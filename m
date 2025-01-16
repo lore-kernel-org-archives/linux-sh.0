@@ -1,124 +1,156 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mail.alien8.de (mail.alien8.de [65.109.113.108])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AA3319259A;
-	Thu, 16 Jan 2025 10:04:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA94A1DDC23;
+	Thu, 16 Jan 2025 10:29:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=65.109.113.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1737021843; cv=none; b=d4N9JCIUGro4IBgT5bbU2MOqgoOyZAYyIwqxPN20xNH/xU5NNKZk6BL6/7gqzN3YcQ/SwnQAOSMZv5H/JVuBN6gpyhIRwTGmto9xPbGBVCeuOZ9NcFfzMcBcB8G9/nPUI9cRGJOytLt1+Nyf+/sgrT63YxfwPQDlK6qnVoaj1dY=
+	t=1737023386; cv=none; b=A595hOrXKfPPjn1zNMJZVvmhdgs96Oj8tE0Z4KuC5L4loRiDAODODOsmMTnARyKe7OgMIc3vQA/0jUK6kKB7VuIUW/pHsQFMvbEQ+u+txdDskl8kEtl4RpzubThWuTL+DFXs3nZVf/mUOxfjC0MG1s4uJe8oRX1oYTaKXlsanho=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1737021843; c=relaxed/simple;
-	bh=vOWQM+I3YRBGjUYDIowHfBe+kql+W0wxpSJ3h1dp89U=;
+	s=arc-20240116; t=1737023386; c=relaxed/simple;
+	bh=jP/wVz8lrlZOPBRiVe05XfWlnjrVaTJVXBj2co85OLg=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=DTTt3fL1i6hDd/AeZSkB7i+ORX0KuUwxO0QEalyG/UhFginyJiToOZ5ry4DSe1Pvk0lnn7JSKM3q4oiWFRCqQWSI7JJO3tVpU+hJEX2f9A1bZxMHmDHJTzsb+YqKA4r2DMgYW7bCEqDq9mm2jOmTXqWTrh+IAU8+K3lnhn2vRAE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=IAgqR2f6; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=Ec6S3Zr1e+ctfKTo9ahF8l68NZdlGgZ/Yg2lCNAuqoezOZOOOFb63Pp4A8Wx/mEqi7ki9U+bfm9vmUfe35Q39B7ylC3DeA7W56w8ZqeSC0/698iuXUqcAuOoMnjBrHOdSaBgkyJSCPExxV5ZaGCxIwk6VfE6cM8J6f4hSWbPKz0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=alien8.de; spf=pass smtp.mailfrom=alien8.de; dkim=pass (4096-bit key) header.d=alien8.de header.i=@alien8.de header.b=FM40lE/0; arc=none smtp.client-ip=65.109.113.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=alien8.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=alien8.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="IAgqR2f6"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8394EC4CED6;
-	Thu, 16 Jan 2025 10:04:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1737021843;
-	bh=vOWQM+I3YRBGjUYDIowHfBe+kql+W0wxpSJ3h1dp89U=;
+	dkim=pass (4096-bit key) header.d=alien8.de header.i=@alien8.de header.b="FM40lE/0"
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by mail.alien8.de (SuperMail on ZX Spectrum 128k) with ESMTP id C3C7840E02BE;
+	Thu, 16 Jan 2025 10:29:39 +0000 (UTC)
+X-Virus-Scanned: Debian amavisd-new at mail.alien8.de
+Received: from mail.alien8.de ([127.0.0.1])
+	by localhost (mail.alien8.de [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id MFOmT_gDX9aa; Thu, 16 Jan 2025 10:29:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=alien8;
+	t=1737023375; bh=GQBvA11kyxIGOlMc4gw5ALfkgQqX/TyrIH9O3oAvLFA=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=IAgqR2f66QLIyDnlJbSk0pURydWNxseM1FJspSLBkNINi0tBhfM9rafMRa8Fh7jXI
-	 X/IP3yQAnuTRRWVUMeZreOqI759pDr0UfGfwD6rxNXDM8bopEelBPpsrHjqB0dq8+Z
-	 f7INV4NNHfjOuSUxgJvNmSniqiSaAOd/F4iyTma5i6Vp7kMzpIK5WuY4DJjAJYUGV5
-	 SybOjcbKgQOt6adDDGmfohqQAh2Wurvyjc4q5ngWeI4K+I/El+T/pSa1BmM0z6vulg
-	 JaRJP2M2hymQq+cuTQPeXzoDhAFUTQvtWiPUncRVXrccXXxEnHYXgKekjrM1OSnKQS
-	 grprVO8ZExbiQ==
-Date: Thu, 16 Jan 2025 11:03:58 +0100
-From: Joel Granados <joel.granados@kernel.org>
-To: yukaixiong <yukaixiong@huawei.com>
-Cc: akpm@linux-foundation.org, mcgrof@kernel.org, 
-	ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, luto@kernel.org, 
-	tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, dave.hansen@linux.intel.com, 
-	hpa@zytor.com, viro@zeniv.linux.org.uk, brauner@kernel.org, jack@suse.cz, 
-	kees@kernel.org, j.granados@samsung.com, willy@infradead.org, 
-	Liam.Howlett@oracle.com, vbabka@suse.cz, lorenzo.stoakes@oracle.com, trondmy@kernel.org, 
-	anna@kernel.org, chuck.lever@oracle.com, jlayton@kernel.org, neilb@suse.de, 
-	okorniev@redhat.com, Dai.Ngo@oracle.com, tom@talpey.com, davem@davemloft.net, 
-	edumazet@google.com, kuba@kernel.org, pabeni@redhat.com, paul@paul-moore.com, 
-	jmorris@namei.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, linux-nfs@vger.kernel.org, 
-	netdev@vger.kernel.org, linux-security-module@vger.kernel.org, dhowells@redhat.com, 
-	haifeng.xu@shopee.com, baolin.wang@linux.alibaba.com, shikemeng@huaweicloud.com, 
-	dchinner@redhat.com, bfoster@redhat.com, souravpanda@google.com, hannes@cmpxchg.org, 
-	rientjes@google.com, pasha.tatashin@soleen.com, david@redhat.com, 
-	ryan.roberts@arm.com, ying.huang@intel.com, yang@os.amperecomputing.com, 
-	zev@bewilderbeest.net, serge@hallyn.com, vegard.nossum@oracle.com, 
-	wangkefeng.wang@huawei.com
-Subject: Re: Re: [PATCH v5 -next 00/16] sysctl: move sysctls from vm_table
- into its own files
-Message-ID: <lxskw5notxchwlmwl2bspjqsxl52yjd6gknfyssr6xggnj2nll@2nqm5b3itvjh>
-References: <20250111070751.2588654-1-yukaixiong@huawei.com>
- <2asuqwd4rpml6ylxce7mpz2vpvlm2gpdtwpp4lwuf4mdlylig2@dxdj4a73x2sb>
- <a3b4dcf9-7055-33f9-396c-c90b8cfa68d6@huawei.com>
+	b=FM40lE/0clitssFsEKe5JK0a143dAnkAItQNq6yMfahZmpGeSTt09D5HGf0pFLbt8
+	 ulpp29oYaFstDERke8ThqjtXoN04wo6eTBNIkCpJpYEXzS9U9b6shsRrnjlVJY+eKW
+	 TBn1/+CZ9ngMH08pwT66FQz7AXQy6uCPmHYlis0QOsac6iB9mWKsXjQbzbnmjnFYRL
+	 rZuO8syduQMjrFLSjkGi0HDUyE5i/fs8xiEFxdQfkwB7MgmrqT5n5XzifvkD8pCoqz
+	 5X1jUm0gItWfUGbyRkcvKB+w0NCTaoWmvE8UGl8msx3A8F9pgsooW7AjKtjxpPd8Lg
+	 Fb16TJfn+gMvgYR9ZsMlvBBT0VyKZ8xqAHFUwbZBUJJBetncTrqjjppvD9l7XGyf4m
+	 juTTN1zpyhjrfd7TJsAviRyvUSFuCvbml3Dt2L9NGpEIVm/zwFrWYVYuT654H8gFk2
+	 2Yj2R3th9hwTaGTH/t/mjjo+AyzreQe3eFBzv5ejybagmNkRrbkC3tIXtHARl+Igxz
+	 KDg7YnAEPlNEP63WkcD8y4HxsuP37idpXVeYFeL/U5iPMx4eRF2w1AcbW6UgXuHjtO
+	 b3RYhp+4K4Ia7A1PVcGG9NkyVI2JCvCFPMGn35tDMiM9QmJ3MEVxqzNgvDl6r7hKMW
+	 MGq/1HBafOJLETwhOQ5EmCKY=
+Received: from zn.tnic (p200300ea971f93c3329c23fFFEa6a903.dip0.t-ipconnect.de [IPv6:2003:ea:971f:93c3:329c:23ff:fea6:a903])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange ECDHE (P-256) server-signature ECDSA (P-256) server-digest SHA256)
+	(No client certificate requested)
+	by mail.alien8.de (SuperMail on ZX Spectrum 128k) with ESMTPSA id 9F55140E028B;
+	Thu, 16 Jan 2025 10:27:52 +0000 (UTC)
+Date: Thu, 16 Jan 2025 11:27:47 +0100
+From: Borislav Petkov <bp@alien8.de>
+To: Brendan Jackman <jackmanb@google.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	"H. Peter Anvin" <hpa@zytor.com>, Andy Lutomirski <luto@kernel.org>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>, Vineet Gupta <vgupta@kernel.org>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+	Brian Cain <bcain@quicinc.com>, Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Michal Simek <monstr@monstr.eu>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Dinh Nguyen <dinguyen@kernel.org>, Jonas Bonn <jonas@southpole.se>,
+	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+	Stafford Horne <shorne@gmail.com>,
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+	Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Naveen N Rao <naveen@kernel.org>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Paul Walmsley <paul.walmsley@sifive.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Juri Lelli <juri.lelli@redhat.com>,
+	Vincent Guittot <vincent.guittot@linaro.org>,
+	Dietmar Eggemann <dietmar.eggemann@arm.com>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Ben Segall <bsegall@google.com>, Mel Gorman <mgorman@suse.de>,
+	Valentin Schneider <vschneid@redhat.com>,
+	Uladzislau Rezki <urezki@gmail.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
+	Mike Rapoport <rppt@kernel.org>,
+	Arnaldo Carvalho de Melo <acme@kernel.org>,
+	Namhyung Kim <namhyung@kernel.org>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Alexander Shishkin <alexander.shishkin@linux.intel.com>,
+	Jiri Olsa <jolsa@kernel.org>, Ian Rogers <irogers@google.com>,
+	Adrian Hunter <adrian.hunter@intel.com>,
+	Dennis Zhou <dennis@kernel.org>, Tejun Heo <tj@kernel.org>,
+	Christoph Lameter <cl@linux.com>,
+	Sean Christopherson <seanjc@google.com>,
+	Paolo Bonzini <pbonzini@redhat.com>,
+	Ard Biesheuvel <ardb@kernel.org>,
+	Josh Poimboeuf <jpoimboe@kernel.org>,
+	Pawan Gupta <pawan.kumar.gupta@linux.intel.com>, x86@kernel.org,
+	linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
+	linux-snps-arc@lists.infradead.org,
+	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+	linux-arch@vger.kernel.org, linux-mm@kvack.org,
+	linux-trace-kernel@vger.kernel.org,
+	linux-perf-users@vger.kernel.org, kvm@vger.kernel.org,
+	linux-efi@vger.kernel.org
+Subject: Re: [PATCH RFC v2 01/29] mm: asi: Make some utility functions
+ noinstr compatible
+Message-ID: <20250116102747.GAZ4jfI9HG3K-PW7nf@fat_crate.local>
+References: <20250110-asi-rfc-v2-v2-0-8419288bc805@google.com>
+ <20250110-asi-rfc-v2-v2-1-8419288bc805@google.com>
+ <20250116001858.GDZ4hQctZe_PFvJ0AJ@fat_crate.local>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <a3b4dcf9-7055-33f9-396c-c90b8cfa68d6@huawei.com>
+In-Reply-To: <20250116001858.GDZ4hQctZe_PFvJ0AJ@fat_crate.local>
 
-On Wed, Jan 15, 2025 at 09:53:53AM +0800, yukaixiong wrote:
-> 
-> 
-> On 2025/1/14 21:50, Joel Granados wrote:
-> > On Sat, Jan 11, 2025 at 03:07:35PM +0800, Kaixiong Yu wrote:
-> > > This patch series moves sysctls of vm_table in kernel/sysctl.c to
-> > > places where they actually belong, and do some related code clean-ups.
-> > > After this patch series, all sysctls in vm_table have been moved into its
-> > > own files, meanwhile, delete vm_table.
-> > > 
-> > > All the modifications of this patch series base on
-> > > linux-next(tags/next-20250110). To test this patch series, the code was
-> > > compiled with both the CONFIG_SYSCTL enabled and disabled on arm64 and
-> > > x86_64 architectures. After this patch series is applied, all files
-> > > under /proc/sys/vm can be read or written normally.
-> > It is looking good! Here is how I think we should move it upstream:
-> > 
-> > 1. These should queued in for 6.15 instead of the next merge window.
-> >     It is too late in the current cycle and if we put it in now, it will
-> >     not properly tested in linux-next.
-> > 
-> > 2. I am putting this in sysctl-testing with the expectation of pushing this
-> >     up for the 6.15 merge window. Please tell me if you want this to go
-> >     through some other tree.
-> > 
-> > Thx for the contribution
-> > 
-> > Best
-> 
-> Thank you! I don't want this to go through some other tree.
-This was more for the mm, net and security maintainers :)
+On Thu, Jan 16, 2025 at 01:18:58AM +0100, Borislav Petkov wrote:
+> Long story short, lemme try to poke around tomorrow to try to figure out what
+> actually happens. It could be caused by the part of Rik's patches and this one
+> inlining things. We'll see...
 
-
-> 
-> Best ...
-> > > my test steps as below listed:
-> > > 
-> > > Step 1: Set CONFIG_SYSCTL to 'n' and compile the Linux kernel on the
-> > > arm64 architecture. The kernel compiles successfully without any errors
-> > > or warnings.
-> > > 
-> > ...
-> > >   mm/swap.c                          |  16 ++-
-> > >   mm/swap.h                          |   1 +
-> > >   mm/util.c                          |  67 +++++++--
-> > >   mm/vmscan.c                        |  23 +++
-> > >   mm/vmstat.c                        |  44 +++++-
-> > >   net/sunrpc/auth.c                  |   2 +-
-> > >   security/min_addr.c                |  11 ++
-> > >   23 files changed, 336 insertions(+), 312 deletions(-)
-> > > 
-> > > -- 
-> > > 2.34.1
-> > > 
-> 
+Looks transient... The very similar guest boots fine on another machine. Let's
+watch this...
 
 -- 
+Regards/Gruss,
+    Boris.
 
-Joel Granados
+https://people.kernel.org/tglx/notes-about-netiquette
