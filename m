@@ -1,89 +1,86 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from desiato.infradead.org (desiato.infradead.org [90.155.92.199])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1FA34157485;
-	Fri, 24 Jan 2025 15:58:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 426152AD21;
+	Mon, 27 Jan 2025 16:02:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.92.199
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1737734287; cv=none; b=Bwq1Jcupw4EVmylyXLCnREyoyIT36MGTcN/QAAsQSeaKh9BmBw2TYoJfzDedMM2bwr+gofAv6m8XCJY7OolZ10zEp5OgicJOUkzaW4nkMwYvUnJ0pJ6XJnNcInZKtONuBz7hAg6mvmpppJsBsU15jcDO1wuLAio8mXfUnVg+Jas=
+	t=1737993773; cv=none; b=C2L4TApDzRPPIta5M3F4uVy9Ai5rCIVefUu7uhQxJNwqJt0pb5SQ3mGUAAwbJJYwiVOtMaCVxZUsXZZobHMHAQbU3EWW1ZG+0YXnc2f7X/kCWc3tKMJaMXqaZQKG9CJps6ssdPEFtcyNeu0iCoVipYhHBMf45RT4oeXY+6f7OOs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1737734287; c=relaxed/simple;
-	bh=1A86Zz6bBgcaV7r3S4D9v59QUu6vk9y6MxJJ7gSJ4cc=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=a1zgpfvzsWyNsl5AhTasrvRUg6G0c6UF8bHet+fpK28Kn5+4K+8QkwLQ+A5hZJT9oL3Tu5FJnCktiZE2DvMpvgDd4DIRavCzPBp1uxBC6W/aUYyrrO1yQ0bRzhb84F5HkhHxN9Wv+EvD9Yqsx5Tj/+kp7kp1DXzhLEXP2dU3neA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ehk766zG; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1737993773; c=relaxed/simple;
+	bh=kcQe7aG2j2Myj05tFg2s8RbzUcJCMxaTNaK+Rxg8E4s=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=n2ldUt5ivyupnRZYkw92QppkH6VYnKFHWOWZjwcw9Ol/vp/awhIQ5GupZdyBrfUUWLSqjiQxkUqi5bWmc45s2yhMF6HXaASagFHfIVE4p4xznCc1iFUk2UELSa0lQIt/Q2UCBHasTMiM1OnDJjKSFghldc5AAbxe5p3NMwxQRE0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=an/mRK4i; arc=none smtp.client-ip=90.155.92.199
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ehk766zG"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 05323C4CED2;
-	Fri, 24 Jan 2025 15:58:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1737734286;
-	bh=1A86Zz6bBgcaV7r3S4D9v59QUu6vk9y6MxJJ7gSJ4cc=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
-	b=ehk766zGEdAoQkghwFc1HgDd4EKnhOpun+/k4KGu8CPkoGGPk4OniSuoYbBftbB2h
-	 SUQMYwoMgb4EoKDtMH5UATdMNCop3qLq9rXp3uCzjPqE44baDxlFdg0Y9w8DUwtduX
-	 5BmnNfHm2HdQC9drlhWqFoOvY6f+EctQDWFTLs9jGmwe9BQaC93Mw9Drwkauz/4sgv
-	 4CafUmXvKKRtUPKQmTQI4WmUC2X6FZAxdTEX6jp/OK4/sIFv7+x6lnPNnOAQ74SgZb
-	 7MgQyXHYzGUYVVt+ufXqITY5zzHil8iBQFijBhPNY3ZrGFC8IhmfeVhUGYPIXF52fc
-	 oeS4hTDFKIfTA==
-From: Mark Brown <broonie@kernel.org>
-To: Liam Girdwood <lgirdwood@gmail.com>, Jaroslav Kysela <perex@perex.cz>, 
- Takashi Iwai <tiwai@suse.com>, 
- Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, 
- Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: linux-sh@vger.kernel.org, linux-sound@vger.kernel.org, 
- kernel test robot <lkp@intel.com>
-In-Reply-To: <8c17ff52584ce824b8b42d08ea1b942ebeb7f4d9.1737708688.git.geert+renesas@glider.be>
-References: <8c17ff52584ce824b8b42d08ea1b942ebeb7f4d9.1737708688.git.geert+renesas@glider.be>
-Subject: Re: [PATCH] ASoC: renesas: SND_SIU_MIGOR should depend on
- DMADEVICES
-Message-Id: <173773428475.46042.4071074696257192145.b4-ty@kernel.org>
-Date: Fri, 24 Jan 2025 15:58:04 +0000
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="an/mRK4i"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=SXnX6yfCJ4lo25sKBuf0Jih5OsMg7kJt7yHBT/wi2JQ=; b=an/mRK4icZzCqPPHMN609Ff0wL
+	Qs2pgoOW69THhWB5T5gY6nH/4fK6Y72Gx049NYy4Jjyug2T3/ZqGxinuzmLsukap/98K7qe6Bqwy6
+	7MFOHakKvuHQ9yFf/ZaTeVhJH7QQNtJt3R+A5YsNVDHyFh2+dFXHFqOqCuLPafjvgw/Ko394Ybr25
+	5i168RQSG388+3kPTU4tUR6sth73mFYsatyAk065qko7xleaRiAMsQW6PIOD1KtmnXAMGvNjM/h8P
+	qmlTj2NGgL7VPHXjuGCxbahpRIiTN3LvPQJXH47YXPZraFzPsPy0cSXa1hMT4QUnZnKtVWB2tSt2P
+	1b8AU+gg==;
+Received: from 77-249-17-89.cable.dynamic.v4.ziggo.nl ([77.249.17.89] helo=noisy.programming.kicks-ass.net)
+	by desiato.infradead.org with esmtpsa (Exim 4.98 #2 (Red Hat Linux))
+	id 1tcRZN-0000000Eiwv-24hm;
+	Mon, 27 Jan 2025 16:02:37 +0000
+Received: by noisy.programming.kicks-ass.net (Postfix, from userid 1000)
+	id 145F93004DE; Mon, 27 Jan 2025 17:02:37 +0100 (CET)
+Date: Mon, 27 Jan 2025 17:02:36 +0100
+From: Peter Zijlstra <peterz@infradead.org>
+To: Qi Zheng <zhengqi.arch@bytedance.com>
+Cc: kevin.brodsky@arm.com, riel@surriel.com, vishal.moola@gmail.com,
+	david@redhat.com, jannh@google.com, hughd@google.com,
+	willy@infradead.org, yuzhao@google.com, muchun.song@linux.dev,
+	akpm@linux-foundation.org, will@kernel.org, aneesh.kumar@kernel.org,
+	npiggin@gmail.com, arnd@arndb.de, dave.hansen@linux.intel.com,
+	rppt@kernel.org, alexghiti@rivosinc.com, linux-mm@kvack.org,
+	linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org, linux-sh@vger.kernel.org,
+	linux-um@lists.infradead.org, x86@kernel.org,
+	linux-riscv@lists.infradead.org
+Subject: Re: [PATCH 4/5] x86: pgtable: unconditionally use tlb_remove_table()
+Message-ID: <20250127160236.GJ16742@noisy.programming.kicks-ass.net>
+References: <cover.1737637631.git.zhengqi.arch@bytedance.com>
+ <00bf7935d65826eee547ac195d7854b1c946dbc5.1737637631.git.zhengqi.arch@bytedance.com>
+ <20250124113854.GA15996@noisy.programming.kicks-ass.net>
+ <45651097-c056-49e3-9cc8-c289c1c0030d@bytedance.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-Mailer: b4 0.15-dev-1b0d6
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <45651097-c056-49e3-9cc8-c289c1c0030d@bytedance.com>
 
-On Fri, 24 Jan 2025 09:52:45 +0100, Geert Uytterhoeven wrote:
-> If CONFIG_DMADEVICES=n:
+On Fri, Jan 24, 2025 at 09:00:58PM +0800, Qi Zheng wrote:
 > 
->     WARNING: unmet direct dependencies detected for SND_SOC_SH4_SIU
->       Depends on [n]: SOUND [=y] && SND [=y] && SND_SOC [=y] && (SUPERH [=y] || ARCH_RENESAS || COMPILE_TEST [=n]) && ARCH_SHMOBILE [=y] && HAVE_CLK [=y] && DMADEVICES [=n]
->       Selected by [y]:
->       - SND_SIU_MIGOR [=y] && SOUND [=y] && SND [=y] && SND_SOC [=y] && (SUPERH [=y] || ARCH_RENESAS || COMPILE_TEST [=n]) && SH_MIGOR [=y] && I2C [=y]
 > 
-> [...]
+> On 2025/1/24 19:38, Peter Zijlstra wrote:
+> > On Thu, Jan 23, 2025 at 09:26:17PM +0800, Qi Zheng wrote:
+> > > If the CONFIG_MMU_GATHER_TABLE_FREE is disabled, the tlb_remove_table()
+> > > will fall back to pagetable_dtor() + tlb_remove_page(). So let's use
+> > > tlb_remove_table() unconditionally to free page table pages.
+> > > 
+> > > Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
+> > > Suggested-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+> > 
+> > I think we can clean up more :-)
+> 
+> Yes, but Rik van Riel has already done the same thing in his patch series
+> [1], so I was originally planning to wait for his patch to be
+> merged into the linux-next branch, and then rebase this series onto his
+> patch.
 
-Applied to
-
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git for-next
-
-Thanks!
-
-[1/1] ASoC: renesas: SND_SIU_MIGOR should depend on DMADEVICES
-      commit: 2e3c688ddaf2bb8e3696a773b5278711a90ea080
-
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.
-
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
-
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
-
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
-
-Thanks,
-Mark
-
+Duh, yeah, I've actually seen those patches and totally forgot he did
+that... -ETOOMUCHEMAIL :/
