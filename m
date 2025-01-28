@@ -1,207 +1,203 @@
-Received: from mo4-p01-ob.smtp.rzone.de (mo4-p01-ob.smtp.rzone.de [81.169.146.164])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2428C1DF250;
-	Tue, 28 Jan 2025 08:43:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=81.169.146.164
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738053808; cv=pass; b=uDEQJ759+FLfaixG3XYOFsLuiBER5JBceYVwScFu4WNnQyNPybPZcYfVWJneKowbyRITohnCK2Bpqm3a+ZdvDryFCVOiR0vjPlTqif7kNa1Vhk1VcRu4+GRrNhw0IkMLRIra8L6O+FdJfgrxznJ8UGqMkVuYzP9PFizcRHZYhus=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738053808; c=relaxed/simple;
-	bh=3doHFkzjsq+ipMFQyXsACTky5fspIz7lN86s+fdYHYY=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=Pn1EfJ6EHDJcabEydR/yiSSnFOKGjZACO4m2C69gGZUN1sfsV3oImIT2NySNDcNVs7k4CyGaXmpTi1a3hZIT8cxR2XnF2WE603c8jZYPJmBfOjQFr/gIE/ILN6Wv22O340Sb35UPnw5c4j6sBgQtsL/TBhPRaGwlRiujRMsz0z4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=outer-limits.org; spf=none smtp.mailfrom=outer-limits.org; dkim=pass (2048-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b=fF0DzmvS; dkim=permerror (0-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b=84Mod60X; arc=pass smtp.client-ip=81.169.146.164
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=outer-limits.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=outer-limits.org
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b="fF0DzmvS";
-	dkim=permerror (0-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b="84Mod60X"
-ARC-Seal: i=1; a=rsa-sha256; t=1738053788; cv=none;
-    d=strato.com; s=strato-dkim-0002;
-    b=IXWq/s88KXRqC6ykVaEfmapcUGRZBZieuYZZNImcV5Rzaa7s9p995LBXRP8m+NGu99
-    NT5oTIPIm2bT2+FUu6FA9FP5GTDhMP4BQ3g7sOWuXHybylhVy/HjiZOU7yXIXt93ENPw
-    Lg7lyxRnYI4tWCJLDtVMhL94k+ijpUYa4WDGnNw11j7tWjERFUWb4Mqgdnvpzbt81QE2
-    rVwZ27aLly8q6JFJBA7rEhI54z8s94xFzqz7kYVIHtunxzcHSZIKuNVL77ShhP/+ZcCY
-    wX+t2Mk/5Mfp+nq5IsgdyNeP6/ZaPL14VLzoN4k4XW7k3sroMGejkvTWmOEJFUN4m5RL
-    ZC0g==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; t=1738053788;
-    s=strato-dkim-0002; d=strato.com;
-    h=Message-Id:Date:Subject:Cc:To:From:Cc:Date:From:Subject:Sender;
-    bh=9Jqsbtm4hPLjQVWFiGaPCVZK4atmLMRdIUOO7zygNsw=;
-    b=npY2NcN0Q8CzUh82qVMhKPwjSSQOt+OCCbvE9Acddt9TTXtmOE1dbXdT5dC6SnEKRq
-    o2i1wpBLn8D9ORlhn+nIPhzseydIJRP4QU8CwJYTtofRnP6kfdUqAQQAYMY4ApwqJRCR
-    Ph9zWIXvYgeNtZ/U+5KywNi/EIvLqTcdcgn5xNSW1YYoOxE4okgTcHX/Bw086D/DHML6
-    CumlInwXNgnSKwjIwAN7e+4DCshbqZiocmle8mksw/8n/lc7sbFXuNo5s92Ww+3gKGQR
-    UpFaJ4/hHz+E4Dct6sT96FlwgO/EABKVvIP1alBWazGR1wQCaPMHqmREUvqgKU+alqZE
-    IBjw==
-ARC-Authentication-Results: i=1; strato.com;
-    arc=none;
-    dkim=none
-X-RZG-CLASS-ID: mo01
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; t=1738053788;
-    s=strato-dkim-0002; d=outer-limits.org;
-    h=Message-Id:Date:Subject:Cc:To:From:Cc:Date:From:Subject:Sender;
-    bh=9Jqsbtm4hPLjQVWFiGaPCVZK4atmLMRdIUOO7zygNsw=;
-    b=fF0DzmvS9Bhyle2dwjMekGMhPiPSQfJCmEcQej7v3fgtKV8Sy/VWZUQdssqy7zy1bV
-    XL3Wn3I1qh0ZjC1m+C6inAWS6b0fKETDoNuLrxd+kLcJ00hrryyel0TyJ1puHubjtdAx
-    E+gNN1aJr77Ck/Vooq0K+w89eqMSSUsLckjJz1KD0WnTRHoYLq1Zlpba1WlQbHI89ao3
-    PO0QoMn1dFXetGfVKIOjmUxhYUn7aZB2eT5Y385JVWmYejNrr+RQ8ru2hoTQ+gyItMju
-    5Wka0gwO/jArGWfuJHef/AX/4EABemL77BD6qcZJ1E5Heb3N+PM+2BgukIW+XCY+i5fH
-    SAGw==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; t=1738053788;
-    s=strato-dkim-0003; d=outer-limits.org;
-    h=Message-Id:Date:Subject:Cc:To:From:Cc:Date:From:Subject:Sender;
-    bh=9Jqsbtm4hPLjQVWFiGaPCVZK4atmLMRdIUOO7zygNsw=;
-    b=84Mod60Xu+POWrbjEFxWGcTL34vUwlZpkthJKbiQe9yW3DEOiJYZoystNI6xDhqwh0
-    b1H5ydT45xa7L8Ja3TBw==
-X-RZG-AUTH: ":JnkIfEGmW/AMJS6HttH4FbRVwc4dHlPLCp4e/IoHo8zEMMHAgwTfqBEHcVJSv9P5mRTGd2ImeA=="
-Received: from ws2104.lan.kalrayinc.com
-    by smtp.strato.de (RZmta 51.2.17 AUTH)
-    with ESMTPSA id J1a25110S8h70Lu
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256 bits))
-	(Client did not present a certificate);
-    Tue, 28 Jan 2025 09:43:07 +0100 (CET)
-From: Julian Vetter <julian@outer-limits.org>
-To: Arnd Bergmann <arnd@arndb.de>,
+Received: from vmicros1.altlinux.org (vmicros1.altlinux.org [194.107.17.57])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id DDE6C194C6A;
+	Tue, 28 Jan 2025 09:14:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.107.17.57
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1738055689; cv=none; b=ON7aBghC2DA10LudDOz05FQm3HI7Eq5jLtiWGE3AYjXMCHaGGphSqnSrbrUd39xy2GEj9/dgyfec4X0TMfALAzVeXESAOoK8uKopyihXZl7ZPgCcUwjphHIEycCinsl5mv8cjfh0WsUFqTKmGjAd1G/Y15wj8ILCrLrTWSXIJVs=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1738055689; c=relaxed/simple;
+	bh=xBv91Vhe4Gw6iZ3jXePjk1/UOht63NRyiLILSBPHqR8=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=m117E7Tw6DYxia9CTUuFmeiHzotyyb8l5hJ3/roCb0SokH9D0iV4BM6W2ceyTa4+5velongZP4QDwbsW5TJr3rWtdhrW6X+Dt/sERtBq57EOq9drJHeXM2TCU+WYPM7CRgAttAE5Bgo1kSrhNJQHPlwYV9RiyRuA9T/pk/uqx+8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=strace.io; spf=pass smtp.mailfrom=altlinux.org; arc=none smtp.client-ip=194.107.17.57
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=strace.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=altlinux.org
+Received: from mua.local.altlinux.org (mua.local.altlinux.org [192.168.1.14])
+	by vmicros1.altlinux.org (Postfix) with ESMTP id 54AE372C8FB;
+	Tue, 28 Jan 2025 12:14:45 +0300 (MSK)
+Received: by mua.local.altlinux.org (Postfix, from userid 508)
+	id 43F947CCB3A; Tue, 28 Jan 2025 11:14:45 +0200 (IST)
+Date: Tue, 28 Jan 2025 11:14:45 +0200
+From: "Dmitry V. Levin" <ldv@strace.io>
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: Alexey Gladkov <legion@kernel.org>,
+	Charlie Jenkins <charlie@rivosinc.com>,
+	Eugene Syromyatnikov <evgsyr@gmail.com>,
+	Mike Frysinger <vapier@gentoo.org>,
+	Renzo Davoli <renzo@cs.unibo.it>,
+	Davide Berardi <berardi.dav@gmail.com>,
+	strace-devel@lists.strace.io, Vineet Gupta <vgupta@kernel.org>,
+	Russell King <linux@armlinux.org.uk>, Will Deacon <will@kernel.org>,
+	Guo Ren <guoren@kernel.org>, Brian Cain <bcain@quicinc.com>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Michal Simek <monstr@monstr.eu>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Dinh Nguyen <dinguyen@kernel.org>, Jonas Bonn <jonas@southpole.se>,
+	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+	Stafford Horne <shorne@gmail.com>,
+	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+	Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Naveen N Rao <naveen@kernel.org>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Paul Walmsley <paul.walmsley@sifive.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
 	Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Julian Vetter <julian@outer-limits.org>
-Subject: [PATCH] sh: Remove IO memcpy and memset from sh code
-Date: Tue, 28 Jan 2025 09:42:54 +0100
-Message-Id: <20250128084254.1408815-1-julian@outer-limits.org>
-X-Mailer: git-send-email 2.34.1
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
+	Max Filippov <jcmvbkbc@gmail.com>, Arnd Bergmann <arnd@arndb.de>,
+	Shuah Khan <shuah@kernel.org>, linux-snps-arc@lists.infradead.org,
+	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+	linux-um@lists.infradead.org, linux-arch@vger.kernel.org,
+	linux-kselftest@vger.kernel.org, linux-api@vger.kernel.org
+Subject: [PATCH v3 0/6] ptrace: introduce PTRACE_SET_SYSCALL_INFO API
+Message-ID: <20250128091445.GA8257@strace.io>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Remove IO memcpy and memset from sh specific code and fall back to the
-new implementation from lib/iomem_copy.c. It uses word accesses if the
-buffers are aligned and only falls back to byte accesses for potentially
-unaligned parts of a buffer. Keep only the SH4 optimized memcpy_fromio.
+PTRACE_SET_SYSCALL_INFO is a generic ptrace API that complements
+PTRACE_GET_SYSCALL_INFO by letting the ptracer modify details of
+system calls the tracee is blocked in.
 
-Signed-off-by: Julian Vetter <julian@outer-limits.org>
----
- arch/sh/include/asm/io.h |  8 ++----
- arch/sh/kernel/io.c      | 62 ++--------------------------------------
- 2 files changed, 6 insertions(+), 64 deletions(-)
+This API allows ptracers to obtain and modify system call details
+in a straightforward and architecture-agnostic way.
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index cf5eab840d57..89a9b86bf844 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -269,12 +269,10 @@ __BUILD_IOPORT_STRING(q, u64)
- #define IO_SPACE_LIMIT 0xffffffff
- 
- /* We really want to try and get these to memcpy etc */
--#define memset_io memset_io
-+#ifdef CONFIG_CPU_SH4
- #define memcpy_fromio memcpy_fromio
--#define memcpy_toio memcpy_toio
--void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
--void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
--void memset_io(volatile void __iomem *, int, unsigned long);
-+void memcpy_fromio(void *, const volatile void __iomem *, size_t);
-+#endif
- 
- /* Quad-word real-mode I/O, don't ask.. */
- unsigned long long peek_real_address_q(unsigned long long addr);
-diff --git a/arch/sh/kernel/io.c b/arch/sh/kernel/io.c
-index da22f3b32d30..a3e181643f75 100644
---- a/arch/sh/kernel/io.c
-+++ b/arch/sh/kernel/io.c
-@@ -5,21 +5,18 @@
-  * Copyright (C) 2000 - 2009  Stuart Menefy
-  * Copyright (C) 2005  Paul Mundt
-  */
--#include <linux/module.h>
--#include <linux/pci.h>
--#include <asm/machvec.h>
- #include <asm/io.h>
- 
- /*
-  * Copy data from IO memory space to "real" memory space.
-  */
--void memcpy_fromio(void *to, const volatile void __iomem *from, unsigned long count)
-+#ifdef CONFIG_CPU_SH4
-+void memcpy_fromio(void *to, const volatile void __iomem *from, size_t count)
- {
- 	/*
- 	 * Would it be worthwhile doing byte and long transfers first
- 	 * to try and get aligned?
- 	 */
--#ifdef CONFIG_CPU_SH4
- 	if ((count >= 0x20) &&
- 	     (((u32)to & 0x1f) == 0) && (((u32)from & 0x3) == 0)) {
- 		int tmp2, tmp3, tmp4, tmp5, tmp6;
-@@ -53,59 +50,6 @@ void memcpy_fromio(void *to, const volatile void __iomem *from, unsigned long co
- 			: "7"(from), "0" (to), "1" (count)
- 			: "r0", "r7", "t", "memory");
- 	}
--#endif
--
--	if ((((u32)to | (u32)from) & 0x3) == 0) {
--		for (; count > 3; count -= 4) {
--			*(u32 *)to = *(volatile u32 *)from;
--			to += 4;
--			from += 4;
--		}
--	}
--
--	for (; count > 0; count--) {
--		*(u8 *)to = *(volatile u8 *)from;
--		to++;
--		from++;
--	}
--
--	mb();
- }
- EXPORT_SYMBOL(memcpy_fromio);
--
--/*
-- * Copy data from "real" memory space to IO memory space.
-- */
--void memcpy_toio(volatile void __iomem *to, const void *from, unsigned long count)
--{
--	if ((((u32)to | (u32)from) & 0x3) == 0) {
--		for ( ; count > 3; count -= 4) {
--			*(volatile u32 *)to = *(u32 *)from;
--			to += 4;
--			from += 4;
--		}
--	}
--
--	for (; count > 0; count--) {
--		*(volatile u8 *)to = *(u8 *)from;
--		to++;
--		from++;
--	}
--
--	mb();
--}
--EXPORT_SYMBOL(memcpy_toio);
--
--/*
-- * "memset" on IO memory space.
-- * This needs to be optimized.
-- */
--void memset_io(volatile void __iomem *dst, int c, unsigned long count)
--{
--        while (count) {
--                count--;
--                writeb(c, dst);
--                dst++;
--        }
--}
--EXPORT_SYMBOL(memset_io);
-+#endif
+Current implementation supports changing only those bits of system call
+information that are used by strace, namely, syscall number, syscall
+arguments, and syscall return value.
+
+Support of changing additional details returned by PTRACE_GET_SYSCALL_INFO,
+such as instruction pointer and stack pointer, could be added later if
+needed, by using struct ptrace_syscall_info.flags to specify the additional
+details that should be set.  Currently, "flags", "reserved", and
+"seccomp.reserved2" fields of struct ptrace_syscall_info must be
+initialized with zeroes; "arch", "instruction_pointer", and "stack_pointer"
+fields are ignored.
+
+PTRACE_SET_SYSCALL_INFO currently supports only PTRACE_SYSCALL_INFO_ENTRY,
+PTRACE_SYSCALL_INFO_EXIT, and PTRACE_SYSCALL_INFO_SECCOMP operations.
+Other operations could be added later if needed.
+
+Ideally, PTRACE_SET_SYSCALL_INFO should have been introduced along with
+PTRACE_GET_SYSCALL_INFO, but it didn't happen.  The last straw that
+convinced me to implement PTRACE_SET_SYSCALL_INFO was apparent failure
+to provide an API of changing the first system call argument on riscv
+architecture [1].
+
+ptrace(2) man page:
+
+long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
+...
+PTRACE_SET_SYSCALL_INFO
+       Modify information about the system call that caused the stop.
+       The "data" argument is a pointer to struct ptrace_syscall_info
+       that specifies the system call information to be set.
+       The "addr" argument should be set to sizeof(struct ptrace_syscall_info)).
+
+[1] https://lore.kernel.org/all/59505464-c84a-403d-972f-d4b2055eeaac@gmail.com/
+
+Notes:
+    v3:
+    * powerpc: Submit syscall_set_return_value fix for "sc" case separately
+    * mips: Do not introduce erroneous argument truncation on mips n32,
+      add a detailed description to the commit message of the
+      mips_get_syscall_arg change
+    * ptrace: Add explicit padding to the end of struct ptrace_syscall_info,
+      simplify obtaining of user ptrace_syscall_info,
+      do not introduce PTRACE_SYSCALL_INFO_SIZE_VER0
+    * ptrace: Change the return type of ptrace_set_syscall_info_* functions
+      from "unsigned long" to "int"
+    * ptrace: Add -ERANGE check to ptrace_set_syscall_info_exit,
+      add comments to -ERANGE checks
+    * ptrace: Update comments about supported syscall stops
+    * selftests: Extend set_syscall_info test, fix for mips n32
+    * Add Tested-by and Reviewed-by
+
+    v2:
+    * Add patch to fix syscall_set_return_value() on powerpc
+    * Add patch to fix mips_get_syscall_arg() on mips
+    * Add syscall_set_return_value() implementation on hexagon
+    * Add syscall_set_return_value() invocation to syscall_set_nr()
+      on arm and arm64.
+    * Fix syscall_set_nr() and mips_set_syscall_arg() on mips
+    * Add a comment to syscall_set_nr() on arc, powerpc, s390, sh,
+      and sparc
+    * Remove redundant ptrace_syscall_info.op assignments in
+      ptrace_get_syscall_info_*
+    * Minor style tweaks in ptrace_get_syscall_info_op()
+    * Remove syscall_set_return_value() invocation from
+      ptrace_set_syscall_info_entry()
+    * Skip syscall_set_arguments() invocation in case of syscall number -1
+      in ptrace_set_syscall_info_entry() 
+    * Split ptrace_syscall_info.reserved into ptrace_syscall_info.reserved
+      and ptrace_syscall_info.flags
+    * Use __kernel_ulong_t instead of unsigned long in set_syscall_info test
+
+Dmitry V. Levin (6):
+  mips: fix mips_get_syscall_arg() for o32
+  syscall.h: add syscall_set_arguments() and syscall_set_return_value()
+  syscall.h: introduce syscall_set_nr()
+  ptrace_get_syscall_info: factor out ptrace_get_syscall_info_op
+  ptrace: introduce PTRACE_SET_SYSCALL_INFO request
+  selftests/ptrace: add a test case for PTRACE_SET_SYSCALL_INFO
+
+ arch/arc/include/asm/syscall.h                |  25 +
+ arch/arm/include/asm/syscall.h                |  37 ++
+ arch/arm64/include/asm/syscall.h              |  29 +
+ arch/csky/include/asm/syscall.h               |  13 +
+ arch/hexagon/include/asm/syscall.h            |  21 +
+ arch/loongarch/include/asm/syscall.h          |  15 +
+ arch/m68k/include/asm/syscall.h               |   7 +
+ arch/microblaze/include/asm/syscall.h         |   7 +
+ arch/mips/include/asm/syscall.h               |  70 ++-
+ arch/nios2/include/asm/syscall.h              |  16 +
+ arch/openrisc/include/asm/syscall.h           |  13 +
+ arch/parisc/include/asm/syscall.h             |  19 +
+ arch/powerpc/include/asm/syscall.h            |  20 +
+ arch/riscv/include/asm/syscall.h              |  16 +
+ arch/s390/include/asm/syscall.h               |  24 +
+ arch/sh/include/asm/syscall_32.h              |  24 +
+ arch/sparc/include/asm/syscall.h              |  22 +
+ arch/um/include/asm/syscall-generic.h         |  19 +
+ arch/x86/include/asm/syscall.h                |  43 ++
+ arch/xtensa/include/asm/syscall.h             |  18 +
+ include/asm-generic/syscall.h                 |  30 +
+ include/uapi/linux/ptrace.h                   |   7 +-
+ kernel/ptrace.c                               | 179 +++++-
+ tools/testing/selftests/ptrace/Makefile       |   2 +-
+ .../selftests/ptrace/set_syscall_info.c       | 514 ++++++++++++++++++
+ 25 files changed, 1143 insertions(+), 47 deletions(-)
+ create mode 100644 tools/testing/selftests/ptrace/set_syscall_info.c
+
 -- 
-2.34.1
-
+ldv
