@@ -1,106 +1,184 @@
-Received: from fhigh-b6-smtp.messagingengine.com (fhigh-b6-smtp.messagingengine.com [202.12.124.157])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD44C19CC02;
-	Tue, 28 Jan 2025 10:21:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.157
+Received: from pegase2.c-s.fr (pegase2.c-s.fr [93.17.235.10])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 6DA221CAA8A;
+	Tue, 28 Jan 2025 15:20:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=93.17.235.10
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738059721; cv=none; b=GAhBm++inVb6le5mrQQRh7/VVlQl7NiGUyGDdQhP0aSK+0/zTSSf9jXWU7rh4UbjKxl889CLKB02DubIhQvhm4mw5a7RBk7oKfSPms9F+OPZBqd+K5ms1SXZNCfq2B4j0bqvqg0mVzZJOAlEN32N1n3lzfZ6dz+WWzwoClsJnjU=
+	t=1738077606; cv=none; b=bKX2WDqiVSv0JPhXg5fcXkqL+LukGlkoC2e7UZe857FITq/cMmchsoIEBSxI9O2Yf3RSkqSb9+NtD0eyy8buJdf5R1lqnmNrLAAKY/R6MjTKu4XtA/HWeA6eLImzf9jLQJ6d7rcivrgUuUSv+mINyxYwJ5lIVsph6BP4Zhd/+iY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738059721; c=relaxed/simple;
-	bh=+/oxoE91NKOHcQLz3rgJnj6womVGOb1f1E1kO7EtnbM=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=STi4yub8d5ey+NUFlGgB/TC6GLeyFsM21fb4owEAdaDwcku3sSu+x2L6wFv2kFSKDxZRkmzbirIilxUGs+ud07/RA6fCEMfNTdKWUzRjWBIRIjS8SL1X7GAitaG7XnAo1LmTFt5+OOhOfJ4Gw8PNq8m8njN+BMIYEzPgdJgURY8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=rXQgFSX2; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=sNTb/Qbg; arc=none smtp.client-ip=202.12.124.157
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="rXQgFSX2";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="sNTb/Qbg"
-Received: from phl-compute-10.internal (phl-compute-10.phl.internal [10.202.2.50])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 6141825401B3;
-	Tue, 28 Jan 2025 05:21:57 -0500 (EST)
-Received: from phl-imap-11 ([10.202.2.101])
-  by phl-compute-10.internal (MEProxy); Tue, 28 Jan 2025 05:21:57 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1738059717;
-	 x=1738146117; bh=+/oxoE91NKOHcQLz3rgJnj6womVGOb1f1E1kO7EtnbM=; b=
-	rXQgFSX2hcerZ8JUvj0fBl5Rxnv0BgDnoS6KKdP9erS7+nFE/wMbt1swLoWKw2IO
-	0cnwRae7Yicdf+X+1qfPAQa3IH+wgoxfxBGeskgIXO9SwVft863FzlN2Ukp/9Ikr
-	rOjA6Yt7OyUPOXWm8OQuD0LQG+TqigmhfIvD/PNaqZkdOtHQNRr5mPZZa04BrhHz
-	svxEEMtz0H3pPMO7m8ozQffjGxNL7wLy0pw31cRZjD7Te6fFE012aPFeMblhD+Vc
-	Lb7dLfGpJkQBoBh+YXwcSQjQdN4SI0axMCOu9q28gpwy6er1sk9jZzTLv0YntiBd
-	QJLJj1U7t/hM/dwCGoo0ww==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1738059717; x=
-	1738146117; bh=+/oxoE91NKOHcQLz3rgJnj6womVGOb1f1E1kO7EtnbM=; b=s
-	NTb/Qbgl26sIz/Dvd40zFBR6wwRZ5VLN14fojeHeMUHRQkRi7KQII4xL1gn9nWJm
-	wmXMYjmtaUH6kHq8yCUmyFkYGzGQQs/X5qMecet+h5WHZta3iZflhvlMCIRB+Wp7
-	uIcHat1EDZB9cdRRdckMpeNf+K5Xjid9v6lBqCmdNV2w5jT/tqYsMUqfXKJY7xCr
-	yqpL0fU2lwyzscDN80oH+YTFtAVlBcUlnQWY6lsC7Zb3dRPG5hJ/eu6Niff8G/hN
-	VqoZD/Ulzmx79T9uaqVeRLMYmFdSL1ncVgyOQPEtZ0fHoUjjjDg3REQnsQxSWs3s
-	YmVuMlXLGQ19ZK4F1fVYQ==
-X-ME-Sender: <xms:xK-YZxj4h-1a2Cc8VOxQHl_BfzrCE0MFlN725zIroBAW33t51oIebQ>
-    <xme:xK-YZ2BO4BmHc7Uqg7aVZOlZfgpshziqH2UeXKKfdiKT1NZo5c3EUZgXID6mumMbe
-    kv8t8_rd3-1rFao2Xo>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefuddrudejgedgudehkeehucetufdoteggodetrf
-    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdggtfgfnhhsuhgsshgtrhhisggv
-    pdfurfetoffkrfgpnffqhgenuceurghilhhouhhtmecufedttdenucesvcftvggtihhpih
-    gvnhhtshculddquddttddmnecujfgurhepofggfffhvfevkfgjfhfutgfgsehtjeertder
-    tddtnecuhfhrohhmpedftehrnhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnug
-    gsrdguvgeqnecuggftrfgrthhtvghrnhephfdthfdvtdefhedukeetgefggffhjeeggeet
-    fefggfevudegudevledvkefhvdeinecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrg
-    hmpehmrghilhhfrhhomheprghrnhgusegrrhhnuggsrdguvgdpnhgspghrtghpthhtohep
-    iedpmhhouggvpehsmhhtphhouhhtpdhrtghpthhtohepuggrlhhirghssehlihgstgdroh
-    hrghdprhgtphhtthhopehjuhhlihgrnhesohhuthgvrhdqlhhimhhithhsrdhorhhgpdhr
-    tghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinhdruggvpd
-    hrtghpthhtohephihsrghtohesuhhsvghrshdrshhouhhrtggvfhhorhhgvgdrjhhppdhr
-    tghpthhtoheplhhinhhugidqkhgvrhhnvghlsehvghgvrhdrkhgvrhhnvghlrdhorhhgpd
-    hrtghpthhtoheplhhinhhugidqshhhsehvghgvrhdrkhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:xK-YZxH3ywI8GtpGOClc8hOHNLujK51I2xZb43hScAyUHMO9DSYcmg>
-    <xmx:xK-YZ2TkYDd2ehluwcv0A-NWYKXziIDRyypWY2COtv63KfgJqKveMg>
-    <xmx:xK-YZ-za5iHKapombeksyEz6DBccRd2scJha0WfEZtf5DcXoqSgNKQ>
-    <xmx:xK-YZ87acdLkQo881v18Sc1YHpUcEtd7mwCLl1oA2cxCiFLa1haHmQ>
-    <xmx:xa-YZ1polCJZdS2cR0ggc52QAe5q4kgG7MFWEJ8VQrR4lj8DIvHXdSpx>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 92B742220072; Tue, 28 Jan 2025 05:21:56 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
+	s=arc-20240116; t=1738077606; c=relaxed/simple;
+	bh=gEEe3ytPfkoQKjM3T2pAQfISERlcVe7TiJOsIheAWfU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Bc0n7h18QtTavdpJcQN+9NPcRheY3XAFSTILyNJrHKuTZ/IaTs6c3fDcG/Nd8ikR+EhW0jU3mk1fdM1T2AVujQqvCiIavBpYLbN5BA/rI+OwT0RrG20lHzarALIM6/Q8oTdtJvARfkg6S67sLByclCMSu2bn8lcrCs5EVXYGtQg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu; spf=pass smtp.mailfrom=csgroup.eu; arc=none smtp.client-ip=93.17.235.10
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=csgroup.eu
+Received: from localhost (mailhub3.si.c-s.fr [172.26.127.67])
+	by localhost (Postfix) with ESMTP id 4Yj82D1NL5z9sSh;
+	Tue, 28 Jan 2025 16:13:56 +0100 (CET)
+X-Virus-Scanned: amavisd-new at c-s.fr
+Received: from pegase2.c-s.fr ([172.26.127.65])
+	by localhost (pegase2.c-s.fr [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 0cq2jNfGuglH; Tue, 28 Jan 2025 16:13:56 +0100 (CET)
+Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
+	by pegase2.c-s.fr (Postfix) with ESMTP id 4Yj82D06Ztz9sSX;
+	Tue, 28 Jan 2025 16:13:56 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+	by messagerie.si.c-s.fr (Postfix) with ESMTP id DE8B98B76C;
+	Tue, 28 Jan 2025 16:13:55 +0100 (CET)
+X-Virus-Scanned: amavisd-new at c-s.fr
+Received: from messagerie.si.c-s.fr ([127.0.0.1])
+	by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
+	with ESMTP id iuMElj2ydnSp; Tue, 28 Jan 2025 16:13:55 +0100 (CET)
+Received: from [192.168.235.99] (unknown [192.168.235.99])
+	by messagerie.si.c-s.fr (Postfix) with ESMTP id E34BB8B763;
+	Tue, 28 Jan 2025 16:13:52 +0100 (CET)
+Message-ID: <e76df471-1346-459a-9f24-fa053d7dcbe8@csgroup.eu>
+Date: Tue, 28 Jan 2025 16:13:52 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Tue, 28 Jan 2025 11:21:36 +0100
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Julian Vetter" <julian@outer-limits.org>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>,
- "Rich Felker" <dalias@libc.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Message-Id: <3b821e8a-ea45-4bb1-874f-ff18f37dd455@app.fastmail.com>
-In-Reply-To: <20250128101306.1475491-1-julian@outer-limits.org>
-References: <20250128101306.1475491-1-julian@outer-limits.org>
-Subject: Re: [PATCH v2] sh: Remove IO memcpy and memset from sh code
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3 3/6] syscall.h: introduce syscall_set_nr()
+To: "Dmitry V. Levin" <ldv@strace.io>, Oleg Nesterov <oleg@redhat.com>
+Cc: Alexey Gladkov <legion@kernel.org>, Charlie Jenkins
+ <charlie@rivosinc.com>, Eugene Syromyatnikov <evgsyr@gmail.com>,
+ Mike Frysinger <vapier@gentoo.org>, Renzo Davoli <renzo@cs.unibo.it>,
+ Davide Berardi <berardi.dav@gmail.com>, strace-devel@lists.strace.io,
+ Vineet Gupta <vgupta@kernel.org>, Russell King <linux@armlinux.org.uk>,
+ Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
+ Brian Cain <bcain@quicinc.com>, Huacai Chen <chenhuacai@kernel.org>,
+ WANG Xuerui <kernel@xen0n.name>, Geert Uytterhoeven <geert@linux-m68k.org>,
+ Michal Simek <monstr@monstr.eu>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ Dinh Nguyen <dinguyen@kernel.org>, Jonas Bonn <jonas@southpole.se>,
+ Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+ Stafford Horne <shorne@gmail.com>,
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+ Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
+ Nicholas Piggin <npiggin@gmail.com>, Naveen N Rao <naveen@kernel.org>,
+ Madhavan Srinivasan <maddy@linux.ibm.com>,
+ Paul Walmsley <paul.walmsley@sifive.com>, Palmer Dabbelt
+ <palmer@dabbelt.com>, Albert Ou <aou@eecs.berkeley.edu>,
+ Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>,
+ Alexander Gordeev <agordeev@linux.ibm.com>,
+ Christian Borntraeger <borntraeger@linux.ibm.com>,
+ Sven Schnelle <svens@linux.ibm.com>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ "David S. Miller" <davem@davemloft.net>,
+ Andreas Larsson <andreas@gaisler.com>, Richard Weinberger <richard@nod.at>,
+ Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+ Johannes Berg <johannes@sipsolutions.net>,
+ Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>,
+ Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>,
+ x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
+ Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>,
+ Arnd Bergmann <arnd@arndb.de>, linux-snps-arc@lists.infradead.org,
+ linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+ linux-arch@vger.kernel.org
+References: <20250128091636.GC8601@strace.io>
+Content-Language: fr-FR
+From: Christophe Leroy <christophe.leroy@csgroup.eu>
+In-Reply-To: <20250128091636.GC8601@strace.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Tue, Jan 28, 2025, at 11:13, Julian Vetter wrote:
-> Remove IO memcpy and memset from sh specific code and fall back to the
-> new implementations from lib/iomem_copy.c. They use word accesses if the
-> buffers are aligned and only fall back to byte accesses for potentially
-> unaligned parts of a buffer.
->
-> Signed-off-by: Julian Vetter <julian@outer-limits.org>
+
+
+Le 28/01/2025 à 10:16, Dmitry V. Levin a écrit :
+> Similar to syscall_set_arguments() that complements
+> syscall_get_arguments(), introduce syscall_set_nr()
+> that complements syscall_get_nr().
+> 
+> syscall_set_nr() is going to be needed along with
+> syscall_set_arguments() on all HAVE_ARCH_TRACEHOOK
+> architectures to implement PTRACE_SET_SYSCALL_INFO API.
+> 
+> Signed-off-by: Dmitry V. Levin <ldv@strace.io>
+> Tested-by: Charlie Jenkins <charlie@rivosinc.com>
+> Reviewed-by: Charlie Jenkins <charlie@rivosinc.com>
 > ---
-> Changes for V2:
-> - Removed also SH4 specific memcpy_fromio code
+>   arch/arc/include/asm/syscall.h        | 11 +++++++++++
+>   arch/arm/include/asm/syscall.h        | 24 ++++++++++++++++++++++++
+>   arch/arm64/include/asm/syscall.h      | 16 ++++++++++++++++
+>   arch/hexagon/include/asm/syscall.h    |  7 +++++++
+>   arch/loongarch/include/asm/syscall.h  |  7 +++++++
+>   arch/m68k/include/asm/syscall.h       |  7 +++++++
+>   arch/microblaze/include/asm/syscall.h |  7 +++++++
+>   arch/mips/include/asm/syscall.h       | 14 ++++++++++++++
+>   arch/nios2/include/asm/syscall.h      |  5 +++++
+>   arch/openrisc/include/asm/syscall.h   |  6 ++++++
+>   arch/parisc/include/asm/syscall.h     |  7 +++++++
+>   arch/powerpc/include/asm/syscall.h    | 10 ++++++++++
+>   arch/riscv/include/asm/syscall.h      |  7 +++++++
+>   arch/s390/include/asm/syscall.h       | 12 ++++++++++++
+>   arch/sh/include/asm/syscall_32.h      | 12 ++++++++++++
+>   arch/sparc/include/asm/syscall.h      | 12 ++++++++++++
+>   arch/um/include/asm/syscall-generic.h |  5 +++++
+>   arch/x86/include/asm/syscall.h        |  7 +++++++
+>   arch/xtensa/include/asm/syscall.h     |  7 +++++++
+>   include/asm-generic/syscall.h         | 14 ++++++++++++++
+>   20 files changed, 197 insertions(+)
+> 
 
-Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+> diff --git a/arch/arm64/include/asm/syscall.h b/arch/arm64/include/asm/syscall.h
+> index 76020b66286b..712daa90e643 100644
+> --- a/arch/arm64/include/asm/syscall.h
+> +++ b/arch/arm64/include/asm/syscall.h
+> @@ -61,6 +61,22 @@ static inline void syscall_set_return_value(struct task_struct *task,
+>   	regs->regs[0] = val;
+>   }
+>   
+> +static inline void syscall_set_nr(struct task_struct *task,
+> +				  struct pt_regs *regs,
+> +				  int nr)
+> +{
+> +	regs->syscallno = nr;
+> +	if (nr == -1) {
+> +		/*
+> +		 * When the syscall number is set to -1, the syscall will be
+> +		 * skipped.  In this case the syscall return value has to be
+> +		 * set explicitly, otherwise the first syscall argument is
+> +		 * returned as the syscall return value.
+> +		 */
+> +		syscall_set_return_value(task, regs, -ENOSYS, 0);
+> +	}
+> +}
+> +
+>   #define SYSCALL_MAX_ARGS 6
+>   
+>   static inline void syscall_get_arguments(struct task_struct *task,
+
+> diff --git a/arch/powerpc/include/asm/syscall.h b/arch/powerpc/include/asm/syscall.h
+> index 521f279e6b33..7505dcfed247 100644
+> --- a/arch/powerpc/include/asm/syscall.h
+> +++ b/arch/powerpc/include/asm/syscall.h
+> @@ -39,6 +39,16 @@ static inline int syscall_get_nr(struct task_struct *task, struct pt_regs *regs)
+>   		return -1;
+>   }
+>   
+> +static inline void syscall_set_nr(struct task_struct *task, struct pt_regs *regs, int nr)
+> +{
+> +	/*
+> +	 * Unlike syscall_get_nr(), syscall_set_nr() can be called only when
+> +	 * the target task is stopped for tracing on entering syscall, so
+> +	 * there is no need to have the same check syscall_get_nr() has.
+> +	 */
+> +	regs->gpr[0] = nr;
+
+Doesn't the same as for ARM64 apply here as well ?
+
+> +}
+> +
+>   static inline void syscall_rollback(struct task_struct *task,
+>   				    struct pt_regs *regs)
+>   {
