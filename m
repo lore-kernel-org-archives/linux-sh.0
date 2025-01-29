@@ -1,135 +1,111 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A20EC14F9FF
-	for <linux-sh@vger.kernel.org>; Wed, 29 Jan 2025 18:52:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4DA619F116
+	for <linux-sh@vger.kernel.org>; Wed, 29 Jan 2025 22:46:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738176777; cv=none; b=rEnwo2xuYriH0+qqPpVu1Q3WLKLU+qCd/iHZzxTufj4kJ1yUzyT+ojfWSCm9KkNOaHHHWsy8cXhoaX/Cs9DHij3Ee0rEajK5ZW8uuCg1fpxqgZQx81PMx0K+1K81aFoKfR62l6Y8FsjeU/8yQrC2n+GhJITkx+9mRlr5Qh3ugms=
+	t=1738190799; cv=none; b=q3WcjBXnGumMYyRZwQ7brzu6WJVjauhkA45hKX3ynmbbMjHNppikRJ08PGdqDIdPSEmlE6pnIk9f0fheyzWsIwvYE5HK0PRpUxCYs6s1OtwWvG4f5eWDqdCJb5zP9z9lw9qAPWDujP6dRLVRE3pVY37icP4Y9QjlxtO3nwfutVI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738176777; c=relaxed/simple;
-	bh=kXUWf4bzCULNMipXU787lKMp83ROSa9zL6s2oSKQfIo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=RstrAczXv8dgGugWwI51oTKMPmuwLAAD0qLZRYrHGKyc+knjwFMYlY/felPSbhxgDa2YFc5DyULIhx+jv8EjpZnmU+8NjGd/f9QtOY7qjbAH698kWgVmpc4A9PP/Wvj2uHHtTsgSQNTf4GXLeNX22KjFsdc75yvEUb4rYvMaaPw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=GisjZwU+; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1738190799; c=relaxed/simple;
+	bh=9NEZbUKkxC9WZkbiAIu1fWTLB4qRr2YDtbirpcADGLM=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=AAR3GqgmAKQE/l/TnEOX+3oC+qhD/9c1i2wzWT3HjvpQ2NZyIGrZhEgTGZD+pXrvKgdwamZaVpa/w0Bmy5qhfKy6KGtk2HvDq6HaJC/YAIlYO6QSuJxOjxKDKjTddRQaEzD5OVQg14fo3lY3+dlJ+e+5qCoTlqB9wnzjriIJCkE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ME2wCF+g; arc=none smtp.client-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="GisjZwU+"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1738176774;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=vlOChQEKTp5JX+pbfAOT77vMe8ez+6+Y0ab8kJl+7mw=;
-	b=GisjZwU+iP78I/4GywL0DefoiIF+Af28TMeHOn8inVnETs7ou+HLo2u/4focwqHzKjaL3t
-	uTWIQxt3VWQKiPFLU/2vPI+Eq2fhN1cItlTMpLR2x/eEo4+n9L40rCUmRsV568M4RW4ijW
-	CPLnHtc1rGicTSukV7L12GHUEAF+M+8=
-Received: from mx-prod-mc-02.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-47--D-VqdZWMCuKFM53jcF7wQ-1; Wed,
- 29 Jan 2025 13:52:52 -0500
-X-MC-Unique: -D-VqdZWMCuKFM53jcF7wQ-1
-X-Mimecast-MFC-AGG-ID: -D-VqdZWMCuKFM53jcF7wQ
-Received: from mx-prod-int-04.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-04.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.40])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mx-prod-mc-02.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 396CC19560BA;
-	Wed, 29 Jan 2025 18:52:48 +0000 (UTC)
-Received: from dhcp-27-174.brq.redhat.com (unknown [10.45.226.29])
-	by mx-prod-int-04.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with SMTP id 3326919560AA;
-	Wed, 29 Jan 2025 18:52:16 +0000 (UTC)
-Received: by dhcp-27-174.brq.redhat.com (nbSMTP-1.00) for uid 1000
-	oleg@redhat.com; Wed, 29 Jan 2025 19:52:21 +0100 (CET)
-Date: Wed, 29 Jan 2025 19:51:49 +0100
-From: Oleg Nesterov <oleg@redhat.com>
-To: "Dmitry V. Levin" <ldv@strace.io>
-Cc: Alexey Gladkov <legion@kernel.org>,
-	Charlie Jenkins <charlie@rivosinc.com>,
-	Eugene Syromyatnikov <evgsyr@gmail.com>,
-	Mike Frysinger <vapier@gentoo.org>,
-	Renzo Davoli <renzo@cs.unibo.it>,
-	Davide Berardi <berardi.dav@gmail.com>,
-	strace-devel@lists.strace.io, Vineet Gupta <vgupta@kernel.org>,
-	Russell King <linux@armlinux.org.uk>, Will Deacon <will@kernel.org>,
-	Guo Ren <guoren@kernel.org>, Brian Cain <bcain@quicinc.com>,
-	Huacai Chen <chenhuacai@kernel.org>,
-	WANG Xuerui <kernel@xen0n.name>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Michal Simek <monstr@monstr.eu>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Dinh Nguyen <dinguyen@kernel.org>, Jonas Bonn <jonas@southpole.se>,
-	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-	Stafford Horne <shorne@gmail.com>,
-	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-	Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Naveen N Rao <naveen@kernel.org>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Paul Walmsley <paul.walmsley@sifive.com>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Richard Weinberger <richard@nod.at>,
-	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-	Max Filippov <jcmvbkbc@gmail.com>, Arnd Bergmann <arnd@arndb.de>,
-	Shuah Khan <shuah@kernel.org>, linux-snps-arc@lists.infradead.org,
-	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-	linux-um@lists.infradead.org, linux-arch@vger.kernel.org,
-	linux-kselftest@vger.kernel.org, linux-api@vger.kernel.org
-Subject: Re: [PATCH v3 0/6] ptrace: introduce PTRACE_SET_SYSCALL_INFO API
-Message-ID: <20250129185149.GA25901@redhat.com>
-References: <20250128091445.GA8257@strace.io>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ME2wCF+g"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-43624b2d453so1067215e9.2
+        for <linux-sh@vger.kernel.org>; Wed, 29 Jan 2025 14:46:37 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1738190796; x=1738795596; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-disposition:mime-version:reply-to
+         :message-id:subject:cc:to:from:date:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=bq5HSBH3IUQQ6t95U9MV+TMJF2wzLuKzSVhBRPVa0Vk=;
+        b=ME2wCF+gDd8LdIynat9S3bda9P17TUQ0vziPxvygRTRyLEOFte5uwaZTJZ/5SBp9Su
+         mjn/LL1433C6Ov0EhZCf1uVHMQmdLcX+AO958YqR4mszBpNgndg0r7wribXmqDmlCDZQ
+         G8XdKSlYp4bY6h6fK67wnuIvhpiDkQynAmmwdi9czkAYh9IfNb2RkHDvoXi/00/HguqK
+         2evKAFYsiSOyUzT4nCMOPog+2kt2tCpMPlpwnAG5X9YnLXGIrc32nBHBBXJt8022uOVv
+         6maCYs2UTSlYyZGX/heMAtNIRfmQXx+/LiDYZkgCR8HpkGICu8sbtmyS5Am1JT0eTMTm
+         oY1Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1738190796; x=1738795596;
+        h=content-transfer-encoding:content-disposition:mime-version:reply-to
+         :message-id:subject:cc:to:from:date:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=bq5HSBH3IUQQ6t95U9MV+TMJF2wzLuKzSVhBRPVa0Vk=;
+        b=PFjZnp27AKbbIBR8vBv4oWEvzZ/Ds4Ef/kMM6zzs0AY6KxVg50L2jfr48Vgp3zAGcf
+         N46LnLR/dWFjfMDNe4LmbiZDAAwz0gdEYKJIOtkGInAp4l1JW4U4W0FzTQttvieVgTHl
+         NVg+GhE4hcUbXXd4YVMHDQ2DdLCu0Cn67cLiOsDbf8Sp5Gpm1xKRUjMF9g3mttBpeuUE
+         GKGMvR5iKdpAYjsbG7jGiWVZTkWdqK4YxVgNpdGSPCt/pcJXYJO17wYZlyJjShd4IYGR
+         IAU05i23XeQUpIFIBf6/el8SD9ZvFuCTh9RPw2lPXXk78Q6os2bJ4QCYnH3Cpb7EksNS
+         WJgQ==
+X-Forwarded-Encrypted: i=1; AJvYcCXoOZCpR/2b+F0pawRGPhcx2MVvqhnESFs+hBnD+VQtfLAo9PY4o4p8/+CmgBF5u0LGP9utTAvJ6A==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy747djzut3BKxrpzF2FCPrGiFbu0crTdFW50N4HGRUkLqT0x/5
+	knw4+hlhekhKolu+UDOrmaPlJqivnznKSYDHvxI2KxzYWm4M4eYf
+X-Gm-Gg: ASbGncumbZJT3oAtOhWnwTS3iIHpih9xFJnJiqVBupHEb/mRAQSiEyDQCFIflqxtXiu
+	ZrwHd7oKD4qLzPlN69mQJUBEW+j5LDK3ETxc2MqEoJ/YFnzPZjoc5cUllf5PRBZLPw3kgvZZj1K
+	lijhaaYaUrQCNi5PI1d5KMV43SIwqiFlqB88OWco7kzdnk1T6WKqhtGtPirnJC32zJmco97l+F+
+	+OrFS77mi34cefF2loZmrPK1DFL1WjNjioFCltg/yXwIeuLyqilt9PhA/Lyu8y8TOwZaH1tKGaN
+	Ri4wN47MUUlGrafcCxqc
+X-Google-Smtp-Source: AGHT+IEMEXjwXlRQfN7vWeuXK/GlMDRdhd5em34babQOjlNDCktXzG2ivOzywizd/lCfyORLH3bH7A==
+X-Received: by 2002:a5d:4f90:0:b0:385:ee3f:5cbf with SMTP id ffacd0b85a97d-38c519526edmr3798383f8f.20.1738190795618;
+        Wed, 29 Jan 2025 14:46:35 -0800 (PST)
+Received: from pevik (gw1.ms-free.net. [185.243.124.10])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-38c5c125f0fsm120379f8f.57.2025.01.29.14.46.33
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 29 Jan 2025 14:46:34 -0800 (PST)
+Date: Wed, 29 Jan 2025 23:46:31 +0100
+From: Petr Vorel <petr.vorel@gmail.com>
+To: buildroot@buildroot.or
+Cc: devel@uclibc-ng.org, linux-sh@vger.kernel.org, ltp@lists.linux.it
+Subject: LTP test fstatat01.c FTBFS on Buildroot bootlin-sh4-uclibc toolchain
+Message-ID: <20250129224631.GA452802@pevik>
+Reply-To: Petr Vorel <petr.vorel@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20250128091445.GA8257@strace.io>
-User-Agent: Mutt/1.5.24 (2015-08-30)
-X-Scanned-By: MIMEDefang 3.0 on 10.30.177.40
+Content-Transfer-Encoding: 8bit
 
-On 01/28, Dmitry V. Levin wrote:
->
->     * ptrace: Add explicit padding to the end of struct ptrace_syscall_info,
->       simplify obtaining of user ptrace_syscall_info,
->       do not introduce PTRACE_SYSCALL_INFO_SIZE_VER0
->     * ptrace: Change the return type of ptrace_set_syscall_info_* functions
->       from "unsigned long" to "int"
->     * ptrace: Add -ERANGE check to ptrace_set_syscall_info_exit,
->       add comments to -ERANGE checks
->     * ptrace: Update comments about supported syscall stops
->     * selftests: Extend set_syscall_info test, fix for mips n32
+Hi all,
 
-Again, I can't review 1-3, I know nothing about the non-x86 architectures.
+LTP test fstatat01.c [1] FTBFS on Buildroot bootlin-sh4-uclibc toolchain
+(uclibc: 1.0.50, kernel headers: 4.19.255). It looks to me that other bootlin
+uclibc based toolchains are working, therefore it's probably sh4 problem.
 
-As for 4-6, feel free to add
+Looking into include/sys/stat.h in uclibc-ng [2], extern int fstatat (int __fd,
+...) definition is guarded only by: #  ifdef __REDIRECT_NTH.
+But in glibc io/sys/stat.h [3] guardes it with #  ifdef __USE_TIME64_REDIRECTS
+added glibc 2.40 a4ed0471d7 ("Always define __USE_TIME_BITS64 when 64 bit time_t is used")
+which replaced previous __USE_TIME_BITS64 added in in glibc 2.34 47f24c21ee [4]
+("y2038: Add support for 64-bit time on legacy ABIs") [5]. Should similar change
+be added to uclibc-ng?
 
-Reviewed-by: Oleg Nesterov <oleg@redhat.com>
+Kind regards,
+Petr
 
+$ cd ~/br-test-pkg/bootlin-sh4-uclibc/build/ltp-testsuite-728759506cbe08612183275b3543007d1c47f7f4/testcases/kernel/syscalls/fstatat
+$ make V=1 fstatat01
+br-test-pkg/bootlin-sh4-uclibc/host/bin/sh4-linux-gcc -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2 -I../../../../include -I../../../../include -I../../../../include/old/ -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64  -O2 -g0  -Ibr-test-pkg/bootlin-sh4-uclibc/host/bin/../sh4-buildroot-linux-uclibc/sysroot/usr/include/tirpc -g -O2 -fno-strict-aliasing -pipe -Wall -W -Wold-style-definition -std=gnu99 -L../../../../lib fstatat01.c  -Lbr-test-pkg/bootlin-sh4-uclibc/host/bin/../sh4-buildroot-linux-uclibc/sysroot/usr/lib -ltirpc -lfts -lltp -o fstatat01
+fstatat01.c:63:5: error: conflicting types for ‘fstatat’; have ‘int(int,  const char *, struct stat64 *, int)’
+   63 | int fstatat(int dirfd, const char *filename, struct stat64 *statbuf, int flags)
+      |     ^~~~~~~
+In file included from br-test-pkg/bootlin-sh4-uclibc/host/sh4-buildroot-linux-uclibc/sysroot/usr/include/features.h:409,
+                 from br-test-pkg/bootlin-sh4-uclibc/host/sh4-buildroot-linux-uclibc/sysroot/usr/include/sys/types.h:26,
+                 from fstatat01.c:27:
+br-test-pkg/bootlin-sh4-uclibc/host/sh4-buildroot-linux-uclibc/sysroot/usr/include/sys/stat.h:243:12: note: previous declaration of ‘fstatat’ with type ‘int(int,  const char * restrict,  struct stat * restrict,  int)’
+  243 | extern int __REDIRECT_NTH (fstatat, (int __fd, const char *__restrict __file,
+      |            ^~~~~~~~~~~~~~
+
+[1] https://github.com/linux-test-project/ltp/blob/master/testcases/kernel/syscalls/fstatat/fstatat01.c
+[2] https://cgit.openadk.org/cgi/cgit/uclibc-ng.git/tree/include/sys/stat.h#n247
+[3] https://sourceware.org/git/?p=glibc.git;a=blob;f=io/sys/stat.h;h=4bea9e9a7785f51af8eefd035874f475b92bb26d;hb=HEAD#l268
+[4] https://sourceware.org/git/?p=glibc.git;a=commit;h=a4ed0471d71739928a0d0fa3258b3ff3b158e9b9
+[5] https://sourceware.org/git/?p=glibc.git;a=commit;h=47f24c21ee38701ae275aa9e451f70fa3e77478c
