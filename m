@@ -1,54 +1,60 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66405148832;
-	Thu, 30 Jan 2025 08:32:08 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 26A7D18F2DD;
+	Thu, 30 Jan 2025 08:33:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738225930; cv=none; b=vFHoFW4XzxcrWvFZlDNaJAiTyFkO7KPLJnQeFkdHRW+Ddz5OYYK1xYttr43STCo/uEt2xPJj+PNXj5gRVtBf00G5JhmEasDJ9wdbcfhKzQBzUAFJXEVo4klw66Slj0kDnf4oPN+H0OtN/HxWCFMSvkYxOhbwP1l50a7gAPxiZlY=
+	t=1738225987; cv=none; b=WAlYAXhP7B6rePv0aMDnOEav3w5u9zMmLDux8nEt3+h9kyVdUDD3gsRtmw1qXV1eIR4RNLxQ9KTuQda5tBmzOGQsfC4YimfBUKaF0vULVqExDqqRsD7cdeHQ2pht1HXYajVgaeRbTnKu3SRfAnEclWbt20CqZE9ApL9S+SPAbUo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738225930; c=relaxed/simple;
-	bh=ch0mvzHl7BtRiR+ehcr7+FmBj2pnIcAvO/xV3NS3aMo=;
+	s=arc-20240116; t=1738225987; c=relaxed/simple;
+	bh=hnQ1v+oMPKp2PMWU6ncam0hpEyuQ7qcl1v7r8Gvx9Zo=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=aQQ0sRkxvZEDM8mszL+s9TiJ5CEcxFCQOURnRdy8DmZ9gG9+QusQuVYO27TUpguP812QAe2Ff5atHN7TncV6HHiaVP5S9FugdKN2GW6x9MaeMY83hvPFKcvzuQNHZQVS/hibRVTWnd+j1cookQoHXOrYqSvEeVGW79zlV3yAvcs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=N4wWQj1C; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=KLQm66v9BAUwj8z/n1+LkxWK4g3HK7KHabNzk4y7907q9UWVSz150f7JusHvfVXLLFoF9nmHP3WE7bQk/oKuYBZE+YHSzAk5i0RoCEZTKCXnJ80IsZHFX0iXjBn/VJHNa6c1fCFAoE1gZFcq7RDemFb/eX+IxVEvXcuyKTD2X8c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=pqLr2AS6; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="N4wWQj1C"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="pqLr2AS6"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=Ul7+mqvJN+pEzAZI3KgN5ZCGEQWBECJtRWmuoSN3Ln4=; t=1738225928; x=1738830728; 
-	b=N4wWQj1CVi//bhpXC8PV5L+bUKBmL80KHPjuqUOoawTe7V6K6OVYvIXc16w+xNz78ripc3zvwr/
-	k02CJ5y90yUFc/fgPiBL414I4VGo6bn0+LhQZt1wrAkGMj3o6qPabYxjdLHXqVVONsJKU/pglJFqk
-	VL+SwhkwuYIhKQrD5ctuNl1aRBKs12R8XSB6QRiPvuEazi6fH3+rLC2mjL35Hd2zquDzWCmLyfpoI
-	y+wZvvVj8KD3LRqHY6xk2XfjUjg96OSNIIhfI6uCwADXg5+UlH6I30Q6fMvUz9TZWoBEj1v8BDfSf
-	bhbHxyFpb1irtNy3+iXoYFERSNxusqgEHu6Q==;
+	bh=N4dgd52Of6FcUlgl8rSDcpg7TYKOfzb/xbujhysv99w=; t=1738225986; x=1738830786; 
+	b=pqLr2AS6tvDpUJDC2l0Wih5hTpWYJvdUE3saHvy0pj3RC1GB7hzQ4ynNZEbmtyoRBoiuNpUKhzW
+	0FJ5DT/wtO9SIMynC1xH+RnYcX2z58HZ7pnRvyFGH4pWTCDLp8BCphBsB+KdfkEfOMuFY2AiX2iaH
+	Ele3idaZ23NPU1IIgVjNkxFpVXHcOtyOBC4u0NhNWVvVRBTthImvRY+wfmshtjOqcCQRX9UNNDXuB
+	2OkJTk4w222uvsX6+01E0PlmOdZYz60fMTHUcyjyPl4N3pCvnXKu/W4gY1Rl59UREx4e/lvhVGYTx
+	mnzD+/KZ0dOwsTPC9WywZTnNkVFGu9Z2VUmg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.98)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1tdPy1-00000000CAQ-29Q6; Thu, 30 Jan 2025 09:32:05 +0100
+          id 1tdPyw-00000000CVs-2047; Thu, 30 Jan 2025 09:33:02 +0100
 Received: from p5dc55198.dip0.t-ipconnect.de ([93.197.81.152] helo=[192.168.178.61])
           by inpost2.zedat.fu-berlin.de (Exim 4.98)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1tdPy1-00000001jkB-17z8; Thu, 30 Jan 2025 09:32:05 +0100
-Message-ID: <3ec5a6621cabddad686f727d20b725ed9658dddd.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: Remove memset_io from sh specific code
+          id 1tdPyw-00000001jpa-0wX4; Thu, 30 Jan 2025 09:33:02 +0100
+Message-ID: <79f5c04056398aac4cb6b4d7eb68c20c69c419a4.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] serial: sh-sci: Use plain struct copy in
+ early_console_setup()
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Julian Vetter <julian@outer-limits.org>, Arnd Bergmann <arnd@arndb.de>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date: Thu, 30 Jan 2025 09:32:04 +0100
-In-Reply-To: <20241204164020.48361-1-julian@outer-limits.org>
-References: <20241204164020.48361-1-julian@outer-limits.org>
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman	
+ <gregkh@linuxfoundation.org>, Jiri Slaby <jirislaby@kernel.org>, Wolfram
+ Sang	 <wsa+renesas@sang-engineering.com>, Claudiu Beznea	
+ <claudiu.beznea.uj@bp.renesas.com>, Lad Prabhakar	
+ <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Cc: linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org, 
+	linux-sh@vger.kernel.org
+Date: Thu, 30 Jan 2025 09:33:01 +0100
+In-Reply-To: <e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
+References: 
+	<e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.54.3 
@@ -61,69 +67,37 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Julian,
-
-On Wed, 2024-12-04 at 17:40 +0100, Julian Vetter wrote:
-> Remove memset_io from sh specific code and fall back to the new
-> implementation from lib/iomem_copy.c. It uses word accesses if the
-> buffer is aligned and only falls back to byte accesses for potentially
-> unaligned parts of a buffer (i.e., at the beginning and end).
+On Tue, 2024-12-03 at 17:30 +0100, Geert Uytterhoeven wrote:
+> Using memcpy() prevents the compiler from doing any checking on the
+> types of the passed pointer parameters.  Copy the structure using struct
+> assignment instead, to increase type-safety.
 >=20
-> Signed-off-by: Julian Vetter <julian@outer-limits.org>
+> No change in generated code on all relevant architectures
+> (arm/arm64/riscv/sh).
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > ---
->  arch/sh/include/asm/io.h |  2 --
->  arch/sh/kernel/io.c      | 14 --------------
->  2 files changed, 16 deletions(-)
+>  drivers/tty/serial/sh-sci.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 >=20
-> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-> index cf5eab840d57..3771bfa984af 100644
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -269,12 +269,10 @@ __BUILD_IOPORT_STRING(q, u64)
->  #define IO_SPACE_LIMIT 0xffffffff
+> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+> index df523c7444230836..1ed13ce2c2952547 100644
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -3542,7 +3542,7 @@ static int __init early_console_setup(struct earlyc=
+on_device *device,
+>  		return -ENODEV;
 > =20
->  /* We really want to try and get these to memcpy etc */
-> -#define memset_io memset_io
->  #define memcpy_fromio memcpy_fromio
->  #define memcpy_toio memcpy_toio
->  void memcpy_fromio(void *, const volatile void __iomem *, unsigned long)=
-;
->  void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
-> -void memset_io(volatile void __iomem *, int, unsigned long);
-> =20
->  /* Quad-word real-mode I/O, don't ask.. */
->  unsigned long long peek_real_address_q(unsigned long long addr);
-> diff --git a/arch/sh/kernel/io.c b/arch/sh/kernel/io.c
-> index da22f3b32d30..16e963bab595 100644
-> --- a/arch/sh/kernel/io.c
-> +++ b/arch/sh/kernel/io.c
-> @@ -95,17 +95,3 @@ void memcpy_toio(volatile void __iomem *to, const void=
- *from, unsigned long coun
->  	mb();
->  }
->  EXPORT_SYMBOL(memcpy_toio);
-> -
-> -/*
-> - * "memset" on IO memory space.
-> - * This needs to be optimized.
-> - */
-> -void memset_io(volatile void __iomem *dst, int c, unsigned long count)
-> -{
-> -        while (count) {
-> -                count--;
-> -                writeb(c, dst);
-> -                dst++;
-> -        }
-> -}
-> -EXPORT_SYMBOL(memset_io);
-
-Looks good to me. I looked up the generic implementation in lib/iomem_copy.=
-c and
-it looks much better than the sh-specific implementation due to the smarter
-use of conditional word-long memset.
+>  	device->port.type =3D type;
+> -	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
+> +	sci_ports[0].port =3D device->port;
+>  	port_cfg.type =3D type;
+>  	sci_ports[0].cfg =3D &port_cfg;
+>  	sci_ports[0].params =3D sci_probe_regmap(&port_cfg);
 
 Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
+Thanks,
 Adrian
 
 --=20
