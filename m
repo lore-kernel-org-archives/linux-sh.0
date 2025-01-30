@@ -1,56 +1,56 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 558991547C9;
-	Thu, 30 Jan 2025 08:24:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 50A12145B27;
+	Thu, 30 Jan 2025 08:28:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738225452; cv=none; b=fR2st5ufJiRln7G6bEHGKqcp/yPNYwqMtbqVSfMRP9o0qoajTW5UXOZSwsVIkiHZow3FDwwL3rcl9G/zwwxQbAf5H9Ss/YV77YwONoKehOqGRWC2bLBYtQEyj6snRSDErEfqugw4FZJnRIvgWqCZql6EyY1LKBWgWfz05//RVvg=
+	t=1738225712; cv=none; b=LKSy+JU8y0HjAT5PLg1vMXv9It8wRc2A9c6V0Z0Fs8/kC4I5TKJFAPmgl35pzEIKDv5gqtd8Ig0MrRiuohifhAM5Zwst5GZorrrStwq+KJPJ2/A++xr6rHW3rPKTE6l3eJnf/p4864gi7j0qIGYiYBQeAqE3av2gzXEE/o+U8XE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738225452; c=relaxed/simple;
-	bh=XMsYQxx1st3PcRVZZG8wVoCL5T3+oTFhfHlIgyGlPfo=;
+	s=arc-20240116; t=1738225712; c=relaxed/simple;
+	bh=bbBgEkFsletXi8yE0h2piyiQJMcoIugxE8tLFE+KzbI=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=W2uRCFhSBN+iX90tQEvXGhlkox26bo9nxvAy5Erpg0wIK6PsGYyQ6u7UmL4Ee8k1BBgCVBenLVQb1WEE0ym+AgP2DNXkuQ8p2Da84ljjjj/i7UGrIGIi1xfNisAj49yh8zd6qhJtgHp+KIbfVZCLFWu3jmZlm9HXMppQIyYI0Uo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=OMDyH/KF; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=C+YD6LkyAVQHp2GKEHp1+k9VIP7gBpsllV2zBalq1y5XD9Sz4s6e1u6RcUOl6PCMrHK5QKPRjhIETh1V/2H4IpB3O3OvUksdqwB171z0ifU5jzOSWloQa4gttVJjBqOUV6NerP5OVWRHrm6mRnud5GEXpgkXA9qdXuA0yBJfXd4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=VA1ZCumS; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="OMDyH/KF"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="VA1ZCumS"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=3h6yZcqdv4m2JbAUENLW8cE3fvB7R3CJBmiZ8dYaFXs=; t=1738225449; x=1738830249; 
-	b=OMDyH/KFaWonAcjQ5OoLgqwm5m70dHPwgIgU932agob/goeiTZpWOpATp/i6sMdKTm8sH1mf2r4
-	sdGdm0u+BWIdYKHceg09cFfZ7IuRXHxeOtGRBR0tGSZyTIqp+arRDIMapT5dMMCOwZ8FIE+WMCvpg
-	JH0krWZjTF6lKChyaLltKTzJIN+qb0xdhCgK9ljInLwjQWCw6QiXgk+xRGX6EY0YdHSU8i9UHQcLp
-	iH7gcHQ6KNT1sd36Le7tN+xWOsZvXXNN0+hDAxeiCFE7qo/vhgE92EfUV6frcyjimi4ION02Aol+V
-	/Me0XB8Ip1+KHglIBBOowdlvqnfy+deutphA==;
+	bh=WtOOCJkEduRa01QsR9Cft5tnAPFPRfNF932iIKtL0G4=; t=1738225709; x=1738830509; 
+	b=VA1ZCumSHSMacdq8BsD2EACMh7y+hIYl20OK21tyZl2i/VshwqrCrvVxzxuri/9I5bYTygKI9j0
+	ZVgZSow3leNdezvMnQhUBU3KUGa7DUm34abkvzzv1JsXBtMwkYd7rxW9cVC8OATpl0MSak4EwhGN7
+	nNLF27S4FOoPqAg/KFRpAAr5VjyWNL/CK5jf4LBH6pZCuGXscdj1yMsi924pZDkDvB/7H3X33N9sk
+	ZxSpdQV9tZ9obMNyF1L5S/ILG9/IxGy9EnQqmq4ZQENTscsHkFUqIBF0Pf4etrGXuyS2xfnC/r1QI
+	jL7UYDh7GRw9TxVYpkjUUbkW0klygqz6hESg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.98)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1tdPqF-0000000097i-48q7; Thu, 30 Jan 2025 09:24:04 +0100
+          id 1tdPuU-00000000ARd-2sqZ; Thu, 30 Jan 2025 09:28:26 +0100
 Received: from p5dc55198.dip0.t-ipconnect.de ([93.197.81.152] helo=[192.168.178.61])
           by inpost2.zedat.fu-berlin.de (Exim 4.98)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1tdPqF-00000001iSk-3Ef2; Thu, 30 Jan 2025 09:24:03 +0100
-Message-ID: <4c37eb9306b9eef2a93720947817d5838ee48dbc.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: pci: Fix the wrong format specifier
+          id 1tdPuU-00000001j8H-1sco; Thu, 30 Jan 2025 09:28:26 +0100
+Message-ID: <8754dbeecb9ee16f84a82548f5e4121ec422ae3a.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v2] sh/irq: use seq_put_decimal_ull_width() for decimal
+ values
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Geert Uytterhoeven <geert@linux-m68k.org>, liujing
-	 <liujing@cmss.chinamobile.com>
-Cc: ysato@users.sourceforge.jp, dalias@libc.org, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Date: Thu, 30 Jan 2025 09:24:03 +0100
-In-Reply-To: <CAMuHMdXu04CFhkc3E=cA9wi_eigc1q88azb8k5N4UeyMAgKOkw@mail.gmail.com>
-References: <20241204110706.6776-1-liujing@cmss.chinamobile.com>
-	 <CAMuHMdXu04CFhkc3E=cA9wi_eigc1q88azb8k5N4UeyMAgKOkw@mail.gmail.com>
+To: David Wang <00107082@163.com>
+Cc: dalias@libc.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Date: Thu, 30 Jan 2025 09:28:25 +0100
+In-Reply-To: <20241130134909.171183-1-00107082@163.com>
+References: 
+	<a9fe22747f20cae9fcc9b9d20109e7afbf8e6b93.camel@physik.fu-berlin.de>
+	 <20241130134909.171183-1-00107082@163.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.54.3 
@@ -63,42 +63,39 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Liujing,
+Hi David,
 
-On Wed, 2024-12-04 at 13:35 +0100, Geert Uytterhoeven wrote:
-> Hi Liujing,
+On Sat, 2024-11-30 at 21:49 +0800, David Wang wrote:
+> On a system with n CPUs and m interrupts, there will be n*m decimal
+> values yielded via seq_printf(.."%10u "..) which has significant costs
+> parsing format string and is less efficient than
+> seq_put_decimal_ull_width(). Stress reading /proc/interrupts
+> indicates ~30% performance improvement with this patch.
 >=20
-> On Wed, Dec 4, 2024 at 12:10=E2=80=AFPM liujing <liujing@cmss.chinamobile=
-.com> wrote:
-> > Make a minor change to eliminate a static checker warning. The type
-> > of port->index is unsigned int, so the correct format specifier should =
-be
-> > %u instead of %d.
-> >=20
-> > Signed-off-by: liujing <liujing@cmss.chinamobile.com>
+> Signed-off-by: David Wang <00107082@163.com>
+> ---
+>  arch/sh/kernel/irq.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
 >=20
-> Thanks for your patch!
->=20
-> > --- a/arch/sh/drivers/pci/pcie-sh7786.c
-> > +++ b/arch/sh/drivers/pci/pcie-sh7786.c
-> > @@ -219,7 +219,7 @@ static int __init pcie_clk_init(struct sh7786_pcie_=
-port *port)
-> >          * on. clock lookups don't help us much at this point, since no
-> >          * dev_id is available this early. Lame.
-> >          */
-> > -       snprintf(fclk_name, sizeof(fclk_name), "pcie%d_fck", port->inde=
-x);
-> > +       snprintf(fclk_name, sizeof(fclk_name), "pcie%u_fck", port->inde=
-x);
-> >=20
-> >         port->fclk =3D clk_get(NULL, fclk_name);
-> >         if (IS_ERR(port->fclk)) {
->=20
-> LGTM, but there are several more cases to fix in this file.
-> Please fix all of them in a single patch.
+> diff --git a/arch/sh/kernel/irq.c b/arch/sh/kernel/irq.c
+> index 4e6835de54cf..9022d8af9d68 100644
+> --- a/arch/sh/kernel/irq.c
+> +++ b/arch/sh/kernel/irq.c
+> @@ -43,9 +43,9 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+>  {
+>  	int j;
+> =20
+> -	seq_printf(p, "%*s: ", prec, "NMI");
+> +	seq_printf(p, "%*s:", prec, "NMI");
+>  	for_each_online_cpu(j)
+> -		seq_printf(p, "%10u ", per_cpu(irq_stat.__nmi_count, j));
+> +		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat.__nmi_count, j), 10=
+);
+>  	seq_printf(p, "  Non-maskable interrupts\n");
+> =20
+>  	seq_printf(p, "%*s: %10u\n", prec, "ERR", atomic_read(&irq_err_count));
 
-Could you send a V2 of your patch and make the changes recommended by Geert=
-?
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 Thanks,
 Adrian
