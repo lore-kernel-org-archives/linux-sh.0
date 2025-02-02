@@ -1,94 +1,131 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 954711E7C2E;
-	Thu, 30 Jan 2025 14:10:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 542101581F0
+	for <linux-sh@vger.kernel.org>; Sun,  2 Feb 2025 09:53:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738246218; cv=none; b=ozuNlG9eDEQJdSvROIiXCcr4JwRqpMuvywHdfFXuubDOYYlFPGmcOausZcDrS9EjKzubAmCf9D7R6QlgyC9dyUuCf8fKyMkIRXmGXFgOvAWfo/o4S7A1E2xUyqYtp93tslRe26QK22/t2n8yEZd5jiHUe0qjS0jxlPamHh010jk=
+	t=1738490001; cv=none; b=KYNZcC1Mu1c/L1I3KGn/9KeEynxfo4AuBD7N/CPafXaFedwb5cGWDWYp82gBwBJDk2iDb3e4oBtbTD9bKS5VjJ2ydfUS5peggqzNIvEivhY0SRrE8DBd9VHsd2v5MW42S9uvS1xWzSA/x1Z/FXoYzreAZgB+6VVDnV+Sx5nMbRI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738246218; c=relaxed/simple;
-	bh=9+g/CdbDGQY0MKh8KuXIORy84Cune0MY5qj0W7Kj2Qs=;
-	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
-	 In-Reply-To:To:Cc; b=XjiKgm92iaULHc1gCyXztLJSqtnVnyL8rGEd4mkH3PfdDOF9g4hYUMPFNdS1l//EMBZx53tyyisHGc8g1t9TkvQZfHJOr3OA30Hx7FVrxqhPfdheb0SQTi/6NniGGDbxfQkL5BP3NIVaWFDBNA9ZQgHqw4xwxu56LcZvfuCXlUE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=tjr7SdDB; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1738490001; c=relaxed/simple;
+	bh=x6e/kf/eLyVHz+VB4T0xZ5Juxw1JzmwYSp9flgFSXLk=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=khE0G2r68JFVwyErHZ0mbGWqWxZn/uSYDKTIKRSKywjdMpBnxgVc1aHfA45/N6no8ZWylsQ92LYGkEFTPj+8JuPQ7qc07rigHJNL33ZwUixDmi59fUrI0lrSHITnatUuT79j1NhHZQXruRtSemY6ekmIWJngH74TzGq6pvqXgJU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=F87QC0DZ; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="tjr7SdDB"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 078F6C4CEE0;
-	Thu, 30 Jan 2025 14:10:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1738246218;
-	bh=9+g/CdbDGQY0MKh8KuXIORy84Cune0MY5qj0W7Kj2Qs=;
-	h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
-	b=tjr7SdDBr3+Fs5IbJYELFc574X1htZLZbpExQuJpDk6mlc5B3WtoRHftpc2AuN4jI
-	 xquntxyf3Wx3YVhFUFadZRK2T/ZZIBkq38GU5TeMsAXqXcwyEAFvoj8SvpmmHK1a4D
-	 o4U2lBqkVv1HLfl5so3xYsMVWLVHMKLUth3KVKM6KGPPAY/NBHXJy30Zyc8U34a1KE
-	 k1GkM8ffZTFa6U1c5ldyoqgp0Gy8/UsZpsuO8Jqj7HjN/Ud9VjP1+NAgI6zSpV7qjG
-	 vZZt+SxdpF0paX7sLwgIwnwZwCKwu3BvJfJqMBdSimzREinVNOGl7tUsnk/ZfhrOSU
-	 hs20squu2pOCA==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 71114380AA66;
-	Thu, 30 Jan 2025 14:10:45 +0000 (UTC)
-Content-Type: text/plain; charset="utf-8"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="F87QC0DZ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=ElZPPtVl/NCb/kXNAmWsr5oYLYtZJiorUGRVqtipmnw=; t=1738489998; x=1739094798; 
+	b=F87QC0DZ6/15B5+iS3+AX3T+jxbigBKqKVToMIlMz7sjkY1iH0ZDHKGLHToKUUgzttor3WncTDn
+	GpBqvceFGhBu9KUB3UDH90L1ocNVaN5VLsw+ZFehHW7GPXKpO9iGnfc3tGs9MaW5w0kPbE0XGpe64
+	BLBJgF3KbrXq03XqPnxRrljMEXASFa9V/Aklepy19yAFnuKzqJhTW0nw1+J3DLSc887LUI0/eSnnU
+	WinEp+iGrEScTKgFEsPaNgLnrCuFQ9GIH8Vi7j4gJYuIAHtKDgPRM5FjPgoKbqOhgF4h9zOY5JriK
+	pGKg3WMZOmrYYAr9hPjNYRVMNAET0etmZ40w==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1teWf6-00000000oKw-1haJ; Sun, 02 Feb 2025 10:53:08 +0100
+Received: from [151.216.131.255]
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1teWf6-00000003tcA-0gzv; Sun, 02 Feb 2025 10:53:08 +0100
+Message-ID: <e69caa6dbc35338b2aa898b3647985823e0548ea.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.14
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh <linux-sh@vger.kernel.org>, David Wang <00107082@163.com>, 
+ Masahiro Yamada <masahiroy@kernel.org>, Geert Uytterhoeven
+ <geert+renesas@glider.be>, Yoshinori Sato	 <ysato@users.sourceforge.jp>,
+ Rich Felker <dalias@libc.org>
+Date: Sun, 02 Feb 2025 10:53:06 +0100
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.54.3 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Subject: Re: [PATCH v4 0/4] defconfig: drop RT_GROUP_SCHED=y
-From: patchwork-bot+linux-riscv@kernel.org
-Message-Id: 
- <173824624400.971083.13259437466133760961.git-patchwork-notify@kernel.org>
-Date: Thu, 30 Jan 2025 14:10:44 +0000
-References: <20250115-fix-riscv-rt_group_sched-v4-0-607606fe73a5@coelacanthus.name>
-In-Reply-To: <20250115-fix-riscv-rt_group_sched-v4-0-607606fe73a5@coelacanthus.name>
-To: Celeste Liu <uwu@coelacanthus.name>
-Cc: linux-riscv@lists.infradead.org, paul.walmsley@sifive.com,
- palmer@dabbelt.com, aou@eecs.berkeley.edu, guoren@kernel.org,
- anup@brainfault.org, heinrich.schuchardt@canonical.com,
- chenhuacai@kernel.org, kernel@xen0n.name, ysato@users.sourceforge.jp,
- dalias@libc.org, glaubitz@physik.fu-berlin.de, linux@armlinux.org.uk,
- florian.fainelli@broadcom.com, bcm-kernel-feedback-list@broadcom.com,
- rjui@broadcom.com, sbranden@broadcom.com, tony@atomide.com,
- thierry.reding@gmail.com, jonathanh@nvidia.com, aaro.koskinen@iki.fi,
- andreas@kemnade.info, khilman@baylibre.com, rogerq@kernel.org,
- palmer@rivosinc.com, linux-kernel@vger.kernel.org, loongarch@lists.linux.dev,
- linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
- linux-rpi-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
- linux-tegra@vger.kernel.org, charlie@rivosinc.com, xry111@xry111.site,
- wahrenst@gmx.net, treding@nvidia.com
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Hello:
+Hi Linus,
 
-This series was applied to riscv/linux.git (for-next)
-by Palmer Dabbelt <palmer@rivosinc.com>:
+this is my pull request for v6.14 which contains three fixes and improvemen=
+ts
+for sh. The first patch by David Wang replaces seq_printf() with the more
+efficient seq_put_decimal_ull_width() to increase performance when stress
+reading /proc/interrupts.
 
-On Wed, 15 Jan 2025 04:41:19 +0800 you wrote:
-> For cgroup v1, if turned on, and there's any cgroup in the "cpu" hierarchy it
-> needs an RT budget assigned, otherwise the processes in it will not be able to
-> get RT at all. The problem with RT group scheduling is that it requires the
-> budget assigned but there's no way we could assign a default budget, since the
-> values to assign are both upper and lower time limits, are absolute, and need to
-> be sum up to < 1 for each individal cgroup. That means we cannot really come up
-> with values that would work by default in the general case.[1]
-> 
-> [...]
+The second patch by Masahiro Yamada migrates sh to the generic rule for bui=
+lt-in
+DTB to help avoid race conditions during parallel builds which can occur be=
+cause
+Kbuild decends into arch/*/boot/dts twice.
 
-Here is the summary with links:
-  - [v4,1/4] riscv: defconfig: drop RT_GROUP_SCHED=y
-    https://git.kernel.org/riscv/c/26f2d6de4179
-  - [v4,2/4] loongarch: defconfig: drop RT_GROUP_SCHED=y
-    (no matching commit)
-  - [v4,3/4] sh: defconfig: drop RT_GROUP_SCHED=y from sdk7786/urquell
-    (no matching commit)
-  - [v4,4/4] arm: defconfig: drop RT_GROUP_SCHED=y from bcm2835/tegra/omap2plus
-    (no matching commit)
+And, finally, a patch by Geert Uytterhoeven replaces select with imply in t=
+he
+boards Kconfig for enabling hardware with complex dependencies. This addres=
+ses
+warnings which were reported by the kernel test robot.
 
-You are awesome, thank you!
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/patchwork/pwbot.html
+The following changes since commit 40384c840ea1944d7c5a392e8975ed088ecf0b37=
+:
 
+  Linux 6.13-rc1 (2024-12-01 14:28:56 -0800)
 
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
+sh-for-v6.14-tag1
+
+for you to fetch changes up to 909f3c55d887a9f9d4cd2762813cbfcaf640ec57:
+
+  sh: boards: Use imply to enable hardware with complex dependencies (2025-=
+02-01 10:44:06 +0100)
+
+Thanks for pulling!
+
+Adrian
+
+----------------------------------------------------------------
+sh updates for v6.14
+
+- sh: boards: Use imply to enable hardware with complex dependencies
+- sh: Migrate to the generic rule for built-in DTB
+- sh: irq: Use seq_put_decimal_ull_width() for decimal values
+
+----------------------------------------------------------------
+David Wang (1):
+      sh: irq: Use seq_put_decimal_ull_width() for decimal values
+
+Geert Uytterhoeven (1):
+      sh: boards: Use imply to enable hardware with complex dependencies
+
+Masahiro Yamada (1):
+      sh: Migrate to the generic rule for built-in DTB
+
+ arch/sh/Kbuild            | 1 -
+ arch/sh/Kconfig           | 7 ++++---
+ arch/sh/boards/Kconfig    | 4 ++--
+ arch/sh/boot/dts/Makefile | 2 +-
+ arch/sh/kernel/irq.c      | 4 ++--
+ arch/sh/kernel/setup.c    | 4 ++--
+ 6 files changed, 11 insertions(+), 11 deletions(-)
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
