@@ -1,82 +1,57 @@
-Received: from vmicros1.altlinux.org (vmicros1.altlinux.org [194.107.17.57])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 63725200BBF;
-	Mon,  3 Feb 2025 10:35:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.107.17.57
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F73C151987;
+	Wed,  5 Feb 2025 12:39:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738578946; cv=none; b=m7UY05zweRptcIADuBAOER0P5qmwATFM6irugu/jttJkpdv1VJuvgG602Wv0KSmt8jmaXHS65f4kqisI19NJS0yzh6Lt46NqBMdIsspqRPh+yvhf1bQIju4ng5jw0jhuozDrzZIPAo0ohUgrI3tNXxHVIegVw3zQrpJjELc70kY=
+	t=1738759162; cv=none; b=Rn0QqgSjcBuv4uiWjEGRXBPHzGjd2AvddbpvWAgSQ5+kNDyCyHWVKaMV5d2PQZgOFmNwC68iwXKyNhJvKjcDrQSIYDhDem46U4VwuUf3iqvep7PspHTNH/sMi8F+icKhC3i/6BnKpxOVirheDwt/DJoczGhMYUkvZbeN86PJx/k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738578946; c=relaxed/simple;
-	bh=D5Jv3FPUdrdfdsx4anIJHNUlSFE+deaFBpMQvm/GgIE=;
+	s=arc-20240116; t=1738759162; c=relaxed/simple;
+	bh=gjnkul5ze2O0TEqEsn7OrVw4FMjwajJjo6S7dUZaW4o=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=RCgF66EDFeJqSh0HHe4Yz/PdcAnb7/12EcJtOr2TntGtyaesDN/fKDItSBa2Ws8omv0vbiN/VSPCTmmKwSYy2Zti7IrfTfi/feNZ+BlrYNMCgb2WFyy8ze5CwiSmlVauMq0MtK0zClhexqRqjWwSboGh5bic43t+GHiq/RP+In8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=strace.io; spf=pass smtp.mailfrom=altlinux.org; arc=none smtp.client-ip=194.107.17.57
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=strace.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=altlinux.org
-Received: from mua.local.altlinux.org (mua.local.altlinux.org [192.168.1.14])
-	by vmicros1.altlinux.org (Postfix) with ESMTP id 35C8572C8F5;
-	Mon,  3 Feb 2025 13:35:43 +0300 (MSK)
-Received: by mua.local.altlinux.org (Postfix, from userid 508)
-	id 1956F7CCB3A; Mon,  3 Feb 2025 12:35:43 +0200 (IST)
-Date: Mon, 3 Feb 2025 12:35:43 +0200
-From: "Dmitry V. Levin" <ldv@strace.io>
-To: Alexander Gordeev <agordeev@linux.ibm.com>
-Cc: linux-snps-arc@lists.infradead.org, Rich Felker <dalias@libc.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Andreas Larsson <andreas@gaisler.com>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	x86@kernel.org, linux-kernel@vger.kernel.org,
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-	Guo Ren <guoren@kernel.org>, linux-csky@vger.kernel.org,
-	linux-kselftest@vger.kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
-	sparclinux@vger.kernel.org, linux-hexagon@vger.kernel.org,
-	WANG Xuerui <kernel@xen0n.name>, linux-api@vger.kernel.org,
-	Will Deacon <will@kernel.org>,
-	Eugene Syromyatnikov <evgsyr@gmail.com>,
-	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-	Jonas Bonn <jonas@southpole.se>, linux-s390@vger.kernel.org,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	linux-sh@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>,
-	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	Ingo Molnar <mingo@redhat.com>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Vineet Gupta <vgupta@kernel.org>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org,
-	Shuah Khan <shuah@kernel.org>, Albert Ou <aou@eecs.berkeley.edu>,
-	Mike Frysinger <vapier@gentoo.org>,
-	Davide Berardi <berardi.dav@gmail.com>,
-	Renzo Davoli <renzo@cs.unibo.it>, linux-um@lists.infradead.org,
-	Heiko Carstens <hca@linux.ibm.com>, strace-devel@lists.strace.io,
-	Charlie Jenkins <charlie@rivosinc.com>,
-	Naveen N Rao <naveen@kernel.org>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-	linux-m68k@lists.linux-m68k.org, Borislav Petkov <bp@alien8.de>,
-	loongarch@lists.linux.dev, Paul Walmsley <paul.walmsley@sifive.com>,
-	Stafford Horne <shorne@gmail.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	linux-arm-kernel@lists.infradead.org,
-	Brian Cain <bcain@quicinc.com>, Michal Simek <monstr@monstr.eu>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	linux-parisc@vger.kernel.org, linux-openrisc@vger.kernel.org,
-	linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	Oleg Nesterov <oleg@redhat.com>, Dinh Nguyen <dinguyen@kernel.org>,
-	linux-riscv@lists.infradead.org,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	Richard Weinberger <richard@nod.at>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Alexey Gladkov <legion@kernel.org>,
-	"David S. Miller" <davem@davemloft.net>
-Subject: Re: [PATCH v4 0/7] ptrace: introduce PTRACE_SET_SYSCALL_INFO API
-Message-ID: <20250203103542.GA16165@strace.io>
-References: <20250203065849.GA14120@strace.io>
- <Z6CMgVm8QKEMRf8L@li-008a6a4c-3549-11b2-a85c-c5cc2836eea2.ibm.com>
+	 Content-Type:Content-Disposition:In-Reply-To; b=R3fW8TFv3BV+7rSqZowxaFELEDHoio5gpWYb7aq13sFMkKiH0HMWq4+MF4l7cACfXcFGfty0dYlzsqjxF3BxMWnZg3NqgYCN5IFWGRUwTr5MnqeR0CfmGq/7nbfeq4mDJyesS3VqXLNFzAE+HzQHOXRI6p1gkD1iMSdHBDk5Xkg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FirndxN8; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FirndxN8"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 44319C4CED1;
+	Wed,  5 Feb 2025 12:39:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1738759161;
+	bh=gjnkul5ze2O0TEqEsn7OrVw4FMjwajJjo6S7dUZaW4o=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=FirndxN80c8BwhrQKHqUA3H3IyK6Z35QESZV0Q/tHAAfdtmgm96CtwtBwTpXyqLOq
+	 jXvQdKIydOOavEq6cyQBtqcRsZUt2WpPgU1W1k5TE1oGi9lz0ip7i60lA86Lo90/JL
+	 Hw77WHEsSxMVS/PKd0SV1ruEi+NsVMZBZUqXCYuQyq+ntHobO8bzuspDxpsocD2vxu
+	 R2xBOJXR7zex9YourhtUnlriMOg90vsjLVQtojJop1XXxs7dNvmKx/VSKrVgkx+aYq
+	 SJfUou2wMAcowi7UPUTr+odb0fM9fyNIET6DHzD3wl2cAYBuBp3ytpoaAkwtKQUA/8
+	 ORK2DMl1+xAGg==
+Date: Wed, 5 Feb 2025 13:39:16 +0100
+From: Joel Granados <joel.granados@kernel.org>
+To: Kaixiong Yu <yukaixiong@huawei.com>
+Cc: akpm@linux-foundation.org, mcgrof@kernel.org, 
+	ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, luto@kernel.org, 
+	tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, dave.hansen@linux.intel.com, 
+	hpa@zytor.com, viro@zeniv.linux.org.uk, brauner@kernel.org, jack@suse.cz, 
+	kees@kernel.org, j.granados@samsung.com, willy@infradead.org, 
+	Liam.Howlett@oracle.com, vbabka@suse.cz, lorenzo.stoakes@oracle.com, trondmy@kernel.org, 
+	anna@kernel.org, chuck.lever@oracle.com, jlayton@kernel.org, neilb@suse.de, 
+	okorniev@redhat.com, Dai.Ngo@oracle.com, tom@talpey.com, davem@davemloft.net, 
+	edumazet@google.com, kuba@kernel.org, pabeni@redhat.com, paul@paul-moore.com, 
+	jmorris@namei.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, linux-nfs@vger.kernel.org, 
+	netdev@vger.kernel.org, linux-security-module@vger.kernel.org, dhowells@redhat.com, 
+	haifeng.xu@shopee.com, baolin.wang@linux.alibaba.com, shikemeng@huaweicloud.com, 
+	dchinner@redhat.com, bfoster@redhat.com, souravpanda@google.com, hannes@cmpxchg.org, 
+	rientjes@google.com, pasha.tatashin@soleen.com, david@redhat.com, 
+	ryan.roberts@arm.com, ying.huang@intel.com, yang@os.amperecomputing.com, 
+	zev@bewilderbeest.net, serge@hallyn.com, vegard.nossum@oracle.com, 
+	wangkefeng.wang@huawei.com
+Subject: Re: [PATCH v5 -next 00/16] sysctl: move sysctls from vm_table into
+ its own files
+Message-ID: <lmfy2wd6ke6pa7pfxwohmb4r5krvwcau4ybu6snkunpgod452b@24edzgbtf4ru>
+References: <20250111070751.2588654-1-yukaixiong@huawei.com>
+ <2asuqwd4rpml6ylxce7mpz2vpvlm2gpdtwpp4lwuf4mdlylig2@dxdj4a73x2sb>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -85,47 +60,65 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <Z6CMgVm8QKEMRf8L@li-008a6a4c-3549-11b2-a85c-c5cc2836eea2.ibm.com>
+In-Reply-To: <2asuqwd4rpml6ylxce7mpz2vpvlm2gpdtwpp4lwuf4mdlylig2@dxdj4a73x2sb>
 
-On Mon, Feb 03, 2025 at 10:29:37AM +0100, Alexander Gordeev wrote:
-> On Mon, Feb 03, 2025 at 08:58:49AM +0200, Dmitry V. Levin wrote:
+On Tue, Jan 14, 2025 at 02:50:12PM +0100, Joel Granados wrote:
+> On Sat, Jan 11, 2025 at 03:07:35PM +0800, Kaixiong Yu wrote:
+> > This patch series moves sysctls of vm_table in kernel/sysctl.c to
+> > places where they actually belong, and do some related code clean-ups.
+> > After this patch series, all sysctls in vm_table have been moved into its
+> > own files, meanwhile, delete vm_table.
+> > 
+> > All the modifications of this patch series base on
+> > linux-next(tags/next-20250110). To test this patch series, the code was
+> > compiled with both the CONFIG_SYSCTL enabled and disabled on arm64 and
+> > x86_64 architectures. After this patch series is applied, all files
+> > under /proc/sys/vm can be read or written normally.
 > 
-> Hi Dmitry,
+> It is looking good! Here is how I think we should move it upstream:
 > 
-> > PTRACE_SET_SYSCALL_INFO is a generic ptrace API that complements
-> > PTRACE_GET_SYSCALL_INFO by letting the ptracer modify details of
-> > system calls the tracee is blocked in.
+> 1. These should queued in for 6.15 instead of the next merge window.
+>    It is too late in the current cycle and if we put it in now, it will
+>    not properly tested in linux-next.
+> 
+> 2. I am putting this in sysctl-testing with the expectation of pushing this
+>    up for the 6.15 merge window. Please tell me if you want this to go
+>    through some other tree.
+I have rebased on top of 6.14-rc1 and sent it out for sysctl-testing
+once more. I'll add it to sysctl-next by the end of the week (unless we
+see something pop-up in the testing).
+
+Best
+
+> 
+> Thx for the contribution
+> 
+> Best
+> > 
+> > my test steps as below listed:
+> > 
+> > Step 1: Set CONFIG_SYSCTL to 'n' and compile the Linux kernel on the
+> > arm64 architecture. The kernel compiles successfully without any errors
+> > or warnings.
+> > 
 > ...
+> >  mm/swap.c                          |  16 ++-
+> >  mm/swap.h                          |   1 +
+> >  mm/util.c                          |  67 +++++++--
+> >  mm/vmscan.c                        |  23 +++
+> >  mm/vmstat.c                        |  44 +++++-
+> >  net/sunrpc/auth.c                  |   2 +-
+> >  security/min_addr.c                |  11 ++
+> >  23 files changed, 336 insertions(+), 312 deletions(-)
+> > 
+> > -- 
+> > 2.34.1
+> > 
 > 
-> FWIW, I am getting these on s390:
+> -- 
 > 
-> # ./tools/testing/selftests/ptrace/set_syscall_info 
-> TAP version 13
-> 1..1
-> # Starting 1 tests from 1 test cases.
-> #  RUN           global.set_syscall_info ...
-> # set_syscall_info.c:87:set_syscall_info:Expected exp_entry->nr (-1) == info->entry.nr (65535)
-> # set_syscall_info.c:88:set_syscall_info:wait #3: PTRACE_GET_SYSCALL_INFO #2: syscall nr mismatch
-> # set_syscall_info: Test terminated by assertion
-> #          FAIL  global.set_syscall_info
-> not ok 1 global.set_syscall_info
-> # FAILED: 0 / 1 tests passed.
-> # Totals: pass:0 fail:1 xfail:0 xpass:0 skip:0 error:0
-> 
-> I remember one of the earlier versions (v1 or v2) was working for me.
-> 
-> Thanks!
-
-In v3, this test was extended to check whether PTRACE_GET_SYSCALL_INFO
-called immediately after PTRACE_SET_SYSCALL_INFO returns the same syscall
-number, and on s390 it apparently doesn't, thanks to its implementation
-of syscall_get_nr() that returns 0xffff in this case.
-
-To workaround this, we could either change syscall_get_nr() to return -1
-in this case, or add an #ifdef __s390x__ exception to the test.
-
-What would you prefer?
-
+> Joel Granados
 
 -- 
-ldv
+
+Joel Granados
