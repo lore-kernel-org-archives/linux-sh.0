@@ -1,124 +1,88 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from server-598995.kolorio.com (server-598995.kolorio.com [162.241.152.247])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F73C151987;
-	Wed,  5 Feb 2025 12:39:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6BD7018FC67
+	for <linux-sh@vger.kernel.org>; Sat,  8 Feb 2025 04:42:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.241.152.247
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1738759162; cv=none; b=Rn0QqgSjcBuv4uiWjEGRXBPHzGjd2AvddbpvWAgSQ5+kNDyCyHWVKaMV5d2PQZgOFmNwC68iwXKyNhJvKjcDrQSIYDhDem46U4VwuUf3iqvep7PspHTNH/sMi8F+icKhC3i/6BnKpxOVirheDwt/DJoczGhMYUkvZbeN86PJx/k=
+	t=1738989740; cv=none; b=T3Tl9Z0NwSimQ8ZXz1R8AdbHTcseG+NSGFeQlmpDlauEXbUkrX5I+ebWFWvp84l8uUf4SzUCMsTF+waCMxD3BYbqHXNBImX7ognwaPnsy5fLYrDJSZk3QH59pQ48qBlMiQBxj3g9J5UEonGRkzhPBxIOZp+7ncSiGbwlNJPpvNg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1738759162; c=relaxed/simple;
-	bh=gjnkul5ze2O0TEqEsn7OrVw4FMjwajJjo6S7dUZaW4o=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=R3fW8TFv3BV+7rSqZowxaFELEDHoio5gpWYb7aq13sFMkKiH0HMWq4+MF4l7cACfXcFGfty0dYlzsqjxF3BxMWnZg3NqgYCN5IFWGRUwTr5MnqeR0CfmGq/7nbfeq4mDJyesS3VqXLNFzAE+HzQHOXRI6p1gkD1iMSdHBDk5Xkg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FirndxN8; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1738989740; c=relaxed/simple;
+	bh=gl4+7vNxgV9+JzZtw7EthQ6aGDgi0WVn3wQV/lnKiyo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version:Content-Type; b=uTWiQrUT7g/bquyUuEUO5JJF+mYFdou3NfCosVPiPvz4hgjypKbyBa8cMPYrb0fA8IGozDBkSPGbpNDPnLbgZdcEMj7nWbZF+i9eNx8+68KMf58NHmV5NFqIQiZ0yRRUKK3tZ9X3hRx/1CnmtRDSDqc33QWtEQFlRjxk7xasdrA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=truemaisha.co.tz; spf=pass smtp.mailfrom=truemaisha.co.tz; dkim=pass (2048-bit key) header.d=truemaisha.co.tz header.i=@truemaisha.co.tz header.b=a2m7vYVi; arc=none smtp.client-ip=162.241.152.247
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=truemaisha.co.tz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=truemaisha.co.tz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FirndxN8"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 44319C4CED1;
-	Wed,  5 Feb 2025 12:39:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1738759161;
-	bh=gjnkul5ze2O0TEqEsn7OrVw4FMjwajJjo6S7dUZaW4o=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=FirndxN80c8BwhrQKHqUA3H3IyK6Z35QESZV0Q/tHAAfdtmgm96CtwtBwTpXyqLOq
-	 jXvQdKIydOOavEq6cyQBtqcRsZUt2WpPgU1W1k5TE1oGi9lz0ip7i60lA86Lo90/JL
-	 Hw77WHEsSxMVS/PKd0SV1ruEi+NsVMZBZUqXCYuQyq+ntHobO8bzuspDxpsocD2vxu
-	 R2xBOJXR7zex9YourhtUnlriMOg90vsjLVQtojJop1XXxs7dNvmKx/VSKrVgkx+aYq
-	 SJfUou2wMAcowi7UPUTr+odb0fM9fyNIET6DHzD3wl2cAYBuBp3ytpoaAkwtKQUA/8
-	 ORK2DMl1+xAGg==
-Date: Wed, 5 Feb 2025 13:39:16 +0100
-From: Joel Granados <joel.granados@kernel.org>
-To: Kaixiong Yu <yukaixiong@huawei.com>
-Cc: akpm@linux-foundation.org, mcgrof@kernel.org, 
-	ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, luto@kernel.org, 
-	tglx@linutronix.de, mingo@redhat.com, bp@alien8.de, dave.hansen@linux.intel.com, 
-	hpa@zytor.com, viro@zeniv.linux.org.uk, brauner@kernel.org, jack@suse.cz, 
-	kees@kernel.org, j.granados@samsung.com, willy@infradead.org, 
-	Liam.Howlett@oracle.com, vbabka@suse.cz, lorenzo.stoakes@oracle.com, trondmy@kernel.org, 
-	anna@kernel.org, chuck.lever@oracle.com, jlayton@kernel.org, neilb@suse.de, 
-	okorniev@redhat.com, Dai.Ngo@oracle.com, tom@talpey.com, davem@davemloft.net, 
-	edumazet@google.com, kuba@kernel.org, pabeni@redhat.com, paul@paul-moore.com, 
-	jmorris@namei.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, linux-nfs@vger.kernel.org, 
-	netdev@vger.kernel.org, linux-security-module@vger.kernel.org, dhowells@redhat.com, 
-	haifeng.xu@shopee.com, baolin.wang@linux.alibaba.com, shikemeng@huaweicloud.com, 
-	dchinner@redhat.com, bfoster@redhat.com, souravpanda@google.com, hannes@cmpxchg.org, 
-	rientjes@google.com, pasha.tatashin@soleen.com, david@redhat.com, 
-	ryan.roberts@arm.com, ying.huang@intel.com, yang@os.amperecomputing.com, 
-	zev@bewilderbeest.net, serge@hallyn.com, vegard.nossum@oracle.com, 
-	wangkefeng.wang@huawei.com
-Subject: Re: [PATCH v5 -next 00/16] sysctl: move sysctls from vm_table into
- its own files
-Message-ID: <lmfy2wd6ke6pa7pfxwohmb4r5krvwcau4ybu6snkunpgod452b@24edzgbtf4ru>
-References: <20250111070751.2588654-1-yukaixiong@huawei.com>
- <2asuqwd4rpml6ylxce7mpz2vpvlm2gpdtwpp4lwuf4mdlylig2@dxdj4a73x2sb>
+	dkim=pass (2048-bit key) header.d=truemaisha.co.tz header.i=@truemaisha.co.tz header.b="a2m7vYVi"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=truemaisha.co.tz; s=default; h=Content-Transfer-Encoding:Content-Type:
+	MIME-Version:Message-ID:Date:Subject:To:From:Reply-To:Sender:Cc:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=gl4+7vNxgV9+JzZtw7EthQ6aGDgi0WVn3wQV/lnKiyo=; b=a2m7vYVi5P6hnt4ZNhU0jvHCCO
+	kQuY/W9oCvtIsfzhpm5mh+5Vp9S6yXKh1y9RQoMBLTf5u003kmBht2WqP6HKsCa6rvIItlCfBBDcq
+	Q3yEJBvuhD4dx/mwkm3pdI6ivJyAqhCduzEY7z7vKSjuOwmmPdF1++KByh7VKyCW7mHOj/nRYq31Q
+	V42EoitAtc4S/hyYXaCzpxL7Cj+5r06sanhFuWAj5tAA8myUnc191Ha5CwJgvs6TOcvoeo+RjUPrl
+	mkVVu1FelCZKBFL/LW7fLl+8HqapjYhbku4GnV6dUOsXq00rC0cAkj2UPvGfbh5tzm2DaRhWE+vKm
+	eYCPaAkg==;
+Received: from [74.208.124.33] (port=51293 helo=truemaisha.co.tz)
+	by server-598995.kolorio.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.96.2)
+	(envelope-from <chrispinerick@truemaisha.co.tz>)
+	id 1tgcfX-0004BR-0c
+	for linux-sh@vger.kernel.org;
+	Fri, 07 Feb 2025 22:42:16 -0600
+Reply-To: dsong@aa4financialservice.com
+From: David Song <chrispinerick@truemaisha.co.tz>
+To: linux-sh@vger.kernel.org
+Subject: Re: The business loan- 
+Date: 08 Feb 2025 04:42:17 +0000
+Message-ID: <20250208015433.75D219D4E2FB76B2@truemaisha.co.tz>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <2asuqwd4rpml6ylxce7mpz2vpvlm2gpdtwpp4lwuf4mdlylig2@dxdj4a73x2sb>
+Content-Type: text/plain;
+	charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - server-598995.kolorio.com
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - truemaisha.co.tz
+X-Get-Message-Sender-Via: server-598995.kolorio.com: authenticated_id: chrispinerick@truemaisha.co.tz
+X-Authenticated-Sender: server-598995.kolorio.com: chrispinerick@truemaisha.co.tz
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
 
-On Tue, Jan 14, 2025 at 02:50:12PM +0100, Joel Granados wrote:
-> On Sat, Jan 11, 2025 at 03:07:35PM +0800, Kaixiong Yu wrote:
-> > This patch series moves sysctls of vm_table in kernel/sysctl.c to
-> > places where they actually belong, and do some related code clean-ups.
-> > After this patch series, all sysctls in vm_table have been moved into its
-> > own files, meanwhile, delete vm_table.
-> > 
-> > All the modifications of this patch series base on
-> > linux-next(tags/next-20250110). To test this patch series, the code was
-> > compiled with both the CONFIG_SYSCTL enabled and disabled on arm64 and
-> > x86_64 architectures. After this patch series is applied, all files
-> > under /proc/sys/vm can be read or written normally.
-> 
-> It is looking good! Here is how I think we should move it upstream:
-> 
-> 1. These should queued in for 6.15 instead of the next merge window.
->    It is too late in the current cycle and if we put it in now, it will
->    not properly tested in linux-next.
-> 
-> 2. I am putting this in sysctl-testing with the expectation of pushing this
->    up for the 6.15 merge window. Please tell me if you want this to go
->    through some other tree.
-I have rebased on top of 6.14-rc1 and sent it out for sysctl-testing
-once more. I'll add it to sysctl-next by the end of the week (unless we
-see something pop-up in the testing).
+Hello,
 
-Best
+My name is David Song, at AA4 FS, we are a consultancy and
+brokerage Firm specializing in Growth Financial Loan and joint
+partnership venture. We specialize in investments in all Private
+and public sectors in a broad range of areas within our Financial
+Investment Services.
 
-> 
-> Thx for the contribution
-> 
-> Best
-> > 
-> > my test steps as below listed:
-> > 
-> > Step 1: Set CONFIG_SYSCTL to 'n' and compile the Linux kernel on the
-> > arm64 architecture. The kernel compiles successfully without any errors
-> > or warnings.
-> > 
-> ...
-> >  mm/swap.c                          |  16 ++-
-> >  mm/swap.h                          |   1 +
-> >  mm/util.c                          |  67 +++++++--
-> >  mm/vmscan.c                        |  23 +++
-> >  mm/vmstat.c                        |  44 +++++-
-> >  net/sunrpc/auth.c                  |   2 +-
-> >  security/min_addr.c                |  11 ++
-> >  23 files changed, 336 insertions(+), 312 deletions(-)
-> > 
-> > -- 
-> > 2.34.1
-> > 
-> 
-> -- 
-> 
-> Joel Granados
+ We are experts in financial and operational management, due
+diligence and capital planning in all markets and industries. Our
+Investors wish to invest in any viable Project presented by your
+Management after reviews on your Business Project Presentation
+Plan.
 
--- 
+ We look forward to your Swift response. We also offer commission
+to consultants and brokers for any partnership referrals.
 
-Joel Granados
+ Regards,
+David Song
+Senior Broker
+
+AA4 Financial Services
+13 Wonersh Way, Cheam,
+Sutton, Surrey, SM2 7LX
+Email: dsong@aa4financialservice.com
+
