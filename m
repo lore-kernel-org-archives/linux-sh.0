@@ -1,21 +1,21 @@
 Received: from relay1-d.mail.gandi.net (relay1-d.mail.gandi.net [217.70.183.193])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2D8419D083;
-	Sun, 16 Feb 2025 17:56:26 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C0F119D881;
+	Sun, 16 Feb 2025 17:56:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.193
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1739728588; cv=none; b=s9Sc+O1WfMGdtoe/yYd8p9cX9TrrXu18u2vzyvNhfjKrVpdHv97gG0MmgF8hPtvRJC+iTZbCQxQhWS+CMt11Jq5VkKsHohj0LJDPf2zEyHeeZuR3L4+Fh0rux5exCA32yl4fsUkXFl4izJsP683shmBuaP7i5ZqX6XtdH2jwVz8=
+	t=1739728589; cv=none; b=KXPSWLQ7pK1TvppNhsvlahnudbRJOMBzuHeZxQ56LZqXJDPuL8wPMRVp7CCzSvcBti/ZHdPg4wTsIG/E3l9pit4Q0/kqbiHW+bo+ehLqbn/e5YrpDWNO9xfGoQqFWkUC97rgRs5RoKs5bulzgNcJwBHXeN4M1D4z0OgR3RS3+WE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1739728588; c=relaxed/simple;
-	bh=ZDY1aJPZDgeCwOYVMqaVpQ2knOg9rXSiKOZ0IoAXVcg=;
+	s=arc-20240116; t=1739728589; c=relaxed/simple;
+	bh=GbqbGRkA0ij276UplGyHztWbVzm9XhSCf2P3NGSMUZ8=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=o6/PGIFIYdrvUHxgYZvwZk9ooLSA8C5IEMydjUTJpMQ4Rj8JS4MtYWj03HD5r+tFP9syuAQUQghMukkv/EeQjwwiMoci0T/kIrkD2pHQJ3RCcLY17Uu0tB0lKIsyBcwsS5/B58sxR37+Jf6qsZ4vJDVgguitmZRdN5Yp9jvlH1M=
+	 MIME-Version; b=HQrz8iwjGr/3AUW+NwtUCX+rHod7YsEwmff4EWG3ZgcyBWangaQWXikCUACa/1X4vRmtqCjj39PtIM7WcsEeoaKSYcTuotaLHMm9Ud3MIFPcAZwNdJ8F0XBkWC7j5nDjf73tC1SudjUQNMV5mCI6ERku0I6nI1BQ25S0Xf7gVVo=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.183.193
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
-Received: by mail.gandi.net (Postfix) with ESMTPSA id DAA7544339;
-	Sun, 16 Feb 2025 17:56:16 +0000 (UTC)
+Received: by mail.gandi.net (Postfix) with ESMTPSA id A4FBF44384;
+	Sun, 16 Feb 2025 17:56:18 +0000 (UTC)
 From: Artur Rojek <contact@artur-rojek.eu>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
@@ -29,9 +29,9 @@ Cc: Geert Uytterhoeven <geert+renesas@glider.be>,
 	linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	Artur Rojek <contact@artur-rojek.eu>
-Subject: [PATCH 1/2] sh: align .bss section padding to 8-byte boundary
-Date: Sun, 16 Feb 2025 18:55:44 +0100
-Message-ID: <20250216175545.35079-2-contact@artur-rojek.eu>
+Subject: [PATCH 2/2] irqchip: clocksource: fix jcore-pit irq request
+Date: Sun, 16 Feb 2025 18:55:45 +0100
+Message-ID: <20250216175545.35079-3-contact@artur-rojek.eu>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <20250216175545.35079-1-contact@artur-rojek.eu>
 References: <20250216175545.35079-1-contact@artur-rojek.eu>
@@ -44,54 +44,85 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-GND-State: clean
 X-GND-Score: -100
-X-GND-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgdehieduudcutefuodetggdotefrodftvfcurfhrohhfihhlvgemucfitefpfffkpdcuggftfghnshhusghstghrihgsvgenuceurghilhhouhhtmecufedtudenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurhephffvvefufffkofgjfhgggfestdekredtredttdenucfhrhhomheptehrthhurhcutfhojhgvkhcuoegtohhnthgrtghtsegrrhhtuhhrqdhrohhjvghkrdgvuheqnecuggftrfgrthhtvghrnhepiefftdefueefveduuefhleetfeevvdetiedtleevfeefleejvedutdefiedvgeefnecuffhomhgrihhnpehlughsrdhssgenucfkphepfedurddufedtrddutdefrdduvdelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehinhgvthepfedurddufedtrddutdefrdduvdelpdhhvghlohepphgtrdhlohgtrghlughomhgrihhnpdhmrghilhhfrhhomheptghonhhtrggtthesrghrthhurhdqrhhojhgvkhdrvghupdhnsggprhgtphhtthhopeduvddprhgtphhtthhopeihshgrthhosehushgvrhhsrdhsohhurhgtvghfohhrghgvrdhjphdprhgtphhtthhopegurghlihgrsheslhhisggtrdhorhhgpdhrtghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinhdruggvpdhrtghpthhtohepuggrnhhivghlrdhlvgiitggrnhhosehlihhnrghrohdrohhrghdprhgtphhtthhopehtghhlg
- ieslhhinhhuthhrohhnihigrdguvgdprhgtphhtthhopehusghiiihjrghksehgmhgrihhlrdgtohhmpdhrtghpthhtohepghgvvghrthdorhgvnhgvshgrshesghhlihguvghrrdgsvgdprhgtphhtthhopehjvghffhestghorhgvshgvmhhirdhioh
+X-GND-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgdehieduudcutefuodetggdotefrodftvfcurfhrohhfihhlvgemucfitefpfffkpdcuggftfghnshhusghstghrihgsvgenuceurghilhhouhhtmecufedtudenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurhephffvvefufffkofgjfhgggfestdekredtredttdenucfhrhhomheptehrthhurhcutfhojhgvkhcuoegtohhnthgrtghtsegrrhhtuhhrqdhrohhjvghkrdgvuheqnecuggftrfgrthhtvghrnhepgedtieevjeffvdehffeiieehjedtudethffghfefvdevfeetteevhfetledtudfhnecukfhppeefuddrudeftddruddtfedruddvleenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepihhnvghtpeefuddrudeftddruddtfedruddvledphhgvlhhopehptgdrlhhotggrlhguohhmrghinhdpmhgrihhlfhhrohhmpegtohhnthgrtghtsegrrhhtuhhrqdhrohhjvghkrdgvuhdpnhgspghrtghpthhtohepuddvpdhrtghpthhtohephihsrghtohesuhhsvghrshdrshhouhhrtggvfhhorhhgvgdrjhhppdhrtghpthhtohepuggrlhhirghssehlihgstgdrohhrghdprhgtphhtthhopehglhgruhgsihhtiiesphhhhihsihhkrdhfuhdqsggvrhhlihhnrdguvgdprhgtphhtthhopegurghnihgvlhdrlhgviigtrghnoheslhhinhgrrhhordhorhhgpdhrtghpthhtohepthhglhigsehlihhnuhhtrhhonhhigidruggvp
+ dhrtghpthhtohepuhgsihiijhgrkhesghhmrghilhdrtghomhdprhgtphhtthhopehgvggvrhhtodhrvghnvghsrghssehglhhiuggvrhdrsggvpdhrtghpthhtohepjhgvfhhfsegtohhrvghsvghmihdrihho
 X-GND-Sasl: contact@artur-rojek.eu
 
-J2 based devices expect to find a devicetree blob at the end of the bss
-section. As of a77725a9a3c5, libfdt enforces 8-byte alignment for the
-dtb, causing J2 devices to fail early in sh_fdt_init.
+The jcore-aic irqchip does not have separate interrupt numbers reserved
+for cpu-local vs global interrupts. Instead, the task of selecting this
+property is being delegated to the device drivers requesting the given
+irq.
 
-As J2 loader firmware calculates the dtb location based on the kernel
-image .bss section size, rather than the __bss_stop symbol offset, the
-required alignment can't be enforced with BSS_SECTION(0, PAGE_SIZE, 8).
-Instead, inline modified version of the above macro, which grows .bss
-by the required size.
+This quirk has not been taken into account while migrating jcore-pit to
+request_percpu_irq(), resulting in a failure to register PIT interrupts.
 
-While this change affects all existing SH boards, it should be benign on
-platforms which don't need this alignment.
+Fix this behavior by making the following changes:
+1) Explicitly register irq_set_percpu_devid() in jcore-pit.
+2) Provide enable_percpu_irq()/disable_percpu_irq() calls in jcore-pit.
+3) Make jcore-aic pass the correct per-cpu cookie to the irq handler by
+   using handle_percpu_devid_irq() instead of handle_percpu_irq().
+
+Fixes: 69a9dcbd2d65 ("clocksource/drivers/jcore: Use request_percpu_irq()")
 
 Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
 ---
- arch/sh/kernel/vmlinux.lds.S | 15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
+ drivers/clocksource/jcore-pit.c | 15 ++++++++++++++-
+ drivers/irqchip/irq-jcore-aic.c |  2 +-
+ 2 files changed, 15 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
-index 9644fe187a3f..008c30289eaa 100644
---- a/arch/sh/kernel/vmlinux.lds.S
-+++ b/arch/sh/kernel/vmlinux.lds.S
-@@ -71,7 +71,20 @@ SECTIONS
+diff --git a/drivers/clocksource/jcore-pit.c b/drivers/clocksource/jcore-pit.c
+index a3fe98cd3838..82815428f8f9 100644
+--- a/drivers/clocksource/jcore-pit.c
++++ b/drivers/clocksource/jcore-pit.c
+@@ -114,6 +114,18 @@ static int jcore_pit_local_init(unsigned cpu)
+ 	pit->periodic_delta = DIV_ROUND_CLOSEST(NSEC_PER_SEC, HZ * buspd);
  
- 	. = ALIGN(PAGE_SIZE);
- 	__init_end = .;
--	BSS_SECTION(0, PAGE_SIZE, 4)
-+	__bss_start = .;
-+	SBSS(0)
-+	. = ALIGN(PAGE_SIZE);
-+	.bss : AT(ADDR(.bss) - LOAD_OFFSET) {
-+		BSS_FIRST_SECTIONS
-+		. = ALIGN(PAGE_SIZE);
-+		*(.bss..page_aligned)
-+		. = ALIGN(PAGE_SIZE);
-+		*(.dynbss)
-+		*(BSS_MAIN)
-+		*(COMMON)
-+		. = ALIGN(8);
-+	}
-+	__bss_stop = .;
- 	_end = . ;
+ 	clockevents_config_and_register(&pit->ced, freq, 1, ULONG_MAX);
++	enable_percpu_irq(pit->ced.irq, IRQ_TYPE_NONE);
++
++	return 0;
++}
++
++static int jcore_pit_local_teardown(unsigned cpu)
++{
++	struct jcore_pit *pit = this_cpu_ptr(jcore_pit_percpu);
++
++	pr_info("Local J-Core PIT teardown on cpu %u\n", cpu);
++
++	disable_percpu_irq(pit->ced.irq);
  
- 	STABS_DEBUG
+ 	return 0;
+ }
+@@ -168,6 +180,7 @@ static int __init jcore_pit_init(struct device_node *node)
+ 		return -ENOMEM;
+ 	}
+ 
++	irq_set_percpu_devid(pit_irq);
+ 	err = request_percpu_irq(pit_irq, jcore_timer_interrupt,
+ 				 "jcore_pit", jcore_pit_percpu);
+ 	if (err) {
+@@ -237,7 +250,7 @@ static int __init jcore_pit_init(struct device_node *node)
+ 
+ 	cpuhp_setup_state(CPUHP_AP_JCORE_TIMER_STARTING,
+ 			  "clockevents/jcore:starting",
+-			  jcore_pit_local_init, NULL);
++			  jcore_pit_local_init, jcore_pit_local_teardown);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
+index b9dcc8e78c75..1f613eb7b7f0 100644
+--- a/drivers/irqchip/irq-jcore-aic.c
++++ b/drivers/irqchip/irq-jcore-aic.c
+@@ -38,7 +38,7 @@ static struct irq_chip jcore_aic;
+ static void handle_jcore_irq(struct irq_desc *desc)
+ {
+ 	if (irqd_is_per_cpu(irq_desc_get_irq_data(desc)))
+-		handle_percpu_irq(desc);
++		handle_percpu_devid_irq(desc);
+ 	else
+ 		handle_simple_irq(desc);
+ }
 -- 
 2.48.1
 
