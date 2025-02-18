@@ -1,126 +1,141 @@
-Received: from seashell.cherry.relay.mailchannels.net (seashell.cherry.relay.mailchannels.net [23.83.223.162])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f42.google.com (mail-lf1-f42.google.com [209.85.167.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BBD2269AF0;
-	Tue, 18 Feb 2025 14:00:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.223.162
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1739887214; cv=pass; b=WYUHEtVbscUboykn4gNhqy4AKT07+QZOymz3PAwmkzENli4tj+23vIUei3ntAhXPVwWEFaNIq02t1tiIWzYwJXl+huClIrNXg2a6fXnaX0r86MpmMlMgZ4BOQezESG5t9vLGVKapuhHb/pT0fGyqZ7BMv2GBoOb86kVCC/gpXCo=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1739887214; c=relaxed/simple;
-	bh=DGgdmGoXFuNbS7z/vFF8stOUuDr8Sn4WUzD/hMg1nu4=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ur8UROBZihrdaxtpe0UvYShhg4cwqc8p6Z1eDWQUSJIFlm1ZXAT2J+YD3Q7smtcayje35TkoTX5RRelaXeEtqQQu0BX6K+mS+z8i1y3ZdcCKdbo2TFdYohOVJCJQCQ6OjHFWWxbZHSG6CcF3tut0l+az6O12DHDjWBXvaqm6qak=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=B4psEMDl; arc=pass smtp.client-ip=23.83.223.162
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE5A426F45A;
+	Tue, 18 Feb 2025 17:57:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.42
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1739901480; cv=none; b=ZrdPs9kJXDOL7+OhO40My2/diAegpV+rDGd5EB8qS2pPZK4WzS3bh9FzBIpE+eh2CYcZRDtrvhmuMEkfRH7vwEDtDAdq//qI4oL2o/1Y/omhWu9qF3iG0EOe/W/2Tj55gSyxskxVJXv6sOwWlsjUDPWk9guPs+wtoxUxHnZPXNE=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1739901480; c=relaxed/simple;
+	bh=SKnjvoPaAHGikEYH0U8N6QZO8ST6XHXeB5oJXKQXdvM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=MrjOb4KgG1Iu4uifbOc6fP1nTzfBtGljrd+hKDkrxcDKite04zUlAo25SGBVWKreAi1QdAYv1v+6G0ezeHL0wazYUWG4MGvMPqC+8rb3bo0ETSwhQe9zZ0cp116jV6kkXEaNXbCpl3ZDpfwbmg9rA4bStiQPV4BIQZcW9nbgUeA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=KkZAoCLh; arc=none smtp.client-ip=209.85.167.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="B4psEMDl"
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id ADFC71A5486;
-	Tue, 18 Feb 2025 12:43:10 +0000 (UTC)
-Received: from pdx1-sub0-mail-a208.dreamhost.com (100-127-158-254.trex-nlb.outbound.svc.cluster.local [100.127.158.254])
-	(Authenticated sender: dreamhost)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 0E1A61A4E91;
-	Tue, 18 Feb 2025 12:43:10 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1739882590; a=rsa-sha256;
-	cv=none;
-	b=VrwwjxbFesy8mpfO2IjNYUhcLWBLaYAgmBHh+mrMKnhAM8CJ7q0AfNwtFaJZhLG8VJaNS5
-	0UWnJASq6ykqjlPUp8troZLiwAVQxv/juZ+j0UorrMeeqaHhA1gisW0M5YBp6NHy8C8hdL
-	Ai9IAOmvU5Pb6u7N1j5v/gRaisbRWh/abj7c+RZhx+Ibi6uj5qdMxt7ghv0XYU6pge5qga
-	3msspTlwd+WBz364Y3d4vPI9A1mJkuaxwJLmtUULQlvCp84czqy1ZbwmFHOkLJr3J3Hgql
-	tlzlLgRX6kB+qGuLAChdMDNxSdGaf8/VAoLBwE4OvLHgZXJqcfI4DKSiIdSJOw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1739882590;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:dkim-signature;
-	bh=B95tabb5XZzsLZAdmM0q9rShY5CxFJ7DzbxtbrrhHbY=;
-	b=ZlvR4WgSsHn+uWciGXRxmLTLs9afzEirW57vVLw+fbrBJgl6fituvs27LNJyTNDFgw4bWi
-	mX2jnFlFWu0vFpKtYE9zuZj2SwAlDPb8hjcqUxS+qJampzAOzpev79dF+pQhKOleg5CAvZ
-	R41V/MF/pxzs+FMx94NTZigkkrXm1XT5RBwZLCocLpkk5N+vWxTGs3zgj/EYxykUcV9Edq
-	VnvUNvxwVc8iJRHqHbbQAhaIVPkB81wzd25agT2DShpo5bQRqbhmogQbWDeOMBy+ooREp3
-	zQl6SrPLeVEjrarzDrCMNpllEq1XR6puu1ciPrejLgNSVokR1xwzrCRmRoD1lg==
-ARC-Authentication-Results: i=1;
-	rspamd-78ddd997cc-ttgrr;
-	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
-X-MailChannels-Auth-Id: dreamhost
-X-Stop-Madly: 6edb93bf651849a8_1739882590423_2474421560
-X-MC-Loop-Signature: 1739882590423:52837196
-X-MC-Ingress-Time: 1739882590423
-Received: from pdx1-sub0-mail-a208.dreamhost.com (pop.dreamhost.com
- [64.90.62.162])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.127.158.254 (trex/7.0.2);
-	Tue, 18 Feb 2025 12:43:10 +0000
-Received: from [172.16.32.88] (unknown [198.232.126.202])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits))
-	(No client certificate requested)
-	(Authenticated sender: rob@landley.net)
-	by pdx1-sub0-mail-a208.dreamhost.com (Postfix) with ESMTPSA id 4YxzhX6n0qzNR;
-	Tue, 18 Feb 2025 04:43:08 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
-	s=dreamhost; t=1739882589;
-	bh=B95tabb5XZzsLZAdmM0q9rShY5CxFJ7DzbxtbrrhHbY=;
-	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
-	b=B4psEMDltaoKyD63Dts4zk1CiSgxddy46xHI/QV5mgigdVCqa2Bu/FzfsnujpuaPb
-	 eeZbRnPq+UC/S1HRcZABcatN5jxRzWlmKGyF36KtpgCg56zffacA73cKHb2nB1SeUS
-	 vzFrvGBuMWF0+LtGa5O3dqci2KXCJ1mz9s+zz4Q8FrjVTuUvpTsKA1avO0L/QZBEVg
-	 f73zzlrc3rb6uQPQ/So8zmcuGSRtL5N/mjcXyw4mGBTYdXtDTTVC95V4o6YYMYKdD0
-	 8sXSdHaLqUotjLgMAL/wrYlInzhPKifQchb0/DKoibUsrgqxy7iZIuA9mSYZmuYomY
-	 kNmukHkY9h9+w==
-Message-ID: <c9caa50a-597b-48c7-9ac8-b3a4193c3fec@landley.net>
-Date: Tue, 18 Feb 2025 06:43:07 -0600
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KkZAoCLh"
+Received: by mail-lf1-f42.google.com with SMTP id 2adb3069b0e04-54622e97753so39364e87.0;
+        Tue, 18 Feb 2025 09:57:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1739901476; x=1740506276; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=oFRKePU7thBon8tfL6vskAhYenxo2fl21vHaxPHsJUc=;
+        b=KkZAoCLhrm5O6bQUr81CniOBnrdW53L/TerG5ciIQ5wNtt5TaT2U05C99h9zLUgaBU
+         W3Fj/rqzATzC/XWfUCQtaIeMafcMbclEhQcpmpHmqnauoCkdv2jwQJER6Or2vMEsZvfE
+         2mrgGk3vYlGn9ugS6dq/6OSZF/WaMgneHLuxdmUgUPciVDBy0AsL10XIy0tbPGXEeNMs
+         sKaprurWeA7TA6MRWcyQnP072SNe6s5mUCQESszarGiuA0DjfZIDUg4nMG3iXOr3byM8
+         2+MATmOFWa9Rq7kMtol/xPzUmYOTm95xvmGFrqzYX5SMS4diaTJGzroZNO2onrQ50ARc
+         P/UQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1739901476; x=1740506276;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=oFRKePU7thBon8tfL6vskAhYenxo2fl21vHaxPHsJUc=;
+        b=mY+H2kLCuvJ73XvFbh0FZdTLp4480zFIOO+t6Ej30c5UYcZBamDoZ8iHqHZ9+XEiPA
+         nnkD72SVYATZFL0oU3q31zJhU+rayFe8tnry9KyRjf5mbzhhOz2P/soMSjN577V3qV+R
+         J9m4lvYVSNfWrYtIAJtED62TO6dQaJI0l2Uht1aMw8TzP9iDO0JGcS/ETgMfBzr5wD/1
+         naSXPCz37QjzY00BoQFm91GLcOF6f3Y+tE8JZTyDWRwxSYAEfdFhmt5EDEbM9G7R3Ogg
+         O0/Aa0Fa70C4uDnAA9KiizVCRZ3bSC030YmsJR4myPe2g1geT4EPH5Di5CNXzRHPrr3O
+         J8Cg==
+X-Forwarded-Encrypted: i=1; AJvYcCVdKWHVS3zrvzEktmVFyFftq/k1sKEwzPD+ExFXf10TIPs2QLVs8kPCjy6ECLUslucrF3G8JO5e5D6ZyQ==@vger.kernel.org, AJvYcCVzNTKneHU0oJTutpRTtv3UdQ1ISPEB7yKtuwKLsoXwoMojnhdGioYSwfBKmepaI/jbTGwMsYqYHBw=@vger.kernel.org, AJvYcCWk3UfcbfBpBbc+M3n6+a0EAcAOd4GRqH0Xe3AGZSgU8XBU3VRtuFHG/xU9oF8WCAHmSrTWmhdbbe6LNQ==@vger.kernel.org, AJvYcCX/oeRNgz2HUw/q4j6e4UiW82oqNWwAOpRiy+x+GJcrTSlv85oyJL+enSnyjH8d1SxSBgUfix6zYm0M0cOo@vger.kernel.org, AJvYcCXEykKMD1lCzMw7NTnpdlgJX1kGsjbOe15CR/ErAYin+ipoQ+MjsYXzGx9DrnYqIb+QC6Fg0dRUQxIlYw==@vger.kernel.org, AJvYcCXJzZkuCfT1tSchGr3zMNPjK1h0zcNGfDVuH94VQkMAc98xo2ya4WF084pNGoWz9mU4SXtEl/5LFyEV77zSEg==@vger.kernel.org, AJvYcCXOWddQkTIRcteU/BkY2rbbMrcMcaNxVwmhVm5YAKdMpmWEDwS6UECcICu2VNC8+/jK5Q2PVwcl3y9N3w==@vger.kernel.org, AJvYcCXYN4rFz/S1o2yjLzgo5WfvTvH7HwoKjdOD9/8wiv7asy4WD6O1rsXyfe9XeKTWURb8fbol0YpXGJQkiEch@vger.kernel.org, AJvYcCXhyq7f5kVXZ2MpMYXktNZCF6ES8+gRZd12/Z22g8FbHfyYunw24xE6q3dfy8rsqQSKc3z0ZLLVQ0P3Dw==@vger.kernel.org, AJvYcCXtkDcPmCyairr3AHu5lsC5ssMLDd/7TvX7WUVR5T8yonz11t/PpUAapaPFeRRCIVc5Ckg0I7wezbp0Lbzyf/o=@vger.kernel.org
+X-Gm-Message-State: AOJu0Yztj9TZtxCcIPUTIsEKT1M6i5GOATtuHjFWtd/6qExWrX7Y1tap
+	exQad1BGHpNn3qdWzmCNgkXQbSqWVhleMS0Qb7odH/EclE5KDTRi
+X-Gm-Gg: ASbGncuWA88tXk259mTUe1rNTRYMhNzo435I3uirlMlYU9SNqcha3Oml9gkQ5/dHiNj
+	8CsYXpuTNYk4xo9E94Iz1CQGrMM7so05UIRO6cnKjQIU6d4Viv+Q2XuCGJeIxDOnLtqyDIW6fH1
+	s2Rt4I9aUkgsibD0aEE/RK+7wkgEcx8wIaX7VoXOxfT/ez/EHrbFrV8DUfpGYiHuZkRuJA+QNdo
+	vOBibeAMNDdDlA09cGB2DHEhUfPoC8cvb+pJvUKm8V8uSi47PYCRlEexrO1DY3iThdZ5tjbfxfX
+	5IfWqLGGx7ApjNrt9Mrl96s9hbWyxibqVvCBV3eSmykOI0pwt6cfP9aOu+NICw==
+X-Google-Smtp-Source: AGHT+IGfFBi/u9SniGtV33nIqkglJaUtkaaAX/KBzbUXSrhxIdAk38ItpiS7x3PdO+hl8rMx2A+8sQ==
+X-Received: by 2002:a05:6512:3b23:b0:545:550:83e6 with SMTP id 2adb3069b0e04-5462eaa1f1amr241343e87.5.1739901475583;
+        Tue, 18 Feb 2025 09:57:55 -0800 (PST)
+Received: from es40.darklands.se (h-94-254-104-176.A469.priv.bahnhof.se. [94.254.104.176])
+        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-545254f7072sm1709286e87.127.2025.02.18.09.57.53
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 18 Feb 2025 09:57:54 -0800 (PST)
+From: Magnus Lindholm <linmag7@gmail.com>
+To: linmag7@gmail.com,
+	richard.henderson@linaro.org,
+	mattst88@gmail.com,
+	glaubitz@physik.fu-berlin.de,
+	ink@unseen.parts,
+	kees@kernel.org,
+	arnd@arndb.de,
+	linux-kernel@vger.kernel.org,
+	linux-alpha@vger.kernel.org
+Cc: chris@zankel.net,
+	dinguyen@kernel.org,
+	jcmvbkbc@gmail.com,
+	linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-snps-arc@lists.infradead.org,
+	linux-um@lists.infradead.org,
+	loongarch@lists.linux.dev,
+	monstr@monstr.eu,
+	sparclinux@vger.kernel.org,
+	x86@kernel.org
+Subject: [PATCH v2 0/1] mm: pgtable: fix pte_swp_exclusive
+Date: Tue, 18 Feb 2025 18:55:13 +0100
+Message-ID: <20250218175735.19882-1-linmag7@gmail.com>
+X-Mailer: git-send-email 2.48.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/2] irqchip: clocksource: fix jcore-pit irq request
-To: Artur Rojek <contact@artur-rojek.eu>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Daniel Lezcano <daniel.lezcano@linaro.org>,
- Thomas Gleixner <tglx@linutronix.de>, Uros Bizjak <ubizjak@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>,
- "D . Jeff Dionne" <jeff@coresemi.io>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org
-References: <20250216175545.35079-1-contact@artur-rojek.eu>
- <20250216175545.35079-3-contact@artur-rojek.eu>
-Content-Language: en-US
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <20250216175545.35079-3-contact@artur-rojek.eu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-On 2/16/25 11:55, Artur Rojek wrote:
-> The jcore-aic irqchip does not have separate interrupt numbers reserved
-> for cpu-local vs global interrupts. Instead, the task of selecting this
-> property is being delegated to the device drivers requesting the given
-> irq.
-> 
-> This quirk has not been taken into account while migrating jcore-pit to
-> request_percpu_irq(), resulting in a failure to register PIT interrupts.
-> 
-> Fix this behavior by making the following changes:
-> 1) Explicitly register irq_set_percpu_devid() in jcore-pit.
-> 2) Provide enable_percpu_irq()/disable_percpu_irq() calls in jcore-pit.
-> 3) Make jcore-aic pass the correct per-cpu cookie to the irq handler by
->     using handle_percpu_devid_irq() instead of handle_percpu_irq().
-> 
-> Fixes: 69a9dcbd2d65 ("clocksource/drivers/jcore: Use request_percpu_irq()")
-> 
-> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+The first version of this patch intended to fix issues with swap memory on
+alpha, when swapoff fails to writeback exclusive swap pages and gets stuck
+in an infinite loop trying to do so. This problem appeared after commit
+a172d5128706028ac07b8db709728379ecc72f6e and as far as I know only
+affected the alpha architecure.
 
-Tested-by: Rob Landley <rob@landley.net>
+Changes in v2:
+As suggested by Al Viro, rather than doing a bit-shift alpha-only fix this
+version of the patch makes pte_swp_exclusive return bool instead of int.
+As Al pointed out, this will also better reflect how pte_swp_exclusive
+is actually used in the code.
 
-Rob
+Best regards
+Magnus Lindholm linmag7@gmail.com
+
+ arch/alpha/include/asm/pgtable.h             | 2 +-
+ arch/arc/include/asm/pgtable-bits-arcv2.h    | 2 +-
+ arch/arm/include/asm/pgtable.h               | 2 +-
+ arch/arm64/include/asm/pgtable.h             | 2 +-
+ arch/csky/include/asm/pgtable.h              | 2 +-
+ arch/hexagon/include/asm/pgtable.h           | 2 +-
+ arch/loongarch/include/asm/pgtable.h         | 2 +-
+ arch/m68k/include/asm/mcf_pgtable.h          | 2 +-
+ arch/m68k/include/asm/motorola_pgtable.h     | 2 +-
+ arch/m68k/include/asm/sun3_pgtable.h         | 2 +-
+ arch/microblaze/include/asm/pgtable.h        | 2 +-
+ arch/mips/include/asm/pgtable.h              | 4 ++--
+ arch/nios2/include/asm/pgtable.h             | 2 +-
+ arch/openrisc/include/asm/pgtable.h          | 2 +-
+ arch/parisc/include/asm/pgtable.h            | 2 +-
+ arch/powerpc/include/asm/book3s/32/pgtable.h | 2 +-
+ arch/powerpc/include/asm/book3s/64/pgtable.h | 2 +-
+ arch/powerpc/include/asm/nohash/pgtable.h    | 2 +-
+ arch/riscv/include/asm/pgtable.h             | 2 +-
+ arch/s390/include/asm/pgtable.h              | 2 +-
+ arch/sh/include/asm/pgtable_32.h             | 2 +-
+ arch/sparc/include/asm/pgtable_32.h          | 2 +-
+ arch/sparc/include/asm/pgtable_64.h          | 2 +-
+ arch/um/include/asm/pgtable.h                | 2 +-
+ arch/x86/include/asm/pgtable.h               | 2 +-
+ arch/xtensa/include/asm/pgtable.h            | 2 +-
+ 26 files changed, 27 insertions(+), 27 deletions(-)
