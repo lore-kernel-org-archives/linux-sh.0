@@ -1,129 +1,242 @@
-Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com [209.85.221.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A0542AD00
-	for <linux-sh@vger.kernel.org>; Wed, 19 Feb 2025 14:52:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.42
+Received: from angie.orcam.me.uk (angie.orcam.me.uk [78.133.224.34])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id F1E181F61C;
+	Wed, 19 Feb 2025 17:15:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=78.133.224.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1739976773; cv=none; b=MTTRcal64OH+caiwjswjXf9ik1frSITUBPD0Fkfh6hz6Lwu54kFTjAOHQDAkWrFrZNgYCmFtYxh5Yet3jU1QRgV7XRPM5tPsjF3uylOkQ9Py4t46+uEnRP+JIYBFjeedCvqZK5dOquYdzD0Ir4DB+xlSx/iqrFYX3n/cnZm84s4=
+	t=1739985353; cv=none; b=aKGWe1XA4P+QRhOsRBNI6IcudALJSxxONNqPqE7obIuJd5/dzlolxyeKXLlRkrjdS4wKfQr4aC0LIHbebdqgL1qwqyOr1RhrqFVg3j5hyhglDbDUydCwxJnrdZ32mfRf2E539H4fGbA3Z12bZGrxcb+hA39bhBa3onRtu5/xeEA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1739976773; c=relaxed/simple;
-	bh=dp5AVOsGmbjgfTQnYJoV/9JkRncskhmWkEaujE8CIsk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Zm5Av/fypZRWzzhbA/LfURbqe88EGeZhkMxzpN+KW978m+/doD9HFIVf7UTmB+2QWjcaKFnTr7/VYGtqH2IU1Mxndb6eM9tb154NCtPbgmzDmqvpn+Vu90EN6lMnsS6VpP+ms6yAQmo/pROnQ2HeYkxfIn6Zua68l7Ywoedm7/Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org; spf=pass smtp.mailfrom=linaro.org; dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b=IbZAjarU; arc=none smtp.client-ip=209.85.221.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="IbZAjarU"
-Received: by mail-wr1-f42.google.com with SMTP id ffacd0b85a97d-38a8b17d7a7so3772020f8f.2
-        for <linux-sh@vger.kernel.org>; Wed, 19 Feb 2025 06:52:51 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google; t=1739976769; x=1740581569; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=AcrTLEV536jWejUD/85wpmtXUyXxwJGaRE9pys71VVI=;
-        b=IbZAjarUoH+nNPfLQKaBioT4qbnWq3UWHGGnMrne78Jpujb14UXoNVNAfcpMyfvORe
-         minumA13H/4aVWO/6DMx8ozMiTpi72nRaz72Pdh66a0dg0B3MIrWsjyaOVByhpGsKo1P
-         GNeAyaXFuAgXfBub8oxr8RW9JUpwQd3eRnDl3gRh10J6CucCQjoPaT2SLd7YsPP05I9S
-         Y7IFwcV3m5zUBcEY73ycyNfWGsTXNydRxgVwUikvqNkwWh7VHpNISWUFqBqv0Z4q8RBZ
-         SUHr8uRyjZm+TRUi1zYdFNKGT4Ez6WWfJzIo10NGkPvAGMztBBrANMg85XA9tM2SVgJW
-         QjCQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1739976769; x=1740581569;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=AcrTLEV536jWejUD/85wpmtXUyXxwJGaRE9pys71VVI=;
-        b=DamHxlq+UUbpmJOHaiDSuTtlCYlQrmSz3AG/thihV4Fb/0iBjkEDkiaLoPkko4m1bR
-         AKQ3EHi5+q5n3NjhEU6U6pfDN1Q9pgBObxNQN8+e/RAi/a0Hmxa/jftpHYCPVUmuIqU6
-         U4Y3nNl7HwCMcVS9seV3wEmsfC84IKbqJbmY5z0Je4sg7J9Q6XdOlnpN0KBaUvv3S/v1
-         1zsjxzUWNQcR5LZURtHvyWCKS+mL9PwQ0frUDCEmYOP3HKCS7jSfLxDJUPiEuH94T8+C
-         zRROPKdr/Ck3V5HETKTHcHzEWsASOWGb0WDU+dfboQK8koKJp4bd158YuatxBEkurOpo
-         tzwA==
-X-Forwarded-Encrypted: i=1; AJvYcCUjJ0XQGDlH12BuW6BKEmQostuAn8ZWPnCReaYL/+obKL8QFvrm1qzbElW/b+Dww0Ld57eIQX96rQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzgX1rZWib0jlWTEpMjqsTXz99M0ZkldYwpc6WxpSNOB7Xa8yDK
-	17Uo4GpgXXmzETWox4UlofXdP1zeaiawSNswBoVYOrM0ExWrgGuCxVmmb/VHJ2g=
-X-Gm-Gg: ASbGnctT50lejJmwXkMjzn5Z/sV6Bv9jlk4rAu4u/dAuQOp4Xv+/i1do70MRgp+evPo
-	nN2PVv5+f4O3p7CtN86rdXSpz1uLdYPk4imSQUAJThhAlMMR5WT6E4umZSuruIjQV+M/U3gWuqG
-	yZwl9l+3OBvo/9uFbS37Ju6EEGJeDaRG8215EvJ4m14iW9H5iiC7PT1onvhu468NrP7loh8S0z4
-	YlDiLnAh2uVnW1vNWD7hogt+M9WgGQ/fBk9KGTDEANrconwDi8ylq0xWdGLHRU4wRnYtbRherhc
-	fxGDlp7InqMZQuVtKuBDCUjfjx9Cxtl5tu5qI0wx6HRGVki+vWJ726U=
-X-Google-Smtp-Source: AGHT+IEGpOUT2Kql6BOz/f6CUFqRsZvcez+B8YGnnSN/N6M/oshP7AzII9i03CFTfTUAIR5PkMXw/A==
-X-Received: by 2002:a05:6000:2a4:b0:38f:483f:8319 with SMTP id ffacd0b85a97d-38f587f3ec3mr3475441f8f.51.1739976769565;
-        Wed, 19 Feb 2025 06:52:49 -0800 (PST)
-Received: from [192.168.10.46] (146725694.box.freepro.com. [130.180.211.218])
-        by smtp.googlemail.com with ESMTPSA id ffacd0b85a97d-38f259f8115sm18324866f8f.92.2025.02.19.06.52.48
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 19 Feb 2025 06:52:49 -0800 (PST)
-Message-ID: <5f7cb96d-ccc5-47d6-a732-560dcedfa04f@linaro.org>
-Date: Wed, 19 Feb 2025 15:52:48 +0100
+	s=arc-20240116; t=1739985353; c=relaxed/simple;
+	bh=QvmJAcxumbdGw5pVgtb8a1HCfpeuwZB04qMbZpB9Smg=;
+	h=Date:From:To:cc:Subject:In-Reply-To:Message-ID:References:
+	 MIME-Version:Content-Type; b=GGR/3iYAxCmO+J78hbWDYTwmAovxgKYZ8+6vYxk5pHXvqAT4fjqJq+fsEmalQ7zScmX/ySV1ARKHPO6u9sU8dyILvUrDW8epq+vKTPiavd+xuYgHKvIjEipgkHVw7CAxX+GS5i8gSoH4Dw8MeO5VGAkL9fGeVFofvGUbPgVPyC8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=orcam.me.uk; spf=none smtp.mailfrom=orcam.me.uk; arc=none smtp.client-ip=78.133.224.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=orcam.me.uk
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=orcam.me.uk
+Received: by angie.orcam.me.uk (Postfix, from userid 500)
+	id 7D21992009C; Wed, 19 Feb 2025 18:15:48 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+	by angie.orcam.me.uk (Postfix) with ESMTP id 7875792009B;
+	Wed, 19 Feb 2025 17:15:48 +0000 (GMT)
+Date: Wed, 19 Feb 2025 17:15:48 +0000 (GMT)
+From: "Maciej W. Rozycki" <macro@orcam.me.uk>
+To: "Dmitry V. Levin" <ldv@strace.io>
+cc: Andrew Morton <akpm@linux-foundation.org>, Oleg Nesterov <oleg@redhat.com>, 
+    Alexey Gladkov <legion@kernel.org>, 
+    Eugene Syromyatnikov <evgsyr@gmail.com>, 
+    Charlie Jenkins <charlie@rivosinc.com>, Helge Deller <deller@gmx.de>, 
+    Mike Frysinger <vapier@gentoo.org>, Renzo Davoli <renzo@cs.unibo.it>, 
+    Davide Berardi <berardi.dav@gmail.com>, Vineet Gupta <vgupta@kernel.org>, 
+    Russell King <linux@armlinux.org.uk>, Will Deacon <will@kernel.org>, 
+    Guo Ren <guoren@kernel.org>, Brian Cain <bcain@quicinc.com>, 
+    Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, 
+    Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+    Dinh Nguyen <dinguyen@kernel.org>, Jonas Bonn <jonas@southpole.se>, 
+    Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, 
+    Stafford Horne <shorne@gmail.com>, 
+    "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
+    Madhavan Srinivasan <maddy@linux.ibm.com>, 
+    Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, 
+    Christophe Leroy <christophe.leroy@csgroup.eu>, 
+    Naveen N Rao <naveen@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, 
+    Palmer Dabbelt <palmer@dabbelt.com>, Albert Ou <aou@eecs.berkeley.edu>, 
+    Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, 
+    Alexander Gordeev <agordeev@linux.ibm.com>, 
+    Christian Borntraeger <borntraeger@linux.ibm.com>, 
+    Sven Schnelle <svens@linux.ibm.com>, 
+    Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+    John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+    "David S. Miller" <davem@davemloft.net>, 
+    Andreas Larsson <andreas@gaisler.com>, Richard Weinberger <richard@nod.at>, 
+    Anton Ivanov <anton.ivanov@cambridgegreys.com>, 
+    Johannes Berg <johannes@sipsolutions.net>, 
+    Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, 
+    Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>, 
+    x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
+    Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, 
+    Arnd Bergmann <arnd@arndb.de>, strace-devel@lists.strace.io, 
+    linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org, 
+    linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, 
+    linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev, 
+    linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org, 
+    linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+    linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
+    linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
+    linux-um@lists.infradead.org, linux-arch@vger.kernel.org
+Subject: Re: [PATCH v6 2/6] syscall.h: add syscall_set_arguments()
+In-Reply-To: <20250217091020.GC18175@strace.io>
+Message-ID: <alpine.DEB.2.21.2502191642590.65342@angie.orcam.me.uk>
+References: <20250217091020.GC18175@strace.io>
+User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/2] irqchip: clocksource: fix jcore-pit irq request
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Artur Rojek <contact@artur-rojek.eu>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Thomas Gleixner <tglx@linutronix.de>, Uros Bizjak <ubizjak@gmail.com>,
- Geert Uytterhoeven <geert+renesas@glider.be>,
- "D . Jeff Dionne" <jeff@coresemi.io>, Rob Landley <rob@landley.net>,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20250216175545.35079-1-contact@artur-rojek.eu>
- <20250216175545.35079-3-contact@artur-rojek.eu>
- <d7484ab2-6da0-4bb9-a2ae-9388dac15038@linaro.org>
- <CAMuHMdWX9xeLRDLnteGWR31KbhtdupxVbhjQqY-6VaFA4tVaBQ@mail.gmail.com>
-Content-Language: en-US
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-In-Reply-To: <CAMuHMdWX9xeLRDLnteGWR31KbhtdupxVbhjQqY-6VaFA4tVaBQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII
 
-On 19/02/2025 15:50, Geert Uytterhoeven wrote:
-> Hi Daniel,
+On Mon, 17 Feb 2025, Dmitry V. Levin wrote:
+
+> This function is going to be needed on all HAVE_ARCH_TRACEHOOK
+> architectures to implement PTRACE_SET_SYSCALL_INFO API.
 > 
-> On Wed, 19 Feb 2025 at 15:43, Daniel Lezcano <daniel.lezcano@linaro.org> wrote:
->> On 16/02/2025 18:55, Artur Rojek wrote:
->>> The jcore-aic irqchip does not have separate interrupt numbers reserved
->>> for cpu-local vs global interrupts. Instead, the task of selecting this
->>> property is being delegated to the device drivers requesting the given
->>> irq.
->>>
->>> This quirk has not been taken into account while migrating jcore-pit to
->>> request_percpu_irq(), resulting in a failure to register PIT interrupts.
->>>
->>> Fix this behavior by making the following changes:
->>> 1) Explicitly register irq_set_percpu_devid() in jcore-pit.
->>> 2) Provide enable_percpu_irq()/disable_percpu_irq() calls in jcore-pit.
->>> 3) Make jcore-aic pass the correct per-cpu cookie to the irq handler by
->>>      using handle_percpu_devid_irq() instead of handle_percpu_irq().
->>>
->>> Fixes: 69a9dcbd2d65 ("clocksource/drivers/jcore: Use request_percpu_irq()")
->>>
->>> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
->>> ---
->>
->> How this patch should be merged ?
->>
->> It is touching irqchip and clocksource at the same time.
->>
->> May I pick it in the clocksource tree ?
+> This partially reverts commit 7962c2eddbfe ("arch: remove unused
+> function syscall_set_arguments()") by reusing some of old
+> syscall_set_arguments() implementations.
 > 
-> Thomas already took it, cfr. commit d7e3fd658248f257
-> ("irqchip/jcore-aic, clocksource/drivers/jcore: Fix jcore-pit interrupt
-> request") in next-20250219.
+> Signed-off-by: Dmitry V. Levin <ldv@strace.io>
+> Tested-by: Charlie Jenkins <charlie@rivosinc.com>
+> Reviewed-by: Charlie Jenkins <charlie@rivosinc.com>
+> Acked-by: Helge Deller <deller@gmx.de> # parisc
+> ---
+>  arch/arc/include/asm/syscall.h        | 14 +++++++++++
+>  arch/arm/include/asm/syscall.h        | 13 ++++++++++
+>  arch/arm64/include/asm/syscall.h      | 13 ++++++++++
+>  arch/csky/include/asm/syscall.h       | 13 ++++++++++
+>  arch/hexagon/include/asm/syscall.h    |  7 ++++++
+>  arch/loongarch/include/asm/syscall.h  |  8 ++++++
+>  arch/mips/include/asm/syscall.h       | 32 ++++++++++++++++++++++++
+>  arch/nios2/include/asm/syscall.h      | 11 ++++++++
+>  arch/openrisc/include/asm/syscall.h   |  7 ++++++
+>  arch/parisc/include/asm/syscall.h     | 12 +++++++++
+>  arch/powerpc/include/asm/syscall.h    | 10 ++++++++
+>  arch/riscv/include/asm/syscall.h      |  9 +++++++
+>  arch/s390/include/asm/syscall.h       |  9 +++++++
+>  arch/sh/include/asm/syscall_32.h      | 12 +++++++++
+>  arch/sparc/include/asm/syscall.h      | 10 ++++++++
+>  arch/um/include/asm/syscall-generic.h | 14 +++++++++++
+>  arch/x86/include/asm/syscall.h        | 36 +++++++++++++++++++++++++++
+>  arch/xtensa/include/asm/syscall.h     | 11 ++++++++
+>  include/asm-generic/syscall.h         | 16 ++++++++++++
+>  19 files changed, 257 insertions(+)
+> 
+> diff --git a/arch/arc/include/asm/syscall.h b/arch/arc/include/asm/syscall.h
+> index 9709256e31c8..89c1e1736356 100644
+> --- a/arch/arc/include/asm/syscall.h
+> +++ b/arch/arc/include/asm/syscall.h
+> @@ -67,6 +67,20 @@ syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
+>  	}
+>  }
+>  
+> +static inline void
+> +syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
+> +		      unsigned long *args)
+> +{
+> +	unsigned long *inside_ptregs = &regs->r0;
+> +	unsigned int n = 6;
+> +	unsigned int i = 0;
+> +
+> +	while (n--) {
+> +		*inside_ptregs = args[i++];
+> +		inside_ptregs--;
+> +	}
+> +}
+> +
+>  static inline int
+>  syscall_get_arch(struct task_struct *task)
+>  {
+> diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/syscall.h
+> index fe4326d938c1..21927fa0ae2b 100644
+> --- a/arch/arm/include/asm/syscall.h
+> +++ b/arch/arm/include/asm/syscall.h
+> @@ -80,6 +80,19 @@ static inline void syscall_get_arguments(struct task_struct *task,
+>  	memcpy(args, &regs->ARM_r0 + 1, 5 * sizeof(args[0]));
+>  }
+>  
+> +static inline void syscall_set_arguments(struct task_struct *task,
+> +					 struct pt_regs *regs,
+> +					 const unsigned long *args)
+> +{
+> +	memcpy(&regs->ARM_r0, args, 6 * sizeof(args[0]));
+> +	/*
+> +	 * Also copy the first argument into ARM_ORIG_r0
+> +	 * so that syscall_get_arguments() would return it
+> +	 * instead of the previous value.
+> +	 */
+> +	regs->ARM_ORIG_r0 = regs->ARM_r0;
+> +}
+> +
+>  static inline int syscall_get_arch(struct task_struct *task)
+>  {
+>  	/* ARM tasks don't change audit architectures on the fly. */
+> diff --git a/arch/arm64/include/asm/syscall.h b/arch/arm64/include/asm/syscall.h
+> index ab8e14b96f68..76020b66286b 100644
+> --- a/arch/arm64/include/asm/syscall.h
+> +++ b/arch/arm64/include/asm/syscall.h
+> @@ -73,6 +73,19 @@ static inline void syscall_get_arguments(struct task_struct *task,
+>  	memcpy(args, &regs->regs[1], 5 * sizeof(args[0]));
+>  }
+>  
+> +static inline void syscall_set_arguments(struct task_struct *task,
+> +					 struct pt_regs *regs,
+> +					 const unsigned long *args)
+> +{
+> +	memcpy(&regs->regs[0], args, 6 * sizeof(args[0]));
+> +	/*
+> +	 * Also copy the first argument into orig_x0
+> +	 * so that syscall_get_arguments() would return it
+> +	 * instead of the previous value.
+> +	 */
+> +	regs->orig_x0 = regs->regs[0];
+> +}
+> +
+>  /*
+>   * We don't care about endianness (__AUDIT_ARCH_LE bit) here because
+>   * AArch64 has the same system calls both on little- and big- endian.
+> diff --git a/arch/csky/include/asm/syscall.h b/arch/csky/include/asm/syscall.h
+> index 0de5734950bf..30403f7a0487 100644
+> --- a/arch/csky/include/asm/syscall.h
+> +++ b/arch/csky/include/asm/syscall.h
+> @@ -59,6 +59,19 @@ syscall_get_arguments(struct task_struct *task, struct pt_regs *regs,
+>  	memcpy(args, &regs->a1, 5 * sizeof(args[0]));
+>  }
+>  
+> +static inline void
+> +syscall_set_arguments(struct task_struct *task, struct pt_regs *regs,
+> +		      const unsigned long *args)
+> +{
+> +	memcpy(&regs->a0, args, 6 * sizeof(regs->a0));
+> +	/*
+> +	 * Also copy the first argument into orig_x0
+                                                  ^
+ Typo here, s/orig_x0/orig_a0/; see below.
 
-Oh, ok, thanks for letting me know
+> +	 * so that syscall_get_arguments() would return it
+> +	 * instead of the previous value.
+> +	 */
+> +	regs->orig_a0 = regs->a0;
 
--- 
-<http://www.linaro.org/> Linaro.org │ Open source software for ARM SoCs
+ Also:
 
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+> diff --git a/arch/mips/include/asm/syscall.h b/arch/mips/include/asm/syscall.h
+> index 056aa1b713e2..ea050b23d428 100644
+> --- a/arch/mips/include/asm/syscall.h
+> +++ b/arch/mips/include/asm/syscall.h
+> @@ -120,6 +137,21 @@ static inline void syscall_get_arguments(struct task_struct *task,
+>  		mips_get_syscall_arg(args++, task, regs, i++);
+>  }
+>  
+> +static inline void syscall_set_arguments(struct task_struct *task,
+> +					 struct pt_regs *regs,
+> +					 unsigned long *args)
+> +{
+> +	unsigned int i = 0;
+> +	unsigned int n = 6;
+> +
+> +	/* O32 ABI syscall() */
+> +	if (mips_syscall_is_indirect(task, regs))
+> +		i++;
+
+-- given MIPS syscall_set_nr() implementation in 3/6 this conditional is 
+supposed to never be true.  Should it be BUG_ON() or discarded entirely?
+
+> +
+> +	while (n--)
+> +		mips_set_syscall_arg(args++, task, regs, i++);
+> +}
+> +
+>  extern const unsigned long sys_call_table[];
+>  extern const unsigned long sys32_call_table[];
+>  extern const unsigned long sysn32_call_table[];
+
+  Maciej
