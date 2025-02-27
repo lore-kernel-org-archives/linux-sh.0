@@ -1,105 +1,176 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C1F2221F26;
-	Thu, 27 Feb 2025 07:55:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 1A10A225761;
+	Thu, 27 Feb 2025 11:13:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740642948; cv=none; b=F4GV85fXCbNM2T/ENC9aaQxOoSgc3Er0fPEJLxqRiHwlw+ZsYMPbQtNiI3DrU4d4K6n00A8+vr1/9J0IXyaMBBSWnDvpSPXMmbsbFH5s/GPpYXXDwCcN17xXuW7RfAmzsl11UCcVmevOmx+1fHmaAGMhSbM7102yFeX3OwWzDqw=
+	t=1740654823; cv=none; b=AnDijjdMNsGDHSBR7eaegBrfJDLgQLmZ4yqFke+JgfMubzW1UYXGLf2tKUMnE2P63dPIvKw9Ze0NW2hnuIdV2gwh+QP07K5Jj8rZEtiR+VzdpFNuc3IE386qpTgvC5NxsvDBEuRKxRJcGAG9DqYlKzdsfeoYt6FtBH4LeFwZJdo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740642948; c=relaxed/simple;
-	bh=xI5HhNdKctaYZZh8qMdR+YfI/h8lxZX2RnqCQfmSGTQ=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=HtP4Wx+lGMLfFHob9soLJGcg7+h1J9K5Cu7Eof7wgTgVJcoM/hYJ6oeT/0t8gJE0PYJqZrk6oiy8qhde4AO2VbyQTRWcfLFh3tTGIm0vz7lP02/NgNRIocQ1kCVnSZN760CJxihC+2v+DBoC7M+kzy1FWcyzQSOlJL4H72qtk94=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Z+a6qNXl; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Z+a6qNXl"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=FqSc7JMhq3/DGs0M9ECHpUHU9QBIzBw5prMUBxfWzAE=; t=1740642945; x=1741247745; 
-	b=Z+a6qNXlgpaBtdeJ9YSTqdAXJ3QaaqSU1207JCogqHry4xVWu7NyQK+PQNQaUWEwl5lWPRQc95Q
-	GclwyljhBUrpUtEse5aDxXp1NDBTxhnK/9lg3ClBPHNtzchoKRbTha4r+8l5sWjaZ/HdlWb2IZROp
-	5RKP6jfh0FMv9/hiVcB/1/wa5cWaRrY1HO7XNdOd0ZcboEYrNr8DiyQtfBClmREyIix0KVLUbiZDa
-	Qkt5KmImjKxg7/6qr3ZdRkrR/LLNa9wqzR1hCYlsNPgRDpzsYlusrvPhDQmvIShrillMneMn7v/H/
-	gr+NA58YQl0++SjoSdaA8Ml6FwSatUoW7+ew==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1tnYgk-00000000Ryt-0P9a; Thu, 27 Feb 2025 08:52:10 +0100
-Received: from p5dc5515a.dip0.t-ipconnect.de ([93.197.81.90] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1tnYgj-00000001gus-3brW; Thu, 27 Feb 2025 08:52:10 +0100
-Message-ID: <f574808500e2c5fb733c1e5d9b4d17c2884d1b9f.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 0/2] J2 Turtle Board fixes
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Artur Rojek <contact@artur-rojek.eu>, Yoshinori Sato	
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Daniel Lezcano
-	 <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Uros
- Bizjak	 <ubizjak@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, "D . Jeff Dionne"	
- <jeff@coresemi.io>, Rob Landley <rob@landley.net>,
- linux-sh@vger.kernel.org, 	linux-kernel@vger.kernel.org
-Date: Thu, 27 Feb 2025 08:52:09 +0100
-In-Reply-To: <20250216175545.35079-1-contact@artur-rojek.eu>
-References: <20250216175545.35079-1-contact@artur-rojek.eu>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.54.3 
+	s=arc-20240116; t=1740654823; c=relaxed/simple;
+	bh=SAqzx+hkCBMFjSaW75HdRmriaQmgXA3UpjpZK1/xZLI=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=SeHQ5FVkyKlUEOoG0+OgI2s6aF1YsAAza166Wjfgo3SVWD4hH+WT0gpYgV86UORlwiUJPZ3eB369gWCX7qjZEF5gfzoS9K+NPYuLcurXf3CbO9tC0ye5E+0UkIU4IFc8jLPu8jd7DOhnP6EneZIjRPz+yD5DR4oct2TRYAjVzgY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; arc=none smtp.client-ip=217.140.110.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id B40CD2C23;
+	Thu, 27 Feb 2025 03:13:56 -0800 (PST)
+Received: from [10.57.85.134] (unknown [10.57.85.134])
+	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 6FF103F6A8;
+	Thu, 27 Feb 2025 03:13:31 -0800 (PST)
+Message-ID: <16863478-2195-435e-a899-559df097bc59@arm.com>
+Date: Thu, 27 Feb 2025 11:13:29 +0000
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v7 7/8] execmem: add support for cache of large ROX pages
+Content-Language: en-GB
+To: Mike Rapoport <rppt@kernel.org>, Andrew Morton
+ <akpm@linux-foundation.org>, Luis Chamberlain <mcgrof@kernel.org>,
+ Dev Jain <dev.jain@arm.com>
+Cc: Andreas Larsson <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>,
+ Ard Biesheuvel <ardb@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
+ Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@quicinc.com>,
+ Catalin Marinas <catalin.marinas@arm.com>,
+ Christoph Hellwig <hch@infradead.org>,
+ Christophe Leroy <christophe.leroy@csgroup.eu>,
+ Dave Hansen <dave.hansen@linux.intel.com>, Dinh Nguyen
+ <dinguyen@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>,
+ Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+ Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+ Johannes Berg <johannes@sipsolutions.net>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Kent Overstreet <kent.overstreet@linux.dev>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>,
+ Mark Rutland <mark.rutland@arm.com>, Masami Hiramatsu <mhiramat@kernel.org>,
+ Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
+ Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>,
+ Oleg Nesterov <oleg@redhat.com>, Palmer Dabbelt <palmer@dabbelt.com>,
+ Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>,
+ Russell King <linux@armlinux.org.uk>, Song Liu <song@kernel.org>,
+ Stafford Horne <shorne@gmail.com>, Steven Rostedt <rostedt@goodmis.org>,
+ Suren Baghdasaryan <surenb@google.com>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ Thomas Gleixner <tglx@linutronix.de>, Uladzislau Rezki <urezki@gmail.com>,
+ Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
+ bpf@vger.kernel.org, linux-alpha@vger.kernel.org,
+ linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+ linux-mips@vger.kernel.org, linux-mm@kvack.org,
+ linux-modules@vger.kernel.org, linux-openrisc@vger.kernel.org,
+ linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+ linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+ linux-trace-kernel@vger.kernel.org, linux-um@lists.infradead.org,
+ linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+ sparclinux@vger.kernel.org, x86@kernel.org
+References: <20241023162711.2579610-1-rppt@kernel.org>
+ <20241023162711.2579610-8-rppt@kernel.org>
+From: Ryan Roberts <ryan.roberts@arm.com>
+In-Reply-To: <20241023162711.2579610-8-rppt@kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-Hi Artur,
+Hi Mike,
 
-On Sun, 2025-02-16 at 18:55 +0100, Artur Rojek wrote:
-> this series fixes boot issues and allows J2 Turtle Board to boot
-> upstream Linux again.
->=20
-> Patch [1/2] enforces 8-byte alignment for the dtb offset.
->=20
-> Patch [2/2] resolves a problem with PIT interrupts failing to register.
+Drive by review comments below...
 
-I can confirm that this series makes my J2 Turtle Board boot again!
 
-> Even with the above fixes, Turtle Board is prone to occasional freezes
-> related to clock source transition from periodic to hrtimers. I however
-> decided to send those two patches ahead and debug the third issue at a
-> later time.=20
+On 23/10/2024 17:27, Mike Rapoport wrote:
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+> 
+> Using large pages to map text areas reduces iTLB pressure and improves
+> performance.
+> 
+> Extend execmem_alloc() with an ability to use huge pages with ROX
+> permissions as a cache for smaller allocations.
+> 
+> To populate the cache, a writable large page is allocated from vmalloc with
+> VM_ALLOW_HUGE_VMAP, filled with invalid instructions and then remapped as
+> ROX.
+> 
+> The direct map alias of that large page is exculded from the direct map.
+> 
+> Portions of that large page are handed out to execmem_alloc() callers
+> without any changes to the permissions.
+> 
+> When the memory is freed with execmem_free() it is invalidated again so
+> that it won't contain stale instructions.
+> 
+> An architecture has to implement execmem_fill_trapping_insns() callback
+> and select ARCH_HAS_EXECMEM_ROX configuration option to be able to use
+> the ROX cache.
+> 
+> The cache is enabled on per-range basis when an architecture sets
+> EXECMEM_ROX_CACHE flag in definition of an execmem_range.
+> 
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> Reviewed-by: Luis Chamberlain <mcgrof@kernel.org>
+> Tested-by: kdevops <kdevops@lists.linux.dev>
+> ---
 
-Yep, it just got stuck for me right after these messages at my first boot a=
-ttempt:
+[...]
 
-clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns:=
- 7645041785100000 ns
-futex hash table entries: 512 (order: 1, 8192 bytes, linear)
-NET: Registered PF_NETLINK/PF_ROUTE protocol family
-clocksource: Switched to clocksource jcore_pit_cs
+> +
+> +static int execmem_cache_populate(struct execmem_range *range, size_t size)
+> +{
+> +	unsigned long vm_flags = VM_ALLOW_HUGE_VMAP;
+> +	unsigned long start, end;
+> +	struct vm_struct *vm;
+> +	size_t alloc_size;
+> +	int err = -ENOMEM;
+> +	void *p;
+> +
+> +	alloc_size = round_up(size, PMD_SIZE);
+> +	p = execmem_vmalloc(range, alloc_size, PAGE_KERNEL, vm_flags);
 
-It boots past these messages on second attempt, although it's now stuck try=
-ing to start
-/init. However, it's still echoing <RETURN> strokes, so it might be an issu=
-e with Toybox.
+Shouldn't this be passing PAGE_KERNEL_ROX? Otherwise I don't see how the
+allocated memory is ROX? I don't see any call below where you change the permission.
 
-Adrian
+Given the range has the pgprot in it, you could just drop passing the pgprot
+explicitly here and have execmem_vmalloc() use range->pgprot directly?
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Thanks,
+Ryan
+
+> +	if (!p)
+> +		return err;
+> +
+> +	vm = find_vm_area(p);
+> +	if (!vm)
+> +		goto err_free_mem;
+> +
+> +	/* fill memory with instructions that will trap */
+> +	execmem_fill_trapping_insns(p, alloc_size, /* writable = */ true);
+> +
+> +	start = (unsigned long)p;
+> +	end = start + alloc_size;
+> +
+> +	vunmap_range(start, end);
+> +
+> +	err = execmem_set_direct_map_valid(vm, false);
+> +	if (err)
+> +		goto err_free_mem;
+> +
+> +	err = vmap_pages_range_noflush(start, end, range->pgprot, vm->pages,
+> +				       PMD_SHIFT);
+> +	if (err)
+> +		goto err_free_mem;
+> +
+> +	err = execmem_cache_add(p, alloc_size);
+> +	if (err)
+> +		goto err_free_mem;
+> +
+> +	return 0;
+> +
+> +err_free_mem:
+> +	vfree(p);
+> +	return err;
+> +}
+
+[...]
+
