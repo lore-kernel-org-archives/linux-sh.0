@@ -1,158 +1,261 @@
-Received: from barb.cherry.relay.mailchannels.net (barb.cherry.relay.mailchannels.net [23.83.223.10])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1D5C1635;
-	Sat,  1 Mar 2025 08:32:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.223.10
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1740817955; cv=pass; b=av4bKeAHmfXzdMh56AgUGq9NE4GXBby+nI6tZcUic4Zyxo7ngZ9dKsU0BgYFAe8pKo6RlHpZjdLuVoPipy+LQncVevVpt/BCTeHH1HpUhe+/5hyaU5v4JOOCJ3TtOd0sJSYYQWv6jyLYpGWidswfxWTrix2sB4GeosINGNrDFhs=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1740817955; c=relaxed/simple;
-	bh=ioB2nISzPeluWv9jfPb9Yvprv8YRjalG8AoqtA+W8BE=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=aQDxaLrz79IbygJAco+2x5Y2ys5Bm/uTshRu8mhR35DceqRJ7eHflxJTZtocT0k/JDi/IlV9Oh+RCmWAz2D6vjcCpzYsnGd3fvs4zaflGRIHXLuL3MjUab05vu7uatxtN4g0EKiqJFNXaJy0Ui+YRBmQUA/KNMJ9zLqgN8ERroM=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=rVP6adPk; arc=pass smtp.client-ip=23.83.223.10
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 529201DF749;
+	Sun,  2 Mar 2025 12:20:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1740918022; cv=none; b=n206KnPNuxRAyMKpgGdLPE0WPGXvscM1+a5SvBOaEvOg7RSZXcIiBj5KMjVQO23NuJMvx6F15jJCSuM1YBk2SfBKTToh82BRyfpZxpqtv6G/zxgCH7SLC8VViZAHTOFS1uhBjANMa+ivTcUX8Xy6WVt6WywGtkQDTR21yw9wkPE=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1740918022; c=relaxed/simple;
+	bh=g6N4TpIZBNJ6Fua7mVfbapNWidlbTbgUQQkGOYDnX5w=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=OhIV7TsKKFc9eF8Xcj3iWbZUuqyXeuRLYI4fltL40sYCL0zmNvZZgSrW/LcmjLP49PwgXOSAiNPdn8itlL9KSdyhhRAb6TYOuL7xfyZv4VGAcYkrdTDs9GrM9S0livIwI86tzlEHITh8WM5GzjYMMSDzwbwJyMqQzhEkSByttv0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XLAcy+qL; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="rVP6adPk"
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 392058A31D8;
-	Sat,  1 Mar 2025 03:20:55 +0000 (UTC)
-Received: from pdx1-sub0-mail-a310.dreamhost.com (trex-1.trex.outbound.svc.cluster.local [100.105.230.78])
-	(Authenticated sender: dreamhost)
-	by relay.mailchannels.net (Postfix) with ESMTPA id C03448A3FB2;
-	Sat,  1 Mar 2025 03:20:54 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1740799254; a=rsa-sha256;
-	cv=none;
-	b=6nsRzhaV2KMNAkc9mJSpdW3hlDHspqknwS+MDxThIBKjmlR7E+jY+g45qE8xBiQSf1VzX9
-	vYrExQ1Lqj/qxiyc/VasvCSHMzidF5Nt5voyFx+zl3IXd+BZ3TInrfxJ5bBIp1lADwUwMx
-	FbSSQv1Pm5YBb8ZFF9Di6Mv0d2j3qRxMQ322fZ5t9DFYhk7csKw4734u1kzrv+kK8hnufq
-	cCmc6EywpL2aOGmK9innin1NYgp9T8SLPEst3Oab/VsZq2rTMVDFGVB1KmXKzgIxC2nshW
-	APsXRmVFE8Gy/q2k97Ssy6QRJ2alT9W12S2+YmPVHBJZQ7+ZwgW947Ga9ucCBA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1740799254;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:dkim-signature;
-	bh=TOF8EoDBPkgQOuWlYGr996yYxGzhWlzyrqszfM/Cblc=;
-	b=s1TY/0+FwG9eKaD/85WmkgDz9F+rlirgxhbqJ1IfxjKQk23lu+/UakfjFE3Sj1epewupp/
-	IuuUxvpL2NxF/+MotFXlR92AaQL/b2HdJp41r93HTY5QPIIxOTS3cEfBiZE9pWb0r9qZy/
-	VkHPEtCIMVJivp8evUokg7NStxuq6OJEVfMZ7fWnf3Tee2PyC+jeMr4TaFUUSP/GEAcGJo
-	PFpnM/Q+dVjKqW0mWvkWxthRDIftwnfKd1TQ36E0KVPraEPBwf6MD9RobXxs8kHHa0D3I4
-	cjIvuHLoJ641KTciV5TRgxLK9HqNyM0WlKo3hGNsdQ0MYfqZeImPlnI5Q2MGtg==
-ARC-Authentication-Results: i=1;
-	rspamd-7878b47b55-ndwfl;
-	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-X-MC-Relay: Bad
-X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
-X-MailChannels-Auth-Id: dreamhost
-X-Decisive-Power: 6c5d186c60f78e9d_1740799255062_535815330
-X-MC-Loop-Signature: 1740799255062:2179686445
-X-MC-Ingress-Time: 1740799255062
-Received: from pdx1-sub0-mail-a310.dreamhost.com (pop.dreamhost.com
- [64.90.62.162])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.105.230.78 (trex/7.0.2);
-	Sat, 01 Mar 2025 03:20:55 +0000
-Received: from [172.16.32.88] (unknown [198.232.126.202])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	(Authenticated sender: rob@landley.net)
-	by pdx1-sub0-mail-a310.dreamhost.com (Postfix) with ESMTPSA id 4Z4Vhj4038zM9;
-	Fri, 28 Feb 2025 19:20:53 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
-	s=dreamhost; t=1740799254;
-	bh=TOF8EoDBPkgQOuWlYGr996yYxGzhWlzyrqszfM/Cblc=;
-	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
-	b=rVP6adPkMEcSvt6gI3S03II0l/k9WOLXifmOks/DkimE1I1Lfl/NIcKyFCI8yyZDA
-	 oCGf7C4NlOYl9QyUjXeq81Vm5AC9l1I4x8SjBDm762oV5Tq+cXQ0cTXS2mIDQECnl5
-	 mIBUQKfAv+6FYHQ9JWAncNVeBPLgB8vf7NRttktw55wVAHmdj/6x9uye1GZChB+xmS
-	 +x/qy3t+zpKaDAC//eC2MZfU6+pwqKvEyqvow+kZD4c6VCHE9YIfdIwnTH8ECBsO3I
-	 Yg+3bblfHwwbuDghtfvV3NHMPHAkTcoOwmgB2XJLRtH7MErKZJry8+mPQxbevf4k4x
-	 3BsI8juBJDueg==
-Message-ID: <2f96dcff-421b-4ff2-a24e-ab67d81ef698@landley.net>
-Date: Fri, 28 Feb 2025 21:20:52 -0600
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XLAcy+qL"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 74A7FC4CEE5;
+	Sun,  2 Mar 2025 12:20:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1740918021;
+	bh=g6N4TpIZBNJ6Fua7mVfbapNWidlbTbgUQQkGOYDnX5w=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=XLAcy+qLxtnm5pMuivx8y1wbx2whPxwRO/rtRwHb3XGTBqVLv3H+H+3nfqpeiVTcs
+	 Z8lfoi1AD8UU6wierd4zqGyjqm2XgDBTFpyi1W0HUpAccz8CZZfwoap8XIs48kX6CM
+	 f65c3R0PoNN+S8rIzp2IT3MHFOrvriGPG50wn0FSzq7G1E9xIH+fomhG3PH0clazK/
+	 cuQYFYDwhpmUVesZZFvWCIXQxzNrG6is9mG/+Ao0tNiCJG7f9Ytj2Gp9KWDRZSVXNh
+	 idBB961t1iIPDDhfJ52Qjsy9qgiCACyIbivPMIRAKk58il9vU7ldji9EtwFN/hvYOm
+	 zwPxA25FKE5uQ==
+Received: by pali.im (Postfix)
+	id A4C237B3; Sun,  2 Mar 2025 13:20:07 +0100 (CET)
+Date: Sun, 2 Mar 2025 13:20:07 +0100
+From: Pali =?utf-8?B?Um9ow6Fy?= <pali@kernel.org>
+To: Andrey Albershteyn <aalbersh@redhat.com>
+Cc: Amir Goldstein <amir73il@gmail.com>,
+	"Darrick J. Wong" <djwong@kernel.org>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Michal Simek <monstr@monstr.eu>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+	Helge Deller <deller@gmx.de>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Naveen N Rao <naveen@kernel.org>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
+	Max Filippov <jcmvbkbc@gmail.com>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+	=?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
+	=?utf-8?Q?G=C3=BCnther?= Noack <gnoack@google.com>,
+	Arnd Bergmann <arnd@arndb.de>, linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-security-module@vger.kernel.org, linux-api@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-xfs@vger.kernel.org,
+	Theodore Tso <tytso@mit.edu>
+Subject: Re: [PATCH v3] fs: introduce getfsxattrat and setfsxattrat syscalls
+Message-ID: <20250302122007.4oxtugidf4vxx3vy@pali>
+References: <20250211-xattrat-syscall-v3-1-a07d15f898b2@kernel.org>
+ <20250221181135.GW21808@frogsfrogsfrogs>
+ <CAOQ4uxgyYBFqkq6cQsso4LxJsPJ4uECOdskXmz-nmGhhV5BQWg@mail.gmail.com>
+ <ihkez5xfcuocis7cmipvts2vxnfan2ub5kcpvsrnzm37glwnax@nxp72byvetye>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/2] J2 Turtle Board fixes
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Artur Rojek <contact@artur-rojek.eu>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- Daniel Lezcano <daniel.lezcano@linaro.org>,
- Thomas Gleixner <tglx@linutronix.de>, Uros Bizjak <ubizjak@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>,
- "D . Jeff Dionne" <jeff@coresemi.io>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org
-References: <20250216175545.35079-1-contact@artur-rojek.eu>
- <f574808500e2c5fb733c1e5d9b4d17c2884d1b9f.camel@physik.fu-berlin.de>
- <1551804b-fc78-4a3f-add8-af693f340a01@landley.net>
- <48881e2d8efa9d7df8156f5f81cd662c2286e597.camel@physik.fu-berlin.de>
- <9cf43bbe-898f-4b29-bd85-04f5320bce77@landley.net>
- <a917c1183f85bad8af1312994d330f141c57db04.camel@physik.fu-berlin.de>
-Content-Language: en-US
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <a917c1183f85bad8af1312994d330f141c57db04.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <ihkez5xfcuocis7cmipvts2vxnfan2ub5kcpvsrnzm37glwnax@nxp72byvetye>
+User-Agent: NeoMutt/20180716
 
-On 2/28/25 16:34, John Paul Adrian Glaubitz wrote:
-> Hi,
+On Friday 28 February 2025 09:30:38 Andrey Albershteyn wrote:
+> On 2025-02-21 20:15:24, Amir Goldstein wrote:
+> > On Fri, Feb 21, 2025 at 7:13 PM Darrick J. Wong <djwong@kernel.org> wrote:
+> > >
+> > > On Tue, Feb 11, 2025 at 06:22:47PM +0100, Andrey Albershteyn wrote:
+> > > > From: Andrey Albershteyn <aalbersh@redhat.com>
+> > > >
+> > > > Introduce getfsxattrat and setfsxattrat syscalls to manipulate inode
+> > > > extended attributes/flags. The syscalls take parent directory fd and
+> > > > path to the child together with struct fsxattr.
+> > > >
+> > > > This is an alternative to FS_IOC_FSSETXATTR ioctl with a difference
+> > > > that file don't need to be open as we can reference it with a path
+> > > > instead of fd. By having this we can manipulated inode extended
+> > > > attributes not only on regular files but also on special ones. This
+> > > > is not possible with FS_IOC_FSSETXATTR ioctl as with special files
+> > > > we can not call ioctl() directly on the filesystem inode using fd.
+> > > >
+> > > > This patch adds two new syscalls which allows userspace to get/set
+> > > > extended inode attributes on special files by using parent directory
+> > > > and a path - *at() like syscall.
+> > > >
+> > > > Also, as vfs_fileattr_set() is now will be called on special files
+> > > > too, let's forbid any other attributes except projid and nextents
+> > > > (symlink can have an extent).
+> > > >
+> > > > CC: linux-api@vger.kernel.org
+> > > > CC: linux-fsdevel@vger.kernel.org
+> > > > CC: linux-xfs@vger.kernel.org
+> > > > Signed-off-by: Andrey Albershteyn <aalbersh@redhat.com>
+> > > > ---
+> > > > v1:
+> > > > https://lore.kernel.org/linuxppc-dev/20250109174540.893098-1-aalbersh@kernel.org/
+> > > >
+> > > > Previous discussion:
+> > > > https://lore.kernel.org/linux-xfs/20240520164624.665269-2-aalbersh@redhat.com/
+> > > >
+> > > > XFS has project quotas which could be attached to a directory. All
+> > > > new inodes in these directories inherit project ID set on parent
+> > > > directory.
+> > > >
+> > > > The project is created from userspace by opening and calling
+> > > > FS_IOC_FSSETXATTR on each inode. This is not possible for special
+> > > > files such as FIFO, SOCK, BLK etc. Therefore, some inodes are left
+> > > > with empty project ID. Those inodes then are not shown in the quota
+> > > > accounting but still exist in the directory. Moreover, in the case
+> > > > when special files are created in the directory with already
+> > > > existing project quota, these inode inherit extended attributes.
+> > > > This than leaves them with these attributes without the possibility
+> > > > to clear them out. This, in turn, prevents userspace from
+> > > > re-creating quota project on these existing files.
+> > > > ---
+> > > > Changes in v3:
+> > > > - Remove unnecessary "dfd is dir" check as it checked in user_path_at()
+> > > > - Remove unnecessary "same filesystem" check
+> > > > - Use CLASS() instead of directly calling fdget/fdput
+> > > > - Link to v2: https://lore.kernel.org/r/20250122-xattrat-syscall-v2-1-5b360d4fbcb2@kernel.org
+> > > > ---
+> > > >  arch/alpha/kernel/syscalls/syscall.tbl      |  2 +
+> > > >  arch/arm/tools/syscall.tbl                  |  2 +
+> > > >  arch/arm64/tools/syscall_32.tbl             |  2 +
+> > > >  arch/m68k/kernel/syscalls/syscall.tbl       |  2 +
+> > > >  arch/microblaze/kernel/syscalls/syscall.tbl |  2 +
+> > > >  arch/mips/kernel/syscalls/syscall_n32.tbl   |  2 +
+> > > >  arch/mips/kernel/syscalls/syscall_n64.tbl   |  2 +
+> > > >  arch/mips/kernel/syscalls/syscall_o32.tbl   |  2 +
+> > > >  arch/parisc/kernel/syscalls/syscall.tbl     |  2 +
+> > > >  arch/powerpc/kernel/syscalls/syscall.tbl    |  2 +
+> > > >  arch/s390/kernel/syscalls/syscall.tbl       |  2 +
+> > > >  arch/sh/kernel/syscalls/syscall.tbl         |  2 +
+> > > >  arch/sparc/kernel/syscalls/syscall.tbl      |  2 +
+> > > >  arch/x86/entry/syscalls/syscall_32.tbl      |  2 +
+> > > >  arch/x86/entry/syscalls/syscall_64.tbl      |  2 +
+> > > >  arch/xtensa/kernel/syscalls/syscall.tbl     |  2 +
+> > > >  fs/inode.c                                  | 75 +++++++++++++++++++++++++++++
+> > > >  fs/ioctl.c                                  | 16 +++++-
+> > > >  include/linux/fileattr.h                    |  1 +
+> > > >  include/linux/syscalls.h                    |  4 ++
+> > > >  include/uapi/asm-generic/unistd.h           |  8 ++-
+> > > >  21 files changed, 133 insertions(+), 3 deletions(-)
+> > > >
+> > >
+> > > <cut to the syscall definitions>
+> > >
+> > > > diff --git a/fs/inode.c b/fs/inode.c
+> > > > index 6b4c77268fc0ecace4ac78a9ca777fbffc277f4a..b2dddd9db4fabaf67a6cbf541a86978b290411ec 100644
+> > > > --- a/fs/inode.c
+> > > > +++ b/fs/inode.c
+> > > > @@ -23,6 +23,9 @@
+> > > >  #include <linux/rw_hint.h>
+> > > >  #include <linux/seq_file.h>
+> > > >  #include <linux/debugfs.h>
+> > > > +#include <linux/syscalls.h>
+> > > > +#include <linux/fileattr.h>
+> > > > +#include <linux/namei.h>
+> > > >  #include <trace/events/writeback.h>
+> > > >  #define CREATE_TRACE_POINTS
+> > > >  #include <trace/events/timestamp.h>
+> > > > @@ -2953,3 +2956,75 @@ umode_t mode_strip_sgid(struct mnt_idmap *idmap,
+> > > >       return mode & ~S_ISGID;
+> > > >  }
+> > > >  EXPORT_SYMBOL(mode_strip_sgid);
+> > > > +
+> > > > +SYSCALL_DEFINE4(getfsxattrat, int, dfd, const char __user *, filename,
+> > > > +             struct fsxattr __user *, fsx, unsigned int, at_flags)
+> > >
+> > > Should the kernel require userspace to pass the size of the fsx buffer?
+> > > That way we avoid needing to rev the interface when we decide to grow
+> > > the structure.
+> > >
+> > 
+> > This makes sense to me, but I see that Andreas proposed other ways,
+> > as long as we have a plan on how to extend the struct if we need more space.
+> > 
+> > Andrey, I am sorry to bring this up in v3, but I would like to request
+> > two small changes before merging this API.
+> > 
+> > This patch by Pali [1] adds fsx_xflags_mask for the filesystem to
+> > report the supported set of xflags.
+> > 
+> > It was argued that we can make this change with the existing ioctl,
+> > because it is not going to break xfs_io -c lsattr/chattr, which is fine,
+> > but I think that we should merge the fsx_xflags_mask change along
+> > with getfsxattrat() which is a new UAPI.
+> > 
+> > The second request is related to setfsxattrat().
+> > With current FS_IOC_FSSETXATTR, IIUC, xfs ignores unsupported
+> > fsx_xflags. I think this needs to be fixed before merging setfsxattrat().
+> > It's ok that a program calling FS_IOC_FSSETXATTR will not know
+> > if unsupported flags will be ignored, because that's the way it is,
+> > but I think that setfsxattrat() must return -EINVAL for trying to
+> > set unsupported xflags.
+> > 
+> > As I explained in [2] I think it is fine if FS_IOC_FSSETXATTR
+> > will also start returning -EINVAL for unsupported flags, but I would
+> > like setfsxattrat() to make that a guarantee.
+> > 
+> > There was an open question, what does fsx_xflags_mask mean
+> > for setfsxattrat() - it is a mask like in inode_set_flags() as Andreas
+> > suggested? I think that would be a good idea.
+> > 
+> > Thanks,
+> > Amir.
+> > 
+> > [1] https://lore.kernel.org/linux-fsdevel/20250216164029.20673-4-pali@kernel.org/
+> > [2] https://lore.kernel.org/linux-fsdevel/CAOQ4uxjwQJiKAqyjEmKUnq-VihyeSsxyEy2F+J38NXwrAXurFQ@mail.gmail.com/
+> > 
 > 
-> On Fri, 2025-02-28 at 16:19 -0600, Rob Landley wrote:
->> The march 2024 rebuild was in response to that Feb 2024 bugfix, so it
->> _should_ have the fix? (I'm waiting for another musl release to rebuild
->> them again...)
->>
->> I just downloaded the toolchain currently at that URL and built mkroot
->> and it worked for me:
->>
->> Run /init as init process
->> sntp: time.google.com:123: Try again
->> Type exit when done.
->> $ cat /proc/version
->> Linux version 6.14.0-rc3 (landley@driftwood) (sh2eb-linux-muslfdpic-cc
->> (GCC) 11.2.0, GNU ld (GNU Binutils) 2.33.1) #1 SMP Fri Feb 28 15:47:36
->> CST 2025
+> I'm fine with making Pali's patchset a dependency for this syscall,
+> as if vfs_fileattr_set() will start returning EINVAL on unsupported
+> flags this syscall will pass it through (ioctls will need to ignore
+> it). And as these syscalls use fsxattr anyway the fsx_xflags_mask
+> field will be here.
 > 
-> Is that on Toybox git HEAD?
-
-Yes. Commit b4fd71d18f84.
-
->> And the failure _without_ the fix was deterministic rather than
->> intermittent, so...
->>
->> Keep in mind the init script has a 3 second timeout trying to call sntp
->> to set the clock, which will fail if the ethernet isn't connected (or no
->> driver, or no internet...)
+> -- 
+> - Andrey
 > 
-> I'll try again this weekend. Also, I will review and pick up the fix.
 
-Ok. (I'm available Saturday if you need to poke me, but traveling sunday.)
+Hello Andrey, if I understand correctly then it is needed for new
+setfsxattrat() call to return EINVAL on any unsupported flags since
+beginning.
 
->> P.S. Speaking of intermittent, I hit that hang after "clocksource:
->> Switched to clocksource jcore_pit_cs" on one attempt just now. I should
->> sit down with the engineers next time I'm in japan and try to root cause
->> it. The scheduler fires reliably, so it's _probably_ not a hardware
->> issue? We've had Linux uptime of over a year, not just idle but running
->> an energy monitoring app, so it's pretty stable in our systems...
-> 
-> I thought it was a software issue?
-
-I agree. That's why I said it's probably not a hardware issue. (The 
-config has NO_HZ_IDLE so if the PIT didn't fire reliably when 
-reprogrammed the scheduler would flake, and it's not, so...)
-
-> Adrian
-
-Rob
+Then I could extend it for new flags without breaking backward
+or forward compatibility of the setfsxattrat() call.
