@@ -1,142 +1,168 @@
-Received: from pandora.armlinux.org.uk (pandora.armlinux.org.uk [78.32.30.218])
+Received: from relay4-d.mail.gandi.net (relay4-d.mail.gandi.net [217.70.183.196])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE391199FBA;
-	Tue, 11 Mar 2025 22:06:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=78.32.30.218
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C4D9B7B3E1;
+	Tue, 11 Mar 2025 23:40:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.196
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1741730784; cv=none; b=YHCBTqvoymG0w3fwSHvUnPaeVnbt1zkNElUXgvLHIOSSNwtCiYpheK+SF/FFH5kKna95M6EsPJCi7xz2nf2h/PgLWVeLUoWuDa5mDhw8W6DiWCONg0koMGnpSwl0dr/CWddhFKBaZgAwqQ27cRqlDWDAqpap+WMjbJurOhuwQ8c=
+	t=1741736447; cv=none; b=V07suV6qlfUnyK8awJ0SbhDE2CnPTF/vqP07a70wS+Pvkn10F+FZDLEYfvtdHqDVPnNp/1ierfqfbZvgNLJMWOEXNW2HCSBBrEjbGWaN3JIqpXMBR8HT1Mb10jTi4PYaLTK9nhHs0CNrekK20OIybzj39OYZp4f/1OTTfAyWnbA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1741730784; c=relaxed/simple;
-	bh=1FsEAoBQCwul9SXkYZakBAby+nof+BFT5YLa9ZLbmWo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=jE5bBFsU4YQI5slNlwSO4amX1ivljkuFZHYXDhy4K2frMb6sbqTYqeyyExw/IhYSZi7Dvo4UFJyk3lZJHGqEN9ZpbhBogVuvoTzcTmYqB9thFvFWzM2Se1e7cCf8GWeLqogCXL/azMkhWpuEMSun2TuuByr5FTr9aithxY12Wq8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=armlinux.org.uk; spf=none smtp.mailfrom=armlinux.org.uk; dkim=pass (2048-bit key) header.d=armlinux.org.uk header.i=@armlinux.org.uk header.b=JMh6fI6C; arc=none smtp.client-ip=78.32.30.218
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=armlinux.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=armlinux.org.uk
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=armlinux.org.uk header.i=@armlinux.org.uk header.b="JMh6fI6C"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=armlinux.org.uk; s=pandora-2019; h=Sender:In-Reply-To:Content-Type:
-	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-	Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-	List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=VEtYjw1bJy2FyEgqNltD6h1CKY3ei2RKfjZVJcAYac8=; b=JMh6fI6ClsD77q6QFlO594QFyv
-	sKF4LPcJaQcTQzRqy28KBHvEvNbva/Q4T4karOQKqy3zGz5C6FZf26kql8lG10rd/yWDclC8ace2t
-	E8nv+RSCOd4MSUMTE37Jd6pwCjUlHw6IB88o86uJeQeu1vXLQvCcelUpTMH5zI9UW1Ln/0xzTIYnc
-	+ZxX47CDZdxAPYKw9IFXZpxwHKBPV2C5StuOVk/ouA+IPkzqmTobJn+hz8OlhffXTedE2VG2aUA6F
-	6ipRngplcXCrRC298lr1CqzLj89tc6A4tBT19pldI+iCk9Vc5UcPgIif4YSb1J3UDshYyiuaHWSri
-	JsTs7FhA==;
-Received: from shell.armlinux.org.uk ([fd8f:7570:feb6:1:5054:ff:fe00:4ec]:38464)
-	by pandora.armlinux.org.uk with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.96)
-	(envelope-from <linux@armlinux.org.uk>)
-	id 1ts7j7-0004gC-0h;
-	Tue, 11 Mar 2025 22:05:29 +0000
-Received: from linux by shell.armlinux.org.uk with local (Exim 4.96)
-	(envelope-from <linux@shell.armlinux.org.uk>)
-	id 1ts7j4-0003rB-0F;
-	Tue, 11 Mar 2025 22:05:26 +0000
-Date: Tue, 11 Mar 2025 22:05:25 +0000
-From: "Russell King (Oracle)" <linux@armlinux.org.uk>
-To: Mark Brown <broonie@kernel.org>
-Cc: Mike Rapoport <rppt@kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
-	Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Dinh Nguyen <dinguyen@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Gerald Schaefer <gerald.schaefer@linux.ibm.com>,
-	Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
-	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
-	Ingo Molnar <mingo@redhat.com>,
-	Jiaxun Yang <jiaxun.yang@flygoat.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Michal Simek <monstr@monstr.eu>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Richard Weinberger <richard@nod.at>,
-	Stafford Horne <shorne@gmail.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>,
-	Will Deacon <will@kernel.org>, linux-alpha@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-	linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-	linux-arch@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org
-Subject: Re: [PATCH 10/13] arch, mm: set high_memory in free_area_init()
-Message-ID: <Z9CzpTlA2e0jR7UJ@shell.armlinux.org.uk>
-References: <20250306185124.3147510-1-rppt@kernel.org>
- <20250306185124.3147510-11-rppt@kernel.org>
- <cee346ec-5fa5-4d0b-987b-413ee585dbaa@sirena.org.uk>
- <Z9Cl8JKkRGhaRrgM@kernel.org>
- <5e40219b-f149-4e0f-aa10-c09fa183945e@sirena.org.uk>
+	s=arc-20240116; t=1741736447; c=relaxed/simple;
+	bh=cEAkLUL/KTEhx1CxNQ9t/SS2CT0SmbpUmlzNz9Bumns=;
+	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
+	 Message-ID:Content-Type; b=T3hbsvJuQfsFn/X2bNLEvA+GwwrVI2zScCAXIzG1iWgCH7x+Yc/abc+yjfBGtSR57JIcXgSNB6M1XeLyXbFvh8hGgUyNVjrFDzmJewncOt8SAAj+sbUdtFPViyt2K63b7PP/I/Nymc+UAIav7cogZoXi+CPTSZq2zpu7syP5BEk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.183.196
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
+Received: by mail.gandi.net (Postfix) with ESMTPSA id 2FD35433EB;
+	Tue, 11 Mar 2025 23:40:40 +0000 (UTC)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <5e40219b-f149-4e0f-aa10-c09fa183945e@sirena.org.uk>
-Sender: Russell King (Oracle) <linux@armlinux.org.uk>
+Date: Wed, 12 Mar 2025 00:40:40 +0100
+From: Artur Rojek <contact@artur-rojek.eu>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
+ <dalias@libc.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas
+ Gleixner <tglx@linutronix.de>, Uros Bizjak <ubizjak@gmail.com>, Geert
+ Uytterhoeven <geert+renesas@glider.be>, "D . Jeff Dionne"
+ <jeff@coresemi.io>, Rob Landley <rob@landley.net>, linux-sh@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/2] sh: align .bss section padding to 8-byte boundary
+In-Reply-To: <5365422a9715376c76a89e255c978fc39064e243.camel@physik.fu-berlin.de>
+References: <20250216175545.35079-1-contact@artur-rojek.eu>
+ <20250216175545.35079-2-contact@artur-rojek.eu>
+ <5365422a9715376c76a89e255c978fc39064e243.camel@physik.fu-berlin.de>
+Message-ID: <433bc8a0732bf8a63c64c4bf0e6ad4a7@artur-rojek.eu>
+X-Sender: contact@artur-rojek.eu
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+X-GND-State: clean
+X-GND-Score: -100
+X-GND-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgdduvdefheegucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuifetpfffkfdpucggtfgfnhhsuhgsshgtrhhisggvnecuuegrihhlohhuthemuceftddunecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjughrpeggfffhvfevufgjfhfkgigtgfesthejjhdttddtvdenucfhrhhomheptehrthhurhcutfhojhgvkhcuoegtohhnthgrtghtsegrrhhtuhhrqdhrohhjvghkrdgvuheqnecuggftrfgrthhtvghrnhepvdfffeevuddvudethfeugfektdektdduuedvgfetfeefudetgfdvveeiieeiheeknecuffhomhgrihhnpehlughsrdhssgenucfkphepuddtrddvtddtrddvtddurdduleenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepihhnvghtpedutddrvddttddrvddtuddrudelpdhhvghlohepfigvsghmrghilhdrghgrnhguihdrnhgvthdpmhgrihhlfhhrohhmpegtohhnthgrtghtsegrrhhtuhhrqdhrohhjvghkrdgvuhdpnhgspghrtghpthhtohepuddupdhrtghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinhdruggvpdhrtghpthhtohephihsrghtohesuhhsvghrshdrshhouhhrtggvfhhorhhgvgdrjhhppdhrtghpthhtohepuggrlhhirghssehlihgstgdrohhrghdprhgtphhtthhopegurghnihgvlhdrlhgviigtrghnoheslhhinhgrrhhordhorhhgpdhrtghpthhtohept
+ hhglhigsehlihhnuhhtrhhonhhigidruggvpdhrtghpthhtohepuhgsihiijhgrkhesghhmrghilhdrtghomhdprhgtphhtthhopehgvggvrhhtodhrvghnvghsrghssehglhhiuggvrhdrsggvpdhrtghpthhtohepjhgvfhhfsegtohhrvghsvghmihdrihho
+X-GND-Sasl: contact@artur-rojek.eu
 
-On Tue, Mar 11, 2025 at 09:33:29PM +0000, Mark Brown wrote:
-> [    0.000000] Booting Linux on physical CPU 0x0
-> [    0.000000] Linux version 6.14.0-rc6-next-20250311 (tuxmake@tuxmake) (arm-linux-gnueabihf-gcc (Debian 13.3.0-5) 13.3.0, GNU ld (GNU Binutils for Debian) 2.43.1) #1 SMP @1741691801
-> [    0.000000] CPU: ARMv7 Processor [414fc0f0] revision 0 (ARMv7), cr=10c5387d
-> [    0.000000] CPU: div instructions available: patching division code
-> [    0.000000] CPU: PIPT / VIPT nonaliasing data cache, PIPT instruction cache
-> [    0.000000] OF: fdt: Machine model: linux,dummy-virt
-> [    0.000000] random: crng init done
-> [    0.000000] earlycon: pl11 at MMIO 0x09000000 (options '')
-> [    0.000000] printk: legacy bootconsole [pl11] enabled
-> [    0.000000] Memory policy: Data cache writealloc
-> [    0.000000] efi: UEFI not found.
-> [    0.000000] cma: Reserved 64 MiB at 0x00000000
+On 2025-03-11 18:28, John Paul Adrian Glaubitz wrote:
+> Hi Artur,
 
-If that CMA address is correct, then it's wrong. virt machines start
-DRAM at 0x40000000. This is a small memory VM:
+Hey Adrian,
+thanks for looking into this patch.
 
-[    0.000000] Zone ranges:
-[    0.000000]   Normal   [mem 0x0000000040000000-0x0000000045ffffff]
-[    0.000000]   HighMem  empty
+> 
+> I'm currently trying to review this patch, but I'm not 100% sure how it
+> this change helps grows the .bss section, see below. Maybe you can help
+> me understand what's happening.
+> 
+> On Sun, 2025-02-16 at 18:55 +0100, Artur Rojek wrote:
+>> J2 based devices expect to find a devicetree blob at the end of the 
+>> bss
+>> section. As of a77725a9a3c5, libfdt enforces 8-byte alignment for the
+>> dtb, causing J2 devices to fail early in sh_fdt_init.
+>> 
+>> As J2 loader firmware calculates the dtb location based on the kernel
+>> image .bss section size, rather than the __bss_stop symbol offset, the
+>> required alignment can't be enforced with BSS_SECTION(0, PAGE_SIZE, 
+>> 8).
+>> Instead, inline modified version of the above macro, which grows .bss
+>> by the required size.
+>> 
+>> While this change affects all existing SH boards, it should be benign 
+>> on
+>> platforms which don't need this alignment.
+>> 
+>> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+>> ---
+>>  arch/sh/kernel/vmlinux.lds.S | 15 ++++++++++++++-
+>>  1 file changed, 14 insertions(+), 1 deletion(-)
+>> 
+>> diff --git a/arch/sh/kernel/vmlinux.lds.S 
+>> b/arch/sh/kernel/vmlinux.lds.S
+>> index 9644fe187a3f..008c30289eaa 100644
+>> --- a/arch/sh/kernel/vmlinux.lds.S
+>> +++ b/arch/sh/kernel/vmlinux.lds.S
+>> @@ -71,7 +71,20 @@ SECTIONS
+>> 
+>>  	. = ALIGN(PAGE_SIZE);
+>>  	__init_end = .;
+>> -	BSS_SECTION(0, PAGE_SIZE, 4)
+>> +	__bss_start = .;
+>> +	SBSS(0)
+>> +	. = ALIGN(PAGE_SIZE);
+> 
+> What this effectively does is removing ". = ALIGN(sbss_align);" first 
+> from BSS_SECTION().
+> 
+> Then it inserts ". = ALIGN(PAGE_SIZE);" after the "SBSS(0)".
+> 
+> If I understand this correctly, SBSS() inserts a zero-padding and if 
+> I'm not mistaken,
+> inserting ". = ALIGN(PAGE_SIZE);" will cause this padding to grow to at 
+> least PAGE_SIZE
+> due the alignment.
+> 
+> Is this correct?
+> 
+>> +	.bss : AT(ADDR(.bss) - LOAD_OFFSET) {
+>> +		BSS_FIRST_SECTIONS
+>> +		. = ALIGN(PAGE_SIZE);
+>> +		*(.bss..page_aligned)
+>> +		. = ALIGN(PAGE_SIZE);
+>> +		*(.dynbss)
+>> +		*(BSS_MAIN)
+>> +		*(COMMON)
+>> +		. = ALIGN(8);
+> 
+> If my understanding above is correct, why do we will need an additional 
+> ". = ALIGN(8)"
+> here?
 
-and this is a larger memory VM:
+I'll tackle both of the above questions at once.
+I'm by no means an expert at GNU Linker syntax, but the intention of
+this patch is to put . = ALIGN(8) inside the .bss : { ... } section
+definition, so that the section itself grows by the requested padding.
 
-[    0.000000] Zone ranges:
-[    0.000000]   Normal   [mem 0x0000000040000000-0x000000006fffffff]
-[    0.000000]   HighMem  [mem 0x0000000070000000-0x000000007fffffff]
+In the original BSS_SECTION(0, PAGE_SIZE, 4), the last argument inserts
+a 4 byte padding after the closing brace of .bss section definition,
+causing the __bss_stop symbol offset to grow, but not the .bss section
+itself:
 
-Neither have CMA enabled (it's not necessary for a VM).
+#define BSS_SECTION(sbss_align, bss_align, stop_align)			\
+	. = ALIGN(sbss_align);						\
+	__bss_start = .;						\
+	SBSS(sbss_align)						\
+	BSS(bss_align)							\
+	. = ALIGN(stop_align);						\
+	__bss_stop = .;
 
-On a real platform where CMA and highmem is enabled, then:
+TurtleBoard loader is only concerned with the .bss section size - it
+doesn't care about any symbol offsets - and hence this seemingly cryptic
+change (you can display the section size information with
+readelf -t kernel_image).
+The rest of the changes are simply to "inline" the BSS() macro (as I
+needed to access that closing brace), and the former sbss_align,
+bss_align (that's your PAGE_SIZE) and stop_align arguments are passed
+accordingly, the same way they used to be passed before. The only
+visible effect should be the move of ALIGN(stop_align) inside of .bss
+section definition, and the change of stop_align value from 4 to 8.
 
-[    0.000000] cma: Reserved 16 MiB at 0x4f000000 on node -1
-[    0.000000] Zone ranges:
-[    0.000000]   Normal   [mem 0x0000000010000000-0x000000003fffffff]
-[    0.000000]   HighMem  [mem 0x0000000040000000-0x000000004fffffff]
+Arguably the TurtleBoard loader should read the __bss_stop symbol offset
+instead, but in this patch I'm trying to solve the issue from kernel's
+point of view.
 
-So that "cma:" line you are seeing is indicating that something is very
-very wrong - it should definitely not be zero.
+Cheers,
+Artur
 
--- 
-RMK's Patch system: https://www.armlinux.org.uk/developer/patches/
-FTTP is here! 80Mbps down 10Mbps up. Decent connectivity at last!
+> 
+>> +	}
+>> +	__bss_stop = .;
+>>  	_end = . ;
+>> 
+>>  	STABS_DEBUG
+> 
+> Thanks,
+> Adrian
