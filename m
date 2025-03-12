@@ -1,157 +1,167 @@
-Received: from mail-lj1-f175.google.com (mail-lj1-f175.google.com [209.85.208.175])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B1E123C8AF;
-	Wed, 12 Mar 2025 09:55:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.175
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D581F23E33F;
+	Wed, 12 Mar 2025 15:26:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1741773354; cv=none; b=LGUXln1MF9tO+YG9i1mCUaY4lgdbhTco1o/k/cix+9LbvTY3Hgau6I5QOWcTkB2N4p5XaOABu6V4+j499RojTFkIXsyDc74g3TI5WvgO74PhQkV4u+wd/9xxYdX4NJOEzcRQoJJapfzzyq/1vxt6OXjfE1sM5E3xjIquVHFM1B4=
+	t=1741793180; cv=none; b=aqil8AIHOJDD1Km5UqTL/ph0h2l6lzt8KRkfKj5UCCVWxUS5Qck+E/RzuNsUTID9x38DqjObD9G4N0w9Fx2FWqtxYiu2Jl7HffQ8SaRScfCYVgCZgLppM1kp1/ZKTtCT4sBZ0CJne26G5mmisGwVziSsrlkAzdnfs8zq34FEyVI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1741773354; c=relaxed/simple;
-	bh=wM2HN1jol78lBKJONHq0uwXK+aLeXlK9dWyj0d8vnzw=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=BoUp+1f4ra4OzzRzhA8otuRxeJztidlUZtC/S6bDWI6Jt//6bs9DeCg0ALOfFAO7/igu/q/A251IdKljpiaxWzRFHMNrvPNvyD5Fhsg5B1jzaDn+mxw1d0LfiGWmYrJtRN1Etn/rTo1F6gRNSpMQEa31O+CqHQ8pSPXfrV/7sqE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=c7dpckgy; arc=none smtp.client-ip=209.85.208.175
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1741793180; c=relaxed/simple;
+	bh=Q7awIL7HKUND4G5BgT8sxgfvPYxZ5dldw9MgDhs69ls=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=fvlOj8xDiy39wtexLiuc8/e4guuSZNCJajkCPIUiGsXCuvTJfAvU/OqX55lXa7SLnO0gg7EmZ0Y7gquwiS8n/T+OPIng0G1VLYGngXzlpdLRJ431baq8zeUnUXeqTNzXFZu+jLknrh9LrbUGdSTVNkFiT+zrWb/sDtI7jwFGOk4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ky/BCax3; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="c7dpckgy"
-Received: by mail-lj1-f175.google.com with SMTP id 38308e7fff4ca-30bf3f3539dso6960371fa.1;
-        Wed, 12 Mar 2025 02:55:51 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1741773350; x=1742378150; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=hxtLMkmvM1PHAfvgTkxjLhwip9CJUtQkdApYBOtXlFQ=;
-        b=c7dpckgykHIkOa66fAYLtaIagZdQjcGxL5x7YKGDHMiZ5LnioKJILA4ZR0Njdfa0xb
-         2aNsDH6DzT9TI9b8UmNiAnvjX1RgHkC1ArfEo3FJ9GfFcYn/qCLGIK3xmQ7NLB2OWU6f
-         NbajJ3VAFkLjDf/UdZlTom/hm5SC11fSgGwMd3AswNxprRNCep+NTNtL4qJFWGDJr9g7
-         EysRG++OURx1tZNlRuUZZCHLPbTOebyc+yj9C5qmSYJR1hBGPOOXWwoAn579EjD97BBq
-         QphWuYNqgokCuvxrXlIT+5L6r8ZPvVP+QywH6DqeCe8YKkA6ax1WK6+slgoLDcg7dRIo
-         cAuw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1741773350; x=1742378150;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=hxtLMkmvM1PHAfvgTkxjLhwip9CJUtQkdApYBOtXlFQ=;
-        b=R9+WNuwwka7WFteSeh2XmYfOLyczedV6eU8UK2tGyj2M5DkoLSwsKxSrNbJxK8oduX
-         wwmKCWH3nzHjOfLxtIRBRFU0uly5iFHk39vtxoQMog3nGf9wMICCLLgnAE5TFJz8nbN2
-         JMHnaZ19BE92tt0iU61NXy7fmrGMhpg8FfftWcekpk2YHhzcMUdyluyJZF/HxIBvixct
-         BabkevQOUGmetf37UrPu7qrSl/k3Le10xoHk9tiP35HBaDzismeKxcPsEAqfmK++NIPZ
-         S/25bZfpKzWhKGr2yf1Tt0zTB6H7o8fWBoK3nprul0/xqL6RwDLK15spWaL5smzsZh47
-         Oa6w==
-X-Forwarded-Encrypted: i=1; AJvYcCVpPcehmJ0BMIm99imUHA78DyJrcEWMScSQ562uchI1FkIMtFUhAUmZ1KDYgXSb/8jymNX8A2iNvhw=@vger.kernel.org, AJvYcCXiY4IX2Jes+yS7KvOAque5eykhcqQJC493HwZ//DpZ0RbAOZTBPAbnvVFdR01lxMRUmaWyHf1r1l/WoYQ=@vger.kernel.org
-X-Gm-Message-State: AOJu0YwOhq9FUATcKBftq421I9fsCv8t9RjLQNDFe8dkLggfvmMdRNlQ
-	7UM4mTchU7tQtQXpoRTdudeVuwIrR2JhGnbzC33u+PC22+M4x7b2BfbcbwDHd0RrEE8gDhbpIwr
-	vReLs/1Qx7pgwgvODqjKK5lGSQeo=
-X-Gm-Gg: ASbGnctQfYLxxFv2nB8mar8OA6KGfcMXi9emRs0IGnCAtsDasU9TX8FJ3FOTL/JUt69
-	TIaArXDv4sonCCD7KHPLqNPyXXdZ+TyPcsC91Jz2FX6FBXU1HGgdhEApCGXF3tx1gBwlKsMgJZE
-	sJGIewrV7FrW47PeGr7zcMdWsFVw==
-X-Google-Smtp-Source: AGHT+IHc8Gi9SKOIsVlFCkkx6o96+MJgAWMgmEsek7pgXRVnRGL88Fz9vN1fXvRgOtct8JJ9We05PebnUBB7GGy67Xk=
-X-Received: by 2002:a2e:7006:0:b0:30b:f599:d78f with SMTP id
- 38308e7fff4ca-30c20e883a0mr25759501fa.7.1741773349935; Wed, 12 Mar 2025
- 02:55:49 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ky/BCax3"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9E2A9C4CEDD;
+	Wed, 12 Mar 2025 15:26:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1741793179;
+	bh=Q7awIL7HKUND4G5BgT8sxgfvPYxZ5dldw9MgDhs69ls=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=ky/BCax3DFeowvZEZBaSvHz/FRjz1Ff2w3mZvorveefBQ9QItq7spH+9lPk04kMHc
+	 XFcWV+q8BLDxTsMg3kWEEMrJvLlM02Ov9qT4y5J6eushhPAVsWOV5ed7v5on6xpI5H
+	 t1Jida96hvmMXnQmaaYU62DS/XhHnkqgw1xy5aAbcXTY7h92ihBZ7RpuPzMnvvZIID
+	 4Llux6n6amMPvoDVic/J1BHmAr19Dq0COPgBWULz9Gberd6x0wlqoRfavURfSg5lJv
+	 0Xm3eB6wpryKJveHw8pu/I7JXnt8N5CGgjBp/ANgLyo/AFa/GXs+sbZv0RiHoWV9rf
+	 Q6NAbrOOruTNw==
+Date: Wed, 12 Mar 2025 15:26:05 +0000
+From: Mark Brown <broonie@kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
+	Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Gerald Schaefer <gerald.schaefer@linux.ibm.com>,
+	Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
+	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Jiaxun Yang <jiaxun.yang@flygoat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Michal Simek <monstr@monstr.eu>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>,
+	Stafford Horne <shorne@gmail.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>,
+	Will Deacon <will@kernel.org>, linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+	linux-arch@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
+	Mike Rapoport <rppt@kernel.org>
+Subject: Re: [PATCH 10/13] arch, mm: set high_memory in free_area_init()
+Message-ID: <6d3be692-3dc3-400c-8eeb-3d378adc8dbe@sirena.org.uk>
+Mail-Followup-To: Geert Uytterhoeven <geert@linux-m68k.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
+	Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Gerald Schaefer <gerald.schaefer@linux.ibm.com>,
+	Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
+	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Jiaxun Yang <jiaxun.yang@flygoat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Michal Simek <monstr@monstr.eu>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>,
+	Stafford Horne <shorne@gmail.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>,
+	Will Deacon <will@kernel.org>, linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+	linux-arch@vger.kernel.org, linux-mm@kvack.org, x86@kernel.org,
+	Mike Rapoport <rppt@kernel.org>
+References: <20250306185124.3147510-1-rppt@kernel.org>
+ <20250306185124.3147510-11-rppt@kernel.org>
+ <cee346ec-5fa5-4d0b-987b-413ee585dbaa@sirena.org.uk>
+ <Z9Cl8JKkRGhaRrgM@kernel.org>
+ <5e40219b-f149-4e0f-aa10-c09fa183945e@sirena.org.uk>
+ <CAMuHMdUGnBeo69NkYsv35YHp6H9GJSu-hoES2A8_0WhpX1zFhQ@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250216175545.35079-1-contact@artur-rojek.eu>
- <20250216175545.35079-2-contact@artur-rojek.eu> <5365422a9715376c76a89e255c978fc39064e243.camel@physik.fu-berlin.de>
- <433bc8a0732bf8a63c64c4bf0e6ad4a7@artur-rojek.eu> <967e29681c8bc39edfdd9c645d943f17d341c2ae.camel@physik.fu-berlin.de>
- <CAFULd4b8+HsmJC2XkW50pxtw=fHNrL9gH1_WM90jh+rfLCbSHw@mail.gmail.com> <CAMuHMdXaw117mimN_7UgwbfbG9grVg09WfjKa2Lz4eGqM24EvA@mail.gmail.com>
-In-Reply-To: <CAMuHMdXaw117mimN_7UgwbfbG9grVg09WfjKa2Lz4eGqM24EvA@mail.gmail.com>
-From: Uros Bizjak <ubizjak@gmail.com>
-Date: Wed, 12 Mar 2025 10:55:56 +0100
-X-Gm-Features: AQ5f1JolTJVJhN2SYtghi2NyeluvO7V1pNUB6NL8-ykasafaE2lYgryvCC9OYyU
-Message-ID: <CAFULd4YhqH=5eEptwqSFrH=x02W7VKeuca-zBthS_ckLjHWN8g@mail.gmail.com>
-Subject: Re: [PATCH 1/2] sh: align .bss section padding to 8-byte boundary
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Artur Rojek <contact@artur-rojek.eu>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, 
-	Geert Uytterhoeven <geert+renesas@glider.be>, "D . Jeff Dionne" <jeff@coresemi.io>, 
-	Rob Landley <rob@landley.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="auPMsTU3HApbt9PI"
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdUGnBeo69NkYsv35YHp6H9GJSu-hoES2A8_0WhpX1zFhQ@mail.gmail.com>
+X-Cookie: You will outgrow your usefulness.
 
-On Wed, Mar 12, 2025 at 10:47=E2=80=AFAM Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
->
-> Hi Uros,
->
-> On Wed, 12 Mar 2025 at 09:32, Uros Bizjak <ubizjak@gmail.com> wrote:
-> > On Wed, Mar 12, 2025 at 9:22=E2=80=AFAM John Paul Adrian Glaubitz
-> > <glaubitz@physik.fu-berlin.de> wrote:
-> > > > In the original BSS_SECTION(0, PAGE_SIZE, 4), the last argument ins=
-erts
-> > > > a 4 byte padding after the closing brace of .bss section definition=
-,
-> > > > causing the __bss_stop symbol offset to grow, but not the .bss sect=
-ion
-> > > > itself:
-> > > >
-> > > > #define BSS_SECTION(sbss_align, bss_align, stop_align)             =
-           \
-> > > >       . =3D ALIGN(sbss_align);                                     =
-     \
-> > > >       __bss_start =3D .;                                           =
-     \
-> > > >       SBSS(sbss_align)                                             =
-   \
-> > > >       BSS(bss_align)                                               =
-   \
-> > > >       . =3D ALIGN(stop_align);                                     =
-     \
-> > > >       __bss_stop =3D .;
-> > >
-> > > OK, that's really odd. So, the __bss_stop would be moved to the desir=
-ed
-> > > position but the section itself still remains small? What exactly doe=
-s the
-> > > linker fill the region with? Sounds very strange.
-> > >
-> > > > TurtleBoard loader is only concerned with the .bss section size - i=
-t
-> > > > doesn't care about any symbol offsets - and hence this seemingly cr=
-yptic
-> > > > change (you can display the section size information with
-> > > > readelf -t kernel_image).
-> > >
-> > > Looking at the actual kernel image with readelf is a very good sugges=
-tion!
-> > >
-> > > > The rest of the changes are simply to "inline" the BSS() macro (as =
-I
-> > > > needed to access that closing brace), and the former sbss_align,
-> > > > bss_align (that's your PAGE_SIZE) and stop_align arguments are pass=
-ed
-> > > > accordingly, the same way they used to be passed before. The only
-> > > > visible effect should be the move of ALIGN(stop_align) inside of .b=
-ss
-> > > > section definition, and the change of stop_align value from 4 to 8.
-> > >
-> > > OK. FWIW, do you understand what SBSS is for? I couldn't find any exp=
-lanation
-> > > for it.
-> >
-> > Small BSS section. The compiler can put data objects under a certain
-> > size threshold to the .sbss section. Looking at GCC sh config, sh does
-> > not use this section.
->
-> Hence the moment gcc (or clang) starts using that section, the
-> TurtleBoard loader is broken again...
 
-Rest assured that the compiler won't just magically start using SBSS.
-This is part of an ABI and in case ABI allows SBSS, the compiler needs
-something like:
+--auPMsTU3HApbt9PI
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-  if (in_small_data)
-    switch_to_section (get_named_section (NULL, ".sbss", 0));
+On Tue, Mar 11, 2025 at 10:41:28PM +0100, Geert Uytterhoeven wrote:
+> On Tue, 11 Mar 2025 at 22:33, Mark Brown <broonie@kernel.org> wrote:
 
-when emitting the declaration.
+> > [    0.000000] efi: UEFI not found.
+> > [    0.000000] cma: Reserved 64 MiB at 0x00000000
 
-Uros.
+> > - I'd only been sampling the logs for the physical platforms, none of
+> > which had shown anything.
+
+> Hangs that early need "earlycon", which the qemu boot above does have.
+
+Indeed, the physical platforms either don't support earlycon or I just
+don't wire it up as standard in my CI.  I see a fix should already be on
+the way, but FWIW the physical platforms do seem to have bisected to the
+same commit.
+
+--auPMsTU3HApbt9PI
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAABCgAdFiEEreZoqmdXGLWf4p/qJNaLcl1Uh9AFAmfRp40ACgkQJNaLcl1U
+h9ClrAf9FHrCQNmJXN4iyTK9lTj/btaMWsS34HTwQo5atjLix3MlaM4Oe1X8wWdQ
+rSJgppPAE2cv7YjUDvJGyXeNJEiBsMtnourIYIcXwHIlSknwUTW93aLuOShlc+KF
+iC2gJoynMVm1M0mcCvUSxVXjQXN1rxY3pcXLx99UJqFnR+uWkHqfKq18AdWJzzrD
+MwKz6EmBguL6eE0EstxjYPLlpJ3iYWORVdj2/2h3DYrRMLDlV+dm/xW9xGlq5sxJ
+c/3bxdgHyKWQqTxjQsPQKSz99U2Amjx1VloV+6yG9htGbdo+yNQv+tUP20dHw9c8
+ECZ91Jtf4LTcMPjk/IfIVIr0Hu3V3w==
+=0Ulf
+-----END PGP SIGNATURE-----
+
+--auPMsTU3HApbt9PI--
