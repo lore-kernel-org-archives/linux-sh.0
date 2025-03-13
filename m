@@ -1,172 +1,117 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj1-f44.google.com (mail-pj1-f44.google.com [209.85.216.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C3BA8268C5A
-	for <linux-sh@vger.kernel.org>; Thu, 13 Mar 2025 16:41:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 610FE26AA9D;
+	Thu, 13 Mar 2025 17:14:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1741884094; cv=none; b=gWXJghbQcar/oTQydI0lMafZ7ON/bjGCmMfJjLblOqs2HdkvcZFMgBIXvvCON6VgmHUeaH7TcCwG+P0mH9PtEutaisyJjzeGzZvgY2UKe8hQOnAI/PJSUyyWBGGpIdVH1DweII5Fei1YTse18I47vbgbisUkJygJOAzQdmAzXYs=
+	t=1741886094; cv=none; b=mq7C5cR89NWZO2QbNmKPA2Vk5q2eVYr9b1tPvwgD+PaFN0w4odEqY6/XAsWRVnRntc4Rx9hkPb3NCqE4pUeQlEEoP/vQRjjhP1fU6VRqudYx5ynxk7T1BkjNcv2N6M8L+sxv7E27XvSnUIypmm55tuaUGoHrmNkfC3kXHS8kHPs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1741884094; c=relaxed/simple;
-	bh=NBDdDxNGDvQP5bA9D+gvZA4DOkX78hxDa702jREZMkM=;
+	s=arc-20240116; t=1741886094; c=relaxed/simple;
+	bh=Z0R4Knirkvu+jEmc1w5aGtkeADSH26ueKwL0dPhNn7o=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=m0ytiXnzXwDtS3S7ReBaAhHp58OGvUTXT/hCT/FReSf5UbGTDO97gX/Quhup6sF51GZE/LMsPdWBlrU1eCIqb5K4anF8WwRod70H7sAhw6Kqq+55bG2dhQnWdnQ+bbNt8BbUd7kqMwklgpIzR/JVfptnH0Ocy67ZTKdNFyDzUQI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=dXRqYXfE; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	 To:Cc:Content-Type; b=jrM1C/1SxxWEQwvuLUGH3P+C0SA3CPCJ1Ye4nHxTjmp+HEMlFym8CMYiyGszj718b1CxKRz/otEVIrRnB1t5iXkkQe9022MGe6fhskwuBay4kh/pbHQaPT+91uQtzA7t22b6uLsSs2Cr7efR8ybfRgnfNm18ruHbiOb1uhL9Iss=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=cOimpLfw; arc=none smtp.client-ip=209.85.216.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="dXRqYXfE"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1741884091;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=/AOuWXnGYR13C3EsQl2M3GLqAI/OrlKtR5FIj9y6Kyo=;
-	b=dXRqYXfEHjUkDhGCNuqXYsnq0hVY+hOQ8PDqkoU8pVkdRsM29ioHmpv6zUKcv0pCk5E1Vl
-	U9Wr0xMDRNpZio1hjBoZ0Yi1g6Z7pcinCEbd0nbBFinglitH7aMf0n+tBKce1aRSfDDD7g
-	axj3mjCHHuBpJ/lLVNPf2MEocxSeIp0=
-Received: from mail-pj1-f72.google.com (mail-pj1-f72.google.com
- [209.85.216.72]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-496-n-VMIBWvMQy1TZ69TT5Jqw-1; Thu, 13 Mar 2025 12:41:12 -0400
-X-MC-Unique: n-VMIBWvMQy1TZ69TT5Jqw-1
-X-Mimecast-MFC-AGG-ID: n-VMIBWvMQy1TZ69TT5Jqw_1741884072
-Received: by mail-pj1-f72.google.com with SMTP id 98e67ed59e1d1-2ff798e8c3bso2098697a91.2
-        for <linux-sh@vger.kernel.org>; Thu, 13 Mar 2025 09:41:12 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="cOimpLfw"
+Received: by mail-pj1-f44.google.com with SMTP id 98e67ed59e1d1-2f9d3d0f55dso2228694a91.1;
+        Thu, 13 Mar 2025 10:14:52 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1741886092; x=1742490892; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=n3DVX2jUUT8USovuBtaAWfLwoCZG/vTo0soqbEn/R/c=;
+        b=cOimpLfwOsJiKE9zqThVaUQT49FF1dUz73n612/el2IC/OjalZOYFquXY2F5uUEPBP
+         lJlOSdEMkN7v3YXxIYSBk0vEYbo0jxYU41mn9rcxEyrOLw4W+Pvc7Lnl2b32uIYrT7T2
+         XBgS7TpSuPg895A7kcyW4pFB3R1Az2ohe0HfMYT9BxTpWKLCFYRdkrF3+St87a48wl2i
+         kT24xckDqNXwW2rHvGWRn8JVSgykI/gxf+Pk0tQtZF0sYxdpD0LKIvs+s58hzbUYc6qy
+         C5RoSbi+Q4UJ5ifJx4j8VmodUBb4IZFmadkAr+diIyIBt4VusvwCxmQ8WjdP+i82e2uh
+         m1Gw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1741884071; x=1742488871;
+        d=1e100.net; s=20230601; t=1741886092; x=1742490892;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=/AOuWXnGYR13C3EsQl2M3GLqAI/OrlKtR5FIj9y6Kyo=;
-        b=rV8E9k+Vr962aICSbFEtEtXE+w4KQUWyUbMm5uPCayb8o6c3ODpSXvZjxtnr/B0X1/
-         sic2EZ2X9Yh+s2XEws02GcDsYEGkDHnSalncibNzTKmCH6L7c2AWfTs+DTNcU1FAGFSh
-         qNxMLICkJtV3wIwEsEeRDZpAhVPaupNjayYSeMG/jdxWOMjhQyHyE2yfj7mc6Ta3JiMb
-         mrywKszL46lTdcGKRpLsnNtooionyVvuig08oKIp2CXAtnyhIaezxxrWKlFLuCUNoRyP
-         1d0/OVcn3LLK4FYjUnbd+nwPaDuOI5h6mI7kvATJ2E/PKYJz+fdHb0f27sNaoOAswV8B
-         31nQ==
-X-Forwarded-Encrypted: i=1; AJvYcCWo3j6RZfzq+5QcpTD62CTfiBZA6KqZJiW0M4XPPSYuXozBpLn/OS0B/zHP3uWuTiEVdgXUpY22Rg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yxcz7WFOYj3Cyelma73OSSm3iXicL44mxwvWyq9TnArMJQx90Z2
-	9vIdseKL3pyp/ffCP6MtcK7TUQVPZ5K5o4TGBZeVeoThpeoyaybyI6K8M2WQTaR+7zIZeqWlujJ
-	M1/lnhyqQ+p+QN+iJ9NWtVrUPPzrBLAhW91GQUUAvf0UJ/VdhZ+ioUlCe3lKSG+7qOBNVmPWwZJ
-	TZD229n6zLfzzWHE+uikx834GaOIRiWUw=
-X-Gm-Gg: ASbGncukeiRxuzgSuA+Ce0lsKVnQScXc+3+Tht0g3b+R47f0xC4WWrXmBESqHsUN4NS
-	VhOZiJd102gI0nE1ka52Bj2tNhMMGP0pkxaD7BqlpQLiZRjiKC0t6+dvcegLOgBv4dEk9WZE=
-X-Received: by 2002:a17:90b:2812:b0:2fe:6942:370e with SMTP id 98e67ed59e1d1-3014e814787mr282593a91.7.1741884071600;
-        Thu, 13 Mar 2025 09:41:11 -0700 (PDT)
-X-Google-Smtp-Source: AGHT+IGZSR0GKOgpT9qIwRRXIxVMEVNcO4hzEa3HpTc2cVefBnUNShY5U2qKEnTkHJXaXXzQjc2Wb29JilB9GlX1pNU=
-X-Received: by 2002:a17:90b:2812:b0:2fe:6942:370e with SMTP id
- 98e67ed59e1d1-3014e814787mr282561a91.7.1741884071208; Thu, 13 Mar 2025
- 09:41:11 -0700 (PDT)
+        bh=n3DVX2jUUT8USovuBtaAWfLwoCZG/vTo0soqbEn/R/c=;
+        b=JAddBkSY1z7DdLGlC5vn3v9YnuMopgi9sPDxNvGY0JO3faVuY9bNkrBjqdX83umGzU
+         lSOJaeELQPm5D8B1YwWHnpk4+iWxo2XYP0KNdAKLSrngemLhwb08gT0huGlYwxKIz1Yf
+         Vmx+7pBHJB2dFPaXbRfUWspo9V2Jrsc907HfA8NniFsqW7mjkDkwzJUniMbJsHd6lzht
+         LxYp405uatpih/FiTHGcA8iLihqfwbKbcaktqvJGv3aB96HYF/U0fH/Pr5FXBlFJ10k/
+         p5isdlkn6Obsb90tH0bazKP+H9lH8zTdvnQcKmDGTZPKzmllFB9JBwBc/PPWXU08hBlu
+         lm4A==
+X-Forwarded-Encrypted: i=1; AJvYcCU/1Dr4r3BWYRCNy9SSqfbYhfK0+nh+0q1f8CkmQSx15G5iTyRChJfaqXT3dZlnyB4OR/tUlgZdMIOjUQ==@vger.kernel.org, AJvYcCU2KJKyzozYmMbNP2UEV/xf6ZaUz5ewxSaTg2+WY+Arq3nXxI0FHnbb5mLpUdsk4uw+KALC0e4w0BtJiA==@vger.kernel.org, AJvYcCUbI0hZuyaYyhFwZpXBev6+jT8uAbjySuI/WIkfmwv04l68zIRTdw6i84wG7NapMl/6QjzcvpG6xyHfoFBD@vger.kernel.org, AJvYcCUjvCmjXMxrSQvAZC07MG9KjWOqLaOpgWRtX1WMubJeWg6pKxViz72eFrJ3BL26o1QwXN59ng/M0Ubtgg==@vger.kernel.org, AJvYcCUlZnxdyKmA/1rwK2czB7azKTFuh6kPRkyJkMnlKNe8/nDb7pK0t5UwFGIu4I4mUiFHEww0MnRs/zI=@vger.kernel.org, AJvYcCUyPODGAIHCv2N60UzEAHS7K1QY3rbyVJLD3xEFiGRWKzGkU16Y/Al9fsOztjiX2x+zEdijWIXJpEiy9w==@vger.kernel.org, AJvYcCWXoJOCLDyvjvSGTKYUMg413st2pO3GopK60J6uifXq2DyHeszXaAby5K5fAhVZj3ynvXFCiX8PxQK1S3Yw8A==@vger.kernel.org, AJvYcCWY/7BPMC/c0W5T9jpWkyGaqjNa8pC/b9C2hnL4rbgjUaNt1M/DFWn22otkwTT3ZdFkTKk5heH6ak0cqmBY@vger.kernel.org, AJvYcCX066NzYUWvciJP3yhUbZygNkgBPdFPg8kG1m9Q6dHO71FAaEc0tYItJBvZ9cAHns6WNSFxd4zxgfyEng==@vger.kernel.org, AJvYcCXmcd7V1HGb4ilm3c+jPMnLESvzx31Qc+t2i7qGQIZvVCIQFO08Xuq37oys9gaHzOsxOmRapZaKthEUSvqSyxA=@vger.kernel.org, AJvYcCXpXqoHnScRBfMr+wv5nia70nioFqe7GEOsG1HCZM78T3UgNuyEUTFuxRbbhj7eNVXJr/QTLeV9AJWTng==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwNmz9YPks/sZFgydvLcrs3S0PNWCJPJOW3w/IUcuwuP7oM2vwA
+	Ur0P/q+CmUu6aQMmKkJrCz0yz2PY7Z/8uw/0ii4gLQCNv8kN6tQ0NkfXTzza5ZXvnOHzNNczBEC
+	XIVc0qV9TrUwg0YYWrDUxQJxBJ+U=
+X-Gm-Gg: ASbGnctnpg+2qwjmPSk8wtEvDxiXiS6zVjAIi9JskCEupmWnbNJqFoPvCX9oe2aAE7p
+	xcN/lT44JW6SBwIVqHSX3CZtiQp+835Q14qsUEi9IaJsseGXfWJt2GF7WWpx5++VLjOOeUJW846
+	V8CPD+c4u4rcbUf7O23aiGZTjDT9M=
+X-Google-Smtp-Source: AGHT+IE1qRePjrPlGe/k7DXmrY+KtJaOvGWQ1A7tyU5eLBTz7VxuSMi4hxEC/EMElopjpnT6L0bRBsC6lDv+GByhQbc=
+X-Received: by 2002:a17:90b:5608:b0:2fe:b8ba:62e1 with SMTP id
+ 98e67ed59e1d1-3014ea24aa4mr365923a91.28.1741886091572; Thu, 13 Mar 2025
+ 10:14:51 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250313114329.284104-1-acarmina@redhat.com> <20250313114329.284104-8-acarmina@redhat.com>
- <20250313122503.GA7438@willie-the-truck>
-In-Reply-To: <20250313122503.GA7438@willie-the-truck>
-From: Alessandro Carminati <acarmina@redhat.com>
-Date: Thu, 13 Mar 2025 17:40:59 +0100
-X-Gm-Features: AQ5f1JoRjBn0wYL3TNCgo2Be9gEw3kQ3UV-S3_DQ-XzPf4lVXAvFHPCcZEOjQyQ
-Message-ID: <CAGegRW5r3V2-_44-X353vS-GZwDYG=SVwc6MzSGE8GdFQuFoKA@mail.gmail.com>
-Subject: Re: [PATCH v4 07/14] arm64: Add support for suppressing warning backtraces
-To: Will Deacon <will@kernel.org>
-Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>, 
-	Arnd Bergmann <arnd@arndb.de>, =?UTF-8?B?TWHDrXJhIENhbmFs?= <mcanal@igalia.com>, 
-	Dan Carpenter <dan.carpenter@linaro.org>, Kees Cook <keescook@chromium.org>, 
-	Daniel Diaz <daniel.diaz@linaro.org>, David Gow <davidgow@google.com>, 
-	Arthur Grillo <arthurgrillo@riseup.net>, Brendan Higgins <brendan.higgins@linux.dev>, 
-	Naresh Kamboju <naresh.kamboju@linaro.org>, 
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, Maxime Ripard <mripard@kernel.org>, 
-	=?UTF-8?B?VmlsbGUgU3lyasOkbMOk?= <ville.syrjala@linux.intel.com>, 
-	Daniel Vetter <daniel@ffwll.ch>, Thomas Zimmermann <tzimmermann@suse.de>, 
-	Guenter Roeck <linux@roeck-us.net>, Alessandro Carminati <alessandro.carminati@gmail.com>, 
-	Jani Nikula <jani.nikula@intel.com>, dri-devel@lists.freedesktop.org, 
-	kunit-dev@googlegroups.com, linux-arch@vger.kernel.org, 
-	linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, 
-	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
-	loongarch@lists.linux.dev, x86@kernel.org, 
-	Linux Kernel Functional Testing <lkft@linaro.org>, Catalin Marinas <catalin.marinas@arm.com>
-X-Mimecast-Spam-Score: 0
-X-Mimecast-MFC-PROC-ID: VL1z1S0haJnvcT7hjcNnerRgOKeN1mvlMOncD2Ki-jM_1741884072
-X-Mimecast-Originator: redhat.com
+References: <20250313135003.836600-1-rppt@kernel.org> <20250313135003.836600-9-rppt@kernel.org>
+In-Reply-To: <20250313135003.836600-9-rppt@kernel.org>
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Thu, 13 Mar 2025 20:14:39 +0300
+X-Gm-Features: AQ5f1JpOtVR6fLnH8b4t6Wo35MeP6GXSndMXHGPmpker_QqVMpVf1FbK9Hm_3_Y
+Message-ID: <CAMo8Bf+_8QdcWmk-k6dpUUnvVtVsYCgcviK+fF=CsKjT3nFxHg@mail.gmail.com>
+Subject: Re: [PATCH v2 08/13] xtensa: split out printing of virtual memory
+ layout to a function
+To: Mike Rapoport <rppt@kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Alexander Gordeev <agordeev@linux.ibm.com>, 
+	Andreas Larsson <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>, Ard Biesheuvel <ardb@kernel.org>, 
+	Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>, 
+	Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, 
+	"David S. Miller" <davem@davemloft.net>, Dinh Nguyen <dinguyen@kernel.org>, 
+	Geert Uytterhoeven <geert@linux-m68k.org>, Gerald Schaefer <gerald.schaefer@linux.ibm.com>, 
+	Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>, 
+	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>, 
+	Jiaxun Yang <jiaxun.yang@flygoat.com>, Johannes Berg <johannes@sipsolutions.net>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Madhavan Srinivasan <maddy@linux.ibm.com>, 
+	Mark Brown <broonie@kernel.org>, Matt Turner <mattst88@gmail.com>, 
+	Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, 
+	Palmer Dabbelt <palmer@dabbelt.com>, Peter Zijlstra <peterz@infradead.org>, 
+	Richard Weinberger <richard@nod.at>, Russell King <linux@armlinux.org.uk>, 
+	Stafford Horne <shorne@gmail.com>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+	Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>, 
+	Will Deacon <will@kernel.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, 
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, 
+	linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org, 
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
+	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
+	linux-um@lists.infradead.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, 
+	x86@kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hello Will,
-
-On Thu, Mar 13, 2025 at 1:25=E2=80=AFPM Will Deacon <will@kernel.org> wrote=
-:
+On Thu, Mar 13, 2025 at 4:52=E2=80=AFPM Mike Rapoport <rppt@kernel.org> wro=
+te:
 >
-> On Thu, Mar 13, 2025 at 11:43:22AM +0000, Alessandro Carminati wrote:
-> > diff --git a/arch/arm64/include/asm/bug.h b/arch/arm64/include/asm/bug.=
-h
-> > index 28be048db3f6..044c5e24a17d 100644
-> > --- a/arch/arm64/include/asm/bug.h
-> > +++ b/arch/arm64/include/asm/bug.h
-> > @@ -11,8 +11,14 @@
-> >
-> >  #include <asm/asm-bug.h>
-> >
-> > +#ifdef HAVE_BUG_FUNCTION
-> > +# define __BUG_FUNC  __func__
-> > +#else
-> > +# define __BUG_FUNC  NULL
-> > +#endif
-> > +
-> >  #define __BUG_FLAGS(flags)                           \
-> > -     asm volatile (__stringify(ASM_BUG_FLAGS(flags)));
-> > +     asm volatile (__stringify(ASM_BUG_FLAGS(flags, %c0)) : : "i" (__B=
-UG_FUNC));
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 >
-> Why is 'i' the right asm constraint to use here? It seems a bit odd to
-> use that for a pointer.
-
-I received this code as legacy from a previous version.
-In my review, I considered the case when HAVE_BUG_FUNCTION is defined:
-Here, __BUG_FUNC is defined as __func__, which is the name of the
-current function as a string literal.
-Using the constraint "i" seems appropriate to me in this case.
-
-However, when HAVE_BUG_FUNCTION is not defined:
-__BUG_FUNC is defined as NULL. Initially, I considered it literal 0,
-but after investigating your concern, I found:
-
-```
-$ echo -E "#include <stdio.h>\n#include <stddef.h>\nint main()
-{\nreturn 0;\n}" | aarch64-linux-gnu-gcc -E -dM - | grep NULL
-#define NULL ((void *)0)
-```
-
-I realized that NULL is actually a pointer that is not a link time
-symbol, and using the "i" constraint with NULL may result in undefined
-behavior.
-
-Would the following alternative definition for __BUG_FUNC be more convincin=
-g?
-
-```
-#ifdef HAVE_BUG_FUNCTION
-    #define __BUG_FUNC __func__
-#else
-    #define __BUG_FUNC (uintptr_t)0
-#endif
-```
-Let me know your thoughts.
-
+> This will help with pulling out memblock_free_all() to the generic
+> code and reducing code duplication in arch::mem_init().
 >
-> Will
->
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> ---
+>  arch/xtensa/mm/init.c | 97 ++++++++++++++++++++++---------------------
+>  1 file changed, 50 insertions(+), 47 deletions(-)
 
+Reviewed-by: Max Filippov <jcmvbkbc@gmail.com>
 
-
---
----
-172
-
+--=20
+Thanks.
+-- Max
