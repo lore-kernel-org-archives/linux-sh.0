@@ -1,99 +1,249 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B3FA265CA5;
-	Thu, 13 Mar 2025 10:36:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B39E1F1518
+	for <linux-sh@vger.kernel.org>; Thu, 13 Mar 2025 11:44:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1741862200; cv=none; b=iXsVXwsOtLyiMgWt1OKjsOculL58UyPFrliIngG193Hc8mK0g39Nwgnk81+8Sbxp6vkVwYXyQBtp97c9YITrgyl/IB6OAWkeaYef0tFhDS7FUf5zoExxiNBd0hJHollVPciUyCaUuyFwP6CEpxbfvx4WAcmcAuA5J614be8w8O4=
+	t=1741866275; cv=none; b=QYp3z1rugdwMIQZ9VehJ5zWHu9myViW2BxJmTPdfE/h0Q8f0+QS3ty8QuIrTebecAQCyxBPZXYM/xFW6INXXyzbOOKOqOrErOuVy4NDxdFXMRJSN95qSZPxoXVeWfvJwo29kS07mFI3mZiyh3j+PAQ+ITROIMVMh9ElpVWAOmR8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1741862200; c=relaxed/simple;
-	bh=l0DHiZu/JiKMpTLyuC81m4OmC+Na2qkiqog7TlcMWL8=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=UoSv5n9mHIAhpcK5+eRHMlHwGxNxjFWxaMFGzR1VzfyT2zCcv5R7EyAsux65UG3T4Hqv7N9ZFwx077J+8IFcSBq5V08vwPYT2sbpsdQfN9+D8L8qQGWW/YLUrVBS/nuulAXyi7Z/JiZMkN3h4u61sIIHyfSnblDUgL9j667qLrg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=kVqxRxG5; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1741866275; c=relaxed/simple;
+	bh=RZxQPd6DhJpVyGhaRdUKVZqwkHQjwhx4+RC8j3iFEn0=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-type; b=aMpfSFGrIedWImC0Rn1PudrvaXwkxQVsL+Us2S9/RHfQ4NtnOU7zJlykSUaP1dmURKP0ZtKIs1ycrwQzsL0NU9wtCZmxR0gRoLcbbSqrp1+LVumb5YiKoMYXCuCwrgnAxph8QWV0J1acRs/lMfq3sOKs8eyWpKdZJi5m9CLcM6s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=WqugVzZ8; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="kVqxRxG5"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=uxqSOkreDmEncYOtcr9kowkpb/EgbzfBW4XWcy713g8=; t=1741862197; x=1742466997; 
-	b=kVqxRxG5Q2Nlmmwwa8K9DGSDbFcBJv1RfRTKbRxgU5QPkfefVBB9f7pPa0LEH886uasM4fRuTFq
-	uTbSY258RwlrgVjHJE+khh/G+Eeh5YbaXfwYJg0/ehkRYA14CXAGcsjtkCWvoDryraAyBqCaE9Yeo
-	rsfpgF7EJcpA4t42IXsbKxxQ5jxrl32mP0z6+tNs0ZvcUAM+aW+A4tgjCdsvFww4gKsBDfyw6ZDf/
-	ntvvbCPfov4FyBc0bx91ybzRgO/VdIh3XMGQRaHCxV7PBZQGBprvOBQhQv0CtTkf9aVZ6nsYZFTwK
-	/4D/ZrAs+IttdzqKV2b9WAMg+Qs5FcXuinMg==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1tsfvK-00000002er6-1CbC; Thu, 13 Mar 2025 11:36:22 +0100
-Received: from p5dc5515a.dip0.t-ipconnect.de ([93.197.81.90] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1tsfvK-00000003rl6-0FN1; Thu, 13 Mar 2025 11:36:22 +0100
-Message-ID: <cb1d47ddc86ad1b2235dbd430fed28f6d6cd1c80.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 1/2] sh: align .bss section padding to 8-byte boundary
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Artur Rojek
-	 <contact@artur-rojek.eu>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>,  Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas
- Gleixner <tglx@linutronix.de>, Uros Bizjak <ubizjak@gmail.com>,  "D . Jeff
- Dionne"	 <jeff@coresemi.io>, Rob Landley <rob@landley.net>,
- linux-sh@vger.kernel.org, 	linux-kernel@vger.kernel.org
-Date: Thu, 13 Mar 2025 11:36:21 +0100
-In-Reply-To: <CAMuHMdVmKk9vML=p1MsnkGATzUh3HD+Pa==7C=QMYjjzqzxk2A@mail.gmail.com>
-References: <20250216175545.35079-1-contact@artur-rojek.eu>
-	 <20250216175545.35079-2-contact@artur-rojek.eu>
-	 <5365422a9715376c76a89e255c978fc39064e243.camel@physik.fu-berlin.de>
-	 <433bc8a0732bf8a63c64c4bf0e6ad4a7@artur-rojek.eu>
-	 <CAMuHMdVmKk9vML=p1MsnkGATzUh3HD+Pa==7C=QMYjjzqzxk2A@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.54.3 
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="WqugVzZ8"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1741866271;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=Vi3vqlZEjhRyke+tn+Q3MD+zw3p/H2XxVRSJ9/S1eBk=;
+	b=WqugVzZ8f+Vx4UvGl1aA/yks2AB7/6BChGCJWwALmPCbRn0Fbewym9uuHr5Cf131YKFec+
+	QSkNzqUK5AlT8yL/BQgHiCDaiw4iFcZeq32LuUnzss/PqyCAhSAIPNuj0PxnJ+NZL6zQCE
+	rmF1KRpf/R1UxtfVqq+V+JUhqrvUA0I=
+Received: from mail-wr1-f70.google.com (mail-wr1-f70.google.com
+ [209.85.221.70]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-550-HdKeM4nGNSOxGkNZwpVGOQ-1; Thu, 13 Mar 2025 07:44:30 -0400
+X-MC-Unique: HdKeM4nGNSOxGkNZwpVGOQ-1
+X-Mimecast-MFC-AGG-ID: HdKeM4nGNSOxGkNZwpVGOQ_1741866269
+Received: by mail-wr1-f70.google.com with SMTP id ffacd0b85a97d-39135d31ca4so448397f8f.1
+        for <linux-sh@vger.kernel.org>; Thu, 13 Mar 2025 04:44:30 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1741866269; x=1742471069;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Vi3vqlZEjhRyke+tn+Q3MD+zw3p/H2XxVRSJ9/S1eBk=;
+        b=gOs/Hg/qoyUUgA3KtyFl1nxhAqXFTW5wAFtoy9Utz6Bsd1vY6lqQ+wkJoOWiuUS9fL
+         5SV1pqhEuKeKkuY56j8t6yc52ojMk/8yn6Ush9lyYwaZNUEvqVzoxWECCtQatHOUQjIw
+         HJT2SEbmZdyHvLcL/psF+IQyqbyNxPVgb2fohlNkhs0zKV84bMcA+aklM60TcBWsWCcl
+         e1LLNMmswhqdaGftPasRjyrCUMjW7hYWX47X8I9vyS8nQfHxX6Y9Hu6QN1P5Kqvw00/I
+         Y8FYReXfxJQkLtiPqwnxOOreG1wlz1dlkblvNsxs6UKdVvVqg940zjKtctjyXYXeAF8N
+         XRrQ==
+X-Forwarded-Encrypted: i=1; AJvYcCXK1iETOz5T1CaBXvIz6vLfoTcOSgNZ9ywC8k5UMWIXpbR5CuzCco/O6A+1EKjCgq2yQFA4rlUHIQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwAEftNV8GY9uZg8h9hrMGNiEr4uZBYG7RkcyTOJGsMV6tfpBeq
+	CECJIUdKZ4jqsoODMYb8del/9N2NDj+45iGAg7dQtQBsUMrq0hET9YCajO6cvmzj3KbHEkDf8ow
+	KGbUVx09HDGC8aEkfWbzOKwVyfITYIAlV+6OHpOhuoOcbmm2AL7WMsiV9
+X-Gm-Gg: ASbGncvDIzTZw/t9ydRonYvJEuq9cwEerDLcrOgfmYUt5PFq8ZkdWjGNty1Lt36E9WL
+	onBxAZoGbQNpRPBPUg3KJltwmMcmiYz3pDN4Xc2d4tEmrrM5fMzxhKdOZ/rrLoQpF+cuCg4Dgl8
+	N0LOAErIL4Vpp/X5ZBGzctWYnxlL8Q47ujTwauWs5myd5ud/gsY0AuG6iI4g3aNMgHDqfkMNrzx
+	v84C7UOAzKrvlqUi1w+aL60Ptsd10N1buyFh6rQ33sAxWXcqAjsVKkWbZNk0UeUCgMNt4YLUfhm
+	C8I3PuuMldXm+cKf+wH7
+X-Received: by 2002:a5d:64cb:0:b0:38f:23c4:208c with SMTP id ffacd0b85a97d-395b954ea75mr1784241f8f.18.1741866269114;
+        Thu, 13 Mar 2025 04:44:29 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IH5B4S8E4d5tF3TI1rIoUvKO0tSV0G2B0BPE1gxY0qJz2LBrnTYS6FEhx79I2sbOMPQrE3jHw==
+X-Received: by 2002:a5d:64cb:0:b0:38f:23c4:208c with SMTP id ffacd0b85a97d-395b954ea75mr1784186f8f.18.1741866268630;
+        Thu, 13 Mar 2025 04:44:28 -0700 (PDT)
+Received: from lab.hqhome163.com ([81.57.75.210])
+        by smtp.googlemail.com with ESMTPSA id 5b1f17b1804b1-43d188b754asm17844115e9.14.2025.03.13.04.44.26
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 13 Mar 2025 04:44:27 -0700 (PDT)
+From: Alessandro Carminati <acarmina@redhat.com>
+To: linux-kselftest@vger.kernel.org
+Cc: David Airlie <airlied@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	=?UTF-8?q?Ma=C3=ADra=20Canal?= <mcanal@igalia.com>,
+	Dan Carpenter <dan.carpenter@linaro.org>,
+	Kees Cook <keescook@chromium.org>,
+	Daniel Diaz <daniel.diaz@linaro.org>,
+	David Gow <davidgow@google.com>,
+	Arthur Grillo <arthurgrillo@riseup.net>,
+	Brendan Higgins <brendan.higgins@linux.dev>,
+	Naresh Kamboju <naresh.kamboju@linaro.org>,
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Maxime Ripard <mripard@kernel.org>,
+	=?UTF-8?q?Ville=20Syrj=C3=A4l=C3=A4?= <ville.syrjala@linux.intel.com>,
+	Daniel Vetter <daniel@ffwll.ch>,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	Guenter Roeck <linux@roeck-us.net>,
+	Alessandro Carminati <alessandro.carminati@gmail.com>,
+	Jani Nikula <jani.nikula@intel.com>,
+	dri-devel@lists.freedesktop.org,
+	kunit-dev@googlegroups.com,
+	linux-arch@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-doc@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	loongarch@lists.linux.dev,
+	x86@kernel.org,
+	Alessandro Carminati <acarmina@redhat.com>
+Subject: [PATCH v4 00/14] Add support for suppressing warning backtraces
+Date: Thu, 13 Mar 2025 11:43:15 +0000
+Message-Id: <20250313114329.284104-1-acarmina@redhat.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+X-Mimecast-Spam-Score: 0
+X-Mimecast-MFC-PROC-ID: 4qbMNWJ4mgWWY8O9F7LztrrAA8tj1nxQ27h2TYGIasI_1741866269
+X-Mimecast-Originator: redhat.com
+Content-type: text/plain
+Content-Transfer-Encoding: 8bit
 
-Hi Geert,
+Some unit tests intentionally trigger warning backtraces by passing bad
+parameters to kernel API functions. Such unit tests typically check the
+return value from such calls, not the existence of the warning backtrace.
 
-On Wed, 2025-03-12 at 09:06 +0100, Geert Uytterhoeven wrote:
-> What about moving (or duplicating, e.g. sbss_align alignment is
-> done before and after __bss_start)  the stop_align alignment
-> from BSS_SECTION() into BSS() instead, i.e. just changing
-> include/asm-generic/vmlinux.lds.h for everyone?  I don't think that
-> would hurt any platforms, while fixing the issue for good.
-> IMHO it is a bit strange that the size of the bss section can differ
-> from __bss_stop - __bss_start.
+Such intentionally generated warning backtraces are neither desirable
+nor useful for a number of reasons.
+- They can result in overlooked real problems.
+- A warning that suddenly starts to show up in unit tests needs to be
+  investigated and has to be marked to be ignored, for example by
+  adjusting filter scripts. Such filters are ad-hoc because there is
+  no real standard format for warnings. On top of that, such filter
+  scripts would require constant maintenance.
 
-This sounds reasonable. Could you send a patch? I assume that would go
-through a different tree as we're touching generic code.
+One option to address problem would be to add messages such as "expected
+warning backtraces start / end here" to the kernel log.  However, that
+would again require filter scripts, it might result in missing real
+problematic warning backtraces triggered while the test is running, and
+the irrelevant backtrace(s) would still clog the kernel log.
 
-> One last question though: what about sbss? How does the TurtleBoard
-> loader handle that?  __bss_stop - __bss_start is not the size of bss,
-> but the sum of the sizes of sbss and bss, plus extra alignment in
-> between. The latter might cause trouble, too.
+Solve the problem by providing a means to identify and suppress specific
+warning backtraces while executing test code. Support suppressing multiple
+backtraces while at the same time limiting changes to generic code to the
+absolute minimum. Architecture specific changes are kept at minimum by
+retaining function names only if both CONFIG_DEBUG_BUGVERBOSE and
+CONFIG_KUNIT are enabled.
 
-Does the compiler actually generate the SBSS section on SH?
+The first patch of the series introduces the necessary infrastructure.
+The second patch introduces support for counting suppressed backtraces.
+This capability is used in patch three to implement unit tests.
+Patch four documents the new API.
+The next two patches add support for suppressing backtraces in drm_rect
+and dev_addr_lists unit tests. These patches are intended to serve as
+examples for the use of the functionality introduced with this series.
+The remaining patches implement the necessary changes for all
+architectures with GENERIC_BUG support.
 
-Adrian
+With CONFIG_KUNIT enabled, image size increase with this series applied is
+approximately 1%. The image size increase (and with it the functionality
+introduced by this series) can be avoided by disabling
+CONFIG_KUNIT_SUPPRESS_BACKTRACE.
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+This series is based on the RFC patch and subsequent discussion at
+https://patchwork.kernel.org/project/linux-kselftest/patch/02546e59-1afe-4b08-ba81-d94f3b691c9a@moroto.mountain/
+and offers a more comprehensive solution of the problem discussed there.
+
+Design note:
+  Function pointers are only added to the __bug_table section if both
+  CONFIG_KUNIT_SUPPRESS_BACKTRACE and CONFIG_DEBUG_BUGVERBOSE are enabled
+  to avoid image size increases if CONFIG_KUNIT is disabled. There would be
+  some benefits to adding those pointers all the time (reduced complexity,
+  ability to display function names in BUG/WARNING messages). That change,
+  if desired, can be made later.
+
+Checkpatch note:
+  Remaining checkpatch errors and warnings were deliberately ignored.
+  Some are triggered by matching coding style or by comments interpreted
+  as code, others by assembler macros which are disliked by checkpatch.
+  Suggestions for improvements are welcome.
+
+Changes since RFC:
+- Introduced CONFIG_KUNIT_SUPPRESS_BACKTRACE
+- Minor cleanups and bug fixes
+- Added support for all affected architectures
+- Added support for counting suppressed warnings
+- Added unit tests using those counters
+- Added patch to suppress warning backtraces in dev_addr_lists tests
+
+Changes since v1:
+- Rebased to v6.9-rc1
+- Added Tested-by:, Acked-by:, and Reviewed-by: tags
+  [I retained those tags since there have been no functional changes]
+- Introduced KUNIT_SUPPRESS_BACKTRACE configuration option, enabled by
+  default.
+
+Changes since v2:
+- Rebased to v6.9-rc2
+- Added comments to drm warning suppression explaining why it is needed.
+- Added patch to move conditional code in arch/sh/include/asm/bug.h
+  to avoid kerneldoc warning
+- Added architecture maintainers to Cc: for architecture specific patches
+- No functional changes
+
+Changes since v3:
+- Rebased to v6.14-rc6
+- Dropped net: "kunit: Suppress lock warning noise at end of dev_addr_lists tests"
+  since 3db3b62955cd6d73afde05a17d7e8e106695c3b9
+- Added __kunit_ and KUNIT_ prefixes.
+- Tested on interessed architectures.
+
+----
+Guenter Roeck (14):
+  bug/kunit: Core support for suppressing warning backtraces
+  kunit: bug: Count suppressed warning backtraces
+  kunit: Add test cases for backtrace warning suppression
+  kunit: Add documentation for warning backtrace suppression API
+  drm: Suppress intentional warning backtraces in scaling unit tests
+  x86: Add support for suppressing warning backtraces
+  arm64: Add support for suppressing warning backtraces
+  loongarch: Add support for suppressing warning backtraces
+  parisc: Add support for suppressing warning backtraces
+  s390: Add support for suppressing warning backtraces
+  sh: Add support for suppressing warning backtraces
+  sh: Move defines needed for suppressing warning backtraces
+  riscv: Add support for suppressing warning backtraces
+  powerpc: Add support for suppressing warning backtraces
+
+ Documentation/dev-tools/kunit/usage.rst |  30 ++++++-
+ arch/arm64/include/asm/asm-bug.h        |  27 ++++--
+ arch/arm64/include/asm/bug.h            |   8 +-
+ arch/loongarch/include/asm/bug.h        |  42 +++++++---
+ arch/parisc/include/asm/bug.h           |  29 +++++--
+ arch/powerpc/include/asm/bug.h          |  37 +++++++--
+ arch/riscv/include/asm/bug.h            |  38 ++++++---
+ arch/s390/include/asm/bug.h             |  17 +++-
+ arch/sh/include/asm/bug.h               |  28 ++++++-
+ arch/x86/include/asm/bug.h              |  21 +++--
+ drivers/gpu/drm/tests/drm_rect_test.c   |  16 ++++
+ include/asm-generic/bug.h               |  16 +++-
+ include/kunit/bug.h                     |  56 +++++++++++++
+ include/kunit/test.h                    |   1 +
+ include/linux/bug.h                     |  13 +++
+ lib/bug.c                               |  51 +++++++++++-
+ lib/kunit/Kconfig                       |   9 ++
+ lib/kunit/Makefile                      |   7 +-
+ lib/kunit/backtrace-suppression-test.c  | 104 ++++++++++++++++++++++++
+ lib/kunit/bug.c                         |  42 ++++++++++
+ 20 files changed, 519 insertions(+), 73 deletions(-)
+ create mode 100644 include/kunit/bug.h
+ create mode 100644 lib/kunit/backtrace-suppression-test.c
+ create mode 100644 lib/kunit/bug.c
+
+-- 
+2.34.1
+
