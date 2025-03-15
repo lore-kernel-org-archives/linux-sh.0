@@ -1,126 +1,131 @@
-Received: from mail-vk1-f180.google.com (mail-vk1-f180.google.com [209.85.221.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D8C61A5B82;
-	Fri, 14 Mar 2025 11:06:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.180
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B28741DFED;
+	Sat, 15 Mar 2025 10:59:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1741950369; cv=none; b=NrSaO30PjngksZwZcWtLJk662g2N1os65gKg7TxSU4itj9zJ4KQU3UgX+PxXAo5OvCHwmGLITkdBb126u0QBVoY6+vUOmTpJNHP1IC7E+2myVZgO7PZ3xBKOfRKFM4wX0JOD3wWM6Ww3CpZ8rBKSvtkS51q2wyTOFJbwzxLvqqU=
+	t=1742036357; cv=none; b=SESsnxwjAJOlmzeU4NfXWDTBdHeQYH3COzVzR5jiUCXSae4SV31679ipwre5nAeV+sMBA+CGzPZ/+eH5FPCXSdSdcmbHM3pEMfS7u1Qd2+M0aZx/Pob65JrnUPv4m4r5RAk5dgdD1jBUdIpUNQN/2efKtZbyGMt7LDdgO6PP8Mk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1741950369; c=relaxed/simple;
-	bh=lp0qxpY9qBwzwnNGNJAX05+rnm5rwC/mbVnFgljb+pg=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=OMVkscavb0Vr8vec8HkQPHUzrCRLR/Q54bWGZZU75YAOtJZ+bBQqbBAZfDQXT+jKCGP8l3gv1tbGhJFmwqNPRQz4jz4tf999jC8rL4VvA3a7iHsNkOid7BWukkEBri3/md5iMyWxIY9+V6csnmJQJw63Fe7CQ6QYhIfUNtomAkw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vk1-f180.google.com with SMTP id 71dfb90a1353d-52410fb2afeso1600688e0c.3;
-        Fri, 14 Mar 2025 04:06:07 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1741950366; x=1742555166;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=iCYV3M13nXALyaslQ4jI5BtJPOc5sBQ9xRnSr95zlTI=;
-        b=UYIXzvuCQEAC55Djg2RgBvd1SCHk4QymUTPM1WfqRhd7prpVF44Ztmddnzk6RppYYI
-         okLf1NiiCROH+muqyrxfHPNkoUTsDJtQP2uzzCBkhFIiffEX59QnTGM1IsnFxjqoMH3+
-         4aH5KeAZkxMt3ddlU8afipmZeJgGkWVTUXpxXdsyzrVS6YuWHY+7FZ20vgMH1uGejjNp
-         iEnuI6iVrCrS8VOtIzFEdJn89HSgkj4yL2HVPFU6RiCQZHqDP3ePIFcIpH7flvFHeKUn
-         f8DQ3nBdE35YSnKa0/Ks6/Mmv+mIV9pgBwoO6ONC1ncG3IUX/XpUdBJY4Zm56eziE8ti
-         exZA==
-X-Forwarded-Encrypted: i=1; AJvYcCV0Ojl35ehPmite4QUrTXWS/qTSggVNpgtoTbtUUZubosyHLtlS0xX5Q9Sn2O4aOLdGCFDREl9KLh0yVq5v@vger.kernel.org, AJvYcCVF6qvkPRe+Ri7JdPgG6/4U1zHJdn+dsE17zA51JrCzIRbENwzQlbLR1VetR+f3JAn3VWERq6RVcI0=@vger.kernel.org, AJvYcCVYAo5Dj/QmGfxnNkW2gAPpUTUXKXn7foEbW45aDBMaUK6WMrg1/vh/d1UWGd9Ii+6jJD0Opp/z94hv8Cc=@vger.kernel.org, AJvYcCXiWOsGm4q3XGUW1pxAOmavC8Za1exr38NvWma/s4rjT0eLS4ZRxWY+CIwVbn9MKraxPljrSqna0eNcqyTJiFswm8s=@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywx2+2ZNzB3P7z/pnhFWlWNB47KnRAJ1Is6ZbOkJBj1QVMnsSx6
-	n0fahMOed08IIfQTYJEWNgwrC+b8l8llkae37U8bEyU1T3uXAC6ts9xA+60okOQ=
-X-Gm-Gg: ASbGnctJ/57gLTOJloeK4VlqYy2RLcccHsAA9C/u9Dqlf8c8go+FvSXVx6b4YyKnqsJ
-	txxdeMceAhgaU7/3llfQ6zTg6vJo3Z2NOB6UinkW3t7Uw+Ftx9dIm+9t45sCeYQUriXiID9+AcL
-	LnGiXJyTftH96Lb7jgMsLTcz0x8R8rraozYt5G3egWRr3wKTS2pF5ygndBUlTeXThh0Ac1d6mcs
-	rqz/FoVE3NtxG5FHJxJdBk8H4qAx2f8yw8kICr1cq024u+UEGx2qTSktHxL+pKKwL6BBUx4JqgJ
-	9vHfAf7UIrFdMGmzN3FTwKb/kyZ89gBDBT8l04ykjN1w3vdPrdBMLuFE2G3w6EOzZzCARqgonnM
-	buz/mSd4=
-X-Google-Smtp-Source: AGHT+IEm8Fs2/w5EiE5qEp219X24iQv+AEx5KbLwO2KUs0kY4cfqtLILzCN4VyOKCCXGlke46bG9BA==
-X-Received: by 2002:a05:6122:f1b:b0:520:6773:e5ba with SMTP id 71dfb90a1353d-524498886b6mr1342050e0c.2.1741950366570;
-        Fri, 14 Mar 2025 04:06:06 -0700 (PDT)
-Received: from mail-ua1-f41.google.com (mail-ua1-f41.google.com. [209.85.222.41])
-        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-5243a7184c5sm514319e0c.41.2025.03.14.04.06.06
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 14 Mar 2025 04:06:06 -0700 (PDT)
-Received: by mail-ua1-f41.google.com with SMTP id a1e0cc1a2514c-86d3ac0fec0so1898633241.1;
-        Fri, 14 Mar 2025 04:06:06 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCUHOaoA3pN2y+PZYd/aD121mka8AVFxyLD+JsVuM5s2ACqOYI/w/74buJDMfJLTjjeB235AmY+pY5Y=@vger.kernel.org, AJvYcCWLTI4JHVuNCbbcmnJfkyccHR6pIWHrCDkNima6NIqKL5OFSVW94kDgPr951YnwLk0P+l6f/FFGk6W8YCs=@vger.kernel.org, AJvYcCWqHmdpuPFJg2pxUaNXSHkxUKXJSE3FBe4FQSUyUalQAv0rGw0VkhEhlkbIY71FcD6NJ6yKbbG1gsAXV5IE@vger.kernel.org, AJvYcCXXeHbsQSM9UCE0pQmhp6vSZ1e7926H15lFxzJxHmHFaVBMdl9hkKd87kjxcDhYOY3Di/E1Cq38MIHhgdKVcnemCYQ=@vger.kernel.org
-X-Received: by 2002:a05:6102:2ad4:b0:4c1:71b6:6c with SMTP id
- ada2fe7eead31-4c383139951mr938603137.7.1741950366058; Fri, 14 Mar 2025
- 04:06:06 -0700 (PDT)
+	s=arc-20240116; t=1742036357; c=relaxed/simple;
+	bh=iNj1uai8aBt7DaA8QRTxehgmfPjURYUtO7lvJ9FyPYE=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=UcK00CFtR3oOVNeUxY775/obo6TKN7fomsztc3W/KR268KIhKMMFG75U35lp2Af3l+FWBGYvqG7E31EVM/jKNXFYAdMOp5J0bC94ReUu4reERW/arrotRQUEwYVRgqi9WKqHUavwDtECxF6t+huqwWcw09+NCrG35XLgGeV7ieY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QeGm8n/1; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QeGm8n/1"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7029DC4CEE5;
+	Sat, 15 Mar 2025 10:59:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1742036357;
+	bh=iNj1uai8aBt7DaA8QRTxehgmfPjURYUtO7lvJ9FyPYE=;
+	h=From:To:Cc:Subject:Date:From;
+	b=QeGm8n/1yaBlknAiTM9PbcGBvfecLE14NaWyggw7irJxQ9ZUD4gwqWeD6R+76W8+o
+	 5gZQY1kDfZgbS3U5Ra1LSv3PhQMXoT5G/0Dkekya8DP5aDGcA/Nui9Iw/HTHBij+GU
+	 KaOwiwXausYMh5f+P2Dhq3ZRMVh0bV870WhMtPWKeMqxj3BUGb6y9gI31eLbZi6tpu
+	 2yddEKW6LavqZ+2iOUFrf5fg3qxiiVYyA5TbVg5+qaqjOZDpQJzNk/oRrL9Stu5ouB
+	 IwMueWvL5VGHzPMBsUALBkRyLFmjUPO0kQAnAqcZ0HX4E2/y0YbuJD6CcBwjOue+pl
+	 IOVRtFaA0/coQ==
+From: Arnd Bergmann <arnd@kernel.org>
+To: linux-arch@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Greg Ungerer <gerg@linux-m68k.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+	Helge Deller <deller@gmx.de>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Naveen N Rao <naveen@kernel.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Julian Vetter <julian@outer-limits.org>,
+	Bjorn Helgaas <bhelgaas@google.com>,
+	linux-alpha@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-sh@vger.kernel.org
+Subject: [PATCH 0/6] asm-generic: io.h cleanups
+Date: Sat, 15 Mar 2025 11:59:01 +0100
+Message-Id: <20250315105907.1275012-1-arnd@kernel.org>
+X-Mailer: git-send-email 2.39.5
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250306152451.2356762-1-thierry.bultel.yh@bp.renesas.com> <20250306152451.2356762-9-thierry.bultel.yh@bp.renesas.com>
-In-Reply-To: <20250306152451.2356762-9-thierry.bultel.yh@bp.renesas.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 14 Mar 2025 12:05:54 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdVM_ozW4LAA4DstQuDfEcOnOcXZ2QHGv8nYMKDPWJe43Q@mail.gmail.com>
-X-Gm-Features: AQ5f1JoZp_Fh2KNiMYwN_3b-UmSTFcVLiLca4lkc9x0qGfUAtorqFKSqrdTwz50
-Message-ID: <CAMuHMdVM_ozW4LAA4DstQuDfEcOnOcXZ2QHGv8nYMKDPWJe43Q@mail.gmail.com>
-Subject: Re: [PATCH v4 08/13] serial: sh-sci: Introduced function pointers
-To: Thierry Bultel <thierry.bultel.yh@bp.renesas.com>
-Cc: thierry.bultel@linatsea.fr, linux-renesas-soc@vger.kernel.org, 
-	paul.barker.ct@bp.renesas.com, linux-kernel@vger.kernel.org, 
-	linux-serial@vger.kernel.org, Wolfram Sang <wsa+renesas@sang-engineering.com>, 
-	Ulrich Hecht <uli@fpond.eu>, Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hi Thierry,
+From: Arnd Bergmann <arnd@arndb.de>
 
-On Thu, 6 Mar 2025 at 16:26, Thierry Bultel
-<thierry.bultel.yh@bp.renesas.com> wrote:
-> The aim here is to prepare support for new sci controllers like
-> the T2H/RSCI whose registers are too much different for being
-> handled in common code.
->
-> This named serial controller also has 32 bits register,
-> so some return types had to be changed.
->
-> The needed generic functions are no longer static, with prototypes
-> defined in sh-sci-common.h so that they can be used from specific
-> implementation in a separate file, to keep this driver as little
-> changed as possible.
->
-> For doing so, a set of 'ops' is added to struct sci_port.
->
-> Signed-off-by: Thierry Bultel <thierry.bultel.yh@bp.renesas.com>
-> ---
-> Changes v3->v4:
->    - Add missing #include <bitfield.h>
->    - Remove sci_poll_get_char sci_poll_put_char from sh-sci-common.h (both
->      function are not used by rzsci yet).
->    - Add missing #ifdef around .poll_put_char pointer initialization.
->    - More registers to save & restore due to rebase on tty-next
+After the previous round of cleanups for asm-generic/io,h on the
+ioread64 helpers, I had another look at the architecture specific
+versions, especially those that caused build failures in the past.
 
-Thanks for the update!
+These are some simplifications that I would like to merge at the same
+time, please have a look. Hopefully these are all uncontroversial.
 
-While most rough edges have been polished by now (thanks!), and the
-driver seems to still work on a variety of platforms, I am still
-worried about the impact of this change:
-  - Maintainability and future bug fixing?
-  - Performance of the additional indirections on slow platforms (SH)?
+I have a few more patches for m68k that need a more thorough
+review and testing, will post them after the merge window.
 
-What do other people think?
-Thanks!
+Arnd Bergmann (6):
+  alpha: stop using asm-generic/iomap.h
+  sh: remove duplicate ioread/iowrite helpers
+  parisc: stop using asm-generic/iomap.h
+  powerpc: asm/io.h: remove split ioread64/iowrite64 helpers
+  mips: drop GENERIC_IOMAP wrapper
+  m68k/nommu: stop using GENERIC_IOMAP
 
-Full series:
-https://lore.kernel.org/all/20250306152451.2356762-1-thierry.bultel.yh@bp.renesas.com
-My initial comments and RFC:
-https://lore.kernel.org/all/CAMuHMdVD1dLP53V_zOhxpqazDdPDVafJ6iohY8u6WPQrmYH5Sw@mail.gmail.com
-
-Gr{oetje,eeting}s,
-
-                        Geert
+ arch/alpha/include/asm/io.h   |  31 ++++---
+ arch/m68k/Kconfig             |   2 +-
+ arch/m68k/include/asm/io_no.h |   4 -
+ arch/mips/Kconfig             |   2 +-
+ arch/mips/include/asm/io.h    |  21 ++---
+ arch/mips/lib/iomap-pci.c     |   9 ++
+ arch/parisc/include/asm/io.h  |  36 ++++++--
+ arch/powerpc/include/asm/io.h |  48 ----------
+ arch/sh/include/asm/io.h      |  30 ++-----
+ arch/sh/kernel/Makefile       |   3 -
+ arch/sh/kernel/iomap.c        | 162 ----------------------------------
+ arch/sh/kernel/ioport.c       |   5 --
+ arch/sh/lib/io.c              |   4 +-
+ drivers/sh/clk/cpg.c          |  25 +++---
+ 14 files changed, 84 insertions(+), 298 deletions(-)
+ delete mode 100644 arch/sh/kernel/iomap.c
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.39.5
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Cc: Richard Henderson <richard.henderson@linaro.org>
+Cc: Matt Turner <mattst88@gmail.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Greg Ungerer <gerg@linux-m68k.org>
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
+Cc: Helge Deller <deller@gmx.de>
+Cc: Madhavan Srinivasan <maddy@linux.ibm.com>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Nicholas Piggin <npiggin@gmail.com>
+Cc: Christophe Leroy <christophe.leroy@csgroup.eu>
+Cc: Naveen N Rao <naveen@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Julian Vetter <julian@outer-limits.org>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-mips@vger.kernel.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org
