@@ -1,216 +1,89 @@
-Received: from relmlie6.idc.renesas.com (relmlor2.renesas.com [210.160.252.172])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id C4076219A67;
-	Mon, 17 Mar 2025 10:27:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=210.160.252.172
+Received: from mail.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C66A233728;
+	Mon, 17 Mar 2025 11:31:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=150.107.74.76
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742207267; cv=none; b=CPcJE6gmDJjHnEer6QfuW3HDNsTE4Tde/b6VGh2Pf6oJN/hfyZELcR9/01Ye4MZ4GXspFGq/pomXWr16byL3SvUkWS87y4XHq+96PlHAd64TT8CXaH4g7hHJ/XenyLi98RM35o01PVAFMaNYUqPYidC6bR+yNvOwnp4JfvB9exI=
+	t=1742211100; cv=none; b=i3Mw5bsrYO5b+r2dWEZPIeY9/DcsUGhx5NkZwZBZwpLdrYYZm3wHFGjf3TRERarBITDxZYbqo/jLmBKUjP6dKpjBq4BMxfItm77C9MU9PiHV903XvLR+2VG7fhrIlWAP9AeVixUtYA7NWOjXGdqCynZExgZ+p+CPRvqV+VDyNBo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742207267; c=relaxed/simple;
-	bh=2jv2oNnuMomXh9Kr1t2fb+sIQ5lE6UaVgX/GXBxiVg0=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=P0+qBwWQCXGkSKAN1W4Idlb+IUOrRNrYYgm/rJQvbwpoi+IpI18pM5yMbzA/6Wzd4JEXFP5k8pMp03WUM25s0oFpH7sg++jeT41InGdmVCii9MoKRC2p2cFuybVOLOFY2EcfIKFrLSDsXiXaMkzNWtGEA7FIvWyDI7jAVdTJyOA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=bp.renesas.com; spf=pass smtp.mailfrom=bp.renesas.com; arc=none smtp.client-ip=210.160.252.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=bp.renesas.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bp.renesas.com
-X-CSE-ConnectionGUID: D4GfsnCxQ+6aG0qymhfE/w==
-X-CSE-MsgGUID: rAaiZvVRRKO+OkoXRswZAA==
-Received: from unknown (HELO relmlir5.idc.renesas.com) ([10.200.68.151])
-  by relmlie6.idc.renesas.com with ESMTP; 17 Mar 2025 19:27:36 +0900
-Received: from [10.226.93.170] (unknown [10.226.93.170])
-	by relmlir5.idc.renesas.com (Postfix) with ESMTP id AD8C9402ADFF;
-	Mon, 17 Mar 2025 19:27:33 +0900 (JST)
-Message-ID: <999cb080-ea61-45e5-9ea0-356fb8bc4639@bp.renesas.com>
-Date: Mon, 17 Mar 2025 10:27:32 +0000
+	s=arc-20240116; t=1742211100; c=relaxed/simple;
+	bh=+wUagchdp7sYd7E3QkBkSDACazRJklfq9k+LiWjgVqk=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=De5swgtWOfrQM/EjwIuv155w9nZTZcX8nDgyui7BzbmWbRPW5W5ALQIA/ioTyLprreRRYtf6F2gjTwaxXsfcWmir5fHjWGwyLNjeU7wbdO6EiR3y2Kss9BVhhGAtg1dsFZGl4qE7kax2LK5bCv3p7WqS0Sh1tXFo6P6RV8KSX9U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au; spf=pass smtp.mailfrom=ellerman.id.au; dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b=THULKh4Q; arc=none smtp.client-ip=150.107.74.76
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ellerman.id.au
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b="THULKh4Q"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
+	s=201909; t=1742211091;
+	bh=nfHTB/nIl+RDq3rL3kY2G+Hq2s8UAbra95K2RlIfv/c=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+	b=THULKh4QeDj55AGiFjLvKR+ppiee88dNU1yxt7aAdWCXRewUJdRUk+1hEnpKs5vnk
+	 8cN8/X9HSmCrSl7icuzk389a6XR3oUfqtWruR4sSbc/nIuBeHSJSKIqUYh/FlDi23G
+	 nkrv4kmO9QetcPTFpFiXpUBuULetOEIp9su0DIBRRiQkc1Z/y7is3xcXThvcY8yLrJ
+	 01mZVeWIgX+XwpT50e4SFKqqEfCpqQ9MgzXR9PwVFEbpiGkAKlE94Q12ksS1BrFJun
+	 82FcMT/zCyL1BoG4qzRICkOVKy/3J/0u1OcRuH4J2iJUXGewuGDBA9SqIVT2Q2Blk5
+	 zrnx8kdaVEaEw==
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(Client did not present a certificate)
+	by mail.ozlabs.org (Postfix) with ESMTPSA id 4ZGXqN4Vq7z4wbv;
+	Mon, 17 Mar 2025 22:31:28 +1100 (AEDT)
+From: Michael Ellerman <mpe@ellerman.id.au>
+To: Arnd Bergmann <arnd@kernel.org>, linux-arch@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, Richard Henderson
+ <richard.henderson@linaro.org>, Matt Turner <mattst88@gmail.com>, Geert
+ Uytterhoeven <geert@linux-m68k.org>, Greg Ungerer <gerg@linux-m68k.org>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>, "James E.J. Bottomley"
+ <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>,
+ Madhavan Srinivasan <maddy@linux.ibm.com>, Nicholas Piggin
+ <npiggin@gmail.com>, Christophe Leroy <christophe.leroy@csgroup.eu>,
+ Naveen N Rao <naveen@kernel.org>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, John Paul
+ Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Julian Vetter
+ <julian@outer-limits.org>, Bjorn Helgaas <bhelgaas@google.com>,
+ linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+ linux-sh@vger.kernel.org
+Subject: Re: [PATCH 4/6] powerpc: asm/io.h: remove split ioread64/iowrite64
+ helpers
+In-Reply-To: <20250315105907.1275012-5-arnd@kernel.org>
+References: <20250315105907.1275012-1-arnd@kernel.org>
+ <20250315105907.1275012-5-arnd@kernel.org>
+Date: Mon, 17 Mar 2025 22:31:25 +1100
+Message-ID: <87senbdhbm.fsf@mpe.ellerman.id.au>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 08/13] serial: sh-sci: Introduced function pointers
-Content-Language: en-GB
-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
- Geert Uytterhoeven <geert@linux-m68k.org>,
- Thierry Bultel <thierry.bultel.yh@bp.renesas.com>,
- thierry.bultel@linatsea.fr, linux-renesas-soc@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org,
- Ulrich Hecht <uli@fpond.eu>, Linux-sh list <linux-sh@vger.kernel.org>
-References: <20250306152451.2356762-1-thierry.bultel.yh@bp.renesas.com>
- <20250306152451.2356762-9-thierry.bultel.yh@bp.renesas.com>
- <CAMuHMdVM_ozW4LAA4DstQuDfEcOnOcXZ2QHGv8nYMKDPWJe43Q@mail.gmail.com>
- <Z9fxfV9jAGJ51fcn@shikoro>
-From: Paul Barker <paul.barker.ct@bp.renesas.com>
-In-Reply-To: <Z9fxfV9jAGJ51fcn@shikoro>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="------------GSaVrcKpNAh8KYWgWD9dUaOq"
+Content-Type: text/plain
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---------------GSaVrcKpNAh8KYWgWD9dUaOq
-Content-Type: multipart/mixed; boundary="------------O6kgC8qtnfCsHbkVJ7nSz61a";
- protected-headers="v1"
-From: Paul Barker <paul.barker.ct@bp.renesas.com>
-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
- Geert Uytterhoeven <geert@linux-m68k.org>,
- Thierry Bultel <thierry.bultel.yh@bp.renesas.com>,
- thierry.bultel@linatsea.fr, linux-renesas-soc@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org,
- Ulrich Hecht <uli@fpond.eu>, Linux-sh list <linux-sh@vger.kernel.org>
-Message-ID: <999cb080-ea61-45e5-9ea0-356fb8bc4639@bp.renesas.com>
-Subject: Re: [PATCH v4 08/13] serial: sh-sci: Introduced function pointers
-References: <20250306152451.2356762-1-thierry.bultel.yh@bp.renesas.com>
- <20250306152451.2356762-9-thierry.bultel.yh@bp.renesas.com>
- <CAMuHMdVM_ozW4LAA4DstQuDfEcOnOcXZ2QHGv8nYMKDPWJe43Q@mail.gmail.com>
- <Z9fxfV9jAGJ51fcn@shikoro>
-In-Reply-To: <Z9fxfV9jAGJ51fcn@shikoro>
+Arnd Bergmann <arnd@kernel.org> writes:
+> From: Arnd Bergmann <arnd@arndb.de>
+>
+> In previous kernels, there were conflicting definitions for what
+> ioread64_lo_hi() and similar functions were supposed to do on
+> architectures with native 64-bit MMIO. Based on the actual usage in
+> drivers, they are in fact expected to be a pair of 32-bit accesses on
+> all architectures, which makes the powerpc64 definition wrong.
+>
+> Remove it and use the generic implementation instead.
+>
+> Drivers that want to have split lo/hi or hi/lo accesses on 32-bit
+> architectures but can use 64-bit accesses where supported should instead
+> use ioread64()/iowrite64() after including the corresponding header file.
+>
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+>  arch/powerpc/include/asm/io.h | 48 -----------------------------------
+>  1 file changed, 48 deletions(-)
 
---------------O6kgC8qtnfCsHbkVJ7nSz61a
-Content-Type: multipart/mixed; boundary="------------Ijb1tC0cLv8GylxNAv6i7gC5"
+Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
 
---------------Ijb1tC0cLv8GylxNAv6i7gC5
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
-
-On 17/03/2025 09:55, Wolfram Sang wrote:
-> Hi all,
->=20
-> sorry for missing this series so far and thanks to Geert for pulling me=
-
-> into the loop.
->=20
->> While most rough edges have been polished by now (thanks!), and the
->> driver seems to still work on a variety of platforms, I am still
->> worried about the impact of this change:
->>   - Maintainability and future bug fixing?
->=20
-> I hate to see development work going to waste, yet I have to say I am
-> also concerned about the maintainability of this driver after this very=
-
-> intrusive changeset. The driver is already quite complex. Adding anothe=
-r
-> layer of complexity (function pointers) will make proper bugfixing for
-> all supported instances quite harder, I'd think.
->=20
-> Has it been discussed to have this as a separate driver? Were there
-> reasons against it? This is really an open question. Maybe it is
-> justified to do it like this if we have reasons for it.
->=20
-> Seeing that SCI core needs 800+ lines changed and we still have a
-> seperate driver with 460 lines driver, I do wonder if copying the logic=
-
-> from SCI core to a seperate driver would make sense. I am aware that th=
-e
-> core has currently 3500+ lines currently. I'd estimate it would shrink
-> quite a bit when copying because you won't need to handle all the
-> differences to other SCI entries.
->=20
-> Again, this is not a request to follow my suggestion, it is an open
-> question to make sure all paths have been considered.
-
-Hi Geert, Wolfram,
-
-Thierry is out of the office this week so we can follow this up next
-week, but I do want to give some input in the meantime.
-
-We discussed both approaches internally and did an initial
-proof-of-concept of a separate driver. The result was over 1,000 lines
-of code copy-pasted from the existing sh-sci driver into the new driver,
-which is generally something maintainers want us to avoid doing. The
-trade off here is whether we want a single more complex driver, or two
-copies of much of the code so that bugfixes/improvements to the common
-sections in the future need to be duplicated.
-
-The RZ/V2H and RZ/G3E have interfaces of both the existing sh-sci
-register layout ("SCIF" ports in RZ/V2H & RZ/G3E manual) and the RZ/T2H
-style register layout ("RSCI" ports in RZ/V2H manual, "SCI" ports in
-RZ/G3E manual), so keeping things closely aligned as we move forward
-will be beneficial. I expect that this will be easier with a combined
-driver.
-
-Thanks,
-
---=20
-Paul Barker
---------------Ijb1tC0cLv8GylxNAv6i7gC5
-Content-Type: application/pgp-keys; name="OpenPGP_0x27F4B3459F002257.asc"
-Content-Disposition: attachment; filename="OpenPGP_0x27F4B3459F002257.asc"
-Content-Description: OpenPGP public key
-Content-Transfer-Encoding: quoted-printable
-
------BEGIN PGP PUBLIC KEY BLOCK-----
-
-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3D
-=3DsIIN
------END PGP PUBLIC KEY BLOCK-----
-
---------------Ijb1tC0cLv8GylxNAv6i7gC5--
-
---------------O6kgC8qtnfCsHbkVJ7nSz61a--
-
---------------GSaVrcKpNAh8KYWgWD9dUaOq
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-wnsEABYIACMWIQSiu8gv1Xr0fIw/aoLbaV4Vf/JGvQUCZ9f5FAUDAAAAAAAKCRDbaV4Vf/JGvc9m
-AP9eGklGc56ll2C1TBfHvkIFUNbW1y9Hzwk00cBLYsy+8QEA+3jtJ2DfsW0bZ6yH9NnzAN46Iay7
-WtqeXOrDyo9qIAo=
-=dKJM
------END PGP SIGNATURE-----
-
---------------GSaVrcKpNAh8KYWgWD9dUaOq--
+cheers
