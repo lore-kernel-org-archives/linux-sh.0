@@ -1,121 +1,134 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF2DF18BC3D;
-	Mon, 17 Mar 2025 12:40:25 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8278B20B209;
+	Tue, 18 Mar 2025 11:57:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742215226; cv=none; b=J3E9sKDuBUf4wzyXx272Izo7ldHZ5D6rxLBG4sEc3xoZU+bEy1yUBBxDUWVQqoHbfHUKe3hauj9XCNEtvu0E5z4LNuTh+wTyXNStQvjWj97pPu7/mao0bt03pmwv/ET48+yF58GERfkbPDHtpg7UWNnn1maXp4gL4mVY0D96yX0=
+	t=1742299076; cv=none; b=OuROhSnZM5ege2b0L/9ELVdzKhMCaGVkfsPngV+h7cm+VLpAtQKH+DfjaegNYP29t8ZWmKE0TvAzN8njsRNFe+ZV+EkKvWWQlXjBv/kGP/PbO7hl4np1Tj4mm6mrcsbMYgtyd0gQL3dAflVmVU0IxhREbJo/wJcA5AtDZeDjNKo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742215226; c=relaxed/simple;
-	bh=Qm34pbxAa6RjHCc2A1aXJ4qBOugE70Km6ONzqhDGMKA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=NbXfT+CrxcTqYHciP/HJrGLlKbDsA3OTDjozsfD7Ji2ELgjvAKzTnsJeMnz5Y4+bMi596LHbuef/j0E1RoTNTyEHDan+1tyTfxC8twSQ/IBmsD97aOu3y+BnGpXGuEtHplNIs0iXOaLzF4sbe2aS/eVzPrppEFWVoCpwPOLWSs8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=E7Ar7yyZ; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1742299076; c=relaxed/simple;
+	bh=CIhTjH9kKlO1VYGiipc2V9drjBD3Ayt0OkD0U7KRb6w=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=mkX+QsufJkG5ESeDyS8MStZiypuvHgZ5nG5rtiru83QJN+WT9kcXnOAqINGMsq5+YAu1bMS3ANP4KEBI0GkKnXizDG0W/f6r8obtzT9twjis2uRbNnvPA+ap5cmh2IszKPTMaMvBNL8gESw2IsmDKJv4sTk9sIzrG/C6KkX+DFQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VNZz+D/d; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="E7Ar7yyZ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6A338C4CEE9;
-	Mon, 17 Mar 2025 12:40:21 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VNZz+D/d"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 54476C4CEF4;
+	Tue, 18 Mar 2025 11:57:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1742215225;
-	bh=Qm34pbxAa6RjHCc2A1aXJ4qBOugE70Km6ONzqhDGMKA=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=E7Ar7yyZci/sFoCidNgE8WXrHkJCdBUtC5+SBI7ElJU6LgZqLiSvRPlv1xqMCdR+2
-	 JdSknt+r47jh4J64JDHOV3bC2f8CCEHU9CwoE9ISsT1r2OFEQaCkooFpGyY2cq0AUS
-	 8BJqKWvVNVKmYaiENoybfTCks4OV2Hujobg04vepdZYEAJYEHgTYSVQtuBbCiU49Wg
-	 w4Y7etNdGOWGUdqy5s7jSxyR/7rnszsVQfJoCdbVmwcu/WQyL4uucGKWINrXNoVXHO
-	 5i4vQUYMXA8gu7KzsUBsrs+oDW3h+voixjT+nCGjato5WHQworTVVXnwjAQoo5sK7c
-	 ZdFal0K6UlYKw==
-Message-ID: <e3dfe753-fb5f-4f2f-9d24-da8a4f01be19@kernel.org>
-Date: Mon, 17 Mar 2025 07:40:20 -0500
+	s=k20201202; t=1742299076;
+	bh=CIhTjH9kKlO1VYGiipc2V9drjBD3Ayt0OkD0U7KRb6w=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=VNZz+D/dtbyshE97W4HnLDn48vAHhWJ1qM3mL/ZcYLXzJCavmJHa91JYiiOlMNJbz
+	 3UQHEcUGagflvTa1naQQ3WhxL7VDkHEqM2S7CkzCA9R2QNMrKsOF/87TV8TeAU7pag
+	 JnyeHsFK4NM+n6Sd6iwRDBgTTtsst7XHqqi+SMHGvuW0tYLqcabFNOqlgCauzVkD73
+	 FEV87vVnNi6+5cugxgHyXPjIWm09qmE4hdd7e5vWrscoz4DVCqYqP4MsFlrfEg/D+e
+	 hisoP8e3IL/aZBRIfu7TRQITKlDjGtX7HEA5nLU4mGdskuoLTKP3Pn1CaVYbWjJBBQ
+	 A9XO+vMkI9ejg==
+Received: by mail-ed1-f54.google.com with SMTP id 4fb4d7f45d1cf-5e677f59438so8669594a12.2;
+        Tue, 18 Mar 2025 04:57:56 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCUJn93+o9VThlJf248T8kDQN0A25pxlXD426wHkpSJ00P3nXOoDnyafmlQXi8g4RO1jV2w1+PHwdr13iq4=@vger.kernel.org, AJvYcCUQsv5tW7vwkMCEaajjS4tsu/CRPnrO21Tu2Vdiup8EhoC9mP/7yp/eN6USyp1IFV6xmtvvVcMF/8CMaA==@vger.kernel.org, AJvYcCXVWDtIkYsLnWBxymQTWh/RftqE3HUUANA66uM2rw6ONmrWYR8a87w9TMFGpmgiptUiuZGCspS1iTDkfCo=@vger.kernel.org, AJvYcCXf5pDmhbsiUMlSdYGefVs3+rbL9LuCwZsMOppZDeept2Jk1as5iU0h6+b9ztyq2D4QZN/yhDoypD4=@vger.kernel.org
+X-Gm-Message-State: AOJu0YwykM1XlCIEFflRUYmbznl9cYV/f8jcegCN+P7iUygQu6JIZWKj
+	Y9mLOY1Faam2YLWclHhHVXYf7VDMBmhJxOw/WjzpWjd6PTIFKYiQKKBcVmh3BnE2FnfhZZ2PSlD
+	+sqzRaWIRxQgDYCpKZnxPOcEySeU=
+X-Google-Smtp-Source: AGHT+IHWKrMLWQmDlK3EXFGkIz3JuWrB7n/PbIZxnJSxvCf68cavwFPKlU+WgeLv6v2/CTfArLyeiik7sHtiA+Oo+58=
+X-Received: by 2002:a17:907:1009:b0:ac3:3f10:e8e3 with SMTP id
+ a640c23a62f3a-ac33f10ed5cmr1299294766b.1.1742299074804; Tue, 18 Mar 2025
+ 04:57:54 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 06/13] nios2: move pr_debug() about memory start and
- end to setup_arch()
-To: Mike Rapoport <rppt@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Alexander Gordeev <agordeev@linux.ibm.com>,
- Andreas Larsson <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>,
- Ard Biesheuvel <ardb@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
- Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
- Catalin Marinas <catalin.marinas@arm.com>,
- Dave Hansen <dave.hansen@linux.intel.com>,
- "David S. Miller" <davem@davemloft.net>,
- Geert Uytterhoeven <geert@linux-m68k.org>,
- Gerald Schaefer <gerald.schaefer@linux.ibm.com>, Guo Ren
- <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
- Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
- Ingo Molnar <mingo@redhat.com>, Jiaxun Yang <jiaxun.yang@flygoat.com>,
- Johannes Berg <johannes@sipsolutions.net>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Madhavan Srinivasan <maddy@linux.ibm.com>, Mark Brown <broonie@kernel.org>,
- Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
- Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>,
- Palmer Dabbelt <palmer@dabbelt.com>, Peter Zijlstra <peterz@infradead.org>,
- Richard Weinberger <richard@nod.at>, Russell King <linux@armlinux.org.uk>,
- Stafford Horne <shorne@gmail.com>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>,
- Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
- linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org,
- linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
- loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
- linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
- linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-um@lists.infradead.org, linux-arch@vger.kernel.org,
- linux-mm@kvack.org, x86@kernel.org
-References: <20250313135003.836600-1-rppt@kernel.org>
- <20250313135003.836600-7-rppt@kernel.org>
-Content-Language: en-US
-From: Dinh Nguyen <dinguyen@kernel.org>
-In-Reply-To: <20250313135003.836600-7-rppt@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+References: <20250115-fix-riscv-rt_group_sched-v4-0-607606fe73a5@coelacanthus.name>
+ <20250115-fix-riscv-rt_group_sched-v4-4-607606fe73a5@coelacanthus.name> <t2dustbykx2qd24wazjeiw5hch5nwr6z2ewmaf4srg6r2grwrf@rdw47chzkef2>
+In-Reply-To: <t2dustbykx2qd24wazjeiw5hch5nwr6z2ewmaf4srg6r2grwrf@rdw47chzkef2>
+From: Huacai Chen <chenhuacai@kernel.org>
+Date: Tue, 18 Mar 2025 19:57:44 +0800
+X-Gmail-Original-Message-ID: <CAAhV-H4fTGs-7EXE0EcR=P6GqHF2fokRE-kEte+cDmhjy=FYsA@mail.gmail.com>
+X-Gm-Features: AQ5f1Jo4W5NNqo2SfcBdxKCe2OFxQs4im7DaCODl6wEw6MnCM3-sp2pnyba2ZAw
+Message-ID: <CAAhV-H4fTGs-7EXE0EcR=P6GqHF2fokRE-kEte+cDmhjy=FYsA@mail.gmail.com>
+Subject: Re: [PATCH v4 4/4] arm: defconfig: drop RT_GROUP_SCHED=y from bcm2835/tegra/omap2plus
+To: Thierry Reding <thierry.reding@gmail.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, Celeste Liu <uwu@coelacanthus.name>, 
+	Paul Walmsley <paul.walmsley@sifive.com>, Palmer Dabbelt <palmer@dabbelt.com>, 
+	Albert Ou <aou@eecs.berkeley.edu>, Guo Ren <guoren@kernel.org>, 
+	Anup Patel <anup@brainfault.org>, 
+	Heinrich Schuchardt <heinrich.schuchardt@canonical.com>, WANG Xuerui <kernel@xen0n.name>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Russell King <linux@armlinux.org.uk>, 
+	Florian Fainelli <florian.fainelli@broadcom.com>, 
+	Broadcom internal kernel review list <bcm-kernel-feedback-list@broadcom.com>, Ray Jui <rjui@broadcom.com>, 
+	Scott Branden <sbranden@broadcom.com>, Tony Lindgren <tony@atomide.com>, 
+	Jonathan Hunter <jonathanh@nvidia.com>, Aaro Koskinen <aaro.koskinen@iki.fi>, 
+	Andreas Kemnade <andreas@kemnade.info>, Kevin Hilman <khilman@baylibre.com>, 
+	Roger Quadros <rogerq@kernel.org>, Palmer Dabbelt <palmer@rivosinc.com>, linux-riscv@lists.infradead.org, 
+	linux-kernel@vger.kernel.org, loongarch@lists.linux.dev, 
+	linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
+	linux-rpi-kernel@lists.infradead.org, linux-omap@vger.kernel.org, 
+	linux-tegra@vger.kernel.org, Stefan Wahren <wahrenst@gmx.net>, 
+	Thierry Reding <treding@nvidia.com>, soc@lists.linux.dev
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 3/13/25 08:49, Mike Rapoport wrote:
-> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-> 
-> This will help with pulling out memblock_free_all() to the generic
-> code and reducing code duplication in arch::mem_init().
-> 
-> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
-> ---
->   arch/nios2/kernel/setup.c | 2 ++
->   arch/nios2/mm/init.c      | 2 --
->   2 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/nios2/kernel/setup.c b/arch/nios2/kernel/setup.c
-> index da122a5fa43b..a4cffbfc1399 100644
-> --- a/arch/nios2/kernel/setup.c
-> +++ b/arch/nios2/kernel/setup.c
-> @@ -149,6 +149,8 @@ void __init setup_arch(char **cmdline_p)
->   	memory_start = memblock_start_of_DRAM();
->   	memory_end = memblock_end_of_DRAM();
->   
-> +	pr_debug("%s: start=%lx, end=%lx\n", __func__, memory_start, memory_end);
-> +
->   	setup_initial_init_mm(_stext, _etext, _edata, _end);
->   	init_task.thread.kregs = &fake_regs;
->   
-> diff --git a/arch/nios2/mm/init.c b/arch/nios2/mm/init.c
-> index a2278485de19..aa692ad30044 100644
-> --- a/arch/nios2/mm/init.c
-> +++ b/arch/nios2/mm/init.c
-> @@ -65,8 +65,6 @@ void __init mem_init(void)
->   	unsigned long end_mem   = memory_end; /* this must not include
->   						kernel stack at top */
->   
-> -	pr_debug("mem_init: start=%lx, end=%lx\n", memory_start, memory_end);
-> -
->   	end_mem &= PAGE_MASK;
->   	high_memory = __va(end_mem);
->   
+On Fri, Mar 7, 2025 at 3:19=E2=80=AFAM Thierry Reding <thierry.reding@gmail=
+.com> wrote:
+>
+> On Wed, Jan 15, 2025 at 04:41:23AM +0800, Celeste Liu wrote:
+> > Commit 673ce00c5d6c ("ARM: omap2plus_defconfig: Add support for distros
+> > with systemd") said it's because of recommendation from systemd. But
+> > systemd changed their recommendation later.[1]
+> >
+> > For cgroup v1, if turned on, and there's any cgroup in the "cpu" hierar=
+chy it
+> > needs an RT budget assigned, otherwise the processes in it will not be =
+able to
+> > get RT at all. The problem with RT group scheduling is that it requires=
+ the
+> > budget assigned but there's no way we could assign a default budget, si=
+nce the
+> > values to assign are both upper and lower time limits, are absolute, an=
+d need to
+> > be sum up to < 1 for each individal cgroup. That means we cannot really=
+ come up
+> > with values that would work by default in the general case.[2]
+> >
+> > For cgroup v2, it's almost unusable as well. If it turned on, the cpu c=
+ontroller
+> > can only be enabled when all RT processes are in the root cgroup. But i=
+t will
+> > lose the benefits of cgroup v2 if all RT process were placed in the sam=
+e cgroup.
+> >
+> > Red Hat, Gentoo, Arch Linux and Debian all disable it. systemd also doe=
+sn't
+> > support it.
+> >
+> > [1]: https://github.com/systemd/systemd/commit/f4e74be1856b3ac058acbf1b=
+e321c31d5299f69f
+> > [2]: https://bugzilla.redhat.com/show_bug.cgi?id=3D1229700
+> >
+> > Tested-by: Stefan Wahren <wahrenst@gmx.net>
+> > Acked-by: Kevin Hilman <khilman@baylibre.com>
+> > Acked-by: Thierry Reding <treding@nvidia.com>
+> > Signed-off-by: Celeste Liu <uwu@coelacanthus.name>
+> > ---
+> >  arch/arm/configs/bcm2835_defconfig   | 1 -
+> >  arch/arm/configs/omap2plus_defconfig | 1 -
+> >  arch/arm/configs/tegra_defconfig     | 1 -
+> >  3 files changed, 3 deletions(-)
+>
+> Hi Arnd,
+>
+> is this something that you could pick up? I think so far only the RISC-V
+> patch was picked up, but nobody seems to feel responsible for the ARM
+> patch here.
+I will take the LoongArch patch, but may be squashed to another one
+about config file update.
 
-Acked-By: Dinh Nguyen <dinguyen@kernel.org>
+Huacai
+
+>
+> Thierry
