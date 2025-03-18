@@ -1,134 +1,137 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8278B20B209;
-	Tue, 18 Mar 2025 11:57:56 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A7C1C20E6FA;
+	Tue, 18 Mar 2025 15:59:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742299076; cv=none; b=OuROhSnZM5ege2b0L/9ELVdzKhMCaGVkfsPngV+h7cm+VLpAtQKH+DfjaegNYP29t8ZWmKE0TvAzN8njsRNFe+ZV+EkKvWWQlXjBv/kGP/PbO7hl4np1Tj4mm6mrcsbMYgtyd0gQL3dAflVmVU0IxhREbJo/wJcA5AtDZeDjNKo=
+	t=1742313596; cv=none; b=oeS/Mand7Jxau2tE7KN0QjTULTOje8cy4jkTkTRSbwgjXMdjJVRJDlyvyZ8ZWusVS7TC6ZSVEmjp1+X5iz0jwAHSlHIhO2/VGCTqLAAsOgtu/5gM9ugBowfPmutJb8Kk78yeT6njuLVdeE+rPl+aGm6/S9eE0qRs+9TlxBSLQp4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742299076; c=relaxed/simple;
-	bh=CIhTjH9kKlO1VYGiipc2V9drjBD3Ayt0OkD0U7KRb6w=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=mkX+QsufJkG5ESeDyS8MStZiypuvHgZ5nG5rtiru83QJN+WT9kcXnOAqINGMsq5+YAu1bMS3ANP4KEBI0GkKnXizDG0W/f6r8obtzT9twjis2uRbNnvPA+ap5cmh2IszKPTMaMvBNL8gESw2IsmDKJv4sTk9sIzrG/C6KkX+DFQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VNZz+D/d; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1742313596; c=relaxed/simple;
+	bh=wnqlTyxAgZ8CuVhXT9duPOO4NgjQBjimZKlWtsOUGPY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=rtNuxbEvsVojzW+7QvI93xBrqK3voNzfEGfkR3KtDUInYvUpBBq1aSF4wLJuRPQj0dePFNL+uDuqbEJwQso12VjNFc/tMypWHZORL2C34DxQBfoMRU4cECQo1rMSPOTt2wSTx13hsD6oQY2+NdGL24MCI4no+22mDotXMgSNrnE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WVHlHUak; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VNZz+D/d"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 54476C4CEF4;
-	Tue, 18 Mar 2025 11:57:56 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WVHlHUak"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 58FD2C4CEDD;
+	Tue, 18 Mar 2025 15:59:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1742299076;
-	bh=CIhTjH9kKlO1VYGiipc2V9drjBD3Ayt0OkD0U7KRb6w=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=VNZz+D/dtbyshE97W4HnLDn48vAHhWJ1qM3mL/ZcYLXzJCavmJHa91JYiiOlMNJbz
-	 3UQHEcUGagflvTa1naQQ3WhxL7VDkHEqM2S7CkzCA9R2QNMrKsOF/87TV8TeAU7pag
-	 JnyeHsFK4NM+n6Sd6iwRDBgTTtsst7XHqqi+SMHGvuW0tYLqcabFNOqlgCauzVkD73
-	 FEV87vVnNi6+5cugxgHyXPjIWm09qmE4hdd7e5vWrscoz4DVCqYqP4MsFlrfEg/D+e
-	 hisoP8e3IL/aZBRIfu7TRQITKlDjGtX7HEA5nLU4mGdskuoLTKP3Pn1CaVYbWjJBBQ
-	 A9XO+vMkI9ejg==
-Received: by mail-ed1-f54.google.com with SMTP id 4fb4d7f45d1cf-5e677f59438so8669594a12.2;
-        Tue, 18 Mar 2025 04:57:56 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCUJn93+o9VThlJf248T8kDQN0A25pxlXD426wHkpSJ00P3nXOoDnyafmlQXi8g4RO1jV2w1+PHwdr13iq4=@vger.kernel.org, AJvYcCUQsv5tW7vwkMCEaajjS4tsu/CRPnrO21Tu2Vdiup8EhoC9mP/7yp/eN6USyp1IFV6xmtvvVcMF/8CMaA==@vger.kernel.org, AJvYcCXVWDtIkYsLnWBxymQTWh/RftqE3HUUANA66uM2rw6ONmrWYR8a87w9TMFGpmgiptUiuZGCspS1iTDkfCo=@vger.kernel.org, AJvYcCXf5pDmhbsiUMlSdYGefVs3+rbL9LuCwZsMOppZDeept2Jk1as5iU0h6+b9ztyq2D4QZN/yhDoypD4=@vger.kernel.org
-X-Gm-Message-State: AOJu0YwykM1XlCIEFflRUYmbznl9cYV/f8jcegCN+P7iUygQu6JIZWKj
-	Y9mLOY1Faam2YLWclHhHVXYf7VDMBmhJxOw/WjzpWjd6PTIFKYiQKKBcVmh3BnE2FnfhZZ2PSlD
-	+sqzRaWIRxQgDYCpKZnxPOcEySeU=
-X-Google-Smtp-Source: AGHT+IHWKrMLWQmDlK3EXFGkIz3JuWrB7n/PbIZxnJSxvCf68cavwFPKlU+WgeLv6v2/CTfArLyeiik7sHtiA+Oo+58=
-X-Received: by 2002:a17:907:1009:b0:ac3:3f10:e8e3 with SMTP id
- a640c23a62f3a-ac33f10ed5cmr1299294766b.1.1742299074804; Tue, 18 Mar 2025
- 04:57:54 -0700 (PDT)
+	s=k20201202; t=1742313596;
+	bh=wnqlTyxAgZ8CuVhXT9duPOO4NgjQBjimZKlWtsOUGPY=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=WVHlHUakLlfN9xeuBYO1EJf+5CyU+WJKRkilNy467a1BnupPF2HSzG6De1fpXKFV+
+	 ix9jYHBoyySgyb6uel1Y6KTQEzU4+Rwm0HghzRyuSjF71hbCSnTEGnernC5xUEtu10
+	 +UeOIc/V5TKw7+jkC51H/NeBuaIOzIXiqjJlwYzUGV3n3dFHQ9MxYqNWDakJi0E6hg
+	 3eBuUyUh9Yz/C8EPNMpPnQhIe07ID+3WJ5N3wJyQiVpq4Skm6z+pxWjAjp5DobEjiB
+	 6Jrg3x/R+DiIvD5NG4zUjWrrB/2tNu1hT+SvmfpVy3qQGAt9drIa3KhZDqAUmDABl/
+	 j7eCAm37AJZIQ==
+Date: Tue, 18 Mar 2025 15:59:47 +0000
+From: Will Deacon <will@kernel.org>
+To: Alessandro Carminati <acarmina@redhat.com>
+Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	=?iso-8859-1?Q?Ma=EDra?= Canal <mcanal@igalia.com>,
+	Dan Carpenter <dan.carpenter@linaro.org>,
+	Kees Cook <keescook@chromium.org>,
+	Daniel Diaz <daniel.diaz@linaro.org>,
+	David Gow <davidgow@google.com>,
+	Arthur Grillo <arthurgrillo@riseup.net>,
+	Brendan Higgins <brendan.higgins@linux.dev>,
+	Naresh Kamboju <naresh.kamboju@linaro.org>,
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Maxime Ripard <mripard@kernel.org>,
+	Ville =?iso-8859-1?Q?Syrj=E4l=E4?= <ville.syrjala@linux.intel.com>,
+	Daniel Vetter <daniel@ffwll.ch>,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	Guenter Roeck <linux@roeck-us.net>,
+	Alessandro Carminati <alessandro.carminati@gmail.com>,
+	Jani Nikula <jani.nikula@intel.com>,
+	dri-devel@lists.freedesktop.org, kunit-dev@googlegroups.com,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, loongarch@lists.linux.dev, x86@kernel.org,
+	Linux Kernel Functional Testing <lkft@linaro.org>,
+	Catalin Marinas <catalin.marinas@arm.com>
+Subject: Re: [PATCH v4 07/14] arm64: Add support for suppressing warning
+ backtraces
+Message-ID: <20250318155946.GC13829@willie-the-truck>
+References: <20250313114329.284104-1-acarmina@redhat.com>
+ <20250313114329.284104-8-acarmina@redhat.com>
+ <20250313122503.GA7438@willie-the-truck>
+ <CAGegRW5r3V2-_44-X353vS-GZwDYG=SVwc6MzSGE8GdFQuFoKA@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250115-fix-riscv-rt_group_sched-v4-0-607606fe73a5@coelacanthus.name>
- <20250115-fix-riscv-rt_group_sched-v4-4-607606fe73a5@coelacanthus.name> <t2dustbykx2qd24wazjeiw5hch5nwr6z2ewmaf4srg6r2grwrf@rdw47chzkef2>
-In-Reply-To: <t2dustbykx2qd24wazjeiw5hch5nwr6z2ewmaf4srg6r2grwrf@rdw47chzkef2>
-From: Huacai Chen <chenhuacai@kernel.org>
-Date: Tue, 18 Mar 2025 19:57:44 +0800
-X-Gmail-Original-Message-ID: <CAAhV-H4fTGs-7EXE0EcR=P6GqHF2fokRE-kEte+cDmhjy=FYsA@mail.gmail.com>
-X-Gm-Features: AQ5f1Jo4W5NNqo2SfcBdxKCe2OFxQs4im7DaCODl6wEw6MnCM3-sp2pnyba2ZAw
-Message-ID: <CAAhV-H4fTGs-7EXE0EcR=P6GqHF2fokRE-kEte+cDmhjy=FYsA@mail.gmail.com>
-Subject: Re: [PATCH v4 4/4] arm: defconfig: drop RT_GROUP_SCHED=y from bcm2835/tegra/omap2plus
-To: Thierry Reding <thierry.reding@gmail.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, Celeste Liu <uwu@coelacanthus.name>, 
-	Paul Walmsley <paul.walmsley@sifive.com>, Palmer Dabbelt <palmer@dabbelt.com>, 
-	Albert Ou <aou@eecs.berkeley.edu>, Guo Ren <guoren@kernel.org>, 
-	Anup Patel <anup@brainfault.org>, 
-	Heinrich Schuchardt <heinrich.schuchardt@canonical.com>, WANG Xuerui <kernel@xen0n.name>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Russell King <linux@armlinux.org.uk>, 
-	Florian Fainelli <florian.fainelli@broadcom.com>, 
-	Broadcom internal kernel review list <bcm-kernel-feedback-list@broadcom.com>, Ray Jui <rjui@broadcom.com>, 
-	Scott Branden <sbranden@broadcom.com>, Tony Lindgren <tony@atomide.com>, 
-	Jonathan Hunter <jonathanh@nvidia.com>, Aaro Koskinen <aaro.koskinen@iki.fi>, 
-	Andreas Kemnade <andreas@kemnade.info>, Kevin Hilman <khilman@baylibre.com>, 
-	Roger Quadros <rogerq@kernel.org>, Palmer Dabbelt <palmer@rivosinc.com>, linux-riscv@lists.infradead.org, 
-	linux-kernel@vger.kernel.org, loongarch@lists.linux.dev, 
-	linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-rpi-kernel@lists.infradead.org, linux-omap@vger.kernel.org, 
-	linux-tegra@vger.kernel.org, Stefan Wahren <wahrenst@gmx.net>, 
-	Thierry Reding <treding@nvidia.com>, soc@lists.linux.dev
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAGegRW5r3V2-_44-X353vS-GZwDYG=SVwc6MzSGE8GdFQuFoKA@mail.gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 
-On Fri, Mar 7, 2025 at 3:19=E2=80=AFAM Thierry Reding <thierry.reding@gmail=
-.com> wrote:
->
-> On Wed, Jan 15, 2025 at 04:41:23AM +0800, Celeste Liu wrote:
-> > Commit 673ce00c5d6c ("ARM: omap2plus_defconfig: Add support for distros
-> > with systemd") said it's because of recommendation from systemd. But
-> > systemd changed their recommendation later.[1]
+On Thu, Mar 13, 2025 at 05:40:59PM +0100, Alessandro Carminati wrote:
+> On Thu, Mar 13, 2025 at 1:25 PM Will Deacon <will@kernel.org> wrote:
 > >
-> > For cgroup v1, if turned on, and there's any cgroup in the "cpu" hierar=
-chy it
-> > needs an RT budget assigned, otherwise the processes in it will not be =
-able to
-> > get RT at all. The problem with RT group scheduling is that it requires=
- the
-> > budget assigned but there's no way we could assign a default budget, si=
-nce the
-> > values to assign are both upper and lower time limits, are absolute, an=
-d need to
-> > be sum up to < 1 for each individal cgroup. That means we cannot really=
- come up
-> > with values that would work by default in the general case.[2]
+> > On Thu, Mar 13, 2025 at 11:43:22AM +0000, Alessandro Carminati wrote:
+> > > diff --git a/arch/arm64/include/asm/bug.h b/arch/arm64/include/asm/bug.h
+> > > index 28be048db3f6..044c5e24a17d 100644
+> > > --- a/arch/arm64/include/asm/bug.h
+> > > +++ b/arch/arm64/include/asm/bug.h
+> > > @@ -11,8 +11,14 @@
+> > >
+> > >  #include <asm/asm-bug.h>
+> > >
+> > > +#ifdef HAVE_BUG_FUNCTION
+> > > +# define __BUG_FUNC  __func__
+> > > +#else
+> > > +# define __BUG_FUNC  NULL
+> > > +#endif
+> > > +
+> > >  #define __BUG_FLAGS(flags)                           \
+> > > -     asm volatile (__stringify(ASM_BUG_FLAGS(flags)));
+> > > +     asm volatile (__stringify(ASM_BUG_FLAGS(flags, %c0)) : : "i" (__BUG_FUNC));
 > >
-> > For cgroup v2, it's almost unusable as well. If it turned on, the cpu c=
-ontroller
-> > can only be enabled when all RT processes are in the root cgroup. But i=
-t will
-> > lose the benefits of cgroup v2 if all RT process were placed in the sam=
-e cgroup.
-> >
-> > Red Hat, Gentoo, Arch Linux and Debian all disable it. systemd also doe=
-sn't
-> > support it.
-> >
-> > [1]: https://github.com/systemd/systemd/commit/f4e74be1856b3ac058acbf1b=
-e321c31d5299f69f
-> > [2]: https://bugzilla.redhat.com/show_bug.cgi?id=3D1229700
-> >
-> > Tested-by: Stefan Wahren <wahrenst@gmx.net>
-> > Acked-by: Kevin Hilman <khilman@baylibre.com>
-> > Acked-by: Thierry Reding <treding@nvidia.com>
-> > Signed-off-by: Celeste Liu <uwu@coelacanthus.name>
-> > ---
-> >  arch/arm/configs/bcm2835_defconfig   | 1 -
-> >  arch/arm/configs/omap2plus_defconfig | 1 -
-> >  arch/arm/configs/tegra_defconfig     | 1 -
-> >  3 files changed, 3 deletions(-)
->
-> Hi Arnd,
->
-> is this something that you could pick up? I think so far only the RISC-V
-> patch was picked up, but nobody seems to feel responsible for the ARM
-> patch here.
-I will take the LoongArch patch, but may be squashed to another one
-about config file update.
+> > Why is 'i' the right asm constraint to use here? It seems a bit odd to
+> > use that for a pointer.
+> 
+> I received this code as legacy from a previous version.
+> In my review, I considered the case when HAVE_BUG_FUNCTION is defined:
+> Here, __BUG_FUNC is defined as __func__, which is the name of the
+> current function as a string literal.
+> Using the constraint "i" seems appropriate to me in this case.
+> 
+> However, when HAVE_BUG_FUNCTION is not defined:
+> __BUG_FUNC is defined as NULL. Initially, I considered it literal 0,
+> but after investigating your concern, I found:
+> 
+> ```
+> $ echo -E "#include <stdio.h>\n#include <stddef.h>\nint main()
+> {\nreturn 0;\n}" | aarch64-linux-gnu-gcc -E -dM - | grep NULL
+> #define NULL ((void *)0)
+> ```
+> 
+> I realized that NULL is actually a pointer that is not a link time
+> symbol, and using the "i" constraint with NULL may result in undefined
+> behavior.
+> 
+> Would the following alternative definition for __BUG_FUNC be more convincing?
+> 
+> ```
+> #ifdef HAVE_BUG_FUNCTION
+>     #define __BUG_FUNC __func__
+> #else
+>     #define __BUG_FUNC (uintptr_t)0
+> #endif
+> ```
+> Let me know your thoughts.
 
-Huacai
+Thanks for the analysis; I hadn't noticed this specific issue, it just
+smelled a bit fishy. Anyway, the diff above looks better, thanks.
 
->
-> Thierry
+Will
