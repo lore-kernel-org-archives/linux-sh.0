@@ -1,121 +1,151 @@
-Received: from mail.zeus03.de (zeus03.de [194.117.254.33])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4996D1A01D4
-	for <linux-sh@vger.kernel.org>; Tue, 18 Mar 2025 21:45:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.117.254.33
+Received: from pegase2.c-s.fr (pegase2.c-s.fr [93.17.235.10])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 4A53C250BF6;
+	Wed, 19 Mar 2025 08:20:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=93.17.235.10
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742334310; cv=none; b=ExidERcc9Bw12CaAZiqy8kXyut6Ekz7q2pAWpc2vYTq6OK4jKcEyX9NCGjkYwsvoY/dKk1CBH7jNmYkcMG8Cfyog2VbuL7s5DHCIDtCb48O772Pbn0GpEd35E/P9FnrFPRwyj0JAfoD0VzMaxD6tz3Ag/3jWPYRKaQC2fdDCBpY=
+	t=1742372406; cv=none; b=ny9fw6RmHy/pgwviwLs9LDxYKL8YYHB2XvZzOllM4ipdXUSw1UQGb7HaOcSEAefNCJMbR5HS0eLpi4vb1jyGRmJiyJGdP1hv3pRlmn+kJutOyU3XnFZFnrmMhn6igENy5KeCLNSihus0YpP0igameG5Fx4E9qi0iKYCMH/YKwCU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742334310; c=relaxed/simple;
-	bh=bMM1wi+NozKN3/tg/TNSU7TCynynqWTpswJC2Ltfdww=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Oqbuah0/+5j/OVpYQnIn5FSyMTgjkluXXR4HOysTd3zt0w29ZQKnC/dJWSxeQnXN+odaNi5+hUl0cbm9qSjYJmJ8Cvu+296RInDjiGwm9DKd2d9NZ/KYmpBtCS2IwqRVHUpZdpiqDenK1O+Omzd0jKH2p4uhskrJWGHrC5VnFK8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com; spf=pass smtp.mailfrom=sang-engineering.com; dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b=Lfib3jtk; arc=none smtp.client-ip=194.117.254.33
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sang-engineering.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b="Lfib3jtk"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	sang-engineering.com; h=date:from:to:cc:subject:message-id
-	:references:mime-version:content-type:in-reply-to; s=k1; bh=b8Bo
-	+WjcBkSBJdu8LGh6iRdR5TxchwQpHG5ejNYnok4=; b=Lfib3jtkxEsXAP2Ny19i
-	9IMsJZGsfqdiDM3bfObY340JPfKytqUzvjWlls3tLek+PFFZRe7ORdvfoTYn2gdj
-	xgzZturlPW5LDiWL6l7bBciN7G8Liov9WASEPqIxqqleVAaqiTTK9ro5vV8g/PBp
-	k6jCUeWLJD/vVKj1DgpJzdTD4cZuGZZ4z/8WFlVo1VJcT/DrOYxdo+gckiqbOQBW
-	i5NUVvYujSS9bOGT4/gPseJJjVvYUUvGIVkAzjT6mgq5i0fzrE8WB2ruiNb+2uou
-	IlTfzCcBVyIHz7PiLvLQw6so9EKGIBsFet/XOW0H3tcdtHr0PaKsI7Mhd/bRM+hD
-	Rw==
-Received: (qmail 4009536 invoked from network); 18 Mar 2025 22:45:06 +0100
-Received: by mail.zeus03.de with UTF8SMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 18 Mar 2025 22:45:06 +0100
-X-UD-Smtp-Session: l3s3148p1@KjVg0aQw6Ogujnsn
-Date: Tue, 18 Mar 2025 22:45:05 +0100
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-To: Paul Barker <paul.barker.ct@bp.renesas.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
-	Thierry Bultel <thierry.bultel.yh@bp.renesas.com>,
-	thierry.bultel@linatsea.fr, linux-renesas-soc@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org,
-	Ulrich Hecht <uli@fpond.eu>,
-	Linux-sh list <linux-sh@vger.kernel.org>
-Subject: Re: [PATCH v4 08/13] serial: sh-sci: Introduced function pointers
-Message-ID: <Z9npYaRwzhsoLxS9@shikoro>
-Mail-Followup-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
-	Paul Barker <paul.barker.ct@bp.renesas.com>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Thierry Bultel <thierry.bultel.yh@bp.renesas.com>,
-	thierry.bultel@linatsea.fr, linux-renesas-soc@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org,
-	Ulrich Hecht <uli@fpond.eu>,
-	Linux-sh list <linux-sh@vger.kernel.org>
-References: <20250306152451.2356762-1-thierry.bultel.yh@bp.renesas.com>
- <20250306152451.2356762-9-thierry.bultel.yh@bp.renesas.com>
- <CAMuHMdVM_ozW4LAA4DstQuDfEcOnOcXZ2QHGv8nYMKDPWJe43Q@mail.gmail.com>
- <Z9fxfV9jAGJ51fcn@shikoro>
- <999cb080-ea61-45e5-9ea0-356fb8bc4639@bp.renesas.com>
+	s=arc-20240116; t=1742372406; c=relaxed/simple;
+	bh=9OlvM4XUWWvrHJOd2iYbZSXPoeKrvur3cTL1QmV2LNQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=jGPJqRUmdTHdWfAUsr7ntxP/W8arq3G/Iffg08MrASUp/VinXPonljuAYzkK09NwFa5LW256RcQKiQlbpa3nO9gVg/akVdb+kbdE6zGg2iHxeMZU/vNdIWv3DZnmvfggYrbvm7+1mN8FpBwV1uXHo4CO0bx/W3CS98Eh0Msc7N8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu; spf=pass smtp.mailfrom=csgroup.eu; arc=none smtp.client-ip=93.17.235.10
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=csgroup.eu
+Received: from localhost (mailhub3.si.c-s.fr [172.26.127.67])
+	by localhost (Postfix) with ESMTP id 4ZHh8p3p47z9sSY;
+	Wed, 19 Mar 2025 09:05:30 +0100 (CET)
+X-Virus-Scanned: amavisd-new at c-s.fr
+Received: from pegase2.c-s.fr ([172.26.127.65])
+	by localhost (pegase2.c-s.fr [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 5Pdv_1f5SWZW; Wed, 19 Mar 2025 09:05:30 +0100 (CET)
+Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
+	by pegase2.c-s.fr (Postfix) with ESMTP id 4ZHh8p2Mb8z9sSX;
+	Wed, 19 Mar 2025 09:05:30 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+	by messagerie.si.c-s.fr (Postfix) with ESMTP id 2617E8B78F;
+	Wed, 19 Mar 2025 09:05:30 +0100 (CET)
+X-Virus-Scanned: amavisd-new at c-s.fr
+Received: from messagerie.si.c-s.fr ([127.0.0.1])
+	by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
+	with ESMTP id K6S1MuFrSThd; Wed, 19 Mar 2025 09:05:30 +0100 (CET)
+Received: from [192.168.235.99] (unknown [192.168.235.99])
+	by messagerie.si.c-s.fr (Postfix) with ESMTP id 585CB8B763;
+	Wed, 19 Mar 2025 09:05:28 +0100 (CET)
+Message-ID: <a64bf821-ea90-4fd9-92ec-13bf7b7a3067@csgroup.eu>
+Date: Wed, 19 Mar 2025 09:05:27 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="ZSSzgJ/NPc9toIdY"
-Content-Disposition: inline
-In-Reply-To: <999cb080-ea61-45e5-9ea0-356fb8bc4639@bp.renesas.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v4 07/14] arm64: Add support for suppressing warning
+ backtraces
+To: Will Deacon <will@kernel.org>, Alessandro Carminati <acarmina@redhat.com>
+Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
+ Arnd Bergmann <arnd@arndb.de>, =?UTF-8?Q?Ma=C3=ADra_Canal?=
+ <mcanal@igalia.com>, Dan Carpenter <dan.carpenter@linaro.org>,
+ Kees Cook <keescook@chromium.org>, Daniel Diaz <daniel.diaz@linaro.org>,
+ David Gow <davidgow@google.com>, Arthur Grillo <arthurgrillo@riseup.net>,
+ Brendan Higgins <brendan.higgins@linux.dev>,
+ Naresh Kamboju <naresh.kamboju@linaro.org>,
+ Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+ Andrew Morton <akpm@linux-foundation.org>, Maxime Ripard
+ <mripard@kernel.org>, =?UTF-8?B?VmlsbGUgU3lyasOkbMOk?=
+ <ville.syrjala@linux.intel.com>, Daniel Vetter <daniel@ffwll.ch>,
+ Thomas Zimmermann <tzimmermann@suse.de>, Guenter Roeck <linux@roeck-us.net>,
+ Alessandro Carminati <alessandro.carminati@gmail.com>,
+ Jani Nikula <jani.nikula@intel.com>, dri-devel@lists.freedesktop.org,
+ kunit-dev@googlegroups.com, linux-arch@vger.kernel.org,
+ linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ loongarch@lists.linux.dev, x86@kernel.org,
+ Linux Kernel Functional Testing <lkft@linaro.org>,
+ Catalin Marinas <catalin.marinas@arm.com>
+References: <20250313114329.284104-1-acarmina@redhat.com>
+ <20250313114329.284104-8-acarmina@redhat.com>
+ <20250313122503.GA7438@willie-the-truck>
+ <CAGegRW5r3V2-_44-X353vS-GZwDYG=SVwc6MzSGE8GdFQuFoKA@mail.gmail.com>
+ <20250318155946.GC13829@willie-the-truck>
+Content-Language: fr-FR
+From: Christophe Leroy <christophe.leroy@csgroup.eu>
+In-Reply-To: <20250318155946.GC13829@willie-the-truck>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
---ZSSzgJ/NPc9toIdY
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-Hi Paul,
+Le 18/03/2025 à 16:59, Will Deacon a écrit :
+> On Thu, Mar 13, 2025 at 05:40:59PM +0100, Alessandro Carminati wrote:
+>> On Thu, Mar 13, 2025 at 1:25 PM Will Deacon <will@kernel.org> wrote:
+>>>
+>>> On Thu, Mar 13, 2025 at 11:43:22AM +0000, Alessandro Carminati wrote:
+>>>> diff --git a/arch/arm64/include/asm/bug.h b/arch/arm64/include/asm/bug.h
+>>>> index 28be048db3f6..044c5e24a17d 100644
+>>>> --- a/arch/arm64/include/asm/bug.h
+>>>> +++ b/arch/arm64/include/asm/bug.h
+>>>> @@ -11,8 +11,14 @@
+>>>>
+>>>>   #include <asm/asm-bug.h>
+>>>>
+>>>> +#ifdef HAVE_BUG_FUNCTION
+>>>> +# define __BUG_FUNC  __func__
+>>>> +#else
+>>>> +# define __BUG_FUNC  NULL
+>>>> +#endif
+>>>> +
+>>>>   #define __BUG_FLAGS(flags)                           \
+>>>> -     asm volatile (__stringify(ASM_BUG_FLAGS(flags)));
+>>>> +     asm volatile (__stringify(ASM_BUG_FLAGS(flags, %c0)) : : "i" (__BUG_FUNC));
+>>>
+>>> Why is 'i' the right asm constraint to use here? It seems a bit odd to
+>>> use that for a pointer.
+>>
+>> I received this code as legacy from a previous version.
+>> In my review, I considered the case when HAVE_BUG_FUNCTION is defined:
+>> Here, __BUG_FUNC is defined as __func__, which is the name of the
+>> current function as a string literal.
+>> Using the constraint "i" seems appropriate to me in this case.
+>>
+>> However, when HAVE_BUG_FUNCTION is not defined:
+>> __BUG_FUNC is defined as NULL. Initially, I considered it literal 0,
+>> but after investigating your concern, I found:
+>>
+>> ```
+>> $ echo -E "#include <stdio.h>\n#include <stddef.h>\nint main()
+>> {\nreturn 0;\n}" | aarch64-linux-gnu-gcc -E -dM - | grep NULL
+>> #define NULL ((void *)0)
+>> ```
+>>
+>> I realized that NULL is actually a pointer that is not a link time
+>> symbol, and using the "i" constraint with NULL may result in undefined
+>> behavior.
+>>
+>> Would the following alternative definition for __BUG_FUNC be more convincing?
+>>
+>> ```
+>> #ifdef HAVE_BUG_FUNCTION
+>>      #define __BUG_FUNC __func__
+>> #else
+>>      #define __BUG_FUNC (uintptr_t)0
+>> #endif
+>> ```
+>> Let me know your thoughts.
+> 
+> Thanks for the analysis; I hadn't noticed this specific issue, it just
+> smelled a bit fishy. Anyway, the diff above looks better, thanks.
 
-> We discussed both approaches internally and did an initial
-> proof-of-concept of a separate driver. The result was over 1,000 lines
-> of code copy-pasted from the existing sh-sci driver into the new driver,
-> which is generally something maintainers want us to avoid doing.
+That propably deserves a comment.
 
-Darn, 1000 lines of logic is a lot...
+Doesn't sparse and/or checkpatch complain about 0 being used in lieu of 
+NULL ?
 
-> trade off here is whether we want a single more complex driver, or two
-> copies of much of the code so that bugfixes/improvements to the common
-> sections in the future need to be duplicated.
+By the way I had similar problem in the past with GCC not seeing NULL as 
+a __builtin_constant_p(), refer commit 1d8f739b07bd ("powerpc/kuap: Fix 
+set direction in allow/prevent_user_access()")
 
-Exactly.
-
-> The RZ/V2H and RZ/G3E have interfaces of both the existing sh-sci
-> register layout ("SCIF" ports in RZ/V2H & RZ/G3E manual) and the RZ/T2H
-> style register layout ("RSCI" ports in RZ/V2H manual, "SCI" ports in
-> RZ/G3E manual), so keeping things closely aligned as we move forward
-> will be beneficial. I expect that this will be easier with a combined
-> driver.
-
-I will have a look at the series.
-
-Happy hacking,
-
-   Wolfram
-
-
---ZSSzgJ/NPc9toIdY
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAmfZ6V0ACgkQFA3kzBSg
-Kba5ahAAl/Ml/ppwI24PMjK1c4ePEYFQ5vJsj56tZw+c4I6ys1LCKjEuwYVYXYTe
-6Wg8A6/IxSYrxhrqqTECYBwcnryDDUNXJ5vKRdhqVPRCYVbgHIhqblKA4LVUTAzi
-9+e2Ip1hRNdZP+H/fSSN9zF2EDfQQng8J2pCIdcBkBzzTh/cYfCgdkpJnIMpKIe4
-SiEQKiOuVs1epIHFPpqO4vw46tw5SCgJCxtZetaqx5ZJRjn/d7YbCs7J5MDxAX8j
-bEloxNKmjLVdt5MCKhHXdhxmzwrf7lY6api2Le3unyiDFSA3PEzZnoVRThvY4Jux
-2UqwkjAiA7+LoIi+Mwan0b9v2hgby7QhuF47ZcHn+gIC4fVER+0Pxt69kxM0yt9U
-qjgjZNfG7v7MJZRAgePdxW8kzPU5ZWj8ympsxe6r5scPIMvujtM6tTCCYT62AXhX
-S3RnbP0+vVVh4xMUOvXP9ShX56H4b/JB92l51uc0xpPQVm287dT+5gexuu9j03vg
-dIyMaJnomQ2AJvMH3c32u10H5JtdXzl7Z5i9dCS6fFh03QkJjS3krHRXbk7pJqMT
-nV95tj3IBOmeDtP7Nb+dJ4Ni9Y9vK8hMpCSFkF8FFJnGcrUv3JF9ejcZ2aIu1pzy
-mr1dTJR2VZMrj6kbACexmh7lnrt8ZOO85OYCDt5iy0QcmMI9lIE=
-=yaiH
------END PGP SIGNATURE-----
-
---ZSSzgJ/NPc9toIdY--
+Christophe
