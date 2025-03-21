@@ -1,55 +1,55 @@
-Received: from fhigh-a7-smtp.messagingengine.com (fhigh-a7-smtp.messagingengine.com [103.168.172.158])
+Received: from fout-a5-smtp.messagingengine.com (fout-a5-smtp.messagingengine.com [103.168.172.148])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9891021D00E
-	for <linux-sh@vger.kernel.org>; Fri, 21 Mar 2025 10:42:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.158
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB5FF1E98EB;
+	Fri, 21 Mar 2025 12:29:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.148
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742553743; cv=none; b=u3oowxpYNi2JuZsvNDfbNO8xhOV7n7MJDTJOVEIH1dq6ivxFtjKz6Mo1VAYEZv4ufDZzCPbxuKKhv1AawGXGmTLK2jSJhjuObxRiJO9/31twPMpY86LBYFkLpOd1P36rcdCstmlALCrVfxxStkhG6sJ4TTVulbDxXOJZNBes7Ho=
+	t=1742560153; cv=none; b=pPv104fR+xjrsgdzd4JE4DowEThDnjeeiYYWaRZ3qpQl/ndDCGtd3+KHYQP/RNH8G4/6zDAhC0tBHYsZ8fOhwhS6GTklBcBI1EjjzGYJ2ctswLO+RlBa2a5ESyqwHkT0FPtV+WQEjX6kpIdA/0s1O9NUkMdjlsL+9Pzf8BNMTsE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742553743; c=relaxed/simple;
-	bh=kbwc2dMi8DGC6dfEKkduthhnqPrjCNhv9qJ/tCphYTA=;
+	s=arc-20240116; t=1742560153; c=relaxed/simple;
+	bh=lfdiISzEEgrO+slIfnGzPTZpHHwZmhdB5j/bOmU0rqs=;
 	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=WG/aFn34OasV9Pjd0gS8NBzd0v7ZFJvXRwn7kg7ztVsoWfU89m1/RKlNwdjxNjXFQIjDEJ7F3tG0IkfANDSrbqUxxV9AR5UZjmtZcRen94Dfl3JOoRANqvsg+jJrX/pHH/kpUSumXbEVHYO4lXWliQkf5WSNl/c5RHopSY+zqsQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=XjnjdZcg; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ggxomf2o; arc=none smtp.client-ip=103.168.172.158
+	 Subject:Content-Type; b=g0+RmCgQAKFVfXNrn4mYD7fiej19PSnYZ9xpfec8KvffpvAhD1Jcg3l5QeTWWTJcD+1dAWT0YPcFz3ZZwDY+bOfHaL+HPqA7LH1UyfYCs+k2nPAXQBXSYphhV1UPt/E2xAKOk3uMqdjDswzUdkHaagF1WXxO0Rgq/paRe2bGYkA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=i57tvl4V; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=lT051Oi2; arc=none smtp.client-ip=103.168.172.148
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="XjnjdZcg";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ggxomf2o"
-Received: from phl-compute-07.internal (phl-compute-07.phl.internal [10.202.2.47])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id B4292114010D;
-	Fri, 21 Mar 2025 06:42:20 -0400 (EDT)
+	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="i57tvl4V";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="lT051Oi2"
+Received: from phl-compute-09.internal (phl-compute-09.phl.internal [10.202.2.49])
+	by mailfout.phl.internal (Postfix) with ESMTP id BBD171383770;
+	Fri, 21 Mar 2025 08:29:08 -0400 (EDT)
 Received: from phl-imap-11 ([10.202.2.101])
-  by phl-compute-07.internal (MEProxy); Fri, 21 Mar 2025 06:42:20 -0400
+  by phl-compute-09.internal (MEProxy); Fri, 21 Mar 2025 08:29:08 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
 	:cc:content-transfer-encoding:content-type:content-type:date
 	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm1; t=1742553740;
-	 x=1742640140; bh=68U2xOJN0FdMowzUkCY1aIhi5big7bilZhbRnPyI3bA=; b=
-	XjnjdZcg53TQoWY6DbowpGSf6Ma4/nsFtY8lkgM2pEJsZCUXCKKwcIm7QdV7M4Bf
-	2yM/xCCXpwT3VCW/Nf9a/BX5QIhRI8DG6QFz0DYU5i+JJjSMcsuSwvkAiL2im1/B
-	QUptqhaFFJMriuw9uGO3DvCvSVZBNlMR98m+YkVFJqKLF4NvSZBKjcgEnRsAB/tQ
-	GA+u373L0rT8LwfZDfN7IoF8Ae7CpZXBhKthdAo373/RsGSTPT+8lljNoe/2pxZW
-	qmLXa/EfmC/hpqNMa2nvBUIZRSnZ5Ij5kEXUNkbgs9aVIg6/D2HQSrEvWZgqjqP+
-	354rucCqNwBj7TNoacjEgA==
+	:references:reply-to:subject:subject:to:to; s=fm1; t=1742560148;
+	 x=1742646548; bh=N6kPZ0cFTmXIpixMnN6tF81nr1APN9wNYIh/tOxWbbw=; b=
+	i57tvl4VKDF5ha2G2v+8lAQuw6M4b1rAcdwypJljRX1jdQIIhzz0E6CEgVlFkLRO
+	QtFqzhLS998HFqJWRmkKelAQcaTcK0YLNtn49PmynzG8d5BS7EsoRVNiuYIoIn9I
+	cOiZVhYwtpQWmD2njqRcpGywgdu5+SQt/nPTb4yf8gMJbbwX9oQWrK8AkMTvoVOB
+	L9FmDRNfEoZgW12ShA0klsJ9QMNk9FrVQlr6W4xkhkSf5eGpp8IdkbpOJuEE/Qmg
+	lCPFhIGP50Wykl2lHlJ8xEpJHVYiNbUhYAS/6s/Ue5lmvLZ1GGZpHTY+Et+Yq5tZ
+	OE8D5fzFZEcdRDWUcd+hqQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-transfer-encoding
 	:content-type:content-type:date:date:feedback-id:feedback-id
 	:from:from:in-reply-to:in-reply-to:message-id:mime-version
 	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1742553740; x=
-	1742640140; bh=68U2xOJN0FdMowzUkCY1aIhi5big7bilZhbRnPyI3bA=; b=g
-	gxomf2o2Tzd8VqwlKhcjQellV0+NwxdKBaE8avhS5rYKhDZa0Ghdtmqk737JgchC
-	hOzMB+Mqa0XBnoWrLhvB0iXiVdTvFODyXMi+zZ5OxvSZsWps8Rq108K4//zyzO3F
-	eiH70PU+qr5b18HI0fxDKjhdm62raRMh4jNwz3AVz/jG02/G7Cv9xMLW7yqji8/T
-	M859M1V666xCrodf5rK91YQJ80iJENomW9W1LIJu/CiZ2+CIjNqJeK63099zJU0c
-	UY2kzKmZ00WbGH31yXB8ARjAJq3PjPWLO0lP8GRVoY/h4fpdMiu25xlhdEhALANe
-	CUAEDcYfu4f6wfHRj291w==
-X-ME-Sender: <xms:jELdZ3Qub_8dm9XOH3yQjxa06hPdPSXZkUYGDPZhLOyeo-2A6Nk_Yw>
-    <xme:jELdZ4wb-VhBLRDtRTQgYrx28aExpsmKbLRcj1mPXYv6xEC-Nt5etqa7R-KnIBLPi
-    Nq4Z6LCF6f0-9-qB_w>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgdduhedtkeelucetufdoteggodetrf
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1742560148; x=
+	1742646548; bh=N6kPZ0cFTmXIpixMnN6tF81nr1APN9wNYIh/tOxWbbw=; b=l
+	T051Oi2UrKbm70CTM0+WU3RQEBl8O2InYlf0qdnaHHzwk5G/DKmvmQY4V+YoDLdm
+	QJB0kaHQp9VLye/2Xf+xPqSWKQXyi08/ivcZ8uo6Mjm7/UXyd4jeDd8oB94FhdAa
+	aC2Y99wIkKUoxgxQP84BNTei34kdy6grBEl3jybYMlOFcPhV2LExykGvfGQg7QXH
+	P5QYIGouVKBsllY6pY33yrQvIxGDFhPJFKGTV00z6bwu67sOPPpsFCxVuqIIVKfM
+	Qs66jVGIffYzvn79RakI8Q67HJVtLeA8bZT2RhUYwT+Cx7EXXNC2exbfSZPdwyak
+	fA7bufMcB9yyYIgUYf9Bg==
+X-ME-Sender: <xms:kVvdZ-dvlNxtgCueP5K-X9LrgmPY6bqsjmhT2RPPYtEaSwAWAGAdAQ>
+    <xme:kVvdZ0gcXISmmqq1VzvW-zdk0qyp2ODnRZoy7qxoIXaKjL5LU_X1LWe1jWEw4F8_G
+    dd1P2hZMkrAJWbSSTA>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgdduheduudduucetufdoteggodetrf
     dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdggtfgfnhhsuhgsshgtrhhisggv
     pdfurfetoffkrfgpnffqhgenuceurghilhhouhhtmecufedttdenucesvcftvggtihhpih
     gvnhhtshculddquddttddmnecujfgurhepofggfffhvfevkfgjfhfutgfgsehtjeertder
@@ -57,22 +57,23 @@ X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgdduhedtkeelucetufdote
     gsrdguvgeqnecuggftrfgrthhtvghrnhephfdthfdvtdefhedukeetgefggffhjeeggeet
     fefggfevudegudevledvkefhvdeinecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrg
     hmpehmrghilhhfrhhomheprghrnhgusegrrhhnuggsrdguvgdpnhgspghrtghpthhtohep
-    kedpmhhouggvpehsmhhtphhouhhtpdhrtghpthhtoheplhhkphesihhnthgvlhdrtghomh
-    dprhgtphhtthhopegrrhhmsehkvghrnhgvlhdrohhrghdprhgtphhtthhopehkrggsvghl
-    sehkvghrnhgvlhdrohhrghdprhgtphhtthhopehgvggvrhhtsehlihhnuhigqdhmieekkh
-    drohhrghdprhgtphhtthhopehlihhnuhigqdgrrhhmqdhkvghrnhgvlheslhhishhtshdr
-    ihhnfhhrrgguvggrugdrohhrghdprhgtphhtthhopehovgdqkhgsuhhilhguqdgrlhhlse
-    hlihhsthhsrdhlihhnuhigrdguvghvpdhrtghpthhtohepghhlrghusghithiisehphhih
-    shhikhdrfhhuqdgsvghrlhhinhdruggvpdhrtghpthhtoheplhhinhhugidqshhhsehvgh
-    gvrhdrkhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:jELdZ83aQHV9LtOryKkIY-LnH0PwTwyEk09Enz43tjsIsJiEDDKD8w>
-    <xmx:jELdZ3DDEPGE55RY2nfpDjDUc_c3w6BK6D87xaXuBcNEG6F60073Fg>
-    <xmx:jELdZwibPTszLGO-UHzIzm2F1Ncl2_meCfYni2K7DYg2cqM7epW0cQ>
-    <xmx:jELdZ7rOyu6iqfshT38zNgtCmoZfQTkaiFvSUeK8RI94N64sk42t-Q>
-    <xmx:jELdZ8igUHd-95sRvIhWoI_NxZI-x8VCjyjdp2II0S9JiCsqKfZLABYb>
+    feeipdhmohguvgepshhmthhpohhuthdprhgtphhtthhopehlihhnuhigsegrrhhmlhhinh
+    hugidrohhrghdruhhkpdhrtghpthhtohepthhonhihsegrthhomhhiuggvrdgtohhmpdhr
+    tghpthhtohepkhhhihhlmhgrnhessggrhihlihgsrhgvrdgtohhmpdhrtghpthhtoheprg
+    hnuhhpsegsrhgrihhnfhgruhhlthdrohhrghdprhgtphhtthhopegstghmqdhkvghrnhgv
+    lhdqfhgvvggusggrtghkqdhlihhsthessghrohgruggtohhmrdgtohhmpdhrtghpthhtoh
+    epfhhlohhrihgrnhdrfhgrihhnvghllhhisegsrhhorggutghomhdrtghomhdprhgtphht
+    thhopehrjhhuihessghrohgruggtohhmrdgtohhmpdhrtghpthhtohepshgsrhgrnhguvg
+    hnsegsrhhorggutghomhdrtghomhdprhgtphhtthhopehhvghinhhrihgthhdrshgthhhu
+    tghhrghrughtsegtrghnohhnihgtrghlrdgtohhm
+X-ME-Proxy: <xmx:kVvdZyTE_63LDgMM7nvl4LCgcIFqy_9iCOFIBpOZarDifNQuZnO2iA>
+    <xmx:kVvdZ9x64sGPKdZ2VIrCvWv-1MNkOWAp6cmotk7ZALObl9LtLLnk7A>
+    <xmx:kVvdZ9ft6EbGWl4xG5AO97oQzboLTu8b0zu7dl5RWqGY1OfLFgpFBA>
+    <xmx:kVvdZ5K36lITbTqEtI95TI43l1OeBmYuUxwKKiur1-FWuKwrE3_V5Q>
+    <xmx:lFvdZ0kCqZVFDyJTIxAcWCLqQ8EY8hX7Vh8b8wygXH59ssdCdw-ftcuY>
 Feedback-ID: i56a14606:Fastmail
 Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 3C61E2220072; Fri, 21 Mar 2025 06:42:20 -0400 (EDT)
+	id CB0352220073; Fri, 21 Mar 2025 08:29:05 -0400 (EDT)
 X-Mailer: MessagingEngine.com Webmail Interface
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -80,65 +81,66 @@ List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-ThreadId: Tcf25c5c4b21ac15d
-Date: Fri, 21 Mar 2025 11:41:59 +0100
+X-ThreadId: Td2a26421dc1a91fa
+Date: Fri, 21 Mar 2025 13:28:43 +0100
 From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Geert Uytterhoeven" <geert@linux-m68k.org>
-Cc: "kernel test robot" <lkp@intel.com>,
- =?UTF-8?Q?Marek_Beh=C3=BAn?= <kabel@kernel.org>,
- oe-kbuild-all@lists.linux.dev, linux-arm-kernel@lists.infradead.org,
- arm <arm@kernel.org>, linux-sh@vger.kernel.org,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>
-Message-Id: <86813d50-d4c2-4220-a5a8-2a264b37f7d4@app.fastmail.com>
+To: "Thierry Reding" <thierry.reding@gmail.com>
+Cc: "Celeste Liu" <uwu@coelacanthus.name>,
+ "Paul Walmsley" <paul.walmsley@sifive.com>,
+ "Palmer Dabbelt" <palmer@dabbelt.com>,
+ "Albert Ou" <aou@eecs.berkeley.edu>, guoren <guoren@kernel.org>,
+ "Anup Patel" <anup@brainfault.org>,
+ "Heinrich Schuchardt" <heinrich.schuchardt@canonical.com>,
+ "Huacai Chen" <chenhuacai@kernel.org>, "WANG Xuerui" <kernel@xen0n.name>,
+ "Yoshinori Sato" <ysato@users.sourceforge.jp>,
+ "Rich Felker" <dalias@libc.org>,
+ "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
+ "Russell King" <linux@armlinux.org.uk>,
+ "Florian Fainelli" <florian.fainelli@broadcom.com>,
+ "Broadcom internal kernel review list"
+ <bcm-kernel-feedback-list@broadcom.com>, "Ray Jui" <rjui@broadcom.com>,
+ "Scott Branden" <sbranden@broadcom.com>,
+ "Tony Lindgren" <tony@atomide.com>, "Jon Hunter" <jonathanh@nvidia.com>,
+ "Aaro Koskinen" <aaro.koskinen@iki.fi>,
+ "Andreas Kemnade" <andreas@kemnade.info>,
+ "Kevin Hilman" <khilman@baylibre.com>,
+ "Roger Quadros" <rogerq@kernel.org>,
+ "Palmer Dabbelt" <palmer@rivosinc.com>, linux-riscv@lists.infradead.org,
+ linux-kernel@vger.kernel.org, loongarch@lists.linux.dev,
+ linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-rpi-kernel@lists.infradead.org,
+ Linux-OMAP <linux-omap@vger.kernel.org>, linux-tegra@vger.kernel.org,
+ "Stefan Wahren" <wahrenst@gmx.net>,
+ "Thierry Reding" <treding@nvidia.com>, soc@lists.linux.dev
+Message-Id: <5fd4f314-e570-4b37-b7c2-af5b4bc85a39@app.fastmail.com>
 In-Reply-To: 
- <CAMuHMdUeynpmUUmZPViEBttANFmEhpjFn0wqNc1wQB6wRbd0rQ@mail.gmail.com>
-References: <202503211029.DnQpqsJs-lkp@intel.com>
- <927105f8-4aa8-4579-ac2e-bce4bce12b1e@app.fastmail.com>
- <CAMuHMdUeynpmUUmZPViEBttANFmEhpjFn0wqNc1wQB6wRbd0rQ@mail.gmail.com>
-Subject: Re: [soc:soc/drivers 20/24] ERROR: modpost: "__ffsdi2"
- [drivers/platform/cznic/turris-omnia-mcu.ko] undefined!
+ <t2dustbykx2qd24wazjeiw5hch5nwr6z2ewmaf4srg6r2grwrf@rdw47chzkef2>
+References: 
+ <20250115-fix-riscv-rt_group_sched-v4-0-607606fe73a5@coelacanthus.name>
+ <20250115-fix-riscv-rt_group_sched-v4-4-607606fe73a5@coelacanthus.name>
+ <t2dustbykx2qd24wazjeiw5hch5nwr6z2ewmaf4srg6r2grwrf@rdw47chzkef2>
+Subject: Re: [PATCH v4 4/4] arm: defconfig: drop RT_GROUP_SCHED=y from
+ bcm2835/tegra/omap2plus
 Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
 
-On Fri, Mar 21, 2025, at 10:36, Geert Uytterhoeven wrote:
->> >
->> > ERROR: modpost: "__delay" [drivers/net/mdio/mdio-cavium.ko] undefined!
+On Thu, Mar 6, 2025, at 20:19, Thierry Reding wrote:
+> On Wed, Jan 15, 2025 at 04:41:23AM +0800, Celeste Liu wrote:
+>> ---
+>>  arch/arm/configs/bcm2835_defconfig   | 1 -
+>>  arch/arm/configs/omap2plus_defconfig | 1 -
+>>  arch/arm/configs/tegra_defconfig     | 1 -
+>>  3 files changed, 3 deletions(-)
 >
-> Bug in driver (must not use __delay() directly).
+> Hi Arnd,
 >
->> > ERROR: modpost: "devm_of_clk_add_hw_provider"
->> > [drivers/media/i2c/tc358746.ko] undefined!
->> > ERROR: modpost: "devm_clk_hw_register" [drivers/media/i2c/tc358746.ko]
->> > undefined!
->> > ERROR: modpost: "of_clk_hw_simple_get" [drivers/media/i2c/tc358746.ko]
->> > undefined!
->
-> Missing dependencies for driver.
+> is this something that you could pick up? I think so far only the RISC-V
+> patch was picked up, but nobody seems to feel responsible for the ARM
+> patch here.
 
-Agreed, but both of these only break the build on sh because
-the architecture code is different from the others. It's obviously
-best to fix these in the drivers, I just wouldn't expect the
-driver maintainers to care unless someone sends them a patch/
+I've merged it now after going through stuff in my inbox. It's
+generally ok for patches like this one to be forwarded to
+soc@lists.linux.dev where they end up in patchwork for me to apply,
+in case you don't want it to get lost.
 
->> >>> ERROR: modpost: "__ffsdi2" [drivers/platform/cznic/turris-omnia-mcu.ko] undefined!
->>
->> This comes from __bf_shf(spec) in omnia_mcu_request_irq().
->>
->> As far as I can tell, this is not your problem but in the
->> SH architecture missing one of the libgcc functions that are
->> called by gcc.
->>
->> Since this is only for compile-testing sh allmodconfig, and
->> that is already broken because of other bugs, I'm not going
->> to care either.
->>
->> Adding the linux-sh list to Cc, it would be nice to get a clean
->> build again. All four problems should be trivial to address,
->> and some of these have been broken for many years.
->
-> So one SH-specific issue to fix...
-
-There is also the missing clone3 syscall that has been
-causing a warning for many years.
-
-      Arnd
+     Arnd
