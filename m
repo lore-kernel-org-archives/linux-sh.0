@@ -1,345 +1,142 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f50.google.com (mail-lf1-f50.google.com [209.85.167.50])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B306F20126A;
-	Sun, 23 Mar 2025 10:32:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 57A21193062
+	for <linux-sh@vger.kernel.org>; Sun, 23 Mar 2025 19:13:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742725970; cv=none; b=ZUduXTbo7p6KAQJNq9giAn3IqMTjbFNlDjCVZGGSeh7lIzfciBRgo0vir0vaD3IiAMdbJtRBs5rpurp4WBIUTJfDUJVAt3Tv+zdooVMb/MzUGcWEOF9VokFEFaswZXs0yzqSZ54cVGFDMQtWyS55RvH15uNtoteUT2zM1Pnv1Fc=
+	t=1742757228; cv=none; b=fUWI09WwiwEApWlEtGX95DiQXFNj/90xyyBk9UECf7T0lBEN8hV7+bHSYj90bW4Ix4RrCDbE9ieWs1y4c9p/b2dghthSiIdw+NGzqvA+xLDlZgUPdKI7sqUteAIhbEUm3WAKwizkQWN/+mV25nzxpdKmgzdJus/slQ47im2ELKA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742725970; c=relaxed/simple;
-	bh=22IN0QCxwLGn5bz1ZuEjWluuK6xzFnnzFoh8o64RIEY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=pwp52Z0UVzWHvVyPX986hluAhneOwRsc8czfJcP1Xhb57I5m5lmKIK7V6etunO10jEMs64TIydaFd/xiINAa3xr7Xqg61mEcVFiDQEj/9ADOjozx5UbAqSZzksSadZV7uerBttBlCSUDLriy8QfyGUSDMNVqjVKsVjasnzolBWg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LAbd7AT3; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1742757228; c=relaxed/simple;
+	bh=T7zbmHCB8GlyDITTUxLAGr4fSHQjGM50tYxt8RYvNrM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=AjkpKL+SJ5Vup+lRra+Qz8b6bUjMPbGjlbkRHywpYeLMd75AXHMwmjxkSU9NS93N2seXaEC9nHdEYcBWbK6y46sIZAgQCe+1kUGdD9GWpjmFy5iPgqLPavCuxR1TcNowOIG8fJGJcwAVQOn1OwbXPj/iGS7YSmKSumhNfmqNVBo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=YAiq8BqJ; arc=none smtp.client-ip=209.85.167.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LAbd7AT3"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E3BD8C4CEEE;
-	Sun, 23 Mar 2025 10:32:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1742725970;
-	bh=22IN0QCxwLGn5bz1ZuEjWluuK6xzFnnzFoh8o64RIEY=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=LAbd7AT3HTEufIBq7Y/BHCtHUyO6C5+vfu3hHINcSwZrvjvYPGc+DMZUpYzvZq5HM
-	 P8FcJ7W8e7MHHIG+18pKes7wb/LHdtGp53ICPBxBiwe1cJmBmvQ9SM4dYmxa21ct+l
-	 bDC8jknBMPn9kJAY/TwdYqb7pwUoE8R7T5YdzECI8eqFK2Xe5jTSZ8nFoDJofZiFiM
-	 d5CUi8s5Za7RqyGgDhHGuiFdSeCDUgH90LVTc0DUxGs62l4SBpIeNYy+d4qQklLlAf
-	 7zwquXf2QXRJHQxMWJyGxHHb5ycc7IeHnb3eBfiaA3LSDAjlTILSGkQY0pFGZ0GTrK
-	 I/OzBltEL3ynw==
-Received: by pali.im (Postfix)
-	id C505F7DE; Sun, 23 Mar 2025 11:32:34 +0100 (CET)
-Date: Sun, 23 Mar 2025 11:32:34 +0100
-From: Pali =?utf-8?B?Um9ow6Fy?= <pali@kernel.org>
-To: Amir Goldstein <amir73il@gmail.com>
-Cc: Andrey Albershteyn <aalbersh@redhat.com>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Matt Turner <mattst88@gmail.com>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Will Deacon <will@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Michal Simek <monstr@monstr.eu>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-	Helge Deller <deller@gmx.de>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Naveen N Rao <naveen@kernel.org>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YAiq8BqJ"
+Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5499c8fa0f3so4394354e87.2
+        for <linux-sh@vger.kernel.org>; Sun, 23 Mar 2025 12:13:45 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1742757223; x=1743362023; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=cUCl0GJVWsS4HayT//EG+XlvndVCSfSv+Rw2M+ZHulA=;
+        b=YAiq8BqJaXVUffFVMDxcVh6gt6nCyukEvgZXFFB2b16Cr9g62o4hf/eIEdlU6Vv41R
+         goQ1WCgIbSlq5YG9vu5zCvKGHJgdVfeXC6wF/ccImA0K0rLR07UUc3INDyV7DXswbnvo
+         4zfdBCRgWXNH3oyHXZfFCKXiPtWT3YdxklML4T5WeASU4TZsayInsr/F//ZklZpLCSjD
+         V4Lt28+hX0jy2uTv/0qiwVPiiWp+N/RAUQDS9HbyEYEcgPvCL6qHm18Ynt9Ni7bS9qhx
+         VjHXLrcnl1tlUNPfiWKgJdJfiIZIQxaEdx/x/QqiAalbX1ZRPET8jp3nzXRGEgVjPGco
+         0+Rw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1742757223; x=1743362023;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=cUCl0GJVWsS4HayT//EG+XlvndVCSfSv+Rw2M+ZHulA=;
+        b=DNTh/2FA/kfJnoDMlSPYbpP9sFB8h6jh6grNVx12KNUZLuH/q3bRIsy+GqnZxq9T0e
+         rI/RlNLjjOvQ2EgzRZlmA1ExSe+YxfF62s+vTAGvywD/8i3cocLhKK7YQpemS65qqQJx
+         EYvxG0CRGIhguir0370JlhV4Ta5nOf3gZec7ooRuuQUyJ6NaF0Xz7gz7ieEnkkF2RjR+
+         V8ZKoyihzgxUbgebMDfiOFBr/VCMgPXyzliQH/490BeiC5cVjtYcwaHMzQQdkDXfJfvH
+         eb63W5xpX1cztsdhGf2SDMEVptfwERc7PC4/yod1pZ3Op7Sd1+ybKoWNzmoyd2fePBas
+         B/3w==
+X-Gm-Message-State: AOJu0YyuTsmfG05Kcs2lw7Qi7n53v8KmwnF7qnJ8plcoj6oMdhluuN1R
+	svoXa/mww2eHrtwqpLItfGqDSQRpMfBX2KOnU6a0tkXC3hhyerdIxLUkgXTRDt8=
+X-Gm-Gg: ASbGncvrfN/GNqmxtRNfx03l3Q42UIhoOkZ2q4NsEmtrZlcp/G3fb/NIpEImHiFbkfD
+	bdkFPNrDi3PT65g4USL20pn7hxDsfvZuLJArKESlw7NSG4vyExYQBG4zLXzSCcsOhXjNDGR4aKT
+	nLjQrhdtMJgYL0OVW0nkrbEv7PsQO44BYMpkF7Aou6fpA6+GdcMYkULYLYKIwi/wEa2x7n0uI6E
+	pld7EAjIVldAhWa1OPHs4LvQN2PSXF0qD+98c1Ph68JAKkwz96cvk1ucinsFJ6SnbZHnq8nwMXI
+	kHFnkqxpgG5WTAiYAFe48+PzblCcfV6piWE3xeDkW9+FqNCLDWoDjn2I3mZ1X4cKmvRZDUGtkWU
+	95vfCBOLpD/rBJ+L/wLb81Z208mhohpY0B3WhmyjBuVHV5GqbFJL1UDoD8qIgLV26tw==
+X-Google-Smtp-Source: AGHT+IGmNxkz/jGHOwFH0qH2TY4Wm6EtTMeN8BG9U8aAwheVrCcSwys6vQGK29tIUYSx+IdMJ22RCw==
+X-Received: by 2002:a05:6512:3d1b:b0:545:d70:1d0e with SMTP id 2adb3069b0e04-54ad6480a52mr4354735e87.3.1742757223050;
+        Sun, 23 Mar 2025 12:13:43 -0700 (PDT)
+Received: from yocto-build-johan.c.remarkable-codex-builds.internal (122.96.88.34.bc.googleusercontent.com. [34.88.96.122])
+        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-54ad6508142sm849973e87.172.2025.03.23.12.13.40
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 23 Mar 2025 12:13:41 -0700 (PDT)
+From: Johan Korsnes <johan.korsnes@gmail.com>
+To: linux-sh@vger.kernel.org
+Cc: Johan Korsnes <johan.korsnes@gmail.com>,
 	Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Andy Lutomirski <luto@kernel.org>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-	Max Filippov <jcmvbkbc@gmail.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
-	=?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>,
-	=?utf-8?Q?G=C3=BCnther?= Noack <gnoack@google.com>,
-	Arnd Bergmann <arnd@arndb.de>, Paul Moore <paul@paul-moore.com>,
-	James Morris <jmorris@namei.org>,
-	"Serge E. Hallyn" <serge@hallyn.com>, linux-alpha@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	sparclinux@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-	linux-security-module@vger.kernel.org, linux-api@vger.kernel.org,
-	linux-arch@vger.kernel.org, selinux@vger.kernel.org,
-	Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH v4 0/3] fs: introduce getfsxattrat and setfsxattrat
- syscalls
-Message-ID: <20250323103234.2mwhpsbigpwtiby4@pali>
-References: <20250321-xattrat-syscall-v4-0-3e82e6fb3264@kernel.org>
- <CAOQ4uxjQDUg8HFG+mSxMkR54zen7nC2jttzOKqh13Bx-uosh3Q@mail.gmail.com>
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Subject: [PATCH] arch: sh: defconfig: Drop obsolete CONFIG_NET_CLS_TCINDEX
+Date: Sun, 23 Mar 2025 20:13:30 +0100
+Message-ID: <20250323191330.114640-1-johan.korsnes@gmail.com>
+X-Mailer: git-send-email 2.49.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAOQ4uxjQDUg8HFG+mSxMkR54zen7nC2jttzOKqh13Bx-uosh3Q@mail.gmail.com>
-User-Agent: NeoMutt/20180716
 
-On Sunday 23 March 2025 09:45:06 Amir Goldstein wrote:
-> On Fri, Mar 21, 2025 at 8:50 PM Andrey Albershteyn <aalbersh@redhat.com> wrote:
-> >
-> > This patchset introduced two new syscalls getfsxattrat() and
-> > setfsxattrat(). These syscalls are similar to FS_IOC_FSSETXATTR ioctl()
-> > except they use *at() semantics. Therefore, there's no need to open the
-> > file to get an fd.
-> >
-> > These syscalls allow userspace to set filesystem inode attributes on
-> > special files. One of the usage examples is XFS quota projects.
-> >
-> > XFS has project quotas which could be attached to a directory. All
-> > new inodes in these directories inherit project ID set on parent
-> > directory.
-> >
-> > The project is created from userspace by opening and calling
-> > FS_IOC_FSSETXATTR on each inode. This is not possible for special
-> > files such as FIFO, SOCK, BLK etc. Therefore, some inodes are left
-> > with empty project ID. Those inodes then are not shown in the quota
-> > accounting but still exist in the directory. This is not critical but in
-> > the case when special files are created in the directory with already
-> > existing project quota, these new inodes inherit extended attributes.
-> > This creates a mix of special files with and without attributes.
-> > Moreover, special files with attributes don't have a possibility to
-> > become clear or change the attributes. This, in turn, prevents userspace
-> > from re-creating quota project on these existing files.
-> >
-> > Christian, if this get in some mergeable state, please don't merge it
-> > yet. Amir suggested these syscalls better to use updated struct fsxattr
-> > with masking from Pali Rohár patchset, so, let's see how it goes.
-> 
-> Andrey,
-> 
-> To be honest I don't think it would be fair to delay your syscalls more
-> than needed.
+This option was removed from the Kconfig in commit
+8c710f75256b ("net/sched: Retire tcindex classifier") but it was not
+removed from the defconfigs.
 
-I agree.
+Fixes: 8c710f75256b ("net/sched: Retire tcindex classifier")
+Signed-off-by: Johan Korsnes <johan.korsnes@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+---
+ arch/sh/configs/se7712_defconfig       | 1 -
+ arch/sh/configs/se7721_defconfig       | 1 -
+ arch/sh/configs/sh7710voipgw_defconfig | 1 -
+ arch/sh/configs/titan_defconfig        | 1 -
+ 4 files changed, 4 deletions(-)
 
-> If Pali can follow through and post patches on top of your syscalls for
-> next merge window that would be great, but otherwise, I think the
-> minimum requirement is that the syscalls return EINVAL if fsx_pad
-> is not zero. we can take it from there later.
+diff --git a/arch/sh/configs/se7712_defconfig b/arch/sh/configs/se7712_defconfig
+index 20f07aee5bde..49a4961889de 100644
+--- a/arch/sh/configs/se7712_defconfig
++++ b/arch/sh/configs/se7712_defconfig
+@@ -57,7 +57,6 @@ CONFIG_NET_SCH_TBF=y
+ CONFIG_NET_SCH_GRED=y
+ CONFIG_NET_SCH_DSMARK=y
+ CONFIG_NET_SCH_NETEM=y
+-CONFIG_NET_CLS_TCINDEX=y
+ CONFIG_NET_CLS_ROUTE4=y
+ CONFIG_NET_CLS_FW=y
+ CONFIG_MTD=y
+diff --git a/arch/sh/configs/se7721_defconfig b/arch/sh/configs/se7721_defconfig
+index 00862d3c030d..de293792db84 100644
+--- a/arch/sh/configs/se7721_defconfig
++++ b/arch/sh/configs/se7721_defconfig
+@@ -56,7 +56,6 @@ CONFIG_NET_SCH_TBF=y
+ CONFIG_NET_SCH_GRED=y
+ CONFIG_NET_SCH_DSMARK=y
+ CONFIG_NET_SCH_NETEM=y
+-CONFIG_NET_CLS_TCINDEX=y
+ CONFIG_NET_CLS_ROUTE4=y
+ CONFIG_NET_CLS_FW=y
+ CONFIG_MTD=y
+diff --git a/arch/sh/configs/sh7710voipgw_defconfig b/arch/sh/configs/sh7710voipgw_defconfig
+index 99a5d0760532..5b151bb2bc43 100644
+--- a/arch/sh/configs/sh7710voipgw_defconfig
++++ b/arch/sh/configs/sh7710voipgw_defconfig
+@@ -27,7 +27,6 @@ CONFIG_NETFILTER=y
+ CONFIG_NET_SCHED=y
+ CONFIG_NET_SCH_CBQ=y
+ CONFIG_NET_CLS_BASIC=y
+-CONFIG_NET_CLS_TCINDEX=y
+ CONFIG_NET_CLS_ROUTE4=y
+ CONFIG_NET_CLS_U32=y
+ CONFIG_MTD=y
+diff --git a/arch/sh/configs/titan_defconfig b/arch/sh/configs/titan_defconfig
+index 99bc0e889287..e2928311a126 100644
+--- a/arch/sh/configs/titan_defconfig
++++ b/arch/sh/configs/titan_defconfig
+@@ -119,7 +119,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+-- 
+2.49.0
 
-IMHO SYS_getfsxattrat is fine in this form.
-
-For SYS_setfsxattrat I think there are needed some modifications
-otherwise we would have problem again with backward compatibility as
-is with ioctl if the syscall wants to be extended in future.
-
-I would suggest for following modifications for SYS_setfsxattrat:
-
-- return EINVAL if fsx_xflags contains some reserved or unsupported flag
-
-- add some flag to completely ignore fsx_extsize, fsx_projid, and
-  fsx_cowextsize fields, so SYS_setfsxattrat could be used just to
-  change fsx_xflags, and so could be used without the preceding
-  SYS_getfsxattrat call.
-
-What do you think about it?
-
-Use cases for future without breaking backward compatibility:
-- atomically / race-free do set or clear just one flag in fsx_xflags
-  (so avoid getfsxattrat - modify buffer - setfsxattrat roundtrip)
-- use fsx_pad[] for some new purposes 
-
-> We can always also increase the size of struct fsxattr, but let's first
-> use the padding space already available.
-> 
-> Thanks,
-> Amir.
-> 
-> >
-> > NAME
-> >
-> >         getfsxattrat/setfsxattrat - get/set filesystem inode attributes
-> >
-> > SYNOPSIS
-> >
-> >         #include <sys/syscall.h>    /* Definition of SYS_* constants */
-> >         #include <unistd.h>
-> >
-> >         long syscall(SYS_getfsxattrat, int dirfd, const char *pathname,
-> >                 struct fsxattr *fsx, size_t size,
-> >                 unsigned int at_flags);
-> >         long syscall(SYS_setfsxattrat, int dirfd, const char *pathname,
-> >                 struct fsxattr *fsx, size_t size,
-> >                 unsigned int at_flags);
-> >
-> >         Note: glibc doesn't provide for getfsxattrat()/setfsxattrat(),
-> >         use syscall(2) instead.
-> >
-> > DESCRIPTION
-> >
-> >         The syscalls take fd and path to the child together with struct
-> >         fsxattr. If path is absolute, fd is not used. If path is empty,
-> >         inode under fd is used to get/set attributes on.
-> >
-> >         This is an alternative to FS_IOC_FSGETXATTR/FS_IOC_FSSETXATTR
-> >         ioctl with a difference that file don't need to be open as we
-> >         can reference it with a path instead of fd. By having this we
-> >         can manipulated filesystem inode attributes not only on regular
-> >         files but also on special ones. This is not possible with
-> >         FS_IOC_FSSETXATTR ioctl as with special files we can not call
-> >         ioctl() directly on the filesystem inode using file descriptor.
-> >
-> > RETURN VALUE
-> >
-> >         On success, 0 is returned.  On error, -1 is returned, and errno
-> >         is set to indicate the error.
-> >
-> > ERRORS
-> >
-> >         EINVAL          Invalid at_flag specified (only
-> >                         AT_SYMLINK_NOFOLLOW and AT_EMPTY_PATH is
-> >                         supported).
-> >
-> >         EINVAL          Size was smaller than any known version of
-> >                         struct fsxattr.
-> >
-> >         EINVAL          Invalid combination of parameters provided in
-> >                         fsxattr for this type of file.
-> >
-> >         E2BIG           Size of input argument **struct fsxattr** is too
-> >                         big.
-> >
-> >         EBADF           Invalid file descriptor was provided.
-> >
-> >         EPERM           No permission to change this file.
-> >
-> >         EOPNOTSUPP      Filesystem does not support setting attributes
-> >                         on this type of inode
-> >
-> > HISTORY
-> >
-> >         Added in Linux 6.14.
-> >
-> > EXAMPLE
-> >
-> > Create directory and file "mkdir ./dir && touch ./dir/foo" and then
-> > execute the following program:
-> >
-> >         #include <fcntl.h>
-> >         #include <errno.h>
-> >         #include <string.h>
-> >         #include <linux/fs.h>
-> >         #include <stdio.h>
-> >         #include <sys/syscall.h>
-> >         #include <unistd.h>
-> >
-> >         int
-> >         main(int argc, char **argv) {
-> >                 int dfd;
-> >                 int error;
-> >                 struct fsxattr fsx;
-> >
-> >                 dfd = open("./dir", O_RDONLY);
-> >                 if (dfd == -1) {
-> >                         printf("can not open ./dir");
-> >                         return dfd;
-> >                 }
-> >
-> >                 error = syscall(467, dfd, "./foo", &fsx, 0);
-> >                 if (error) {
-> >                         printf("can not call 467: %s", strerror(errno));
-> >                         return error;
-> >                 }
-> >
-> >                 printf("dir/foo flags: %d\n", fsx.fsx_xflags);
-> >
-> >                 fsx.fsx_xflags |= FS_XFLAG_NODUMP;
-> >                 error = syscall(468, dfd, "./foo", &fsx, 0);
-> >                 if (error) {
-> >                         printf("can not call 468: %s", strerror(errno));
-> >                         return error;
-> >                 }
-> >
-> >                 printf("dir/foo flags: %d\n", fsx.fsx_xflags);
-> >
-> >                 return error;
-> >         }
-> >
-> > SEE ALSO
-> >
-> >         ioctl(2), ioctl_iflags(2), ioctl_xfs_fsgetxattr(2)
-> >
-> > ---
-> > Changes in v4:
-> > - Use getname_maybe_null() for correct handling of dfd + path semantic
-> > - Remove restriction for special files on which flags are allowed
-> > - Utilize copy_struct_from_user() for better future compatibility
-> > - Add draft man page to cover letter
-> > - Convert -ENOIOCTLCMD to -EOPNOSUPP as more appropriate for syscall
-> > - Add missing __user to header declaration of syscalls
-> > - Link to v3: https://lore.kernel.org/r/20250211-xattrat-syscall-v3-1-a07d15f898b2@kernel.org
-> >
-> > Changes in v3:
-> > - Remove unnecessary "dfd is dir" check as it checked in user_path_at()
-> > - Remove unnecessary "same filesystem" check
-> > - Use CLASS() instead of directly calling fdget/fdput
-> > - Link to v2: https://lore.kernel.org/r/20250122-xattrat-syscall-v2-1-5b360d4fbcb2@kernel.org
-> >
-> > v1:
-> > https://lore.kernel.org/linuxppc-dev/20250109174540.893098-1-aalbersh@kernel.org/
-> >
-> > Previous discussion:
-> > https://lore.kernel.org/linux-xfs/20240520164624.665269-2-aalbersh@redhat.com/
-> >
-> > ---
-> > Andrey Albershteyn (3):
-> >       lsm: introduce new hooks for setting/getting inode fsxattr
-> >       fs: split fileattr/fsxattr converters into helpers
-> >       fs: introduce getfsxattrat and setfsxattrat syscalls
-> >
-> >  arch/alpha/kernel/syscalls/syscall.tbl      |   2 +
-> >  arch/arm/tools/syscall.tbl                  |   2 +
-> >  arch/arm64/tools/syscall_32.tbl             |   2 +
-> >  arch/m68k/kernel/syscalls/syscall.tbl       |   2 +
-> >  arch/microblaze/kernel/syscalls/syscall.tbl |   2 +
-> >  arch/mips/kernel/syscalls/syscall_n32.tbl   |   2 +
-> >  arch/mips/kernel/syscalls/syscall_n64.tbl   |   2 +
-> >  arch/mips/kernel/syscalls/syscall_o32.tbl   |   2 +
-> >  arch/parisc/kernel/syscalls/syscall.tbl     |   2 +
-> >  arch/powerpc/kernel/syscalls/syscall.tbl    |   2 +
-> >  arch/s390/kernel/syscalls/syscall.tbl       |   2 +
-> >  arch/sh/kernel/syscalls/syscall.tbl         |   2 +
-> >  arch/sparc/kernel/syscalls/syscall.tbl      |   2 +
-> >  arch/x86/entry/syscalls/syscall_32.tbl      |   2 +
-> >  arch/x86/entry/syscalls/syscall_64.tbl      |   2 +
-> >  arch/xtensa/kernel/syscalls/syscall.tbl     |   2 +
-> >  fs/inode.c                                  | 130 ++++++++++++++++++++++++++++
-> >  fs/ioctl.c                                  |  39 ++++++---
-> >  include/linux/fileattr.h                    |   2 +
-> >  include/linux/lsm_hook_defs.h               |   4 +
-> >  include/linux/security.h                    |  16 ++++
-> >  include/linux/syscalls.h                    |   6 ++
-> >  include/uapi/asm-generic/unistd.h           |   8 +-
-> >  include/uapi/linux/fs.h                     |   3 +
-> >  security/security.c                         |  32 +++++++
-> >  25 files changed, 259 insertions(+), 13 deletions(-)
-> > ---
-> > base-commit: ffd294d346d185b70e28b1a28abe367bbfe53c04
-> > change-id: 20250114-xattrat-syscall-6a1136d2db59
-> >
-> > Best regards,
-> > --
-> > Andrey Albershteyn <aalbersh@kernel.org>
-> >
-> >
