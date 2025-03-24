@@ -1,204 +1,90 @@
-Received: from fout-a7-smtp.messagingengine.com (fout-a7-smtp.messagingengine.com [103.168.172.150])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ua1-f43.google.com (mail-ua1-f43.google.com [209.85.222.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58EEE18B470;
-	Mon, 24 Mar 2025 08:02:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.150
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F1DC433A6
+	for <linux-sh@vger.kernel.org>; Mon, 24 Mar 2025 08:34:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742803377; cv=none; b=E/CWVjYJIFIcJp7gXI2jYzeHx8nJNBXY2EpcWcU26RwJd4nx753qbGD1spiE8kmUIrkJQuobtlU+B+WEl8K7ToBfcLtY7NDU1QxEqjlRL7sV+1T8RaH8h65WrggiR3ZJPho6Sy1Eeq22pZdb+VEloyqs9EkrcPIfc6RS36CeBJA=
+	t=1742805263; cv=none; b=LlZrJiZ9jUBDUsGo5pm2UKjE/s1XJnkcv2VIGyU8JWzf6VvAzwcy/jY1+FM013BDpOnQ6W9bO0MQGqXJxOZbHGFGf7k8AxbrLkFzwzDS5yZdFBxCLBVD/r+HTgeO9TQvRPTa0vU0EXZlzLdmOhPnEVttS7nv3/zcuFFytuvrb68=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742803377; c=relaxed/simple;
-	bh=WnEWpX2LEQgbBaMp8eYL6YPucjJVn5f6DVzd6dzKvos=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=fH9F/kFYUCkcjAq/AMYgFJphMXmt1sQvDaUCg8k1fS7jvIPY9toAIOCyeOSh8KLrfnIC0wZ+m/TW8Ik/0le23h3vWIQIqP7KVJIXKmPld33ffUnUrB4BxB3XXFsiYu9UjSKEMRPDN/Y9XqBDqtuW4PjOZ4M45zlEmShVkIUBaFE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=jQ02LsMk; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=JU2xrRaX; arc=none smtp.client-ip=103.168.172.150
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="jQ02LsMk";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="JU2xrRaX"
-Received: from phl-compute-07.internal (phl-compute-07.phl.internal [10.202.2.47])
-	by mailfout.phl.internal (Postfix) with ESMTP id 3D00E1382CB7;
-	Mon, 24 Mar 2025 04:02:52 -0400 (EDT)
-Received: from phl-imap-11 ([10.202.2.101])
-  by phl-compute-07.internal (MEProxy); Mon, 24 Mar 2025 04:02:52 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm1; t=1742803372;
-	 x=1742889772; bh=adzYBEKh/yqg4YHIRxasSNX+4SOl9DvVZEEHKyF6Ds8=; b=
-	jQ02LsMkYJca5oAbaoAVP9lOqKesMFcf3kY1L6937OmT0RIMP+pgHl3L1dJmtUZ8
-	k/oIPSTiyQ63s1qafFQcIgJXOkEbpOEkyaeRaLFkKhMuTpd2ME/ehnGtpsZq2LIa
-	lpXEtmbFSyOUzqSiGPeg73gqBUgXtcSonD1R3oxGhMyfFs8reSVN3ADa/cs0UxKe
-	hHhGQBg2Q7y9RA+D9FFyTHXaKxZqmWb7X8+bHjpTuBuzrSQXYWUXziOyqusCCB4Y
-	/tuOVhPSnytMqzpEhYM0RiZc3Vt/xDu56HS/aG+GjGl7Ri+BfUg8IAszXw8zFtHM
-	ZQxdQh4FTxF3iidupy0y6g==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1742803372; x=
-	1742889772; bh=adzYBEKh/yqg4YHIRxasSNX+4SOl9DvVZEEHKyF6Ds8=; b=J
-	U2xrRaX/2LY9S62Ap4tyti7bpdYWu0788m1xv1Us5AaoSlmFtSZV7NG0KkHcL850
-	NSIGgD4FiBjJjEe/JcbULMR/iPeuzj7WF1BpZnjwJQBBibEGIhDfh62ARqhPryuH
-	8biIOKbipOqu/tWA6bMysxa/KaMd2yGqyqP/F6XRwI3wY5AUJWE73/mf57kWJQB0
-	C7aXariz+LeW6Grl9nOvLiCsU2Wh87i/eFPfl9aJGty1Ln4CPQegQeRwwJZRb5VW
-	8bUzUnJJErGClA1KJkUhWhQjENriuRIYIhYOFnNQx9gUX41bwanzHuUfNldnR/+r
-	yi93+pyZPYrSlPDFdR1Hw==
-X-ME-Sender: <xms:qhHhZ5nZTPn4CkOVtKO4if16jD0npIjwWI7yBFV-Iz-38wrU7BOfPQ>
-    <xme:qhHhZ004OsA2BUHO9qMmzdirvPjc7MWwko5173S1rvweRDQsG4L5GO_itGAGnl9_R
-    q9SSvL7-OXbP3s4E0I>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefvddrtddtgdduheelvdegucetufdoteggodetrf
-    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdggtfgfnhhsuhgsshgtrhhisggv
-    pdfurfetoffkrfgpnffqhgenuceurghilhhouhhtmecufedttdenucesvcftvggtihhpih
-    gvnhhtshculddquddttddmnecujfgurhepofggfffhvfevkfgjfhfutgfgsehtjeertder
-    tddtnecuhfhrohhmpedftehrnhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnug
-    gsrdguvgeqnecuggftrfgrthhtvghrnhephfdthfdvtdefhedukeetgefggffhjeeggeet
-    fefggfevudegudevledvkefhvdeinecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrg
-    hmpehmrghilhhfrhhomheprghrnhgusegrrhhnuggsrdguvgdpnhgspghrtghpthhtohep
-    vdeipdhmohguvgepshhmthhpohhuthdprhgtphhtthhopehtshgsohhgvghnugesrghlph
-    hhrgdrfhhrrghnkhgvnhdruggvpdhrtghpthhtoheptghhrhhishhtohhphhgvrdhlvghr
-    ohihsegtshhgrhhouhhprdgvuhdprhgtphhtthhopehmphgvsegvlhhlvghrmhgrnhdrih
-    gurdgruhdprhgtphhtthhopehmrghtthhsthekkeesghhmrghilhdrtghomhdprhgtphht
-    thhopehnphhighhgihhnsehgmhgrihhlrdgtohhmpdhrtghpthhtohepuggvlhhlvghrse
-    hgmhigrdguvgdprhgtphhtthhopegshhgvlhhgrggrshesghhoohhglhgvrdgtohhmpdhr
-    tghpthhtohepjhgrmhgvshdrsghothhtohhmlhgvhieshhgrnhhsvghnphgrrhhtnhgvrh
-    hshhhiphdrtghomhdprhgtphhtthhopegrrhhnugeskhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:qhHhZ_p-u8s5pl3YM_1-PsEN9wBfKfwXvrHdL61Q-nhZDSolr_K7Mw>
-    <xmx:qhHhZ5kYRVJdV1MObn5MTFlxn9WLq1qINYV8-8l2m2E4SAKKl83-Ww>
-    <xmx:qhHhZ32z1LJiorBkFoyg-aZNO0xESpHo-jDwSf5gWXDLEZ3-2Qp6VA>
-    <xmx:qhHhZ4tW9ZugFEiuVqPqdmmqi1kNe-aZmABnfDMdIQSnpAO8aZjmsw>
-    <xmx:rBHhZwffwYjZf1CcOqvx81hevZ9WxdyiSnJ2x_cAQyFRDDuaiwyi10Yb>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id E60322220073; Mon, 24 Mar 2025 04:02:49 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	s=arc-20240116; t=1742805263; c=relaxed/simple;
+	bh=Ikyk8tEGyVYJtfl6CoeuEGpX8IKaOePD9yRbwbFjehc=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=E0E6Gb3iVTklBVF+qVTJObmnVeNZTv1/wrX1ac6DI0Pj1DZPpxEpIGdwrTR4J1PCo/RxSVTZxbrHuus/yODyuS09A9Q+HXHZQnrvVGLaRk0tEkOKU525ZU0jBB4vbb2FhBmNVNVioCRB9sqByAyOxnq1p/KrekpsHKqlVmZSDMQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ua1-f43.google.com with SMTP id a1e0cc1a2514c-86d6fd581f4so4642318241.1
+        for <linux-sh@vger.kernel.org>; Mon, 24 Mar 2025 01:34:21 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1742805260; x=1743410060;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=yCOWr5OVgRs94kTbQSYoiNiaJHkAjmdjIZDDP7OCb8g=;
+        b=gh/an3ABDlqJisPC7UaF+FT6DsoNDoaaoiUITh15dcCe2QFIR0X+44QW190YVbxDcE
+         Zej7t41/nD0JJqof7b3pzTxyapZjz6d5Ni81z38syTBbJjxj2lVIdCOSyRR6mQKk7BMd
+         jDYlfMRe/izjCkdSwp9kQGQtopKDeIL7+MMonMjZbZft1jLFv64krv7Vs4+rtUswLopv
+         TjlfmW/nu1V2wfWWWC/5jElDGLvFOefqUF7j2jpwZN8p9A12glh5p4AuvngX8fm2f4sA
+         lLGq037PZtAQVg6geo12y+l0fSjbKmKYhontaJkWhKfeFfLo6piLbYlJnXsKslbSDjp9
+         x4MA==
+X-Gm-Message-State: AOJu0Yy6+IUYPctTHRvyqukSeqJLNk1BFKdlsRUkG5v30ipghz/znBkp
+	88SZ40+Xk/CH67/86To/UiY6igcrnK0PrzoiBnBE7BvXsKrOCvHv0YAFkgy0
+X-Gm-Gg: ASbGncupKwvQkok7JnhtcSACLuu4DqGeT5mDcjhdaJHwK4nfRkTffVHtYlIw5wlPlG/
+	8To55HfSwUa6k18GSpGIUPAmJZVye2qnIIoq5UxEosRvIsaZHl9bOu90qLa3iejQIh8hlckimlD
+	g/Y7WaQJOcGkQpKcSotF0xUeZho7LJC2fzGjdUPJjstOIAnHwQrBmm6ZHkX6ZeoFl0eliq86jSy
+	ciRA1uFi2HTeS7uGAHNDsIbZiqA7YeRq5vWYqRzhW7IRb2DgkB8MEtostyVB5WMFyDV7HArcCU0
+	YoaHiBcPoGeQDD3ahdOkQJWHY41szHMdVBPLj6B5TLXQqAW8hMXDLjtggkrmkZF0XFdDof4ou4T
+	WmJSkCE8=
+X-Google-Smtp-Source: AGHT+IFJt6e0AxACq5sEds5Z6nY6s7WKuZuMCwK+K+iEWVpHnQsa2HFUrdBf94C1ZxjIxztBBmdP0A==
+X-Received: by 2002:a05:6102:f11:b0:4b5:aa91:f29f with SMTP id ada2fe7eead31-4c50c89e088mr7855069137.8.1742805259926;
+        Mon, 24 Mar 2025 01:34:19 -0700 (PDT)
+Received: from mail-ua1-f45.google.com (mail-ua1-f45.google.com. [209.85.222.45])
+        by smtp.gmail.com with ESMTPSA id ada2fe7eead31-4c50bc4b7e2sm1491136137.16.2025.03.24.01.34.19
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 24 Mar 2025 01:34:19 -0700 (PDT)
+Received: by mail-ua1-f45.google.com with SMTP id a1e0cc1a2514c-86d30c329f2so4079973241.0
+        for <linux-sh@vger.kernel.org>; Mon, 24 Mar 2025 01:34:19 -0700 (PDT)
+X-Received: by 2002:a67:fb89:0:b0:4c1:8ded:2d66 with SMTP id
+ ada2fe7eead31-4c4fc1ca0b4mr9802209137.12.1742805259317; Mon, 24 Mar 2025
+ 01:34:19 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-ThreadId: T53f4a10e7512c522
-Date: Mon, 24 Mar 2025 09:02:28 +0100
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Greg Ungerer" <gerg@linux-m68k.org>, "Arnd Bergmann" <arnd@kernel.org>,
- Linux-Arch <linux-arch@vger.kernel.org>
-Cc: "Richard Henderson" <richard.henderson@linaro.org>,
- "Matt Turner" <mattst88@gmail.com>,
- "Geert Uytterhoeven" <geert@linux-m68k.org>,
- "Thomas Bogendoerfer" <tsbogend@alpha.franken.de>,
- "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
- "Helge Deller" <deller@gmx.de>, "Madhavan Srinivasan" <maddy@linux.ibm.com>,
- "Michael Ellerman" <mpe@ellerman.id.au>,
- "Nicholas Piggin" <npiggin@gmail.com>,
- "Christophe Leroy" <christophe.leroy@csgroup.eu>,
- "Naveen N Rao" <naveen@kernel.org>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>,
- "Rich Felker" <dalias@libc.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "Julian Vetter" <julian@outer-limits.org>,
- "Bjorn Helgaas" <bhelgaas@google.com>, linux-alpha@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
-Message-Id: <4a31c6a8-7c99-4d8f-8248-92e0e52b8db6@app.fastmail.com>
-In-Reply-To: <64f226e5-7931-40ba-878a-a28688da82fd@linux-m68k.org>
-References: <20250315105907.1275012-1-arnd@kernel.org>
- <20250315105907.1275012-7-arnd@kernel.org>
- <64f226e5-7931-40ba-878a-a28688da82fd@linux-m68k.org>
-Subject: Re: [PATCH 6/6] m68k/nommu: stop using GENERIC_IOMAP
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+References: <20250323191330.114640-1-johan.korsnes@gmail.com>
+In-Reply-To: <20250323191330.114640-1-johan.korsnes@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 24 Mar 2025 09:34:07 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdWYTaFda-=JVcArb0fTKSMQVec2HrG2WRE0pAUWPAnp3A@mail.gmail.com>
+X-Gm-Features: AQ5f1JprRGG8t7K9LmBdqF-_PmOk3gxeg9enBozcalhjgm4SXvT0Uth-WYGm4i0
+Message-ID: <CAMuHMdWYTaFda-=JVcArb0fTKSMQVec2HrG2WRE0pAUWPAnp3A@mail.gmail.com>
+Subject: Re: [PATCH] arch: sh: defconfig: Drop obsolete CONFIG_NET_CLS_TCINDEX
+To: Johan Korsnes <johan.korsnes@gmail.com>
+Cc: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Content-Type: text/plain; charset="UTF-8"
 
-On Mon, Mar 24, 2025, at 02:33, Greg Ungerer wrote:
-> Hi Arnd,
+On Sun, 23 Mar 2025 at 20:14, Johan Korsnes <johan.korsnes@gmail.com> wrote:
+> This option was removed from the Kconfig in commit
+> 8c710f75256b ("net/sched: Retire tcindex classifier") but it was not
+> removed from the defconfigs.
 >
-> On 15/3/25 20:59, Arnd Bergmann wrote:
->> From: Arnd Bergmann <arnd@arndb.de>
->> 
->> There is no need to go through the GENERIC_IOMAP wrapper for PIO on
->> nommu platforms, since these always come from PCI I/O space that is
->> itself memory mapped.
->> 
->> Instead, the generic ioport_map() can just return the MMIO location
->> of the ports directly by applying the PCI_IO_PA offset, while
->> ioread32/iowrite32 trivially turn into readl/writel as they do
->> on most other architectures.
->> 
->> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
->
-> With this applied this fails to build for me:
->
->    UPD     include/generated/utsversion.h
->    CC      init/version-timestamp.o
->    LD      vmlinux
-> m68k-linux-uclibc-ld: drivers/pci/quirks.o: in function 
-> `quirk_switchtec_ntb_dma_alias':
-> quirks.c:(.text+0x23e4): undefined reference to `pci_iomap'
-> m68k-linux-uclibc-ld: quirks.c:(.text+0x24fe): undefined reference to 
-> `pci_iounmap'
-> m68k-linux-uclibc-ld: drivers/pci/quirks.o: in function 
-> `disable_igfx_irq':
-> quirks.c:(.text+0x32f4): undefined reference to `pci_iomap'
-> m68k-linux-uclibc-ld: quirks.c:(.text+0x3348): undefined reference to 
-> `pci_iounmap'
+> Fixes: 8c710f75256b ("net/sched: Retire tcindex classifier")
+> Signed-off-by: Johan Korsnes <johan.korsnes@gmail.com>
 
-Thanks for the report, I was able to reproduce the problem now
-and applied the fixup below. I had tested m5475evb_defconfig earlier,
-and that built cleanly with PCI enabled, but I had missed how
-that still used GENERIC_IOMAP because it has CONFIG_MMU enabled.
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Does this fixup work for you?
+Gr{oetje,eeting}s,
 
-On a related note, I'm curious about how the MCF54xx chips are
-used in practice, as I see that they are the only coldfire chips
-with PCI and they all have an MMU. Are there actual users of these
-chips that have PCI but choose not to use the MMU? 
+                        Geert
 
-      Arnd
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-8<-----
-From a36995e2a64711556c6773797367d165828f6705 Mon Sep 17 00:00:00 2001
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 24 Mar 2025 07:53:47 +0100
-Subject: [PATCH] m68k: coldfire: select PCI_IOMAP for PCI
-
-After I dropped CONFIG_GENERIC_IOMAP, some PCI drivers started failing
-to link when CONFIG_MMU is disabled:
-
-ERROR: modpost: "pci_iounmap" [drivers/video/fbdev/i740fb.ko] undefined!
-ERROR: modpost: "pci_iounmap" [drivers/video/fbdev/vt8623fb.ko] undefined!
-ERROR: modpost: "pci_iomap_wc" [drivers/video/fbdev/vt8623fb.ko] undefined!
-ERROR: modpost: "pci_iomap" [drivers/video/fbdev/vt8623fb.ko] undefined!
-ERROR: modpost: "pci_iounmap" [drivers/video/fbdev/s3fb.ko] undefined!
-...
-
-It turns out that there were two mistakes in my patch: on !MMU I forgot
-to enable CONFIG_GENERIC_PCI_IOMAP, and for Coldfire with MMU enabled,
-teh GENERIC_IOMAP was left in place but incorrectly configured.
-
-Fixes: 9d48cc07d0d7 ("m68k/nommu: stop using GENERIC_IOMAP")
-Reported-by: Greg Ungerer <gerg@linux-m68k.org>
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-
-diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
-index b50c275fa94d..eb5bb6d36899 100644
---- a/arch/m68k/Kconfig
-+++ b/arch/m68k/Kconfig
-@@ -18,12 +18,13 @@ config M68K
- 	select DMA_DIRECT_REMAP if M68K_NONCOHERENT_DMA && !COLDFIRE
- 	select GENERIC_ATOMIC64
- 	select GENERIC_CPU_DEVICES
--	select GENERIC_IOMAP if HAS_IOPORT && MMU
-+	select GENERIC_IOMAP if HAS_IOPORT && MMU && !COLDFIRE
- 	select GENERIC_IRQ_SHOW
- 	select GENERIC_LIB_ASHLDI3
- 	select GENERIC_LIB_ASHRDI3
- 	select GENERIC_LIB_LSHRDI3
- 	select GENERIC_LIB_MULDI3
-+	select GENERIC_PCI_IOMAP if PCI
- 	select HAS_IOPORT if PCI || ISA || ATARI_ROM_ISA
- 	select HAVE_ARCH_LIBGCC_H
- 	select HAVE_ARCH_SECCOMP
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
