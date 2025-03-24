@@ -1,148 +1,164 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0066122339;
-	Mon, 24 Mar 2025 10:48:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.156.1
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8973914F9FB;
+	Mon, 24 Mar 2025 13:50:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742813299; cv=none; b=K938wWY4WcZ4k36GtCuJijgWnIWMIuU80hnsjweqryP62qO+JQYYCSF1b6GnqMLgWwyDsBpS/6xbM9/YzkiLRILUELjUn079p5gZ2lpHhqK3WCQIznWM5BvxY9nXm0gY7Q8lHNY/wMrolkfFCHgeZomNXrtaatJf1MlSxBV+jT8=
+	t=1742824227; cv=none; b=HZhiqYp6djhngal4ckJYOI8y/0g0jLhYU07DxdtKT5FqcIMxMe/WwhDJW3kTrlth7b5sSHQsxMDgvJAxVYQBtqMyW/19UsaRA1nXmv0CifTzDACB8QxRL7T566ACBuffXf8cEG+SJD6npyRNeXrN3GwxnFZKNhk9qhTF1QGkIfc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742813299; c=relaxed/simple;
-	bh=KKpN7ifW0FwxjJpOhtFmsCId4QhbQ/vnhrEMIbMuqjo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=N/M583F3bFLBRbgvNC6CsoWSCzPDFJSzTP7SQG5SN9QyCW7SfRpH1nNs4vNWEIPxwze2XaBc9g6gZBdpEIA/jwcQXC5mD4MSmRQPlIqs426tsjOk2rjlEd3VVQjNNP4NObmAvwoP916Am3ZHl+aYqkvOwqfkxo6v0MRf0yUt7Og=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=DqSoWvn2; arc=none smtp.client-ip=148.163.156.1
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="DqSoWvn2"
-Received: from pps.filterd (m0356517.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 52O9ptko016767;
-	Mon, 24 Mar 2025 10:47:12 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
-	:content-type:date:from:in-reply-to:message-id:mime-version
-	:references:subject:to; s=pp1; bh=VIga+xvQk4RxwLl37s8roD8US+RxZH
-	6wgAnN7cz6dUM=; b=DqSoWvn2hNYTALQxMlD7ZFoi+4zq0N1yWuxe53qPbwlofS
-	11EDXetv8BM4utLmdlLw0MYgxwUAi5gSGHNoREjNHy90tDmAWBicdY3u5OsLqFNm
-	FswP8lh4U8KL0Z+kmbDMnrfazqs0pMLjoe8sYQPDDhg+bESIKfnjQkeT2J5kZ8gZ
-	uTpBQo4JY573uCvrEvB6/7EY+71e5v7MwS2GmtATqmPLrQY+OFUtee+p4N29MFed
-	yMLrXbyFZsn7mGVDVNB3gW9NBCAPa3n7ktStYlAB993VUD+ET9ZqifqLhNy/ADTm
-	3QJgYd+LcjsIPnDPueY9NsSPBS5ASB0qja99r70Q==
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 45jkqp44qf-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 24 Mar 2025 10:47:11 +0000 (GMT)
-Received: from m0356517.ppops.net (m0356517.ppops.net [127.0.0.1])
-	by pps.reinject (8.18.0.8/8.18.0.8) with ESMTP id 52OAlA92022659;
-	Mon, 24 Mar 2025 10:47:10 GMT
-Received: from ppma22.wdc07v.mail.ibm.com (5c.69.3da9.ip4.static.sl-reverse.com [169.61.105.92])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 45jkqp44qc-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 24 Mar 2025 10:47:10 +0000 (GMT)
-Received: from pps.filterd (ppma22.wdc07v.mail.ibm.com [127.0.0.1])
-	by ppma22.wdc07v.mail.ibm.com (8.18.1.2/8.18.1.2) with ESMTP id 52O77iAg025489;
-	Mon, 24 Mar 2025 10:47:09 GMT
-Received: from smtprelay04.fra02v.mail.ibm.com ([9.218.2.228])
-	by ppma22.wdc07v.mail.ibm.com (PPS) with ESMTPS id 45j7wywy1a-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 24 Mar 2025 10:47:09 +0000
-Received: from smtpav01.fra02v.mail.ibm.com (smtpav01.fra02v.mail.ibm.com [10.20.54.100])
-	by smtprelay04.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 52OAl5LT16187800
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 24 Mar 2025 10:47:05 GMT
-Received: from smtpav01.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 694862004B;
-	Mon, 24 Mar 2025 10:47:05 +0000 (GMT)
-Received: from smtpav01.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id CD8DB20040;
-	Mon, 24 Mar 2025 10:47:03 +0000 (GMT)
-Received: from osiris (unknown [9.179.14.66])
-	by smtpav01.fra02v.mail.ibm.com (Postfix) with ESMTPS;
-	Mon, 24 Mar 2025 10:47:03 +0000 (GMT)
-Date: Mon, 24 Mar 2025 11:47:02 +0100
-From: Heiko Carstens <hca@linux.ibm.com>
-To: Alessandro Carminati <acarmina@redhat.com>
-Cc: Guenter Roeck <linux@roeck-us.net>, linux-kselftest@vger.kernel.org,
-        David Airlie <airlied@gmail.com>, Arnd Bergmann <arnd@arndb.de>,
-        =?iso-8859-1?Q?Ma=EDra?= Canal <mcanal@igalia.com>,
-        Dan Carpenter <dan.carpenter@linaro.org>,
-        Kees Cook <keescook@chromium.org>,
-        Daniel Diaz <daniel.diaz@linaro.org>, David Gow <davidgow@google.com>,
-        Arthur Grillo <arthurgrillo@riseup.net>,
-        Brendan Higgins <brendan.higgins@linux.dev>,
-        Naresh Kamboju <naresh.kamboju@linaro.org>,
-        Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Maxime Ripard <mripard@kernel.org>,
-        Ville =?iso-8859-1?Q?Syrj=E4l=E4?= <ville.syrjala@linux.intel.com>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        Alessandro Carminati <alessandro.carminati@gmail.com>,
-        Jani Nikula <jani.nikula@intel.com>, dri-devel@lists.freedesktop.org,
-        kunit-dev@googlegroups.com, linux-arch@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        loongarch@lists.linux.dev, x86@kernel.org,
-        Linux Kernel Functional Testing <lkft@linaro.org>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>
-Subject: Re: [PATCH v4 10/14] s390: Add support for suppressing warning
- backtraces
-Message-ID: <20250324104702.12139E73-hca@linux.ibm.com>
-References: <20250313114329.284104-1-acarmina@redhat.com>
- <20250313114329.284104-11-acarmina@redhat.com>
- <b6bb68f0-7e93-4db2-9fe6-f615f06ddeb1@roeck-us.net>
- <CAGegRW4GinPmsav5=VBfjXBKy4cUEs5FWv-ixXODk7ajZ69vYg@mail.gmail.com>
+	s=arc-20240116; t=1742824227; c=relaxed/simple;
+	bh=5DWVH+PYF6T7L8669uq6zv4/kb1H6dDU0ckc3N5uPHU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=M22MfMyNm5+m6/QAEOKO1Oc4EbQwzJY6LyV9Q7YbWxdzonFDEFEHqxU589CUSjy8AD+nL6mj15CgVN28Ch0XUrT5mw78x/a0mDzHg5qlyWDlqr/5xxcPMRizqMKBI6ow96Uai+pn5e0bIhzZ0o0gYf6MJA1AYuFpBbTa7eHP8zw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B0AE6C4CEDD;
+	Mon, 24 Mar 2025 13:50:21 +0000 (UTC)
+Message-ID: <9076d00e-c469-4a05-a686-94e3e55c8389@linux-m68k.org>
+Date: Mon, 24 Mar 2025 23:50:19 +1000
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAGegRW4GinPmsav5=VBfjXBKy4cUEs5FWv-ixXODk7ajZ69vYg@mail.gmail.com>
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: -BXK6qMXWLef6jiJ2R9hHCsaI_IjDOmx
-X-Proofpoint-ORIG-GUID: 40o9NRITvQhnDK-iPsw_sUFfSwFPyp4T
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1093,Hydra:6.0.680,FMLib:17.12.68.34
- definitions=2025-03-24_04,2025-03-21_01,2024-11-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 phishscore=0
- suspectscore=0 priorityscore=1501 impostorscore=0 spamscore=0 adultscore=0
- mlxscore=0 mlxlogscore=810 clxscore=1011 malwarescore=0 lowpriorityscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.19.0-2502280000
- definitions=main-2503240076
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 6/6] m68k/nommu: stop using GENERIC_IOMAP
+To: Arnd Bergmann <arnd@arndb.de>, Arnd Bergmann <arnd@kernel.org>,
+ Linux-Arch <linux-arch@vger.kernel.org>
+Cc: Richard Henderson <richard.henderson@linaro.org>,
+ Matt Turner <mattst88@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
+ Helge Deller <deller@gmx.de>, Madhavan Srinivasan <maddy@linux.ibm.com>,
+ Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>,
+ Christophe Leroy <christophe.leroy@csgroup.eu>,
+ Naveen N Rao <naveen@kernel.org>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Julian Vetter <julian@outer-limits.org>, Bjorn Helgaas
+ <bhelgaas@google.com>, linux-alpha@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+ linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
+References: <20250315105907.1275012-1-arnd@kernel.org>
+ <20250315105907.1275012-7-arnd@kernel.org>
+ <64f226e5-7931-40ba-878a-a28688da82fd@linux-m68k.org>
+ <4a31c6a8-7c99-4d8f-8248-92e0e52b8db6@app.fastmail.com>
+Content-Language: en-US
+From: Greg Ungerer <gerg@linux-m68k.org>
+In-Reply-To: <4a31c6a8-7c99-4d8f-8248-92e0e52b8db6@app.fastmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-On Fri, Mar 21, 2025 at 10:05:42PM +0100, Alessandro Carminati wrote:
-> > > +#ifdef CONFIG_KUNIT_SUPPRESS_BACKTRACE
-> > > +# define HAVE_BUG_FUNCTION
-> > > +# define __BUG_FUNC_PTR      "       .long   %0-.\n"
-> > > +# define __BUG_FUNC  __func__
-> >
-> > gcc 7.5.0 on s390 barfs; it doesn't like the use of "__func__" with "%0-."
+Hi Arnd,
 
-...
-
-> GCC makes significant efforts to handle this, and for several
-> architectures, it manages to solve the problem.
-> However, this is not universally the case.
-> Additionally, -fPIC is not widely used in kernel code... I have only
-> seen it used for VDSO, the x86 boot piggyback decompressor, PowerPC
-> boot, and the s390x architecture.
+On 24/3/25 18:02, Arnd Bergmann wrote:
+> On Mon, Mar 24, 2025, at 02:33, Greg Ungerer wrote:
+>> Hi Arnd,
+>>
+>> On 15/3/25 20:59, Arnd Bergmann wrote:
+>>> From: Arnd Bergmann <arnd@arndb.de>
+>>>
+>>> There is no need to go through the GENERIC_IOMAP wrapper for PIO on
+>>> nommu platforms, since these always come from PCI I/O space that is
+>>> itself memory mapped.
+>>>
+>>> Instead, the generic ioport_map() can just return the MMIO location
+>>> of the ports directly by applying the PCI_IO_PA offset, while
+>>> ioread32/iowrite32 trivially turn into readl/writel as they do
+>>> on most other architectures.
+>>>
+>>> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+>>
+>> With this applied this fails to build for me:
+>>
+>>     UPD     include/generated/utsversion.h
+>>     CC      init/version-timestamp.o
+>>     LD      vmlinux
+>> m68k-linux-uclibc-ld: drivers/pci/quirks.o: in function
+>> `quirk_switchtec_ntb_dma_alias':
+>> quirks.c:(.text+0x23e4): undefined reference to `pci_iomap'
+>> m68k-linux-uclibc-ld: quirks.c:(.text+0x24fe): undefined reference to
+>> `pci_iounmap'
+>> m68k-linux-uclibc-ld: drivers/pci/quirks.o: in function
+>> `disable_igfx_irq':
+>> quirks.c:(.text+0x32f4): undefined reference to `pci_iomap'
+>> m68k-linux-uclibc-ld: quirks.c:(.text+0x3348): undefined reference to
+>> `pci_iounmap'
 > 
-> That said, GCC has been mitigating this issue, allowing us to treat a
-> non-compile-time constant as if it were one.
-> A proof of this is that, at least since GCC 11, the s390x version of
-> GCC is able to build this code.
-> Before that... certainly in GCC 7.5 it couldn't.
+> Thanks for the report, I was able to reproduce the problem now
+> and applied the fixup below. I had tested m5475evb_defconfig earlier,
+> and that built cleanly with PCI enabled, but I had missed how
+> that still used GENERIC_IOMAP because it has CONFIG_MMU enabled.
 > 
-> A simple fix would be to restrict usage to GCC versions greater than
-> 11 for s390.
+> Does this fixup work for you?
 
-But please add that dependency only for this new feature for the time
-being. Right now I would not like to see that s390 is the only architecture
-(besides parisc) which requires a much higher minimum gcc level than every
-other architecture. Unless there are specific reasons.
+Yes, this looks good, works for me.
+Feel free to add this if you like:
+
+Acked-by: Greg Ungerer <gerg@linux-m68k.org>
+
+
+> On a related note, I'm curious about how the MCF54xx chips are
+> used in practice, as I see that they are the only coldfire chips
+> with PCI and they all have an MMU. Are there actual users of these
+> chips that have PCI but choose not to use the MMU?
+
+No, I think everyone with these uses them with MMU enabled.
+
+It is probably more of an historical curiosity to use them with
+the MMU disabled. That supported pre-dated mainline kernels having
+full ColdFire MMU support by a good few years.
+
+Regards
+Greg
+
+
+
+>        Arnd
+> 
+> 8<-----
+>  From a36995e2a64711556c6773797367d165828f6705 Mon Sep 17 00:00:00 2001
+> From: Arnd Bergmann <arnd@arndb.de>
+> Date: Mon, 24 Mar 2025 07:53:47 +0100
+> Subject: [PATCH] m68k: coldfire: select PCI_IOMAP for PCI
+> 
+> After I dropped CONFIG_GENERIC_IOMAP, some PCI drivers started failing
+> to link when CONFIG_MMU is disabled:
+> 
+> ERROR: modpost: "pci_iounmap" [drivers/video/fbdev/i740fb.ko] undefined!
+> ERROR: modpost: "pci_iounmap" [drivers/video/fbdev/vt8623fb.ko] undefined!
+> ERROR: modpost: "pci_iomap_wc" [drivers/video/fbdev/vt8623fb.ko] undefined!
+> ERROR: modpost: "pci_iomap" [drivers/video/fbdev/vt8623fb.ko] undefined!
+> ERROR: modpost: "pci_iounmap" [drivers/video/fbdev/s3fb.ko] undefined!
+> ...
+> 
+> It turns out that there were two mistakes in my patch: on !MMU I forgot
+> to enable CONFIG_GENERIC_PCI_IOMAP, and for Coldfire with MMU enabled,
+> teh GENERIC_IOMAP was left in place but incorrectly configured.
+> 
+> Fixes: 9d48cc07d0d7 ("m68k/nommu: stop using GENERIC_IOMAP")
+> Reported-by: Greg Ungerer <gerg@linux-m68k.org>
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> 
+> diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
+> index b50c275fa94d..eb5bb6d36899 100644
+> --- a/arch/m68k/Kconfig
+> +++ b/arch/m68k/Kconfig
+> @@ -18,12 +18,13 @@ config M68K
+>   	select DMA_DIRECT_REMAP if M68K_NONCOHERENT_DMA && !COLDFIRE
+>   	select GENERIC_ATOMIC64
+>   	select GENERIC_CPU_DEVICES
+> -	select GENERIC_IOMAP if HAS_IOPORT && MMU
+> +	select GENERIC_IOMAP if HAS_IOPORT && MMU && !COLDFIRE
+>   	select GENERIC_IRQ_SHOW
+>   	select GENERIC_LIB_ASHLDI3
+>   	select GENERIC_LIB_ASHRDI3
+>   	select GENERIC_LIB_LSHRDI3
+>   	select GENERIC_LIB_MULDI3
+> +	select GENERIC_PCI_IOMAP if PCI
+>   	select HAS_IOPORT if PCI || ISA || ATARI_ROM_ISA
+>   	select HAVE_ARCH_LIBGCC_H
+>   	select HAVE_ARCH_SECCOMP
+
