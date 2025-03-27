@@ -1,260 +1,195 @@
-Received: from pegase2.c-s.fr (pegase2.c-s.fr [93.17.235.10])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 0F72A20E6F7;
-	Tue, 25 Mar 2025 07:20:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=93.17.235.10
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 55BC11BE23F
+	for <linux-sh@vger.kernel.org>; Thu, 27 Mar 2025 09:19:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1742887218; cv=none; b=TCDt+GUDqUBxtXlejW5IVxw9IcgkICQKaEgaiDt/fzaOhPQyDodOWmlkmsQ4aWJISN9nkkNA1Pt5IgYktYs29RjJLjOJyAFfvMrCwMcfZi9aUUqsYH0VdYo7rqCuo1+mN6J51JG4hvLpsEtPkoHrz9byDnuqvy5J+aN46Mol1Uc=
+	t=1743067191; cv=none; b=P6zOfvMTzamFDoqfNZVOsTqoxiwGvQpfOGXbgIXQfdi0oTXrf/YoHZKGDwCQpeIyDgwFwvHtrGtftl1asadftK4wmN27FHBNLKyVS69FEDMBOPRxbNh6+g/w7C10cpr9A1LLheyjsdk5vn83yVyhfDUNhRcWhjNGo+N56lgEHGQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1742887218; c=relaxed/simple;
-	bh=7yAN5DWEseLPhSuJtJplgqzsW8Fn2NnOCRGJNmY+TWE=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=bJtNdqIm+UZrzoVtz/WLlfsOnT59+cPNPgkgOpG+OY1d0tz6PJscs274wNO6CJZZaOkD63wIwhVaspagEZUGjjOtT7dcLCpROIH3p8Wx2oiRaBT4AdT5qcmMI03ZxwbPQ7+I0/fd2WCRazI/nr3jagIBGer1fNgPQAqBB9YwyJE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu; spf=pass smtp.mailfrom=csgroup.eu; arc=none smtp.client-ip=93.17.235.10
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=csgroup.eu
-Received: from localhost (mailhub3.si.c-s.fr [172.26.127.67])
-	by localhost (Postfix) with ESMTP id 4ZMLXZ26Lwz9sSV;
-	Tue, 25 Mar 2025 08:05:18 +0100 (CET)
-X-Virus-Scanned: amavisd-new at c-s.fr
-Received: from pegase2.c-s.fr ([172.26.127.65])
-	by localhost (pegase2.c-s.fr [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id RFFIDcgfzoK7; Tue, 25 Mar 2025 08:05:18 +0100 (CET)
-Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
-	by pegase2.c-s.fr (Postfix) with ESMTP id 4ZMLXY2g73z9sSS;
-	Tue, 25 Mar 2025 08:05:17 +0100 (CET)
-Received: from localhost (localhost [127.0.0.1])
-	by messagerie.si.c-s.fr (Postfix) with ESMTP id DA00C8B766;
-	Tue, 25 Mar 2025 08:05:16 +0100 (CET)
-X-Virus-Scanned: amavisd-new at c-s.fr
-Received: from messagerie.si.c-s.fr ([127.0.0.1])
-	by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
-	with ESMTP id FEOhRsdEs3K2; Tue, 25 Mar 2025 08:05:16 +0100 (CET)
-Received: from PO20335.IDSI0.si.c-s.fr (unknown [192.168.235.99])
-	by messagerie.si.c-s.fr (Postfix) with ESMTP id 285238B763;
-	Tue, 25 Mar 2025 08:05:15 +0100 (CET)
-Received: from PO20335.IDSI0.si.c-s.fr (localhost [127.0.0.1])
-	by PO20335.IDSI0.si.c-s.fr (8.18.1/8.17.1) with ESMTPS id 52P756MK009381
-	(version=TLSv1.3 cipher=TLS_AES_256_GCM_SHA384 bits=256 verify=NOT);
-	Tue, 25 Mar 2025 08:05:07 +0100
-Received: (from chleroy@localhost)
-	by PO20335.IDSI0.si.c-s.fr (8.18.1/8.18.1/Submit) id 52P742SQ009337;
-	Tue, 25 Mar 2025 08:04:02 +0100
-X-Authentication-Warning: PO20335.IDSI0.si.c-s.fr: chleroy set sender to christophe.leroy@csgroup.eu using -f
-From: Christophe Leroy <christophe.leroy@csgroup.eu>
-To: tglx@linutronix.de, "Jiri Slaby (SUSE)" <jirislaby@kernel.org>
-Cc: Christophe Leroy <christophe.leroy@csgroup.eu>, maz@kernel.org,
-        linux-kernel@vger.kernel.org, Aaro Koskinen <aaro.koskinen@iki.fi>,
-        Abhinav Kumar <quic_abhinavk@quicinc.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Alexandre Belloni <alexandre.belloni@bootlin.com>,
-        Alexandre Ghiti <alex@ghiti.fr>,
-        Alexandre Torgue <alexandre.torgue@foss.st.com>,
-        Alex Deucher <alexander.deucher@amd.com>, Alex Shi <alexs@kernel.org>,
-        Alim Akhtar <alim.akhtar@samsung.com>,
-        =?UTF-8?q?Alvin=20=C5=A0ipraga?= <alsi@bang-olufsen.dk>,
-        Alyssa Rosenzweig <alyssa@rosenzweig.io>,
-        amd-gfx@lists.freedesktop.org, Amit Kucheria <amitk@kernel.org>,
-        Anatolij Gustschin <agust@denx.de>, Andi Shyti <andi.shyti@kernel.org>,
-        =?UTF-8?q?Andreas=20F=C3=A4rber?= <afaerber@suse.de>,
-        Andreas Kemnade <andreas@kemnade.info>,
-        Andrew Jeffery <andrew@codeconstruct.com.au>,
-        Andrew Lunn <andrew@lunn.ch>, Andy Shevchenko <andy@kernel.org>,
-        AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
-        Antoine Tenart <atenart@kernel.org>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        Anup Patel <anup@brainfault.org>, Arnd Bergmann <arnd@arndb.de>,
-        asahi@lists.linux.dev, Bartosz Golaszewski <brgl@bgdev.pl>,
-        Baruch Siach <baruch@tkos.co.il>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Bharat Kumar Gogada <bharat.kumar.gogada@amd.com>,
-        Bjorn Andersson <andersson@kernel.org>,
-        Bjorn Helgaas <bhelgaas@google.com>, Borislav Petkov <bp@alien8.de>,
-        Broadcom internal kernel review list <bcm-kernel-feedback-list@broadcom.com>,
-        Claudiu Beznea <claudiu.beznea@tuxon.dev>,
-        Corentin Chary <corentin.chary@gmail.com>,
-        Daire McNamara <daire.mcnamara@microchip.com>,
-        Daniel Golle <daniel@makrotopia.org>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Daniel Mack <daniel@zonque.org>, Daniel Palmer <daniel@thingy.jp>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        David Airlie <airlied@gmail.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        DENG Qingfang <dqfext@gmail.com>, Dinh Nguyen <dinguyen@kernel.org>,
-        Dmitry Baryshkov <dmitry.baryshkov@linaro.org>,
-        Dongliang Mu <dzm91@hust.edu.cn>, Doug Berger <opendmb@gmail.com>,
-        dri-devel@lists.freedesktop.org, Eddie James <eajames@linux.ibm.com>,
-        Eric Dumazet <edumazet@google.com>, Fabio Estevam <festevam@gmail.com>,
-        Florian Fainelli <florian.fainelli@broadcom.com>,
-        Geoff Levand <geoff@infradead.org>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Gregory Clement <gregory.clement@bootlin.com>,
-        Guo Ren <guoren@kernel.org>, Hans de Goede <hdegoede@redhat.com>,
-        Haojian Zhuang <haojian.zhuang@gmail.com>,
-        Haojian Zhuang <haojian.zhuang@linaro.org>,
-        Heiko Stuebner <heiko@sntech.de>,
-        Herve Codina <herve.codina@bootlin.com>,
-        Hou Zhiqiang <Zhiqiang.Hou@nxp.com>, "H. Peter Anvin" <hpa@zytor.com>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Changhuang Liang <changhuang.liang@starfivetech.com>,
-        Chen-Yu Tsai <wens@csie.org>,
-        "Chester A. Unal" <chester.a.unal@arinc9.com>,
-        =?UTF-8?q?Christian=20K=C3=B6nig?= <christian.koenig@amd.com>,
-        Chris Zankel <chris@zankel.net>,
-        =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>,
-        Imre Kaloz <kaloz@openwrt.org>, Ingo Molnar <mingo@redhat.com>,
-        Jakub Kicinski <kuba@kernel.org>, James Morse <james.morse@arm.com>,
-        Janne Grunau <j@jannau.net>, Janusz Krzysztofik <jmkrzyszt@gmail.com>,
-        Jaroslav Kysela <perex@perex.cz>,
-        Jassi Brar <jassisinghbrar@gmail.com>,
-        Jernej Skrabec <jernej.skrabec@gmail.com>,
-        Jerome Brunet <jbrunet@baylibre.com>,
-        Jianjun Wang <jianjun.wang@mediatek.com>,
-        Jiawen Wu <jiawenwu@trustnetic.com>,
-        Jiaxun Yang <jiaxun.yang@flygoat.com>,
-        Jim Quinlan <jim2101024@gmail.com>, Jingoo Han <jingoohan1@gmail.com>,
-        Joel Stanley <joel@jms.id.au>,
-        Johannes Berg <johannes@sipsolutions.net>,
-        John Crispin <john@phrozen.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Jonas Bonn <jonas@southpole.se>, Jonathan Cameron <jic23@kernel.org>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        =?UTF-8?q?Jonathan=20Neusch=C3=A4fer?= <j.neuschaefer@gmx.net>,
-        Joyce Ooi <joyce.ooi@intel.com>,
-        Karthikeyan Mitran <m.karthikeyan@mobiveil.co.in>,
-        Keerthy <j-keerthy@ti.com>, Kevin Hilman <khilman@baylibre.com>,
-        Konrad Dybcio <konradybcio@kernel.org>,
-        Krzysztof Kozlowski <krzk@kernel.org>,
-        =?UTF-8?q?Krzysztof=20Wilczy=C5=84ski?= <kw@linux.com>,
-        Kunihiko Hayashi <hayashi.kunihiko@socionext.com>,
-        Lakshmi Sowjanya D <lakshmi.sowjanya.d@intel.com>,
-        Lars-Peter Clausen <lars@metafoo.de>, Lee Jones <lee@kernel.org>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Linus Walleij <linusw@kernel.org>, linux-amlogic@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-arm-msm@vger.kernel.org,
-        linux-doc@vger.kernel.org, linux-edac@vger.kernel.org,
-        linux-gpio@vger.kernel.org, linux-iio@vger.kernel.org,
-        linux-i2c@vger.kernel.org, linux-mediatek@lists.infradead.org,
-        linux-mips@vger.kernel.org, linux-omap@vger.kernel.org,
-        linux-pci@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-remoteproc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-rpi-kernel@lists.infradead.org, linux-sh@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org, linux-sound@vger.kernel.org,
-        linux-stm32@st-md-mailman.stormreply.com, linux-um@lists.infradead.org,
-        linux-wireless@vger.kernel.org, loongarch@lists.linux.dev,
-        Lorenzo Pieralisi <lpieralisi@kernel.org>,
-        Ludovic Desroches <ludovic.desroches@microchip.com>,
-        Lukasz Luba <lukasz.luba@arm.com>, "Luke D. Jones" <luke@ljones.dev>,
-        Madhavan Srinivasan <maddy@linux.ibm.com>,
-        Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>,
-        =?UTF-8?q?Marek=20Beh=C3=BAn?= <kabel@kernel.org>,
-        Marijn Suijten <marijn.suijten@somainline.org>,
-        Mark Brown <broonie@kernel.org>,
-        Mark-PK Tsai <mark-pk.tsai@mediatek.com>,
-        Martin Blumenstingl <martin.blumenstingl@googlemail.com>,
-        Masami Hiramatsu <mhiramat@kernel.org>,
-        Mathieu Poirier <mathieu.poirier@linaro.org>,
-        Matthias Brugger <matthias.bgg@gmail.com>,
-        Mauro Carvalho Chehab <mchehab@kernel.org>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Maxime Coquelin <mcoquelin.stm32@gmail.com>,
-        Mengyuan Lou <mengyuanlou@net-swift.com>, Michael Buesch <m@bues.ch>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Michal Simek <michal.simek@amd.com>,
-        Miodrag Dinic <miodrag.dinic@mips.com>,
-        Naveen N Rao <naveen@kernel.org>,
-        Neil Armstrong <neil.armstrong@linaro.org>, netdev@vger.kernel.org,
-        Nicolas Ferre <nicolas.ferre@microchip.com>,
-        Nicolas Saenz Julienne <nsaenz@kernel.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Nikhil Agarwal <nikhil.agarwal@amd.com>,
-        Nipun Gupta <nipun.gupta@amd.com>, Nishanth Menon <nm@ti.com>,
-        =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
-        Palmer Dabbelt <palmer@dabbelt.com>, Paolo Abeni <pabeni@redhat.com>,
-        Paul Cercueil <paul@crapouillou.net>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Pengutronix Kernel Team <kernel@pengutronix.de>,
-        Peter Rosin <peda@axentia.se>, Philipp Zabel <p.zabel@pengutronix.de>,
-        Piotr Wojtaszczyk <piotr.wojtaszczyk@timesys.com>,
-        platform-driver-x86@vger.kernel.org,
-        Prasad Kumpatla <quic_pkumpatl@quicinc.com>,
-        Qiang Zhao <qiang.zhao@nxp.com>, Qin Jian <qinjian@cqplus1.com>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Randy Dunlap <rdunlap@infradead.org>, Ray Jui <rjui@broadcom.com>,
-        Rengarajan Sundararajan <Rengarajan.S@microchip.com>,
-        Richard Cochran <richardcochran@gmail.com>,
-        Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>,
-        Rob Clark <robdclark@gmail.com>,
-        Robert Jarzmik <robert.jarzmik@free.fr>,
-        Robert Richter <rric@kernel.org>, Rob Herring <robh@kernel.org>,
-        Roger Quadros <rogerq@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Ryan Chen <ryan_chen@aspeedtech.com>,
-        Ryder Lee <ryder.lee@mediatek.com>,
-        Samuel Holland <samuel@sholland.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Sascha Hauer <s.hauer@pengutronix.de>,
-        Scott Branden <sbranden@broadcom.com>, Scott Wood <oss@buserror.net>,
-        Sean Paul <sean@poorly.run>, Sean Wang <sean.wang@kernel.org>,
-        Sean Wang <sean.wang@mediatek.com>,
-        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
-        Sergio Paracuellos <sergio.paracuellos@gmail.com>,
-        Shawn Guo <shawnguo@kernel.org>, Shawn Lin <shawn.lin@rock-chips.com>,
-        Siddharth Vadapalli <s-vadapalli@ti.com>,
-        Simona Vetter <simona@ffwll.ch>, Stafford Horne <shorne@gmail.com>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stephen Boyd <sboyd@kernel.org>, Sven Peter <sven@svenpeter.dev>,
-        Takashi Iwai <tiwai@suse.com>, Talel Shenhar <talel@amazon.com>,
-        Tero Kristo <kristo@kernel.org>,
-        Thangaraj Samynathan <Thangaraj.S@microchip.com>,
-        Thara Gopinath <thara.gopinath@gmail.com>,
-        Thierry Reding <thierry.reding@gmail.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Thomas Petazzoni <thomas.petazzoni@bootlin.com>,
-        Toan Le <toan@os.amperecomputing.com>,
-        Tony Lindgren <tony@atomide.com>, Tony Luck <tony.luck@intel.com>,
-        UNGLinuxDriver@microchip.com,
-        =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <ukleinek@kernel.org>,
-        Vignesh Raghavendra <vigneshr@ti.com>,
-        Vineet Gupta <vgupta@kernel.org>, Vladimir Oltean <olteanv@gmail.com>,
-        Vladimir Zapolskiy <vz@mleia.com>, WANG Xuerui <kernel@xen0n.name>,
-        Woojung Huh <woojung.huh@microchip.com>, x86@kernel.org,
-        Yanteng Si <si.yanteng@linux.dev>,
-        Yoshinori Sato <ysato@users.osdn.me>, Zhang Rui <rui.zhang@intel.com>
-Subject: Re: (subset) [PATCH v2 00/57] irqdomain: Cleanups and Documentation
-Date: Tue, 25 Mar 2025 08:03:28 +0100
-Message-ID: <174288553816.2234438.13558299160543301187.b4-ty@csgroup.eu>
-X-Mailer: git-send-email 2.47.0
-In-Reply-To: <20250319092951.37667-1-jirislaby@kernel.org>
-References: <20250319092951.37667-1-jirislaby@kernel.org>
+	s=arc-20240116; t=1743067191; c=relaxed/simple;
+	bh=4Uqg1XG05HdJPsxOwRpf2Ggurmvyrn6hqtvAxIbW18E=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 In-Reply-To:Content-Type:Content-Disposition; b=Nm1crORTaq76Xma1LD7w8Inw3otDr4SBFfRjK3GJ4nta0TvUsv6BTaDb7NwfStP6xCthZynxMfyEpIlZ/UCQ7BkzW94jNQBcgBU2fnlIX84NtpkPxIL5G+Qlvb5fPITKRfyXSI2MyaHFap2fwekBcyGekhF6XqdVvKKyamEVWoU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=iQzMr/OM; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="iQzMr/OM"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1743067187;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=9pyhn0HoGdNIq8NPYxOEem1nAHX/1X+tuTFMgKgOzvo=;
+	b=iQzMr/OM1L4aNusLYBgfkJoA3gTJ2s5f90gNNeYwdCAOVSTM5N4m4GTdCbsVNR4ip9RXs/
+	g0BlL5Wj7M6PR2RkF7SLpiHJsyuIxXn64AqMiSJpbdv6kTxseeRlTScltu74yeRs7tvW/3
+	UmNakEj6wZtqSjLgZ2yBVIMKpSCS93w=
+Received: from mail-ed1-f70.google.com (mail-ed1-f70.google.com
+ [209.85.208.70]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-76-3vTsK8mdO0a7pOgv7PLrDw-1; Thu, 27 Mar 2025 05:19:46 -0400
+X-MC-Unique: 3vTsK8mdO0a7pOgv7PLrDw-1
+X-Mimecast-MFC-AGG-ID: 3vTsK8mdO0a7pOgv7PLrDw_1743067185
+Received: by mail-ed1-f70.google.com with SMTP id 4fb4d7f45d1cf-5e67df8c373so840837a12.0
+        for <linux-sh@vger.kernel.org>; Thu, 27 Mar 2025 02:19:45 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1743067185; x=1743671985;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=9pyhn0HoGdNIq8NPYxOEem1nAHX/1X+tuTFMgKgOzvo=;
+        b=W49VxaEUVNg9nU3YmWKMPVHCTWIjzpu2KmOK00Je0tKDL6GhsszZRXkheuFOt5jPj2
+         djARB/JSSXxKkE5GPF9eLrKb6TStS7DxIaBBD8/CBwbyoWtgkcyxXkUtBAWAlv8pbM4J
+         xtMMqj20aG3mPzt7jiYp5cjCph/5W7UrmtIfyNsvn0nOmUURrVIrlvoV3ML5Kzee/B/A
+         CycqIVdBcBPgEUmYY0nShnwF4iYeZ/XVyhj3zyYnbpNZMdGwYU2OsI4JTuVnH2Hb/NeQ
+         qC2BKhLp9DnoxcjtbYawCOWDfuFkHZ/9wyb8oMG1yYi9FuARQiMZR8HbmbyXrNklWZMW
+         Mxlg==
+X-Forwarded-Encrypted: i=1; AJvYcCV8inurB+TE43SdF3LY+nRS6VqQhIqwkeoJSLTO7K8SgMp+VjUd77jyd+Kv6gMGtbkHYIN2bOd8rA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzZz03U53EbV9JrnjSz8ZsXvHrZ+GvQ+73G8vhjzb5PhzIBU0u/
+	C1l6+LwCjGe3DMaAKuqMW0dLW13LjWwi/KiEIAiHD3JvIN/Vpna+inN5cfKY0b6cypdV3Jcjy+9
+	do19qQ+/C8Q3KjA/0v0RZMDKoLZPqM3Ygf//kkqyH54jA4thqe4aXUYg=
+X-Gm-Gg: ASbGncvEExtXGFa2hakv124gKEpBmku/CIgrZROXfn5HuHawkHTk1LaX28NLP7OcqfK
+	dni4QXE5vjVTC3LYpEl6bewKnfI6m/UygFVvMyJOhRmORKg5Yoqo9GKJvpmYBPLyi6mVEwTdENt
+	8G13+5VyqEOTjgzpi7eFlcQOub5o9VaIJPJW6ZV55ksYrgoe7SFoOy5vfaF3AYS59tJUc9dS//9
+	jgiIfslWoC2kHu5rbqOOW0g4HOUDTZgeN2IcouOU9afHknchSZ1rxNI8+kbhVryfHQWxaHEUyqC
+	tmdUWrQmzhZeSzr8ZoFRF6g6mhAId9DDzrs=
+X-Received: by 2002:a05:6402:84f:b0:5ed:5554:7c3b with SMTP id 4fb4d7f45d1cf-5ed8f01bf27mr2519909a12.32.1743067184659;
+        Thu, 27 Mar 2025 02:19:44 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IF/DbC1eDv4uqQP1EBxN610IysnB9dK2feEI/zaqXDqyNyHZNke1rzsRI6Nd8rV/ipuBURwEg==
+X-Received: by 2002:a05:6402:84f:b0:5ed:5554:7c3b with SMTP id 4fb4d7f45d1cf-5ed8f01bf27mr2519867a12.32.1743067184134;
+        Thu, 27 Mar 2025 02:19:44 -0700 (PDT)
+Received: from thinky (ip-217-030-074-039.aim-net.cz. [217.30.74.39])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-5ebcd0e0470sm10684007a12.77.2025.03.27.02.19.42
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 27 Mar 2025 02:19:43 -0700 (PDT)
+Date: Thu, 27 Mar 2025 10:19:40 +0100
+From: Andrey Albershteyn <aalbersh@redhat.com>
+To: =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>
+Cc: Paul Moore <paul@paul-moore.com>, 
+	Richard Henderson <richard.henderson@linaro.org>, Matt Turner <mattst88@gmail.com>, 
+	Russell King <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, 
+	Will Deacon <will@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, 
+	Michal Simek <monstr@monstr.eu>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, Helge Deller <deller@gmx.de>, 
+	Madhavan Srinivasan <maddy@linux.ibm.com>, Michael Ellerman <mpe@ellerman.id.au>, 
+	Nicholas Piggin <npiggin@gmail.com>, Christophe Leroy <christophe.leroy@csgroup.eu>, 
+	Naveen N Rao <naveen@kernel.org>, Heiko Carstens <hca@linux.ibm.com>, 
+	Vasily Gorbik <gor@linux.ibm.com>, Alexander Gordeev <agordeev@linux.ibm.com>, 
+	Christian Borntraeger <borntraeger@linux.ibm.com>, Sven Schnelle <svens@linux.ibm.com>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, "David S. Miller" <davem@davemloft.net>, 
+	Andreas Larsson <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>, 
+	Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
+	Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
+	=?utf-8?Q?G=C3=BCnther?= Noack <gnoack@google.com>, Arnd Bergmann <arnd@arndb.de>, 
+	Pali =?utf-8?B?Um9ow6Fy?= <pali@kernel.org>, James Morris <jmorris@namei.org>, 
+	"Serge E. Hallyn" <serge@hallyn.com>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-arm-kernel@lists.infradead.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, 
+	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-security-module@vger.kernel.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, 
+	selinux@vger.kernel.org, Andrey Albershteyn <aalbersh@kernel.org>
+Subject: Re: [PATCH v4 1/3] lsm: introduce new hooks for setting/getting
+ inode  fsxattr
+Message-ID: <gsg4crfqqc7xmvaadcaqiztsr2ngstswmax4aourvc7iuu3tew@mluhff6a2ip5>
+References: <20250321-xattrat-syscall-v4-1-3e82e6fb3264@kernel.org>
+ <e2d5b27847fde03e0b4b9fc7a464fd87@paul-moore.com>
+ <20250324.aThi9ioghiex@digikod.net>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1742886214; l=533; i=christophe.leroy@csgroup.eu; s=20211009; h=from:subject:message-id; bh=EKh0/GewaFERhfnFRfKBg2j5NzMhdBBECdrA+NV/qUk=; b=vA70hw72XKaj1SXthnl6PXh4i9Z2K3Egqlb0PIRXfpHV2vrVCLTo/AG4L7b0hc2x3UCZ6Qx3v FOB4ERwauOeBecqk7A7PBvaW/237URvW4CKvgDK24Wh/OVU59RY4zZO
-X-Developer-Key: i=christophe.leroy@csgroup.eu; a=ed25519; pk=HIzTzUj91asvincQGOFx6+ZF5AoUuP9GdOtQChs7Mm0=
+In-Reply-To: <20250324.aThi9ioghiex@digikod.net>
+X-Mimecast-Spam-Score: 0
+X-Mimecast-MFC-PROC-ID: VXbt5CTn0aSrzgScrQZwUvOV2tAJMZsgWwRudWFh59g_1743067185
+X-Mimecast-Originator: redhat.com
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
 
-
-On Wed, 19 Mar 2025 10:28:53 +0100, Jiri Slaby (SUSE) wrote:
-> tl;dr if patches are agreed upon, I ask subsys maintainers to take the
-> respective ones via their trees (as they are split per subsys), so that
-> the IRQ tree can take only the rest. That would minimize churn/conflicts
-> during merges.
+On 2025-03-24 20:27:02, Mickaël Salaün wrote:
+> On Fri, Mar 21, 2025 at 05:32:25PM -0400, Paul Moore wrote:
+> > On Mar 21, 2025 Andrey Albershteyn <aalbersh@redhat.com> wrote:
+> > > 
+> > > Introduce new hooks for setting and getting filesystem extended
+> > > attributes on inode (FS_IOC_FSGETXATTR).
+> > > 
+> > > Cc: selinux@vger.kernel.org
+> > > Cc: Paul Moore <paul@paul-moore.com>
+> > > 
+> > > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> > > ---
+> > >  fs/ioctl.c                    |  7 ++++++-
+> > >  include/linux/lsm_hook_defs.h |  4 ++++
+> > >  include/linux/security.h      | 16 ++++++++++++++++
+> > >  security/security.c           | 32 ++++++++++++++++++++++++++++++++
+> > >  4 files changed, 58 insertions(+), 1 deletion(-)
+> > 
+> > Thanks Andrey, one small change below, but otherwise this looks pretty
+> > good.  If you feel like trying to work up the SELinux implementation but
+> > need some assitance please let me know, I'll be happy to help :)
+> > 
+> > > diff --git a/fs/ioctl.c b/fs/ioctl.c
+> > > index 638a36be31c14afc66a7fd6eb237d9545e8ad997..4434c97bc5dff5a3e8635e28745cd99404ff353e 100644
+> > > --- a/fs/ioctl.c
+> > > +++ b/fs/ioctl.c
+> > > @@ -525,10 +525,15 @@ EXPORT_SYMBOL(fileattr_fill_flags);
+> > >  int vfs_fileattr_get(struct dentry *dentry, struct fileattr *fa)
+> > >  {
+> > >  	struct inode *inode = d_inode(dentry);
+> > > +	int error;
+> > >  
+> > >  	if (!inode->i_op->fileattr_get)
+> > >  		return -ENOIOCTLCMD;
+> > >  
+> > > +	error = security_inode_getfsxattr(inode, fa);
+> > > +	if (error)
+> > > +		return error;
+> > > +
+> > >  	return inode->i_op->fileattr_get(dentry, fa);
+> > >  }
+> > >  EXPORT_SYMBOL(vfs_fileattr_get);
+> > > @@ -692,7 +697,7 @@ int vfs_fileattr_set(struct mnt_idmap *idmap, struct dentry *dentry,
+> > >  			fa->flags |= old_ma.flags & ~FS_COMMON_FL;
+> > >  		}
+> > >  		err = fileattr_set_prepare(inode, &old_ma, fa);
+> > > -		if (!err)
+> > > +		if (!err && !security_inode_setfsxattr(inode, fa))
+> > >  			err = inode->i_op->fileattr_set(idmap, dentry, fa);
+> > >  	}
+> > >  	inode_unlock(inode);
+> > 
+> > I don't believe we want to hide or otherwise drop the LSM return code as
+> > that could lead to odd behavior, e.g. returning 0/success despite not
+> > having executed the fileattr_set operation.
 > 
-> ===
+> Yes, this should look something like this:
 > 
-> [...]
+>  		err = fileattr_set_prepare(inode, &old_ma, fa);
+>  		if (err)
+>  			goto out;
+>  		err = security_inode_setfsxattr(dentry, fa);
+>  		if (err)
+>  			goto out;
+>  		err = inode->i_op->fileattr_set(idmap, dentry, fa);
+>  		if (err)
+>  			goto out;
+> 
+> > 
+> > --
+> > paul-moore.com
+> > 
+> 
 
-Applied, thanks!
+Sure, thanks for noticing, will switch to dentries and handle error
+code it in v5
 
-[48/57] irqdomain: soc: Switch to irq_find_mapping()
-        commit: a70a3a6322131632cc6cf71e9d2fa6409a029fd7
-
-Best regards,
 -- 
-Christophe Leroy <christophe.leroy@csgroup.eu>
+- Andrey
+
