@@ -1,70 +1,70 @@
-Received: from mail-qv1-f53.google.com (mail-qv1-f53.google.com [209.85.219.53])
+Received: from mail-qv1-f48.google.com (mail-qv1-f48.google.com [209.85.219.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2EE3A149C55
-	for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 08:03:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 412371A314B
+	for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 08:04:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743235435; cv=none; b=GO//cDLm2AFSLePygSWl/aNk1aFTElyRiutO36z/2PtfJsP73RRaFYQ4suzVcREMrTef87wwKilQALoEG1uZ1kvIQM9SlPSy1EldM3/MPrrWTtfZCwhueW53noMwhPjnmT8m9xZfO7tucAYyo8T65X5U2ED7GXiIp5ESnqamAt4=
+	t=1743235444; cv=none; b=m8ZEDcYpm8Ui03RFlOVvUsrZ3VjyHgnLRKkdmLK8u4kQI1cn3htCtfemtJwWFBdpiLkedg7HKrX4WNxHTQI8Eg/0wwIUmn6qH4hJb61WwUNcKpWG15Cx4QMaL0NQWWkyHMpihWw5zjR+VYF9q1d3zTo90c3CrSLFw56c106ZgYQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743235435; c=relaxed/simple;
-	bh=fBpd0pGwD6qcgLrLT299d2L42xuOM9uINV3RtbfYtVo=;
+	s=arc-20240116; t=1743235444; c=relaxed/simple;
+	bh=ZSASonUFiVN6mXAWkhKAhlBRqZYyaG1UCx0rbN8WwP8=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=IOq0w85OXYSn86ceI9iwBkTYNFngSG2Vgt8Bz8mjbnBwPA/DmuvwvYejYvsfdNdHVYYfs2IANIqo5/SEin+OopyespGYRiLQ9RnIXGyfEg3ZDqkQnrv7/q3s+c6Ct3og3BNA/GTAEeTsFUv6813lxyZXxJSwxx/zsgOtSgf0heM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=GHGySOK/; arc=none smtp.client-ip=209.85.219.53
+	 To:Cc:Content-Type; b=H9K9OZXm5AwFwlF/W5cORaB2/+5w/PQwPvaAnAvLYoAKml3EWXezW3IcSWEqEmMtPR+jbwG13yay8zv396EFEMVN0QL4E3ioDaAOc6lP2NuZP0q9T1lbf4BdKXF0wLblAx3X9WV9Ez1jeEI0kk8AhYXDBN74sZHOrWn76TV+Ov4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=aPvtcpdK; arc=none smtp.client-ip=209.85.219.48
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="GHGySOK/"
-Received: by mail-qv1-f53.google.com with SMTP id 6a1803df08f44-6e900a7ce55so42496056d6.3
-        for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 01:03:52 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="aPvtcpdK"
+Received: by mail-qv1-f48.google.com with SMTP id 6a1803df08f44-6e41e17645dso28371356d6.2
+        for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 01:04:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20230601; t=1743235432; x=1743840232; darn=vger.kernel.org;
+        d=google.com; s=20230601; t=1743235441; x=1743840241; darn=vger.kernel.org;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=O38DLeiVJt22ZeDSy/3LnSkggfk5k7TPd8wvCRLM2u8=;
-        b=GHGySOK/YZJxPTXja8nPg+Y6wSQNTfwdh7kuZCN9Ce+03br0bG7dSCQQ8khg+txtS/
-         2UXuaIg5MjPlhDOBkoPG4DPWdvMfC5/89MQOG9dxErOBrB+SIUDQojSIHzZcdTEdJ2VD
-         u3IhescjAqtmtoBms9N+XhFWCCvUVfJJZZZBH3IpHnLi4ABJZ08I7xM0kBi18BZFYsw0
-         g38R6l853HvpJo6d/ASBfeLCXC95wLHFvfTQ+0d78L09lBkqgG2R7Bsv4S2IvwbIHSpP
-         7lTdIi8/kny6qy5i/S7CCUk4dUOyGcPEO7wHgKdQeaB7Owi5TQYSNypj07JEBeqnr8dJ
-         mWOA==
+        bh=4KlbcmMZGfFd1m8TKvigmhMKPtGFWF478FTifE4WU9Y=;
+        b=aPvtcpdKzN2u64KJfG6CoXMmHg0kr1XSoc55h5ofwiajGFBC25rKlUasshsce4KSKd
+         ZNWn4Q+kmHE/PtjKovQKfLe896aA9LYc6gWZyGi/a6VUqnRSJkbzfVy+BiZEL1Xzr1zs
+         sJ/AI0kWIv2L+jl7yETA97DszPS+RbTP4+xfvew1jIkp5pAbuyyBhRNlfuFz+4elq7fz
+         kzLDJd8QX9LfQA6j6Y2NLsUOmHii+mqH0wD1OqTRKvKaaDut5qmp2ouo/74PxEMDPjFb
+         HGL266RYLoTShn3v2H+YDeY9l5aScDCVrZMUvkN7avHb9uf4gEisQNDocbA6lptTMCjD
+         4ZFw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1743235432; x=1743840232;
+        d=1e100.net; s=20230601; t=1743235441; x=1743840241;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=O38DLeiVJt22ZeDSy/3LnSkggfk5k7TPd8wvCRLM2u8=;
-        b=kWZNnVaNgD2ANSQq1s2LMQTXCRuy81TanRbO0AAIQHfkUMrnFf4FzlQl1JeRduxlXC
-         54kro4ymqLNyTAtgccEtvs9dJrCQCcRGinDgxnL2U1fGmuGVbtBxhplL9kUuH3vHohcZ
-         +wqohtCuyYnuVXq+upGuL3DVhQPVozi19SOjTjlIpyGOBc2EMhHDkaPuL9nCbr1gYl8X
-         wGSYlhKh7+bbsf7ay/3FntGLgggioAjPHoU52fGMmC4Xs681VtCzNFcfmnl8N5c5+OED
-         /8Oz5K8FLArDWath6dHCEcNq/fo/V1L1r1jlF6fs35J1DSfKOxlZcE8mQFVS1xF/Zul7
-         HAIw==
-X-Forwarded-Encrypted: i=1; AJvYcCUA36QttCEcaIyiNzor16KzCcOmu5Os1oEqFkCTS1KW9Pyc7m6Zh06WRtqZb7Vvro30HuL79qW8Jw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxOzEsH2JmwZjMARYyy8BbyyssvwHIE3EjpQj6lI2Pl93ZpWkkm
-	nVWrp5e8hxiWZZ0bUkp3wHPDb4pJGjUeOGFQkZrDbMyvQ/Gm6XdkWj1BitjZ5U5k0gfRu7n7u+F
-	BQhayuGzEA/JDnXSZoNE9a4jMKDGsOIw2NO9F
-X-Gm-Gg: ASbGncu2tSufaaewYL382lwgC5qIAy82rETeh3Yj2OPLjoBaZL0OvHgzEwURU7BD9VR
-	dBKVNE0sibIJtFIcbc5Jpj0HFOKlubn7s7SbczkIsicqsGfHVNR1uonetWCkRMcpCH3rpdI3m4m
-	fIig98bLSuDkFe3DXxXr/HthkKvRI=
-X-Google-Smtp-Source: AGHT+IEJ8ce7V8CIlKC2A2azWY99VUL4El8Tj9GDvwsAXVoga+qrIDcAvwT96/mFGtya6VF3o6ehcJ+woWz7LYivLLE=
-X-Received: by 2002:a05:6214:e67:b0:6e8:fa33:2965 with SMTP id
- 6a1803df08f44-6eed5f93113mr33481246d6.14.1743235431710; Sat, 29 Mar 2025
- 01:03:51 -0700 (PDT)
+        bh=4KlbcmMZGfFd1m8TKvigmhMKPtGFWF478FTifE4WU9Y=;
+        b=EztM1cLARsmPDlpugFGHlS5XgoBK00Ddc/wAbUD30XJIO0jxv31BEzSpZSE7ndZKbe
+         nbPjSg/v/gA2SjyBGUqZdbmhkGdJWDBx7keSVkpwh7f+eloMUdZvPJ2P/Doh7DXLtj4o
+         +dTMgE90FraF7v60rPQfkC1QA5xo3Xv6AYEhvfOB7GeG23B5b8Dos/hHcdD/9jE5HvEZ
+         uWybOQapLA4VOhgEBXTm2uPrn273Ssq1DTG3Qkxkksf6Ot/7I/nBwkViv0i0V1iL/X35
+         p76r9WAicS72CmOeT5CzNczEDqmrKLJ/BbK9wCqKqI1b3O6l5WUGiprGzsWAyT7eX36t
+         TRCQ==
+X-Forwarded-Encrypted: i=1; AJvYcCW5Prj6mrXiH2cpAh+oFxYzyBKJBIftEuJbtjiXwxOAVRxNVGCj+fPojZsx38cnGdb9e8dhahyvww==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzLQtshaKEDvfFURl2v5fv/gifAB/KZp6nzlYgaEVJ7s5N8T/jf
+	LHQB14eXYMfNvhTpb+FX6PTBnUzqoL4Yq4WWX4to97/rzRhdVtsGuwwDkfT/3qCGoSt/bNVn/mg
+	mFGha+ktrbkXZqU1jHHKyhpVWrq0r2fPHxJbD
+X-Gm-Gg: ASbGnctsYX3Xi0buNjlIBgA0WIOXtbBGnlPMHRsXmMMTy7albnA/DgE779dQ6Nf6AcL
+	W9dhogQvmjrX3hq41DfkvY90fJRn5d6SFjCMDBH72F2qel38w+XgHYIsxPSPkKxo3MPSsrzIrje
+	VLwOocy8cPxE7hKkGxV8BGTlQGe/w=
+X-Google-Smtp-Source: AGHT+IGd9IAWS5Asv8qeaKCNI8M/lJrlOqpbPnYOWZIQStV8j0h0OihWzO/lzERuMD4FV6GMZtujp8mB1Gw37oek+Ng=
+X-Received: by 2002:a05:6214:2401:b0:6e6:6b99:cd1e with SMTP id
+ 6a1803df08f44-6eed625e756mr24139206d6.26.1743235440705; Sat, 29 Mar 2025
+ 01:04:00 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250313114329.284104-1-acarmina@redhat.com>
-In-Reply-To: <20250313114329.284104-1-acarmina@redhat.com>
+References: <20250313114329.284104-1-acarmina@redhat.com> <20250313114329.284104-2-acarmina@redhat.com>
+In-Reply-To: <20250313114329.284104-2-acarmina@redhat.com>
 From: David Gow <davidgow@google.com>
-Date: Sat, 29 Mar 2025 16:03:36 +0800
-X-Gm-Features: AQ5f1JqXTcD760nl7rxAYS90_BR-Zg4uyvqHwpHf7WGakdu8aw2xd4LNhe4EvmU
-Message-ID: <CABVgOSk89WzaptN-peaty6ZLxnOHWRB02_JkjfK+5kCepNsxXg@mail.gmail.com>
-Subject: Re: [PATCH v4 00/14] Add support for suppressing warning backtraces
+Date: Sat, 29 Mar 2025 16:03:49 +0800
+X-Gm-Features: AQ5f1JqQWjP8FLOBnFf9qzSfODWFo3TcfCh1IF96gBcl5X5G2gEPmXeOj2SeHoI
+Message-ID: <CABVgOS=+y-yO+4G6-77Cry3LH-bhA+MLsrT-G45ZbxNUyEBRhw@mail.gmail.com>
+Subject: Re: [PATCH v4 01/14] bug/kunit: Core support for suppressing warning backtraces
 To: Alessandro Carminati <acarmina@redhat.com>
 Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>, 
 	Arnd Bergmann <arnd@arndb.de>, =?UTF-8?B?TWHDrXJhIENhbmFs?= <mcanal@igalia.com>, 
@@ -82,18 +82,21 @@ Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
 	linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, 
 	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
 	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
-	loongarch@lists.linux.dev, x86@kernel.org
+	loongarch@lists.linux.dev, x86@kernel.org, 
+	Linux Kernel Functional Testing <lkft@linaro.org>
 Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256;
-	boundary="000000000000b5640f063176a02a"
+	boundary="0000000000003f703a063176a111"
 
---000000000000b5640f063176a02a
+--0000000000003f703a063176a111
 Content-Type: text/plain; charset="UTF-8"
 
 On Thu, 13 Mar 2025 at 19:44, Alessandro Carminati <acarmina@redhat.com> wrote:
 >
-> Some unit tests intentionally trigger warning backtraces by passing bad
-> parameters to kernel API functions. Such unit tests typically check the
-> return value from such calls, not the existence of the warning backtrace.
+> From: Guenter Roeck <linux@roeck-us.net>
+>
+> Some unit tests intentionally trigger warning backtraces by passing
+> bad parameters to API functions. Such unit tests typically check the
+> return value from those calls, not the existence of the warning backtrace.
 >
 > Such intentionally generated warning backtraces are neither desirable
 > nor useful for a number of reasons.
@@ -111,138 +114,31 @@ On Thu, 13 Mar 2025 at 19:44, Alessandro Carminati <acarmina@redhat.com> wrote:
 > the irrelevant backtrace(s) would still clog the kernel log.
 >
 > Solve the problem by providing a means to identify and suppress specific
-> warning backtraces while executing test code. Support suppressing multiple
-> backtraces while at the same time limiting changes to generic code to the
-> absolute minimum. Architecture specific changes are kept at minimum by
-> retaining function names only if both CONFIG_DEBUG_BUGVERBOSE and
-> CONFIG_KUNIT are enabled.
+> warning backtraces while executing test code. Since the new functionality
+> results in an image size increase of about 1% if CONFIG_KUNIT is enabled,
+> provide configuration option KUNIT_SUPPRESS_BACKTRACE to be able to disable
+> the new functionality. This option is by default enabled since almost all
+> systems with CONFIG_KUNIT enabled will want to benefit from it.
 >
-> The first patch of the series introduces the necessary infrastructure.
-> The second patch introduces support for counting suppressed backtraces.
-> This capability is used in patch three to implement unit tests.
-> Patch four documents the new API.
-> The next two patches add support for suppressing backtraces in drm_rect
-> and dev_addr_lists unit tests. These patches are intended to serve as
-> examples for the use of the functionality introduced with this series.
-> The remaining patches implement the necessary changes for all
-> architectures with GENERIC_BUG support.
->
-> With CONFIG_KUNIT enabled, image size increase with this series applied is
-> approximately 1%. The image size increase (and with it the functionality
-> introduced by this series) can be avoided by disabling
-> CONFIG_KUNIT_SUPPRESS_BACKTRACE.
->
-> This series is based on the RFC patch and subsequent discussion at
-> https://patchwork.kernel.org/project/linux-kselftest/patch/02546e59-1afe-4b08-ba81-d94f3b691c9a@moroto.mountain/
-> and offers a more comprehensive solution of the problem discussed there.
->
-> Design note:
->   Function pointers are only added to the __bug_table section if both
->   CONFIG_KUNIT_SUPPRESS_BACKTRACE and CONFIG_DEBUG_BUGVERBOSE are enabled
->   to avoid image size increases if CONFIG_KUNIT is disabled. There would be
->   some benefits to adding those pointers all the time (reduced complexity,
->   ability to display function names in BUG/WARNING messages). That change,
->   if desired, can be made later.
->
-> Checkpatch note:
->   Remaining checkpatch errors and warnings were deliberately ignored.
->   Some are triggered by matching coding style or by comments interpreted
->   as code, others by assembler macros which are disliked by checkpatch.
->   Suggestions for improvements are welcome.
->
-> Changes since RFC:
-> - Introduced CONFIG_KUNIT_SUPPRESS_BACKTRACE
-> - Minor cleanups and bug fixes
-> - Added support for all affected architectures
-> - Added support for counting suppressed warnings
-> - Added unit tests using those counters
-> - Added patch to suppress warning backtraces in dev_addr_lists tests
->
-> Changes since v1:
-> - Rebased to v6.9-rc1
-> - Added Tested-by:, Acked-by:, and Reviewed-by: tags
->   [I retained those tags since there have been no functional changes]
-> - Introduced KUNIT_SUPPRESS_BACKTRACE configuration option, enabled by
->   default.
->
-> Changes since v2:
-> - Rebased to v6.9-rc2
-> - Added comments to drm warning suppression explaining why it is needed.
-> - Added patch to move conditional code in arch/sh/include/asm/bug.h
->   to avoid kerneldoc warning
-> - Added architecture maintainers to Cc: for architecture specific patches
-> - No functional changes
->
-> Changes since v3:
-> - Rebased to v6.14-rc6
-> - Dropped net: "kunit: Suppress lock warning noise at end of dev_addr_lists tests"
->   since 3db3b62955cd6d73afde05a17d7e8e106695c3b9
-> - Added __kunit_ and KUNIT_ prefixes.
-> - Tested on interessed architectures.
->
-> ----
+> Cc: Dan Carpenter <dan.carpenter@linaro.org>
+> Cc: Daniel Diaz <daniel.diaz@linaro.org>
+> Cc: Naresh Kamboju <naresh.kamboju@linaro.org>
+> Cc: Kees Cook <keescook@chromium.org>
+> Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
+> Acked-by: Dan Carpenter <dan.carpenter@linaro.org>
+> Reviewed-by: Kees Cook <keescook@chromium.org>
+> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+> Signed-off-by: Alessandro Carminati <acarmina@redhat.com>
+> ---
 
-Sorry: I also thought this had already landed.
+Thanks Guenter & Alessandro: I'm very happy with this.
 
-I'm definitely in favour of us taking this, though agree that we
-definitely can't afford to break the s390x build.
+Reviewed-by: David Gow <davidgow@google.com>
 
-I've (re-)reviewed the early patches as well, and am generally acking
-the series (though some of the architecture-specific patches are
-definitely beyond my expertise to review fully).
 
-Acked-by: David Gow <davidgow@google.com>
-
-Cheers,
 -- David
 
-
-> Guenter Roeck (14):
->   bug/kunit: Core support for suppressing warning backtraces
->   kunit: bug: Count suppressed warning backtraces
->   kunit: Add test cases for backtrace warning suppression
->   kunit: Add documentation for warning backtrace suppression API
->   drm: Suppress intentional warning backtraces in scaling unit tests
->   x86: Add support for suppressing warning backtraces
->   arm64: Add support for suppressing warning backtraces
->   loongarch: Add support for suppressing warning backtraces
->   parisc: Add support for suppressing warning backtraces
->   s390: Add support for suppressing warning backtraces
->   sh: Add support for suppressing warning backtraces
->   sh: Move defines needed for suppressing warning backtraces
->   riscv: Add support for suppressing warning backtraces
->   powerpc: Add support for suppressing warning backtraces
->
->  Documentation/dev-tools/kunit/usage.rst |  30 ++++++-
->  arch/arm64/include/asm/asm-bug.h        |  27 ++++--
->  arch/arm64/include/asm/bug.h            |   8 +-
->  arch/loongarch/include/asm/bug.h        |  42 +++++++---
->  arch/parisc/include/asm/bug.h           |  29 +++++--
->  arch/powerpc/include/asm/bug.h          |  37 +++++++--
->  arch/riscv/include/asm/bug.h            |  38 ++++++---
->  arch/s390/include/asm/bug.h             |  17 +++-
->  arch/sh/include/asm/bug.h               |  28 ++++++-
->  arch/x86/include/asm/bug.h              |  21 +++--
->  drivers/gpu/drm/tests/drm_rect_test.c   |  16 ++++
->  include/asm-generic/bug.h               |  16 +++-
->  include/kunit/bug.h                     |  56 +++++++++++++
->  include/kunit/test.h                    |   1 +
->  include/linux/bug.h                     |  13 +++
->  lib/bug.c                               |  51 +++++++++++-
->  lib/kunit/Kconfig                       |   9 ++
->  lib/kunit/Makefile                      |   7 +-
->  lib/kunit/backtrace-suppression-test.c  | 104 ++++++++++++++++++++++++
->  lib/kunit/bug.c                         |  42 ++++++++++
->  20 files changed, 519 insertions(+), 73 deletions(-)
->  create mode 100644 include/kunit/bug.h
->  create mode 100644 lib/kunit/backtrace-suppression-test.c
->  create mode 100644 lib/kunit/bug.c
->
-> --
-> 2.34.1
->
-
---000000000000b5640f063176a02a
+--0000000000003f703a063176a111
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -332,13 +228,13 @@ uFrCoYIRlx4rSVHpBIKgnsgdm0SFQK72MPmIkfhfq9Fh0h8AjhF73sLO7K5BfwWkx1gwMySyNY0e
 PCRYr6WEVOkUJS0a0fui693ymMPFLQAimmz8EpyFok4Ju066StkYO1dIgUIla4x61auxkWHwnzGC
 Al0wggJZAgEBMGgwVDELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKjAo
 BgNVBAMTIUdsb2JhbFNpZ24gQXRsYXMgUjYgU01JTUUgQ0EgMjAyMwIQAcDMKctW1GQKDKqEUSh4
-pjANBglghkgBZQMEAgEFAKCBxzAvBgkqhkiG9w0BCQQxIgQg1KtAiaINglwhUWIlJLOFKwhrb9oC
-EXUsWOFmB2dsYDcwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjUw
-MzI5MDgwMzUyWjBcBgkqhkiG9w0BCQ8xTzBNMAsGCWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJ
+pjANBglghkgBZQMEAgEFAKCBxzAvBgkqhkiG9w0BCQQxIgQgGXnEJtIzeKr9PLfaEzjYKScRbNFx
+pc4XvlhSxccKoHMwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjUw
+MzI5MDgwNDAxWjBcBgkqhkiG9w0BCQ8xTzBNMAsGCWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJ
 YIZIAWUDBAECMAoGCCqGSIb3DQMHMAsGCSqGSIb3DQEBBzALBglghkgBZQMEAgEwDQYJKoZIhvcN
-AQEBBQAEggEAnzJsFiWer46vSKVW1QjXqf699AQUVA+HmwLnHxfkgE4DkAQIs7EeaTRYR2VX8SLi
-SY8ykrWn8vVJmrwWqpEY/Yn9JZzHhb1R8F66DZa5ZSN7EB6H6CRRl7zmMIhpTj4qOYxjjg0R8Amu
-shB5i6l7iobEzFyA6JThpc9yhvlBKnMAQT3LL62JPe//PRbe0eBoJ+VhwGxjfhWz3WF5mBqcs6lL
-RmfEesTaO/m+uSCweSJ7rVLqowWJj36Hc89esKapStkOblU0wmGpaR+qwfzcekgvAkLvS1b0QObY
-oovwPT4iwO5QNcterb6T2ox5iO+vQLGtq7P05W2X11Ycv5eUIQ==
---000000000000b5640f063176a02a--
+AQEBBQAEggEAWyDsJHDO/e6Hpdxk2ziW7NAPXbA+qgz5VGtgdNw6jXxzMO4McY9+dyqi6WFbyjFe
++5TJ+LosyXYWTR2P/BTSRzFVcQLnSyk49Q/VCoB1A1wG60/Xy3kyk24wsuhw0cyxFtYZiz57EfxO
+9+2OcyWBSAq/QYINQvbmNDSIRFPeCaQeZS//95evesNXRpjBzyVepWOwbdCqrtTJ+M4whGyJewDt
+KPc0Ox4EVdDbj6/w3+J/uniwSt/8WF+G1YfhFHR5dMB+wC2Wd9JhwKsCm1nIbjhXzeVgA0nn715b
+MgY/A+PHUkhUMtcXqBZC7TEOf3xMiibOYDxaOm4w49WZBmyh5w==
+--0000000000003f703a063176a111--
