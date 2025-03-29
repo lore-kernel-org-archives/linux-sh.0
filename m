@@ -1,70 +1,70 @@
-Received: from mail-qv1-f47.google.com (mail-qv1-f47.google.com [209.85.219.47])
+Received: from mail-qv1-f51.google.com (mail-qv1-f51.google.com [209.85.219.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D9CBB1A314B
-	for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 08:04:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6FF571ADFFE
+	for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 08:04:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743235449; cv=none; b=avYDOzk1SGiM8Hj0E1G5XVPYMN5fMcNtJ+/dlIxB3ujyqZJMETHalzMi/o0VscvnEOKIukGueXompKnpYlD8cVPT9pK56VH1LaxEVM3tsusHvjVbMspEGVe3Hr8DyIfy/h5jnCO6F/6JGhieF1hfbET8EkloDTeK+iq4SFCFuxU=
+	t=1743235452; cv=none; b=M1Pg3adWr1eXG+bGXxcauQR9F5+Jyb2GSpGesD0rBWiHJ1jTmrlsaZrK7P04nh5esGuXguPt44p39aV/LGBRIQqMes3yvYsFoTDTR8SF5jtXwYnDYdY1uJSOKs/Hpr7k4CsRXtJ/dj9kNEws3E868IEzdsUzxDC7wlnB1RXudZ4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743235449; c=relaxed/simple;
-	bh=cpJ8vx3K30KPi9Ka2QEn7bA197IWrdLnh2b7UMShX6s=;
+	s=arc-20240116; t=1743235452; c=relaxed/simple;
+	bh=mLh0Gpc7Ws2t6lZquKigcGS+i/xra8gnwjSEjeoeN7Y=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=TFA5/KvT7AJ1xJxQ+fODs6Vw9CAOYySx0++njHP8DlfXcI8vzByvY29WRxF5OpI4FfqvcrYv/nWAMoroMjm9Jisz5blzNsL0hFRyd35fc9wCxewvKjqjfoAOKzgASWstskvUboX4DOpwV22FqYYnHsgpqwHBLgQVJ7StWo5YmFI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=XG340mIi; arc=none smtp.client-ip=209.85.219.47
+	 To:Cc:Content-Type; b=WW2B7B1U2KcebUrQfvgScCdr3rH4Y0wfCqaNRyE92wdyghS3RRsnBNrmfV8O4irLjTRqnmkNBa933INwVO5M39JNqUhXrxMnUCduZwohdVLAeEX5qiSyQxrZaQD9EAGrKqy902ELzgqmZlhlRuTz5GcEfiSM6txXle5l5Nc3YyA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=WmSyDs0Q; arc=none smtp.client-ip=209.85.219.51
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="XG340mIi"
-Received: by mail-qv1-f47.google.com with SMTP id 6a1803df08f44-6e8ffa00555so24512386d6.0
-        for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 01:04:06 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="WmSyDs0Q"
+Received: by mail-qv1-f51.google.com with SMTP id 6a1803df08f44-6ecf99dd567so33449456d6.0
+        for <linux-sh@vger.kernel.org>; Sat, 29 Mar 2025 01:04:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20230601; t=1743235446; x=1743840246; darn=vger.kernel.org;
+        d=google.com; s=20230601; t=1743235449; x=1743840249; darn=vger.kernel.org;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=Uzi1B5hONRIRO21x0k6QYiEEas6AFAn8xzLh5LFVo2I=;
-        b=XG340mIinnvn+4bzd7JdwHLBFphBejF5J7usZQKq6V2tCiDyoSwHyHugKgJ4s67r9W
-         hS44gpp1hfCQ3AldUu3e7SiDVTfTDSF14h6I7/RP925eS1Jikyj/V/cFm89lpLZWQfy6
-         oMwQ83g6rrBsbrxfBFXxqUU+8NKyu9WsfyWjvA4jzGtsrw9QtJ+HbeIHeb0mFKRqJLp+
-         jsWmHRXzmBHjnI+4lZoBmJ7zIFjm1MDHwyWF+EwZcQHKCGogXtEPX8yogQnT4ZS29/Hr
-         IiwUXizOApP8IfGNrVOHJFq2mD7l69ny5A8DZfLkokMHwPZEahBmKQH6Gxz2xwpEZU1x
-         fksQ==
+        bh=mLh0Gpc7Ws2t6lZquKigcGS+i/xra8gnwjSEjeoeN7Y=;
+        b=WmSyDs0QNq8W3MSXi+5AaDpvn43QT73UeugnTaUWK8gqFD9Q4tqdHfldNjgRsnOiJR
+         XZwB6lE6JAbohOEds5KKbhd6YDbIkIcflxHcvJOz1gAEVEoNJ1tz9XP9FsRr2SiMDEiz
+         73S3Dikgc53bhuwoYKy60nqkIgknQcjWvIXXSWfrt+EhmWOdReiYp/oNuyFSagzNlwfy
+         TsOtOg9zvBERAEw2xLj4KHZCG/WKuDIupfgSA4Ia5+4dNZ4uVKs2tKxmBjsEOEuOa1p8
+         CHYupVAHlQ2lHrPC1q25qJGAmOrqDJv687vBlKgyOU1AcgpiI4pgNuWyuVyJ40/1qCdI
+         KZ0g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1743235446; x=1743840246;
+        d=1e100.net; s=20230601; t=1743235449; x=1743840249;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=Uzi1B5hONRIRO21x0k6QYiEEas6AFAn8xzLh5LFVo2I=;
-        b=btSbSoT0JqABVH1X9icW8GxilFsvn3P3A6kfZkcqLzfArho35rpW2Mig53o8avNfR/
-         KcK68RILXr/ZxvtTMBHDwYg7xUqFwf65dM91vc6P6M49HzgwcsIdZaNPZ+fMTWFiIec6
-         R5TdMo7Mp8qwgLVQQMs81pYkClw9KMOxeAfDQSHJFBFFns5RbnharuY+UObgZv3YgkZe
-         9V2voA+JvhIFf1lUG1ckn/ZuWgqCpc9TBM/1TSv+4ZLgk+6GTK22+k9U013sC1ph0Ml5
-         NFt16N4v5vhCfP9bbI8F6IX5DRfpTVLmJJ8CJgxQwYnwIBp2so/27M6e8781J5Q6VkNV
-         ZZoQ==
-X-Forwarded-Encrypted: i=1; AJvYcCWjrkXa27XiTlm+r3ESnN5wZx6BwxucdktNgGvVemNmQuH5efx2724IswrmVxBK6YYVYf7/Id8fUg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz7N5/enA85eBufBw8WZSIxREFBSudWyDHXAr9jwSamK8wp/EHr
-	4Exy2UXonUfPNO/T8PiCJHJiak8uwYDKXByzynmQ72khDHP2stc8YmfD9ZBy9Cz4kzmrEbqjW/J
-	7nJAwmGp2ZV+pHX6fQXHbMs+Y1Ndjg5C44O1J
-X-Gm-Gg: ASbGnctr8QkqCudNxITRxbhQ4/hib6vMqGDplfIDHsa7sWV+ZCHCmOFa5698N3lO4tk
-	i2OS25ZfLWaJYDp49kIP/r8XXt6x5a7xK1PwCYfT7srCNTPxOAyyfqZnIN4lO0TuWhzgbQETxaU
-	RQvEXWApJaZA9Q3JdjyDAupSTHZLq1YCFami5lpw==
-X-Google-Smtp-Source: AGHT+IF4vYb8pOLkFJRWTHuhbGYXsOEBIHKcutBVeb6PlPGVt7mQOFXq+lOTNgVlorU0yJVkuuNGGMDr57LNVLIoTCk=
-X-Received: by 2002:a05:6214:1c0e:b0:6e6:5e15:d94f with SMTP id
- 6a1803df08f44-6eed6210e0dmr34807856d6.27.1743235445399; Sat, 29 Mar 2025
- 01:04:05 -0700 (PDT)
+        bh=mLh0Gpc7Ws2t6lZquKigcGS+i/xra8gnwjSEjeoeN7Y=;
+        b=hs3VB2LRaoxUitSra6+CzdUe98lK4IMKQR74kghXuT/Jst4er/gEadRB9hXAXYwAmD
+         szTu1Ma+kcSdZxlrk5Evyd8AZqmOzxrRvwoTuR55SLd3qRtLhOC6oil+d6RLlFVyLEAW
+         qDj1TlIL9KKhDvBXqpY+dLafRlqfwumrnCusKpJVPqlRf7n2ukloLTCh/RiwS0ekkfN4
+         E29aAiMN7pXmN8LFDlKT0C/kQOma2DDT333QmLt8DW/ERA/dMsizsvh5nWcRfeGcuOZ3
+         Q0Kvve5wrIlFDiQLtufOFu3fTGHCVdTJ/tGiQ9FXlYXe60ls6FK/bMi8/Bm9auFRFtIS
+         4KQA==
+X-Forwarded-Encrypted: i=1; AJvYcCUdSC74RyM2pAdY1lYVIWgDrPLqXh1o/8JFW4FbGf6OFPfrmY8K0R5LTMCZx/miABD7ZrNqH75nQQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyYUxuod9AchGYLMBgRKEpL59ApplLU+CQ4uShPuPvOgT1YNttG
+	OoCPnLtL7Y1P1+OcvQbd2mVa8KJKCedQ0atKUuBzhY2VCqglz7TDJrwE7aNuJYxtvpMaEkQm1ah
+	hPFgTheXijMFrcyKkWU0+jw2bTCnd8OSsI3sB
+X-Gm-Gg: ASbGncsotRjyk9e4ZSZkzfdaZeNd0xlTy8C1GuxRb7nFgp8ztamY+yVFys+nZLflk44
+	twOqpgqvzKYnaufBs4g60osz9WjP+M+DQUMM7Nilvdr5wYxx10Et79Hc8a6z1hgDL7XprlCkyCy
+	EH9tljCO/kG39WuI0JlU/wmStd9ws=
+X-Google-Smtp-Source: AGHT+IGFuDJ/yS0u8dS14Gv20AD9SchI1L60wuXbwG89moIXFiN8E7tD+sXircX+ivXQe8fclvFz4iylGbitphpvsqU=
+X-Received: by 2002:a05:6214:496:b0:6ea:d604:9e56 with SMTP id
+ 6a1803df08f44-6eed6073e0cmr33102156d6.9.1743235448950; Sat, 29 Mar 2025
+ 01:04:08 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250313114329.284104-1-acarmina@redhat.com> <20250313114329.284104-3-acarmina@redhat.com>
-In-Reply-To: <20250313114329.284104-3-acarmina@redhat.com>
+References: <20250313114329.284104-1-acarmina@redhat.com> <20250313114329.284104-4-acarmina@redhat.com>
+In-Reply-To: <20250313114329.284104-4-acarmina@redhat.com>
 From: David Gow <davidgow@google.com>
-Date: Sat, 29 Mar 2025 16:03:52 +0800
-X-Gm-Features: AQ5f1JpiQDaFl6M7J1W3u94aKAMwVNCidCWvJ9Rbjt0nfJWjQoJiJ3LuwPfFL-Q
-Message-ID: <CABVgOS=zNx18SJK1oQkZOpN14-H8QsH=08rsAWjwgRizuwaz8w@mail.gmail.com>
-Subject: Re: [PATCH v4 02/14] kunit: bug: Count suppressed warning backtraces
+Date: Sat, 29 Mar 2025 16:03:56 +0800
+X-Gm-Features: AQ5f1JpicRKRSaCIuqiwug0PrStdjBYACeo4Eb48BhA0aZtbew_fx1TOosHWZm8
+Message-ID: <CABVgOSmrb_am5nxOxJaZ_JL_wf21xy6e9R2hvEuEiJG29P4y2A@mail.gmail.com>
+Subject: Re: [PATCH v4 03/14] kunit: Add test cases for backtrace warning suppression
 To: Alessandro Carminati <acarmina@redhat.com>
 Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>, 
 	Arnd Bergmann <arnd@arndb.de>, =?UTF-8?B?TWHDrXJhIENhbmFs?= <mcanal@igalia.com>, 
@@ -85,104 +85,36 @@ Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
 	loongarch@lists.linux.dev, x86@kernel.org, 
 	Linux Kernel Functional Testing <lkft@linaro.org>
 Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256;
-	boundary="000000000000856487063176a11d"
+	boundary="000000000000bc820f063176a112"
 
---000000000000856487063176a11d
+--000000000000bc820f063176a112
 Content-Type: text/plain; charset="UTF-8"
 
 On Thu, 13 Mar 2025 at 19:44, Alessandro Carminati <acarmina@redhat.com> wrote:
 >
 > From: Guenter Roeck <linux@roeck-us.net>
 >
-> Count suppressed warning backtraces to enable code which suppresses
-> warning backtraces to check if the expected backtrace(s) have been
-> observed.
+> Add unit tests to verify that warning backtrace suppression works.
 >
-> Using atomics for the backtrace count resulted in build errors on some
-> architectures due to include file recursion, so use a plain integer
-> for now.
+> If backtrace suppression does _not_ work, the unit tests will likely
+> trigger unsuppressed backtraces, which should actually help to get
+> the affected architectures / platforms fixed.
 >
+> Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
 > Acked-by: Dan Carpenter <dan.carpenter@linaro.org>
 > Reviewed-by: Kees Cook <keescook@chromium.org>
-> Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
 > Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> Reviewed-by: David Gow <davidgow@google.com>
 > Signed-off-by: Alessandro Carminati <acarmina@redhat.com>
 > ---
 
-Looks good. I'd definitely prefer the atomics to work one day, but I
-doubt we're likely to have backtraces from multiple threads happening
-in a KUnit test, so it's definitely not urgent.
+Always nice to have tests. :-)
 
 Reviewed-by: David Gow <davidgow@google.com>
 
 Cheers,
 -- David
 
-
->  include/kunit/bug.h | 7 ++++++-
->  lib/kunit/bug.c     | 4 +++-
->  2 files changed, 9 insertions(+), 2 deletions(-)
->
-> diff --git a/include/kunit/bug.h b/include/kunit/bug.h
-> index 0a8e62c1fcaf..44efa7d5c902 100644
-> --- a/include/kunit/bug.h
-> +++ b/include/kunit/bug.h
-> @@ -20,6 +20,7 @@
->  struct __suppressed_warning {
->         struct list_head node;
->         const char *function;
-> +       int counter;
->  };
->
->  void __kunit_start_suppress_warning(struct __suppressed_warning *warning);
-> @@ -28,7 +29,7 @@ bool __kunit_is_suppressed_warning(const char *function);
->
->  #define DEFINE_SUPPRESSED_WARNING(func)        \
->         struct __suppressed_warning __kunit_suppress_##func = \
-> -               { .function = __stringify(func) }
-> +               { .function = __stringify(func), .counter = 0 }
->
->  #define KUNIT_START_SUPPRESSED_WARNING(func) \
->         __kunit_start_suppress_warning(&__kunit_suppress_##func)
-> @@ -39,12 +40,16 @@ bool __kunit_is_suppressed_warning(const char *function);
->  #define KUNIT_IS_SUPPRESSED_WARNING(func) \
->         __kunit_is_suppressed_warning(func)
->
-> +#define SUPPRESSED_WARNING_COUNT(func) \
-> +       (__kunit_suppress_##func.counter)
-> +
->  #else /* CONFIG_KUNIT_SUPPRESS_BACKTRACE */
->
->  #define DEFINE_SUPPRESSED_WARNING(func)
->  #define KUNIT_START_SUPPRESSED_WARNING(func)
->  #define KUNIT_END_SUPPRESSED_WARNING(func)
->  #define KUNIT_IS_SUPPRESSED_WARNING(func) (false)
-> +#define SUPPRESSED_WARNING_COUNT(func) (0)
->
->  #endif /* CONFIG_KUNIT_SUPPRESS_BACKTRACE */
->  #endif /* __ASSEMBLY__ */
-> diff --git a/lib/kunit/bug.c b/lib/kunit/bug.c
-> index 351f9a595a71..84c05b1a9e8b 100644
-> --- a/lib/kunit/bug.c
-> +++ b/lib/kunit/bug.c
-> @@ -32,8 +32,10 @@ bool __kunit_is_suppressed_warning(const char *function)
->                 return false;
->
->         list_for_each_entry(warning, &suppressed_warnings, node) {
-> -               if (!strcmp(function, warning->function))
-> +               if (!strcmp(function, warning->function)) {
-> +                       warning->counter++;
->                         return true;
-> +               }
->         }
->         return false;
->  }
-> --
-> 2.34.1
->
-
---000000000000856487063176a11d
+--000000000000bc820f063176a112
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -272,13 +204,13 @@ uFrCoYIRlx4rSVHpBIKgnsgdm0SFQK72MPmIkfhfq9Fh0h8AjhF73sLO7K5BfwWkx1gwMySyNY0e
 PCRYr6WEVOkUJS0a0fui693ymMPFLQAimmz8EpyFok4Ju066StkYO1dIgUIla4x61auxkWHwnzGC
 Al0wggJZAgEBMGgwVDELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKjAo
 BgNVBAMTIUdsb2JhbFNpZ24gQXRsYXMgUjYgU01JTUUgQ0EgMjAyMwIQAcDMKctW1GQKDKqEUSh4
-pjANBglghkgBZQMEAgEFAKCBxzAvBgkqhkiG9w0BCQQxIgQgVTlqx+rB+MllLMbVbaEqSyy5EuK0
-Ji2VFlgb6K8WjT8wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjUw
-MzI5MDgwNDA2WjBcBgkqhkiG9w0BCQ8xTzBNMAsGCWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJ
+pjANBglghkgBZQMEAgEFAKCBxzAvBgkqhkiG9w0BCQQxIgQgm3R/ghgzBpj1jMOVW83mzw4C0AL9
+5UEGdIWFX/GO6EAwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMjUw
+MzI5MDgwNDA5WjBcBgkqhkiG9w0BCQ8xTzBNMAsGCWCGSAFlAwQBKjALBglghkgBZQMEARYwCwYJ
 YIZIAWUDBAECMAoGCCqGSIb3DQMHMAsGCSqGSIb3DQEBBzALBglghkgBZQMEAgEwDQYJKoZIhvcN
-AQEBBQAEggEAeuoP7Q3jsS1vafe5Mqe3U7GeLIkrx8UXHMoV8DJ9/Dp/Tg7XaGWsZ14BPjHAZayS
-FN6tD63zmrKZdLOLrvvJMFAWE0N25dkAG5lyeiP6tXTBRzW5SUI7JM17zvlOMNAHFlq2GvsCPBfo
-1JlJtCX5CQ/gVIz/rCq60OHGmEVEizMT9UrLqd+C1WttHFl/YpWgLKhNhLZGo+wlsjSWbha9TGDV
-qIhNixh4/7In1sN2o/RN1XeBtwTtmTNIYdJf6pLPnQ3TilQc9lDwBWn3q7tnXjQ7QoktpcDKtK8A
-PBwWKw0ohCMkNvJECVJKN7/Gem5ZIqRtt4TfJeYt+ewlboPnuw==
---000000000000856487063176a11d--
+AQEBBQAEggEAVuI1QEd4DlrvS5gBl3QUy59Zf/mUB8dgId9VEYAz0al5EKjnUBz77/up2C+g4NEz
+0wLl0FVtlf3Yobp82pqwW3x0dwzzdrHbgari46VT5k6TcWhyzFWPFAiYjBbWUPKbFmYHg2fbspaH
+ZVQcmtvsl5j3YWFtdRXGpP23CO5/j7Ccqat1DtBfiaJGs8BiuMmbUCxU6DAJh9msFzW2HI81pjEn
+NzUg/rB4tvKa2KsGETAEK5aWEqlGuTZGfUAXRIp0Osxr0lOA061vD5zrxMAdt6qZY0hpsLn8WdQ1
+mMivBeGETU9GcOmYSrrowtgKlJbuS+r/mMiBqOPIH54sv3R6gA==
+--000000000000bc820f063176a112--
