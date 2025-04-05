@@ -1,55 +1,59 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8E28222EE5
-	for <linux-sh@vger.kernel.org>; Sat,  5 Apr 2025 17:25:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 856D51BC2A;
+	Sat,  5 Apr 2025 17:39:00 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743873941; cv=none; b=mOF1bNQrIsudMCuUobzT2CxtTthIuvhcagLrZ6RTEYF6KbTB9psTHZb0um38RIXhluINKeAVZf0cdpMO+5jPO21EDEaItOrVElym+qdXvLUkjDoTVw8h5vTX/cLBDIuO15l4o/RRg74mozvtuyQ+8BPzu51Z2s/RQisXSNlhdFI=
+	t=1743874743; cv=none; b=Sc5TJPE6T7kWZTSg5/s8pvUsEH/Hcj5IwVYyqC2e9JnFgjelVCbIi4cYmg9fXxEl/tObKvTn7WtiYFRbbqQ+/qw8gNQgpAAXxdalWhckXzLDzDYYF4K378f5lXecw9ucXc5sZ8DOuDN4soYlGOuSXjx0ICJQYgNnWVT/A9fajQU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743873941; c=relaxed/simple;
-	bh=gPFr6Avc3u25Pj/g8XWJ6W+GqjxTUfhQYFfGOqsMvHs=;
+	s=arc-20240116; t=1743874743; c=relaxed/simple;
+	bh=gX0ZLQEjnzU3TBvfxOtgjXwaDdYCJbrEpsKU8RAV1no=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ND3yZOBhxP+RYPXKttPK5zUdFU+dCo16Nyr0uQGJmuww6k5FSly5Vxp0Z7eLfPlJtlLewqlJ11JpEolCZU97ehq3Nmm8SQkb+R0KhHkroGNNbkQhtGPcg3GiZMvkWcFgKfrgtdU6aabH+KC/qxL1kFVUeWif2pR4kevdJXdLO4w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Q/grygcN; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=hn04jAVc6F/eflHwsfiIpwCt491qb3Ju9vueiifR2+uTSNBlf1jo+fyasLBbYLJlmsgypbZN9a5uyFV9/Gpj1PxCkWElAkJK1Qn6ApJR1RO/vYnrCn6mL+pzBNI3rp68S9bd1VNyvHs3UEdXnCu50DxxTr0HnBIAKLEPguoFDCM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=gdgzTirl; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Q/grygcN"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="gdgzTirl"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=gLyNRZ7MrBxkgnGMXa52QBdoPdK42e0Hp4EPwQo3jKk=; t=1743873939; x=1744478739; 
-	b=Q/grygcNMBTk7seUy9cw9K5Ze7koxO0fWBWsRcvfvhNJrb++8psLy7ubHUiyou9kx7lzJDwjhFi
-	tnXCGGbnzO9FLHEzIQIT+alaTJfGgYEre/5WyB7ktiHj7P/s1r8n0mc/phBNiqFwFvU4GS3fHUhVX
-	qFJBQatsbPloMCMSvltL2LPIMHbNIL7WH7+sU7+eS1p8Fm7fZmYwPlWi1kq0OEeO5z6FcjH5/dEuC
-	JwD8zixaQ1WXqttMFsC+8pzgBllCCUL8XVjlPSn/SR4NLlixuxaA1H3iOjWaTVY2qF4QQZ8PCLYYj
-	Wtnqd0hrQVXgcZzSIu/ERzctD9gu/FpKErGQ==;
+	bh=WX9E6DgiY2D01qB2SzZpeJfoy+tNUxzhlIlzO5bFJoo=; t=1743874740; x=1744479540; 
+	b=gdgzTirlr0KTpdqDC2l0cw8SQJcaK50iVN76+6fo+0p9Fd70DoSG8zmIoIizdM5/198wzCYBJB1
+	EzgpLiodz/zcNI1XJp5nXiX+/5bp26mcIGx1+BUeIzKY5zFl7lcmrQ8cDd95gTyvYVTbG6pYqxd6F
+	KQILRl2OFOlztXPFTN8wH0BWYiBZOAjh3t2NZAsc6MFn3G8DGcW8ZT9hM2peHwsMqRMMMo1saUOsh
+	JsV8aei0Xqe25bHVESi2GR45qwrXwv04U1ZU302zVzROr4Jq5qNnHYd9ypEcJtp7+JGF97AlFyJzG
+	pvSGuuIvAVCK5C6DGgT7LIbl/Ma/r+iJGcJg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.98)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1u17Gy-00000003yP0-0eXa; Sat, 05 Apr 2025 19:25:36 +0200
+          id 1u17Tq-000000045Ay-0u8m; Sat, 05 Apr 2025 19:38:54 +0200
 Received: from dynamic-002-242-014-214.2.242.pool.telefonica.de ([2.242.14.214] helo=[192.168.178.50])
           by inpost2.zedat.fu-berlin.de (Exim 4.98)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1u17Gx-00000000cAC-40U2; Sat, 05 Apr 2025 19:25:36 +0200
-Message-ID: <4aaf26c17ab36839c406854ce2b1183db0d8db28.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] arch: sh: defconfig: Drop obsolete
- CONFIG_NET_CLS_TCINDEX
+          id 1u17Tp-00000000dWk-48nP; Sat, 05 Apr 2025 19:38:54 +0200
+Message-ID: <a3faf6820b43cca25c3384d0248f494be7312598.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 1/2] sh: align .bss section padding to 8-byte boundary
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Johan Korsnes <johan.korsnes@gmail.com>, linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>
-Date: Sat, 05 Apr 2025 19:25:35 +0200
-In-Reply-To: <20250323191330.114640-1-johan.korsnes@gmail.com>
-References: <20250323191330.114640-1-johan.korsnes@gmail.com>
+To: Artur Rojek <contact@artur-rojek.eu>, Yoshinori Sato	
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Daniel Lezcano
+	 <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Uros
+ Bizjak	 <ubizjak@gmail.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, "D . Jeff Dionne"	
+ <jeff@coresemi.io>, Rob Landley <rob@landley.net>,
+ linux-sh@vger.kernel.org, 	linux-kernel@vger.kernel.org
+Date: Sat, 05 Apr 2025 19:38:53 +0200
+In-Reply-To: <20250216175545.35079-2-contact@artur-rojek.eu>
+References: <20250216175545.35079-1-contact@artur-rojek.eu>
+	 <20250216175545.35079-2-contact@artur-rojek.eu>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.56.0 
@@ -62,79 +66,59 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Johan,
+Hi Artur,
 
-On Sun, 2025-03-23 at 20:13 +0100, Johan Korsnes wrote:
-> This option was removed from the Kconfig in commit
-> 8c710f75256b ("net/sched: Retire tcindex classifier") but it was not
-> removed from the defconfigs.
+On Sun, 2025-02-16 at 18:55 +0100, Artur Rojek wrote:
+> J2 based devices expect to find a devicetree blob at the end of the bss
+> section. As of a77725a9a3c5, libfdt enforces 8-byte alignment for the
+> dtb, causing J2 devices to fail early in sh_fdt_init.
 >=20
-> Fixes: 8c710f75256b ("net/sched: Retire tcindex classifier")
-> Signed-off-by: Johan Korsnes <johan.korsnes@gmail.com>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> As J2 loader firmware calculates the dtb location based on the kernel
+> image .bss section size, rather than the __bss_stop symbol offset, the
+> required alignment can't be enforced with BSS_SECTION(0, PAGE_SIZE, 8).
+> Instead, inline modified version of the above macro, which grows .bss
+> by the required size.
+>=20
+> While this change affects all existing SH boards, it should be benign on
+> platforms which don't need this alignment.
+>=20
+> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
 > ---
->  arch/sh/configs/se7712_defconfig       | 1 -
->  arch/sh/configs/se7721_defconfig       | 1 -
->  arch/sh/configs/sh7710voipgw_defconfig | 1 -
->  arch/sh/configs/titan_defconfig        | 1 -
->  4 files changed, 4 deletions(-)
+>  arch/sh/kernel/vmlinux.lds.S | 15 ++++++++++++++-
+>  1 file changed, 14 insertions(+), 1 deletion(-)
 >=20
-> diff --git a/arch/sh/configs/se7712_defconfig b/arch/sh/configs/se7712_de=
-fconfig
-> index 20f07aee5bde..49a4961889de 100644
-> --- a/arch/sh/configs/se7712_defconfig
-> +++ b/arch/sh/configs/se7712_defconfig
-> @@ -57,7 +57,6 @@ CONFIG_NET_SCH_TBF=3Dy
->  CONFIG_NET_SCH_GRED=3Dy
->  CONFIG_NET_SCH_DSMARK=3Dy
->  CONFIG_NET_SCH_NETEM=3Dy
-> -CONFIG_NET_CLS_TCINDEX=3Dy
->  CONFIG_NET_CLS_ROUTE4=3Dy
->  CONFIG_NET_CLS_FW=3Dy
->  CONFIG_MTD=3Dy
-> diff --git a/arch/sh/configs/se7721_defconfig b/arch/sh/configs/se7721_de=
-fconfig
-> index 00862d3c030d..de293792db84 100644
-> --- a/arch/sh/configs/se7721_defconfig
-> +++ b/arch/sh/configs/se7721_defconfig
-> @@ -56,7 +56,6 @@ CONFIG_NET_SCH_TBF=3Dy
->  CONFIG_NET_SCH_GRED=3Dy
->  CONFIG_NET_SCH_DSMARK=3Dy
->  CONFIG_NET_SCH_NETEM=3Dy
-> -CONFIG_NET_CLS_TCINDEX=3Dy
->  CONFIG_NET_CLS_ROUTE4=3Dy
->  CONFIG_NET_CLS_FW=3Dy
->  CONFIG_MTD=3Dy
-> diff --git a/arch/sh/configs/sh7710voipgw_defconfig b/arch/sh/configs/sh7=
-710voipgw_defconfig
-> index 99a5d0760532..5b151bb2bc43 100644
-> --- a/arch/sh/configs/sh7710voipgw_defconfig
-> +++ b/arch/sh/configs/sh7710voipgw_defconfig
-> @@ -27,7 +27,6 @@ CONFIG_NETFILTER=3Dy
->  CONFIG_NET_SCHED=3Dy
->  CONFIG_NET_SCH_CBQ=3Dy
->  CONFIG_NET_CLS_BASIC=3Dy
-> -CONFIG_NET_CLS_TCINDEX=3Dy
->  CONFIG_NET_CLS_ROUTE4=3Dy
->  CONFIG_NET_CLS_U32=3Dy
->  CONFIG_MTD=3Dy
-> diff --git a/arch/sh/configs/titan_defconfig b/arch/sh/configs/titan_defc=
-onfig
-> index 99bc0e889287..e2928311a126 100644
-> --- a/arch/sh/configs/titan_defconfig
-> +++ b/arch/sh/configs/titan_defconfig
-> @@ -119,7 +119,6 @@ CONFIG_NET_SCH_DSMARK=3Dm
->  CONFIG_NET_SCH_NETEM=3Dm
->  CONFIG_NET_SCH_INGRESS=3Dm
->  CONFIG_NET_CLS_BASIC=3Dm
-> -CONFIG_NET_CLS_TCINDEX=3Dm
->  CONFIG_NET_CLS_ROUTE4=3Dm
->  CONFIG_NET_CLS_FW=3Dm
->  CONFIG_NET_CLS_U32=3Dm
+> diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
+> index 9644fe187a3f..008c30289eaa 100644
+> --- a/arch/sh/kernel/vmlinux.lds.S
+> +++ b/arch/sh/kernel/vmlinux.lds.S
+> @@ -71,7 +71,20 @@ SECTIONS
+> =20
+>  	. =3D ALIGN(PAGE_SIZE);
+>  	__init_end =3D .;
+> -	BSS_SECTION(0, PAGE_SIZE, 4)
+> +	__bss_start =3D .;
+> +	SBSS(0)
+> +	. =3D ALIGN(PAGE_SIZE);
+> +	.bss : AT(ADDR(.bss) - LOAD_OFFSET) {
+> +		BSS_FIRST_SECTIONS
+> +		. =3D ALIGN(PAGE_SIZE);
+> +		*(.bss..page_aligned)
+> +		. =3D ALIGN(PAGE_SIZE);
+> +		*(.dynbss)
+> +		*(BSS_MAIN)
+> +		*(COMMON)
+> +		. =3D ALIGN(8);
+> +	}
+> +	__bss_stop =3D .;
+>  	_end =3D . ;
+> =20
+>  	STABS_DEBUG
 
-Thanks for catching this! Will pick this up shortly.
+I'll pick this up for now since Uros has confirmed that the compiler
+won't just use SBSS without breaking the ABI, so I think to use this
+fix for now.
+
+If it breaks in the future, we can change it again.
 
 Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
