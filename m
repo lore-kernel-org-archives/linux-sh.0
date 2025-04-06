@@ -1,59 +1,52 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 856D51BC2A;
-	Sat,  5 Apr 2025 17:39:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43B2E1CA81
+	for <linux-sh@vger.kernel.org>; Sun,  6 Apr 2025 08:23:22 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743874743; cv=none; b=Sc5TJPE6T7kWZTSg5/s8pvUsEH/Hcj5IwVYyqC2e9JnFgjelVCbIi4cYmg9fXxEl/tObKvTn7WtiYFRbbqQ+/qw8gNQgpAAXxdalWhckXzLDzDYYF4K378f5lXecw9ucXc5sZ8DOuDN4soYlGOuSXjx0ICJQYgNnWVT/A9fajQU=
+	t=1743927807; cv=none; b=l7MczXLAxP+1QNC0tqWHfuyMnYa8udpvvlunK8uyjizHx1N1jqCR90vdPOzfE2E/GSjAMgj1r4k+kIlTRaFyNYpx4r0V/ExRTl2rVBVksTI6GOKAJ37kPcAw/LzTQSIAwu7g3WrBoR3Iw6pM5y/CME7BCunlwPpb2YkVgB+ZXSA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743874743; c=relaxed/simple;
-	bh=gX0ZLQEjnzU3TBvfxOtgjXwaDdYCJbrEpsKU8RAV1no=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=hn04jAVc6F/eflHwsfiIpwCt491qb3Ju9vueiifR2+uTSNBlf1jo+fyasLBbYLJlmsgypbZN9a5uyFV9/Gpj1PxCkWElAkJK1Qn6ApJR1RO/vYnrCn6mL+pzBNI3rp68S9bd1VNyvHs3UEdXnCu50DxxTr0HnBIAKLEPguoFDCM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=gdgzTirl; arc=none smtp.client-ip=130.133.4.66
+	s=arc-20240116; t=1743927807; c=relaxed/simple;
+	bh=RuwLPaaZsx7pKCC5UVsvtAw5drPL1oY5Z023SfeqPd4=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=WhAWyijmkaahlis0CNmBwjfF6gLoJypTQBQvk4ULNPajiMuw3tIHwL1wRTRaY3LCusfeqWaZioG8lXwg1lHRCOJg6zjinsipmzoU6Si1geppCA5S7hwAJ1bzLp4zwXBtOjk4PO4GCnsjN0Tr52JSRK1Nv+MCbX8OJlpSAKnpdOg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=fv/lYuBe; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="gdgzTirl"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="fv/lYuBe"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=WX9E6DgiY2D01qB2SzZpeJfoy+tNUxzhlIlzO5bFJoo=; t=1743874740; x=1744479540; 
-	b=gdgzTirlr0KTpdqDC2l0cw8SQJcaK50iVN76+6fo+0p9Fd70DoSG8zmIoIizdM5/198wzCYBJB1
-	EzgpLiodz/zcNI1XJp5nXiX+/5bp26mcIGx1+BUeIzKY5zFl7lcmrQ8cDd95gTyvYVTbG6pYqxd6F
-	KQILRl2OFOlztXPFTN8wH0BWYiBZOAjh3t2NZAsc6MFn3G8DGcW8ZT9hM2peHwsMqRMMMo1saUOsh
-	JsV8aei0Xqe25bHVESi2GR45qwrXwv04U1ZU302zVzROr4Jq5qNnHYd9ypEcJtp7+JGF97AlFyJzG
-	pvSGuuIvAVCK5C6DGgT7LIbl/Ma/r+iJGcJg==;
+	Content-Type:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=LXM0M37RqHWGT0yEZylfip6+Ws/m8msgBTxl/DHup7s=; t=1743927803; x=1744532603; 
+	b=fv/lYuBepaKkD+YnoToGf7WNy3SnlGqsbWCIMaiw9a8NkvMwkQINx3Uz1cbkTV+da4eb3GrZgxF
+	hk0CWv0o0OxkuOJdX5zkr2d38J/v09ANb0gka36ApMx2fk3ZV/d1HqylDQUtIOwOy0IIEd7jth3vh
+	AeJ+HOVM+IcHrYkRhZaOIgc8H93xWgMQQ3NgBMaL9iqJpdl1Xu2z4VnH4EcAls9Cbrw3Qc4hrsCFm
+	R7Ofw74vx+gUJN60i/Pn57/Syo/o3ykHHuuoauOp8sH5KkTBPtbjkQ6evLvRexvuxF4frDTpcsmEZ
+	C2Zeckp3ZKPIaMjCEsrv0aHTg7VPlkO9ITBg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.98)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1u17Tq-000000045Ay-0u8m; Sat, 05 Apr 2025 19:38:54 +0200
-Received: from dynamic-002-242-014-214.2.242.pool.telefonica.de ([2.242.14.214] helo=[192.168.178.50])
+          id 1u1LH9-000000043My-1y8L; Sun, 06 Apr 2025 10:22:43 +0200
+Received: from dynamic-092-224-170-221.92.224.pool.telefonica.de ([92.224.170.221] helo=[192.168.178.50])
           by inpost2.zedat.fu-berlin.de (Exim 4.98)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1u17Tp-00000000dWk-48nP; Sat, 05 Apr 2025 19:38:54 +0200
-Message-ID: <a3faf6820b43cca25c3384d0248f494be7312598.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 1/2] sh: align .bss section padding to 8-byte boundary
+          id 1u1LH9-00000002TCL-15jd; Sun, 06 Apr 2025 10:22:43 +0200
+Message-ID: <9c7331defe8b6991bf7f00a7d5e565d6c6784f56.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.15
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Artur Rojek <contact@artur-rojek.eu>, Yoshinori Sato	
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Daniel Lezcano
-	 <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, Uros
- Bizjak	 <ubizjak@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, "D . Jeff Dionne"	
- <jeff@coresemi.io>, Rob Landley <rob@landley.net>,
- linux-sh@vger.kernel.org, 	linux-kernel@vger.kernel.org
-Date: Sat, 05 Apr 2025 19:38:53 +0200
-In-Reply-To: <20250216175545.35079-2-contact@artur-rojek.eu>
-References: <20250216175545.35079-1-contact@artur-rojek.eu>
-	 <20250216175545.35079-2-contact@artur-rojek.eu>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Artur Rojek <contact@artur-rojek.eu>, Johan Korsnes
+	 <johan.korsnes@gmail.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, linux-sh <linux-sh@vger.kernel.org>
+Date: Sun, 06 Apr 2025 10:22:42 +0200
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.56.0 
@@ -66,63 +59,56 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Artur,
+Hi Linus,
 
-On Sun, 2025-02-16 at 18:55 +0100, Artur Rojek wrote:
-> J2 based devices expect to find a devicetree blob at the end of the bss
-> section. As of a77725a9a3c5, libfdt enforces 8-byte alignment for the
-> dtb, causing J2 devices to fail early in sh_fdt_init.
->=20
-> As J2 loader firmware calculates the dtb location based on the kernel
-> image .bss section size, rather than the __bss_stop symbol offset, the
-> required alignment can't be enforced with BSS_SECTION(0, PAGE_SIZE, 8).
-> Instead, inline modified version of the above macro, which grows .bss
-> by the required size.
->=20
-> While this change affects all existing SH boards, it should be benign on
-> platforms which don't need this alignment.
->=20
-> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
-> ---
->  arch/sh/kernel/vmlinux.lds.S | 15 ++++++++++++++-
->  1 file changed, 14 insertions(+), 1 deletion(-)
->=20
-> diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
-> index 9644fe187a3f..008c30289eaa 100644
-> --- a/arch/sh/kernel/vmlinux.lds.S
-> +++ b/arch/sh/kernel/vmlinux.lds.S
-> @@ -71,7 +71,20 @@ SECTIONS
-> =20
->  	. =3D ALIGN(PAGE_SIZE);
->  	__init_end =3D .;
-> -	BSS_SECTION(0, PAGE_SIZE, 4)
-> +	__bss_start =3D .;
-> +	SBSS(0)
-> +	. =3D ALIGN(PAGE_SIZE);
-> +	.bss : AT(ADDR(.bss) - LOAD_OFFSET) {
-> +		BSS_FIRST_SECTIONS
-> +		. =3D ALIGN(PAGE_SIZE);
-> +		*(.bss..page_aligned)
-> +		. =3D ALIGN(PAGE_SIZE);
-> +		*(.dynbss)
-> +		*(BSS_MAIN)
-> +		*(COMMON)
-> +		. =3D ALIGN(8);
-> +	}
-> +	__bss_stop =3D .;
->  	_end =3D . ;
-> =20
->  	STABS_DEBUG
+this is my pull request for v6.15 which contains one important fix and
+one small configuration update. The first patch by Artur Rojek fixes an
+issue with the J2 firmware loader not being able to find the location of
+the device tree blob due to insufficient alignment of the .bss section
+which rendered J2 boards unbootable.
 
-I'll pick this up for now since Uros has confirmed that the compiler
-won't just use SBSS without breaking the ABI, so I think to use this
-fix for now.
+The second patch by Johan Korsnes updates the defconfigs on sh to drop
+the CONFIG_NET_CLS_TCINDEX configuration option which became obsolete
+after 8c710f75256b ("net/sched: Retire tcindex classifier").
 
-If it breaks in the future, we can change it again.
+The following changes since commit 2014c95afecee3e76ca4a56956a936e23283f05b=
+:
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+  Linux 6.14-rc1 (2025-02-02 15:39:26 -0800)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
+sh-for-v6.15-tag1
+
+for you to fetch changes up to 5f2efd67a17e5f4e2fccdb86014efaf8725f57a7:
+
+  sh: defconfig: Drop obsolete CONFIG_NET_CLS_TCINDEX (2025-04-05 19:46:38 =
++0200)
+
+Thanks for pulling!
 
 Adrian
+
+----------------------------------------------------------------
+sh updates for v6.15
+
+- sh: defconfig: Drop obsolete CONFIG_NET_CLS_TCINDEX
+- sh: Align .bss section padding to 8-byte boundary
+
+----------------------------------------------------------------
+Artur Rojek (1):
+      sh: Align .bss section padding to 8-byte boundary
+
+Johan Korsnes (1):
+      sh: defconfig: Drop obsolete CONFIG_NET_CLS_TCINDEX
+
+ arch/sh/configs/se7712_defconfig       |  1 -
+ arch/sh/configs/se7721_defconfig       |  1 -
+ arch/sh/configs/sh7710voipgw_defconfig |  1 -
+ arch/sh/configs/titan_defconfig        |  1 -
+ arch/sh/kernel/vmlinux.lds.S           | 15 ++++++++++++++-
+ 5 files changed, 14 insertions(+), 5 deletions(-)
 
 --=20
  .''`.  John Paul Adrian Glaubitz
