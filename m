@@ -1,63 +1,155 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ua1-f53.google.com (mail-ua1-f53.google.com [209.85.222.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8E82E14A82
-	for <linux-sh@vger.kernel.org>; Sun,  6 Apr 2025 16:01:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0A15221F1A;
+	Mon,  7 Apr 2025 08:06:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1743955291; cv=none; b=nTnEfrbg6+/THaqlzbcaO4Y0IYv155fanIQvwYU1PBd/A584DZjLva1jxe8HoU2vdZSA7XZM3Y8s0Xz/MOqpgGM9H7OQ5ijYx4d8F6NaeEGCKn6A3RIzg7tLQN/r2h++F+bQqUACxh96Hso54GIjKJMVRUAh8pvdVae5CgBtR8w=
+	t=1744013182; cv=none; b=aNHD3UJokIoso43TGiGaHZ6K9JdXNbw7S5uspIT4gdL45DetQhFiXvRxc/srHyOSmhWGornAWUnLRbH+ufSQ/gx9ettaJZVEOASuJBKXYVkO91E0Gky20lq0TWvKGJAOSqaV+40JMfliawKoEA5JiuwH2JUWaz3gHWNEt6LUJco=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1743955291; c=relaxed/simple;
-	bh=WXa9FMrtQR5r3h2a1obo3VqKFuy+VbAOmKzOFGYDNFY=;
-	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=DXsgxB3CCnxnIiN4iJscjEEV8nmk3ESf6irUow5jBx5lSCx82RXGdnJSxBfX8TTvBDp75OKaDTue+S3TQXWckpDTcmr67bG7C1HoSLq74hkl4IFnLqB182fLIU8YdkXNpkMTIkyit+fQDbMEVkTOi1DSxUv7f+dvT0qGB2/2MGc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fAZqvisI; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fAZqvisI"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6FD9DC4CEE3;
-	Sun,  6 Apr 2025 16:01:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1743955291;
-	bh=WXa9FMrtQR5r3h2a1obo3VqKFuy+VbAOmKzOFGYDNFY=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-	b=fAZqvisILFkcugvrmzpwmqHQLKQHtBJmdXEzRA1lyVlBYJgmu4QubtqOmALxOwMgo
-	 L/f7YF6mhvv29IZlitMAdazbcH+kPA3qVeD6+PULBBA0UAFmebTi+1JbnzcWvF6MeG
-	 MHYkbVmVQLGy/6M9kKe5E3kU7TzPR7GIknd27DFlH3tLADAnYL1D5RkMXj5ultU+Lv
-	 TE4kf5Kvjsh78SNPILtBaz84K3ygxk4R8cOHTmgcwhA6wYSmDQfFwym6G70I7rWtnk
-	 wB56tvRpMU1pZK4g5Kusy2/LXxcyVmyHQ5uqxvZqiBCPMvxTSMeX+E1v8TcH8jhmd2
-	 yPvEUiRF34R7w==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id EB00D380AAF5;
-	Sun,  6 Apr 2025 16:02:09 +0000 (UTC)
-Subject: Re: [GIT PULL] sh updates for v6.15
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <9c7331defe8b6991bf7f00a7d5e565d6c6784f56.camel@physik.fu-berlin.de>
-References: <9c7331defe8b6991bf7f00a7d5e565d6c6784f56.camel@physik.fu-berlin.de>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <9c7331defe8b6991bf7f00a7d5e565d6c6784f56.camel@physik.fu-berlin.de>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.15-tag1
-X-PR-Tracked-Commit-Id: 5f2efd67a17e5f4e2fccdb86014efaf8725f57a7
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 1f80fbac0ba7d10218b0902c3c51460617cc7cf8
-Message-Id: <174395532863.3904920.8332426137530013389.pr-tracker-bot@kernel.org>
-Date: Sun, 06 Apr 2025 16:02:08 +0000
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Artur Rojek <contact@artur-rojek.eu>, Johan Korsnes <johan.korsnes@gmail.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh <linux-sh@vger.kernel.org>
+	s=arc-20240116; t=1744013182; c=relaxed/simple;
+	bh=Jv1axMlTH1d7Bc5hi8tVqQgcr6gs+9TX6BEWYeJwdVQ=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=CKQ957o1MSkafX5pwI7Gf9clj6PbObqcZLcQY1jcfJNOJzNpwIDpAxt1QdNKrNj/R3+XmyblYmIphZlmKkyxHL6zGP32AsswlkQglnUGDjIvB0RazXGFp36Ie39qgdJyu1oZFXS/v42rZ8J86fhpmgqfN1qi5G/gSU+BgIlDHns=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ua1-f53.google.com with SMTP id a1e0cc1a2514c-86d5a786c7cso1786399241.2;
+        Mon, 07 Apr 2025 01:06:20 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1744013177; x=1744617977;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=em0yD0kIpDtyZFKdGXKgNdHuMfrDjAXLZIWfYU3VNv0=;
+        b=QqoqyMgVdul9RvY6jWkaX+jVeFG76VW6QPGh9oP/Iza/B1h1x+BgbxTkGM7Q/eE+q7
+         5BwkCjbkHtbMKod6l9tjUG9KHq6axf7oMKSBZ3IC52z8xHO1fqnBd4+q9v7WaSiE1Rjb
+         JPDOc3Qz+MzX9HqTlgEZQM/rwv7jZzbCn+P9PDa1okiVTTTnbsiXWYH1W5wKqdtAtDdq
+         4o58/QyGJRO/wJgJ9allz2XZPt/tVius/SXM2hRhGDFC49P11kUcp5VBTHFZeka+svO4
+         i+kvNrz1IH6Imfy5uxY4fzhXuKVkYkpCezWqvr4gBs6SMPHw6coYsDpdnzpZGFSPai1a
+         yAEA==
+X-Forwarded-Encrypted: i=1; AJvYcCUhJUhMIX7ey7JIMIpmNo2dbjX2zmwRnj+ooITqnjTm4nFlK+B+4O9uM/UuseVZ+20r6EvT+1zUh65zdg==@vger.kernel.org, AJvYcCV1GxUjWZkZHaOulzHDZEhLqTr21DQsvIYxmfSJ95U6oYKwynb5qgqXUWUbw5VNT0x/vCtd/WtkCWQ+Kyjj@vger.kernel.org, AJvYcCVIWaGcPTyTrUg30ALAlFceyKRNwrcBOOCp2emu3/kirpFq45hvgkrx9Z3XJ12MFJp3NwX1m5ScCWs5WQ==@vger.kernel.org, AJvYcCW83VGOcxjmus0QhbAe56vQdQJ5+eg63zAy6tJdY/4oYJ82Gk6P55x4hvkCaQw+eH3YOn4uAB58j9POHfBE@vger.kernel.org, AJvYcCWKcEfSYGfD5TUxfKiur0V2N+ThBM4zrWmq1johOhk+6da8cuUcr062Xqm/ap6rIjU5fvnufYjuUo2tVTenM9c=@vger.kernel.org, AJvYcCWptsgVifqzSzqF3ja0eHZI03VnCO2o7/J257cFfErHr233QRaP5zWDNX00CNHR77W+mNzxrDAlA8YoWw==@vger.kernel.org, AJvYcCWqjPIMJGsHx4iAWsEbMjRij7lJN2r3cFM9ekiRdT/7/DuLKQHBSsT7t3NhzFoZ+xwsRQ3cXi1ib49PSw==@vger.kernel.org, AJvYcCXLbXVPJkbmRjXH4bDbuUOAWOU051RqtdimhWebNQQ9hCyRnYG+w0Eql/0VhjEb4zqgLtfYqs/KeDtErf1R3A==@vger.kernel.org, AJvYcCXWe3RzKKIpomRwaTimB0zjhNeFAp31+AcECETHtt+iEm9wE+OvbBtRZ9eUt50+cKCFJIrEcGNJSBY=@vger.kernel.org, AJvYcCXePFHWhGFPP6+i+dx+6ELcWQYbu+h1OyuNk6P3STWvHDLMhxmRZCw5clqJtcMALxDH0ei1OYzgiuEh2A==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzwCfCdnnCdQ0DD6VegW7o/cJ5iZ3I8e2TsFo8lM4F6xeTAkk9D
+	l7+/DNWCua279LMzRjkTBHpk0Unq+yvHnx4xXkjjX93y1WGKffCEv+Q49aJc
+X-Gm-Gg: ASbGncu0i1j82qY3DHnDejG9M0T89T7kKhPF/bYGtt5KEfAO0GFr1Wd975p99ZI9c1y
+	yBJe+tnABeKZEf8BXYa0R4KLI/hxf77/CnAdhkiKWy7oZwB64BTWlANeLsZdKg9BZuqaOI6B6bO
+	78xgeZpUi8Oe0DGTNgGAql1lryboJEgyVo/3TDv6+wnCtG9jVwRBs8vDhbgP5mcYGAS7eWOiMQh
+	gykBYvihKfJYIZbyMCOLzRxG+dKQwyluiJF30nGGRDuw//4RAsaFuXt1Y8/MU00fPL1OSXAXyme
+	5T9wH+7SCqldNVb2Sm3vCvb8v3RjekbU8W/38jRrDOLCn+T4TLuqjgbw7Le+6orgX0rhhIexsir
+	PK2SNlI0RVlbkiGgWFrxnDw==
+X-Google-Smtp-Source: AGHT+IEIypkAlw58qGBac2+Hu5A+Jxul5pRODKDJKvH5QRRf02oHU/YDN4T+WxofIAG1Nz+RXRMAuA==
+X-Received: by 2002:a05:6102:1481:b0:4c4:df5b:330f with SMTP id ada2fe7eead31-4c8554696f1mr9046623137.17.1744013177543;
+        Mon, 07 Apr 2025 01:06:17 -0700 (PDT)
+Received: from mail-vk1-f179.google.com (mail-vk1-f179.google.com. [209.85.221.179])
+        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-8738b2b1020sm1647791241.33.2025.04.07.01.06.16
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 07 Apr 2025 01:06:17 -0700 (PDT)
+Received: by mail-vk1-f179.google.com with SMTP id 71dfb90a1353d-51eb1823a8eso2185853e0c.3;
+        Mon, 07 Apr 2025 01:06:16 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCUb7UJxdnHYbhM6Vw7DNrjQnSTGYH89rT5cEBXWd4aozJ+uBaGyPZSLtNiu+09oIvooXhmJmuf9nYgoVA==@vger.kernel.org,
+ AJvYcCUhot8uSdvgO/oSoh3al83nNayK21jFzPGK5Dl3MIB8dIMiNTFwZ4P7PLSZ8Ls7U6QlDTSojpp8GFf3Hw==@vger.kernel.org,
+ AJvYcCV2Lhk9GsyFHtPx7NCFVOcR1kSam/FtMao+qKM6aX2X9w7+B/77ZXm3neVSC77JpoQznVhTTgoDP+4hzOEvKg==@vger.kernel.org,
+ AJvYcCVfU9VvwKGc1e1aAylr8ZhYqSK8QYN0bIK2mjRyWy9dqv5DA+E3KtbP20XjS9O3X4N3L1caUid/yzhPww==@vger.kernel.org,
+ AJvYcCVjd6dtfu5ML6XO+C/HJu1zRJxBx6CHPkDNe7EjWTYDpRkE0C6MpjLVj9W/Bwsth4RywdSYtvFteZYSwvrQcZE=@vger.kernel.org,
+ AJvYcCWAuR79s9UK9QCMMIeg1JxoiTqBVblIs1FWXWigmehgZoTbMw5iV2uWy97lsHaPJdnBGZ8XojfI9sbCrZ7G@vger.kernel.org,
+ AJvYcCWqORCKpls2JuoRtXlhj5DQ3ZtoEr2mt+m7i+ymy5qef0PCSi6lRv0PE+64Ab2PU2EpJt3Dd+PuvdVjXA==@vger.kernel.org,
+ AJvYcCX4PHiREUhBv8dPJzFaHjRN1uii9gufCMhavgTwfDo6UXnRz8eGj2mRS2bwGgSotKznjM5LdxqlNuk=@vger.kernel.org,
+ AJvYcCXaHQHsx+LGm68LDBhVRqKM7QBwdSiKIvMwp8Fr2UX2KfX8crfAZ7R9CE/dvaWU8EXYenDodot26/9VRS7u@vger.kernel.org,
+ AJvYcCXanLK+LH2pLYgUqXNBqxRZQoGk4/W+bGdFSl0DpVT4aE3kJ4/l1w5E9EH0XBzZpCr0Y9Eij5BJhl60vg==@vger.kernel.org
+X-Received: by 2002:a05:6102:1622:b0:4c3:221:8f47 with SMTP id
+ ada2fe7eead31-4c8553d0fafmr8533368137.13.1744013176401; Mon, 07 Apr 2025
+ 01:06:16 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+References: <20250218175735.19882-1-linmag7@gmail.com> <20250218175735.19882-2-linmag7@gmail.com>
+ <4209b9816551367f8e5670cc5a08e139f0f2c215.camel@physik.fu-berlin.de>
+In-Reply-To: <4209b9816551367f8e5670cc5a08e139f0f2c215.camel@physik.fu-berlin.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 7 Apr 2025 10:06:03 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWLVw8aUY8aCowgOz+puxjrDqcbUXUAoVXGi8=FpTHwrA@mail.gmail.com>
+X-Gm-Features: ATxdqUEtUaFZruSQ19joR0gbmVyVokHgxasQdxoPHK2-UPmtdbKL5noyYxpgMcc
+Message-ID: <CAMuHMdWLVw8aUY8aCowgOz+puxjrDqcbUXUAoVXGi8=FpTHwrA@mail.gmail.com>
+Subject: Re: [PATCH v2 1/1] mm: pgtable: fix pte_swp_exclusive
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Magnus Lindholm <linmag7@gmail.com>, richard.henderson@linaro.org, mattst88@gmail.com, 
+	ink@unseen.parts, kees@kernel.org, arnd@arndb.de, 
+	linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, chris@zankel.net, 
+	dinguyen@kernel.org, jcmvbkbc@gmail.com, linux-arm-kernel@lists.infradead.org, 
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, 
+	loongarch@lists.linux.dev, monstr@monstr.eu, sparclinux@vger.kernel.org, 
+	x86@kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-The pull request you sent on Sun, 06 Apr 2025 10:22:42 +0200:
+Hi Adrian,
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.15-tag1
+On Sat, 5 Apr 2025 at 19:22, John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On Tue, 2025-02-18 at 18:55 +0100, Magnus Lindholm wrote:
+> > Make pte_swp_exclusive return bool instead of int. This will better reflect
+> > how pte_swp_exclusive is actually used in the code. This fixes swap/swapoff
+> > problems on Alpha due pte_swp_exclusive not returning correct values when
+> > _PAGE_SWP_EXCLUSIVE bit resides in upper 32-bits of PTE (like on alpha).
+>
+> Minor nitpick:
+>
+> "when _PAGE_SWP_EXCLUSIVE" => "when the _PAGE_SWP_EXCLUSIVE"
+>
+> >
+> > Signed-off-by: Magnus Lindholm <linmag7@gmail.com>
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/1f80fbac0ba7d10218b0902c3c51460617cc7cf8
+> > --- a/arch/alpha/include/asm/pgtable.h
+> > +++ b/arch/alpha/include/asm/pgtable.h
+> > @@ -334,7 +334,7 @@ extern inline pte_t mk_swap_pte(unsigned long type, unsigned long offset)
+> >  #define __pte_to_swp_entry(pte)      ((swp_entry_t) { pte_val(pte) })
+> >  #define __swp_entry_to_pte(x)        ((pte_t) { (x).val })
+> >
+> > -static inline int pte_swp_exclusive(pte_t pte)
+> > +static inline bool pte_swp_exclusive(pte_t pte)
+> >  {
+> >       return pte_val(pte) & _PAGE_SWP_EXCLUSIVE;
+> >  }
 
-Thank you!
+> > --- a/arch/xtensa/include/asm/pgtable.h
+> > +++ b/arch/xtensa/include/asm/pgtable.h
+> > @@ -355,7 +355,7 @@ ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr, pte_t *ptep)
+> >  #define __pte_to_swp_entry(pte)      ((swp_entry_t) { pte_val(pte) })
+> >  #define __swp_entry_to_pte(x)        ((pte_t) { (x).val })
+> >
+> > -static inline int pte_swp_exclusive(pte_t pte)
+> > +static inline bool pte_swp_exclusive(pte_t pte)
+> >  {
+> >       return pte_val(pte) & _PAGE_SWP_EXCLUSIVE;
+> >  }
+>
+> I'm not so sure about this implicit cast from unsigned long to bool though.
+>
+> Is this verified to work correctly on all architectures? I wonder why this
+
+Should work fine: any non-zero value is mapped to one.
+
+> bug was not caught earlier on alpha on the other hand.
+
+On Alpha, "pte_val(pte) & _PAGE_SWP_EXCLUSIVE" is either
+_PAGE_SWP_EXCLUSIVE == 0x8000000000UL or zero.  Due to the return
+type being int, the return value was truncated, and the function always
+returned zero.
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
