@@ -1,208 +1,135 @@
-Received: from tiger.tulip.relay.mailchannels.net (tiger.tulip.relay.mailchannels.net [23.83.218.248])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B61C81BD9C1
-	for <linux-sh@vger.kernel.org>; Tue,  8 Apr 2025 13:36:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=23.83.218.248
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1744119418; cv=fail; b=HMipBr1vfXrfsj5fwzSwwtCCGDBTSzX/uCGE2yXix11J1UXu9RH/siN7IK99sgmFzjZyEMeSTiDC6+PppyMey6hruRHj3Ygorux02rXQmtsoxD4/xOfFB3qUWxlHO1HAsFz/BWhf9p/nl5Of98H5/WYY9rB2voYe/E/+ErniQwY=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1744119418; c=relaxed/simple;
-	bh=Pd2p2s3KZsXPHZrC5HksxhyHnlqTc3DuWhINh9xPYOA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=mGiswUq6r1/WirXzviBJPTgtO4MouvCW7o75Qpm7kn8Lc0CW2GZOgETabjBRM+HB1DVyMOWId9uboFZVZpzdP8byfIX2vUA9I1O6K3T4ainhXKh7ngwXxDML+pBcSU4PCHM9EMOjeLHdAJG9h6sTyhJNT/YM7sVXr4C2T4J04Rg=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=XnKg8iel; arc=fail smtp.client-ip=23.83.218.248
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5DB0439AD6;
+	Tue,  8 Apr 2025 15:24:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1744125849; cv=none; b=UtxOvvELanBF2bQhbOHd1lVThq0qQ33WfZbU1vsmV2yD+B2abh7WSwAQHsC5Ao1D7n0wbatH1qsuYbHrYkTcw2L1V6vOBG4C2wjcb20PkKyNwCsVPRiZjpIseDnnQqieFJ9Zf+DKb/u7HGyOv/4gxMMttZhtS1VqWcioQZ1SHps=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1744125849; c=relaxed/simple;
+	bh=4l2udifujnuvM/3Eti8piApI5uKF7ue1PGu2hSHMYUU=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=rEHzkYGgbm361I0MsXgFiADEVwpVSdARedkfl54BKnp6ohTKAPpV/N1wmC38nRf60NABVO6IeHI0IYGPjAqEmNKzdjUgN1QrXfOnyFs99iUYmkWpbGcE+4PJFfciHGzuQ5gcFScCIOMTo1wPQWAjKLFT06zBn/fcu62VjIzPxrE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=AQpIIuKB; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="XnKg8iel"
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 2182F7833CE;
-	Tue,  8 Apr 2025 12:59:32 +0000 (UTC)
-Received: from pdx1-sub0-mail-a294.dreamhost.com (100-99-49-173.trex-nlb.outbound.svc.cluster.local [100.99.49.173])
-	(Authenticated sender: dreamhost)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 8E2017826D5;
-	Tue,  8 Apr 2025 12:59:31 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1744117171; a=rsa-sha256;
-	cv=none;
-	b=u/nQM8dnr/uI4vMaSDMFDypOjlBS+JoCn8zoEAl5aYCVOuwYwpsqqNPOxDpD3LEmm+/DYP
-	LBM8pXXlEbt4e9K15lI59A70Y5yi2MN/dO6yTNR0aOIEbrhk/sI0V61/tV1HKeqcX0bdRy
-	j1xkisr3hwhzoPPAFwz7NedMAfNlXOyEMklEilE4sZNbkJk0yVC9lgm0fV02RLT6mxUMV/
-	3yGpaDGB9wvDvZ9MkjDoWAnyROg+iBtsm3aWY5BPNHtGsZoGczyQRp8Y56+wt2m7k5djst
-	ASg+1fl7VJiKDEQdlNKTfVsDEhuON9qEWkMmsXbDyjmjFC+SGefdiPC/mvAbAA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1744117171;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:dkim-signature;
-	bh=RgMHLT5iaFY5Y5YpP6usWzNKmRfR2dPLLli4hBf6MKI=;
-	b=GF5dHC9TOLefn/8aDp9ZPjgJ7I/yMlaKWYLbSNBWW7YZj/NV7mPP93lZ1KEw45/0wLymF2
-	c9DVEkKvOnhyNFXEqaGTh3/Cftiqvg8BzxOOgk4ZwMyOlHZ1YZ5ObYGEZVP/SHHgWxPsKz
-	dCIDxE/ACRHWImpHwZEI/KOxIk4AdTFIb/O/Huc+5bKu3FLqkoG3ZrCydFj1cSEnvuv6Bi
-	HVfBO05RaDSYfUFmOxsjjc6GDQmKw6ZyWOrSZazPUxy8ON5qkECFcBuL9Qrngic/wXuiF+
-	dmq5gwMbnCZ7MUZzmWk8i2VKEgHzxRqbxEwFCCOBcq4uuQNvuihJ5V4cO4IyPw==
-ARC-Authentication-Results: i=1;
-	rspamd-6c88b8f79f-pfxks;
-	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
-X-MailChannels-Auth-Id: dreamhost
-X-Chemical-Wide-Eyed: 0aa28b4e5ae35a31_1744117171813_2162674698
-X-MC-Loop-Signature: 1744117171813:618128258
-X-MC-Ingress-Time: 1744117171812
-Received: from pdx1-sub0-mail-a294.dreamhost.com (pop.dreamhost.com
- [64.90.62.162])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.99.49.173 (trex/7.0.3);
-	Tue, 08 Apr 2025 12:59:31 +0000
-Received: from [172.16.32.88] (unknown [198.232.126.202])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	(Authenticated sender: rob@landley.net)
-	by pdx1-sub0-mail-a294.dreamhost.com (Postfix) with ESMTPSA id 4ZX5kq13Cgz64;
-	Tue,  8 Apr 2025 05:59:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
-	s=dreamhost; t=1744117171;
-	bh=zphxswrsItVhTF+1yhd204dpl4oL62e9HEnVc6q01dg=;
-	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
-	b=XnKg8ielMPIVpH/RI7hUa2WLaXDpTE03BuesEEzpBlY1MfFM4DuyXW9+mmlAgY0xU
-	 E/cA8F9rzaAmt/6PKgqgBYX5OSoLj0kg30L/UjAaFMDc08RGuoasrO0IXfl9b9sAaW
-	 Q1jAmTEMXNV1Ckzy6kqZ8ih7Cga6cltdvPvovTCknCZmHxLEE3aqEgwgZYOzbNS22r
-	 WmbTbooXUDUEzZEkBSlVE6eTwCqkoklfA0od2DKAKWiu86P5TSal82vORHyFqBF8Xc
-	 P5vQDW9pvnp7Lkx7AoF4x19gXRtMpbTEy2sWjoSJ+C3aQO10yFuDgid5SUdI1Kqcjz
-	 oStY8F0lQvOwg==
-Message-ID: <3699fd5c-a856-4f9f-a4c6-edc9f76e6cf8@landley.net>
-Date: Tue, 8 Apr 2025 07:59:30 -0500
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="AQpIIuKB"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=KhCrvQERtP5/OPC9o3hPqwIWF9s2Dzuwa3WW9MlKEKI=; t=1744125845; x=1744730645; 
+	b=AQpIIuKBs38pFLpSeFsFS3I5otBP9U/p9wISOaApj5YpLe7Oc+VjTZ6U8hlpDn05TrScNB2o1CJ
+	nQTW7YyYyX8PctabMQOF4WIS7ZyKub6dWC4NIW/0IcpC6kE40SycqSVFZy8fJte88kIieU52d8c5y
+	triZnghclOUtX2m+S5lvHZKuxN+3LrZT5LJw9zvQ+JJMc62aAVQFjBLM1PIyjg6nZSqvsTzJSA4Y8
+	SkIL1grbtVTdZvlSmVmZv1LeUAkl+Wr9tMfCGrl115GQferFc4QS95iovjtSt6RjVQHLg3ChXOOJy
+	kOVJy12knM3NInvmWf2xLaKXMDwU6Zv4l66Q==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1u2Anu-00000002Xv0-1yiO; Tue, 08 Apr 2025 17:23:58 +0200
+Received: from p5dc5515a.dip0.t-ipconnect.de ([93.197.81.90] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1u2Anu-00000003RUc-0uRZ; Tue, 08 Apr 2025 17:23:58 +0200
+Message-ID: <afec7233266c6c1fd1e70ac615ff129d9dc3f710.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/2] J2 Turtle Board fixes
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Rob Landley <rob@landley.net>, Artur Rojek <contact@artur-rojek.eu>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ Daniel Lezcano	 <daniel.lezcano@linaro.org>, Thomas Gleixner
+ <tglx@linutronix.de>, Uros Bizjak	 <ubizjak@gmail.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, "D . Jeff Dionne"
+	 <jeff@coresemi.io>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Tue, 08 Apr 2025 17:23:57 +0200
+In-Reply-To: <9cf43bbe-898f-4b29-bd85-04f5320bce77@landley.net>
+References: <20250216175545.35079-1-contact@artur-rojek.eu>
+	 <f574808500e2c5fb733c1e5d9b4d17c2884d1b9f.camel@physik.fu-berlin.de>
+	 <1551804b-fc78-4a3f-add8-af693f340a01@landley.net>
+	 <48881e2d8efa9d7df8156f5f81cd662c2286e597.camel@physik.fu-berlin.de>
+	 <9cf43bbe-898f-4b29-bd85-04f5320bce77@landley.net>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.0 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Did I ever post my sh fdpic-on-mmu patch here?
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org
-References: <11c0bf9e-0918-4739-8245-41a8bfa2bf1a@landley.net>
- <034795475781c8ccd10b553ebe8517eaf1f01bbc.camel@physik.fu-berlin.de>
-Content-Language: en-US
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <034795475781c8ccd10b553ebe8517eaf1f01bbc.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On 4/1/25 15:22, John Paul Adrian Glaubitz wrote:
-> Hi Rob,
-> 
-> On Tue, 2025-04-01 at 11:21 -0500, Rob Landley wrote:
->> I've been using
->> https://landley.net/bin/mkroot/0.8.11/linux-patches/0002-sh4-fdpic.patch
->> to test my sh2eb fdpic nommu userspace under vanilla qemu-system-sh4eb
->> with an sh4eb mmu kernel for a year now (since
->> https://landley.net/notes-2024.html#28-03-2024) but don't remember if I
->> ever sent it here?
-...
-> Could you post the patch with git-send-email so that it's inline and can be
-> reviewed on the list?
+Hi Rob,
 
-Dreamhost's outgoing smtp server requires ssl and a login, so probably 
-not easily? But let's see...
+On Fri, 2025-02-28 at 16:19 -0600, Rob Landley wrote:
+> > > Which was fixed a year ago, which is why I told you to use the new
+> > > toolchain with a current musl-libc:
+> > >=20
+> > > http://lists.landley.net/pipermail/toybox-landley.net/2024-February/0=
+30040.html
+> > >=20
+> > > Unless you're hitting the OTHER issue I fixed last year...
+> > >=20
+> > > https://github.com/landley/toybox/commit/0b2d5c2bb3f1
+> >=20
+> > I just downloaded the latest toolchain from:
+> >=20
+> > https://landley.net/bin/toolchains/latest/sh2eb-linux-muslfdpic-cross.t=
+ar.xz
+> >=20
+> > and the issue still persists.
+> >=20
+> > Am I missing anything?
+>=20
+> The march 2024 rebuild was in response to that Feb 2024 bugfix, so it=20
+> _should_ have the fix? (I'm waiting for another musl release to rebuild=
+=20
+> them again...)
+>=20
+> I just downloaded the toolchain currently at that URL and built mkroot=
+=20
+> and it worked for me:
+>=20
+> Run /init as init process
+> sntp: time.google.com:123: Try again
+> Type exit when done.
+> $ cat /proc/version
+> Linux version 6.14.0-rc3 (landley@driftwood) (sh2eb-linux-muslfdpic-cc=
+=20
+> (GCC) 11.2.0, GNU ld (GNU Binutils) 2.33.1) #1 SMP Fri Feb 28 15:47:36=
+=20
+> CST 2025
+>=20
+> And the failure _without_ the fix was deterministic rather than=20
+> intermittent, so...
+>=20
+> Keep in mind the init script has a 3 second timeout trying to call sntp=
+=20
+> to set the clock, which will fail if the ethernet isn't connected (or no=
+=20
+> driver, or no internet...)
 
-$ man git-send-email
-No manual entry for git-send-email
-$ git help send-email
-No manual entry for gitsend-email
-$ git send-email
-git: 'send-email' is not a git command. See 'git --help'.
-$ git-send-email
-bash: git-send-email: command not found
+I just gave it another try and it still hangs for me at:
 
-Oh good grief, here:
+	Run /init as init process
 
-From: Rob Landley <rob@landley.net>
+with the latest toolchain, toybox and kernel (v6.15-rc-1).
 
-Allow CONFIG_BINFMT_ELF_FDPIC loader to build on sh4 with mmu, same as arm.
+FWIW, I did not connect an ethernet cable.
 
---
+Adrian
 
-  arch/sh/kernel/setup.c |   25 +++++++++++++++++++++++++
-  fs/Kconfig.binfmt      |    2 +-
-  2 files changed, 26 insertions(+), 1 deletion(-)
-
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index d3175f09b3aa..effda8b21370 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -404,3 +404,28 @@ void __init arch_cpu_finalize_init(void)
-  #endif
-  	*p = '\0';
-  }
-+
-+#if defined(CONFIG_MMU) && defined(CONFIG_BINFMT_ELF_FDPIC)
-+
-+#include <linux/personality.h>
-+#include <linux/elf-fdpic.h>
-+
-+void elf_fdpic_arch_lay_out_mm(struct elf_fdpic_params *exec_params,
-+                               struct elf_fdpic_params *interp_params,
-+                               unsigned long *start_stack,
-+                               unsigned long *start_brk)
-+{
-+	set_personality((current->personality & ~PER_MASK) | PER_LINUX);
-+
-+        exec_params->load_addr = 0x8000;
-+        interp_params->load_addr = ELF_ET_DYN_BASE;
-+        *start_stack = TASK_SIZE - SZ_16M;
-+
-+        if ((exec_params->flags & ELF_FDPIC_FLAG_ARRANGEMENT) == 
-ELF_FDPIC_FLAG_INDEPENDENT) {
-+                exec_params->flags &= ~ELF_FDPIC_FLAG_ARRANGEMENT;
-+                exec_params->flags |= ELF_FDPIC_FLAG_CONSTDISP;
-+        }
-+}
-+
-+#endif
-+
-diff --git a/fs/Kconfig.binfmt b/fs/Kconfig.binfmt
-index f5693164ca9a..ba8c5fc81da4 100644
---- a/fs/Kconfig.binfmt
-+++ b/fs/Kconfig.binfmt
-@@ -58,7 +58,7 @@ config ARCH_USE_GNU_PROPERTY
-  config BINFMT_ELF_FDPIC
-  	bool "Kernel support for FDPIC ELF binaries"
-  	default y if !BINFMT_ELF
--	depends on ARM || ((M68K || RISCV || SUPERH || XTENSA) && !MMU)
-+	depends on ARM || SUPERH || ((M68K || RISCV || XTENSA) && !MMU)
-  	select ELFCORE
-  	help
-  	  ELF FDPIC binaries are based on ELF, but allow the individual load
-
-> This makes it easier for review and pick up with the
-> b4 utility
-
-https://landley.net/notes-2024.html#09-04-2024
-
-> and it's easily accessible though patchwork.
-
-The above is "xclip -sel c < file.patch" which I then pasted "as 
-quotation" into thunderbird and hit delete twice at the start of each 
-line to take the "> " off but it's still in the magic "blue text because 
-quotation" state that _should_ prevent line wrapping? (It does for the 
-UI, I _think_ that carries through to sending? No of course disabling 
-HTML email doesn't stop the compose window from maintaining unwanted 
-markup...)
-
-If that doesn't work, I have to track down a version of the no-wordwrap 
-plugin that works with current thunderbird. (The one I was using went 
-away in plugin api version skew du jour during the distro upgrade that 
-might let me back onto the python version treadmill b4 enforces.)
-
-> Thanks,
-> Adrian
-
-Rob
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
