@@ -1,118 +1,191 @@
-Received: from pegase1.c-s.fr (pegase1.c-s.fr [93.17.236.30])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id E623726158B;
-	Tue,  8 Apr 2025 07:20:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=93.17.236.30
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF84F1E4B2
+	for <linux-sh@vger.kernel.org>; Tue,  8 Apr 2025 13:10:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1744096838; cv=none; b=pr4U1pln6V8f5ZnM+8AnVDA7A832OYJaX5hdUCKzFfi2csSrhJlfii47BYqo7g9ltM1+r1jMgS1f3fOWUZC+m/xQ71G24ytIOLLUP0A1JpIhr7pYgyu/uQpFagfqLO6k7CRTNoit1AooW/mScwlK1As7f1ZtuCd0TXKk9FSlMNY=
+	t=1744117825; cv=none; b=j6/uYuPiQS+ZtgDrJuAb5yz2fgX5D1yPz1Hgo5ryOScWEVKqA31XZS081IA2I+PfkXeDQnc1BtPTUtdqXUnbGFBF9yT91ela4gMqoQBt9MZQaBlEXg+TBlg5e0y+q1UXVx+qYbU39b2ljU0YUZk6HmHu62JppTZPaDr0fgKapco=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1744096838; c=relaxed/simple;
-	bh=leAZBUvTDieNUCTCUQ6Z093axNVZ+MVhp4DKPjyWQPA=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=Q43beue9AVbejRT1Xp7biP/ZfZsIpDEVWoTOrkB6MIGhTraCCk64yyo5fQisocNpjPjyJbv3OzUjzd5pfjeB519RWpeXKMEN5v0fG9aWzPkZMhVrNMNC2jPHEiCpJxwNAEG9lfnfRl0J2x/HpGL0bQePQEcNZQOBespijRndrEY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu; spf=pass smtp.mailfrom=csgroup.eu; arc=none smtp.client-ip=93.17.236.30
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=csgroup.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=csgroup.eu
-Received: from localhost (mailhub3.si.c-s.fr [192.168.12.233])
-	by localhost (Postfix) with ESMTP id 4ZWw9N4Zhgz9vkq;
-	Tue,  8 Apr 2025 07:48:24 +0200 (CEST)
-X-Virus-Scanned: amavisd-new at c-s.fr
-Received: from pegase1.c-s.fr ([192.168.12.234])
-	by localhost (pegase1.c-s.fr [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id N6upf-zRu5gv; Tue,  8 Apr 2025 07:48:24 +0200 (CEST)
-Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
-	by pegase1.c-s.fr (Postfix) with ESMTP id 4ZWw9N26zXz9vkm;
-	Tue,  8 Apr 2025 07:48:24 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-	by messagerie.si.c-s.fr (Postfix) with ESMTP id 320D88B768;
-	Tue,  8 Apr 2025 07:48:24 +0200 (CEST)
-X-Virus-Scanned: amavisd-new at c-s.fr
-Received: from messagerie.si.c-s.fr ([127.0.0.1])
-	by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
-	with ESMTP id NWUepSYaoFfZ; Tue,  8 Apr 2025 07:48:24 +0200 (CEST)
-Received: from [192.168.235.99] (unknown [192.168.235.99])
-	by messagerie.si.c-s.fr (Postfix) with ESMTP id DC9078B767;
-	Tue,  8 Apr 2025 07:48:21 +0200 (CEST)
-Message-ID: <ff31c2ff-55be-452e-b94a-6a84c4583258@csgroup.eu>
-Date: Tue, 8 Apr 2025 07:48:22 +0200
+	s=arc-20240116; t=1744117825; c=relaxed/simple;
+	bh=qB6d6QkSryDloxaWdVux4/ao5/NuNn5NtovzT1k8bRM=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=L7eMuVmNwOUsCqdQMWPKDDSRawJD+iRUoWDwTW4izU0yDHN91z7Jt5+GE8rHWRjoCifNVwBZKa73ZkPsoxTyAR0mABHznNy2WuWVPv5eiGVsbMolaztMfkZimwCWVf8RtSRWWrYmAjU53AJMmPHMEziEG78YVeQJSBQlbsqqPnc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=kZOfpiOs; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="kZOfpiOs"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=4Tnuv1Eg39kdeS2vh8rfuM4F/Oaj1zrr3alU5FZMpSU=; t=1744117821; x=1744722621; 
+	b=kZOfpiOs0FQaLefx9KcNnCXSwuY9LK3Bdf4k6pKSkM8QEgIZqTXWd2DG5ft+XAIhgkGC1BA99pe
+	GPc/fJ5TZ3zKmLdfch4zfIEZTGqnFOWEi6uw5IonDjHJUCul8+/o2VJ2gT5PdjMZqvchiI6EUmJbx
+	llt0aR9+TLdXZWYQsirPPATDKNxwwCJ62V9ESAKU5oaeOwjK/TiwI0qCWG5LprWk/1MVmYLsgMQwI
+	svz7olna49Y/9EEbfXA1qAAjqHQ1zAdzqeB7BMyWIllW4NqtIETYRz2PhuJoyI6q6rzZhrUWNxjmT
+	N2Y3KhKUjik9B8iduQXfw/Juc9w2GlZ5dOJA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1u28iT-00000001c4O-3nZ0; Tue, 08 Apr 2025 15:10:13 +0200
+Received: from p5dc5515a.dip0.t-ipconnect.de ([93.197.81.90] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1u28iT-00000002uE0-3477; Tue, 08 Apr 2025 15:10:13 +0200
+Message-ID: <0fa5c6c87fd38d71fcd4bee24affa3c57ed180c1.camel@physik.fu-berlin.de>
+Subject: Re: Did I ever post my sh fdpic-on-mmu patch here?
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Rob Landley <rob@landley.net>
+Cc: linux-sh@vger.kernel.org
+Date: Tue, 08 Apr 2025 15:10:13 +0200
+In-Reply-To: <3699fd5c-a856-4f9f-a4c6-edc9f76e6cf8@landley.net>
+References: <11c0bf9e-0918-4739-8245-41a8bfa2bf1a@landley.net>
+	 <034795475781c8ccd10b553ebe8517eaf1f01bbc.camel@physik.fu-berlin.de>
+	 <3699fd5c-a856-4f9f-a4c6-edc9f76e6cf8@landley.net>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.0 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 09/13] arch, mm: set max_mapnr when allocating memory
- map for FLATMEM
-From: Christophe Leroy <christophe.leroy@csgroup.eu>
-To: Mike Rapoport <rppt@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Alexander Gordeev <agordeev@linux.ibm.com>,
- Andreas Larsson <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>,
- Ard Biesheuvel <ardb@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
- Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
- Catalin Marinas <catalin.marinas@arm.com>,
- Dave Hansen <dave.hansen@linux.intel.com>,
- "David S. Miller" <davem@davemloft.net>, Dinh Nguyen <dinguyen@kernel.org>,
- Geert Uytterhoeven <geert@linux-m68k.org>,
- Gerald Schaefer <gerald.schaefer@linux.ibm.com>, Guo Ren
- <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
- Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
- Ingo Molnar <mingo@redhat.com>, Jiaxun Yang <jiaxun.yang@flygoat.com>,
- Johannes Berg <johannes@sipsolutions.net>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Madhavan Srinivasan <maddy@linux.ibm.com>, Mark Brown <broonie@kernel.org>,
- Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
- Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>,
- Palmer Dabbelt <palmer@dabbelt.com>, Peter Zijlstra <peterz@infradead.org>,
- Richard Weinberger <richard@nod.at>, Russell King <linux@armlinux.org.uk>,
- Stafford Horne <shorne@gmail.com>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>,
- Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
- linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org,
- linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
- loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
- linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
- linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-um@lists.infradead.org, linux-arch@vger.kernel.org,
- linux-mm@kvack.org, x86@kernel.org
-References: <20250313135003.836600-1-rppt@kernel.org>
- <20250313135003.836600-10-rppt@kernel.org>
- <4b9627f2-65ff-4baf-931f-4e23b5732e6b@csgroup.eu>
-Content-Language: fr-FR
-In-Reply-To: <4b9627f2-65ff-4baf-931f-4e23b5732e6b@csgroup.eu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Hi Mike,
+Hi Rob,
 
-Le 14/03/2025 à 10:25, Christophe Leroy a écrit :
-> 
-> 
-> Le 13/03/2025 à 14:49, Mike Rapoport a écrit :
->> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
->>
->> max_mapnr is essentially the size of the memory map for systems that use
->> FLATMEM. There is no reason to calculate it in each and every 
->> architecture
->> when it's anyway calculated in alloc_node_mem_map().
->>
->> Drop setting of max_mapnr from architecture code and set it once in
->> alloc_node_mem_map().
-> 
-> As far as I can see alloc_node_mem_map() is called quite late.
-> 
-> I fear that it will regress commit daa9ada2093e ("powerpc/mm: Fix boot 
-> crash with FLATMEM")
-> 
-> Can you check ?
+On Tue, 2025-04-08 at 07:59 -0500, Rob Landley wrote:
+> > Could you post the patch with git-send-email so that it's inline and ca=
+n be
+> > reviewed on the list?
+>=20
+> Dreamhost's outgoing smtp server requires ssl and a login, so probably=
+=20
+> not easily? But let's see...
+>=20
+> $ man git-send-email
+> No manual entry for git-send-email
+> $ git help send-email
+> No manual entry for gitsend-email
+> $ git send-email
+> git: 'send-email' is not a git command. See 'git --help'.
+> $ git-send-email
+> bash: git-send-email: command not found
 
-I see this patch is now merged into mainline (v6.15-rc1). Have you been 
-able to check and/or analyse whether it doesn't regress the fix in 
-commit daa9ada2093e ("powerpc/mm: Fix boot crash with FLATMEM") ?
+On Ubuntu/Debian, Fedore and openSUSE, you need to install the package
+git-email for git send-email to work.
 
-Thanks
-Christophe
+To set it up and send a kernel patch with, I recommend this guide:
 
+https://nickdesaulniers.github.io/blog/2017/05/16/submitting-your-first-pat=
+ch-to-the-linux-kernel-and-responding-to-feedback/
+
+> Oh good grief, here:
+>=20
+> From: Rob Landley <rob@landley.net>
+>=20
+> Allow CONFIG_BINFMT_ELF_FDPIC loader to build on sh4 with mmu, same as ar=
+m.
+>=20
+> --
+>=20
+>   arch/sh/kernel/setup.c |   25 +++++++++++++++++++++++++
+>   fs/Kconfig.binfmt      |    2 +-
+>   2 files changed, 26 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+> index d3175f09b3aa..effda8b21370 100644
+> --- a/arch/sh/kernel/setup.c
+> +++ b/arch/sh/kernel/setup.c
+> @@ -404,3 +404,28 @@ void __init arch_cpu_finalize_init(void)
+>   #endif
+>   	*p =3D '\0';
+>   }
+> +
+> +#if defined(CONFIG_MMU) && defined(CONFIG_BINFMT_ELF_FDPIC)
+> +
+> +#include <linux/personality.h>
+> +#include <linux/elf-fdpic.h>
+> +
+> +void elf_fdpic_arch_lay_out_mm(struct elf_fdpic_params *exec_params,
+> +                               struct elf_fdpic_params *interp_params,
+> +                               unsigned long *start_stack,
+> +                               unsigned long *start_brk)
+> +{
+> +	set_personality((current->personality & ~PER_MASK) | PER_LINUX);
+> +
+> +        exec_params->load_addr =3D 0x8000;
+> +        interp_params->load_addr =3D ELF_ET_DYN_BASE;
+> +        *start_stack =3D TASK_SIZE - SZ_16M;
+> +
+> +        if ((exec_params->flags & ELF_FDPIC_FLAG_ARRANGEMENT) =3D=3D=20
+> ELF_FDPIC_FLAG_INDEPENDENT) {
+> +                exec_params->flags &=3D ~ELF_FDPIC_FLAG_ARRANGEMENT;
+> +                exec_params->flags |=3D ELF_FDPIC_FLAG_CONSTDISP;
+> +        }
+> +}
+> +
+> +#endif
+> +
+> diff --git a/fs/Kconfig.binfmt b/fs/Kconfig.binfmt
+> index f5693164ca9a..ba8c5fc81da4 100644
+> --- a/fs/Kconfig.binfmt
+> +++ b/fs/Kconfig.binfmt
+> @@ -58,7 +58,7 @@ config ARCH_USE_GNU_PROPERTY
+>   config BINFMT_ELF_FDPIC
+>   	bool "Kernel support for FDPIC ELF binaries"
+>   	default y if !BINFMT_ELF
+> -	depends on ARM || ((M68K || RISCV || SUPERH || XTENSA) && !MMU)
+> +	depends on ARM || SUPERH || ((M68K || RISCV || XTENSA) && !MMU)
+>   	select ELFCORE
+>   	help
+>   	  ELF FDPIC binaries are based on ELF, but allow the individual load
+>=20
+> > This makes it easier for review and pick up with the
+> > b4 utility
+>=20
+> https://landley.net/notes-2024.html#09-04-2024
+>=20
+> > and it's easily accessible though patchwork.
+>=20
+> The above is "xclip -sel c < file.patch" which I then pasted "as=20
+> quotation" into thunderbird and hit delete twice at the start of each=20
+> line to take the "> " off but it's still in the magic "blue text because=
+=20
+> quotation" state that _should_ prevent line wrapping? (It does for the=
+=20
+> UI, I _think_ that carries through to sending? No of course disabling=20
+> HTML email doesn't stop the compose window from maintaining unwanted=20
+> markup...)
+>=20
+> If that doesn't work, I have to track down a version of the no-wordwrap=
+=20
+> plugin that works with current thunderbird. (The one I was using went=20
+> away in plugin api version skew du jour during the distro upgrade that=
+=20
+> might let me back onto the python version treadmill b4 enforces.)
+
+Please try to follow the guide above first and if that fails, we can still
+find a way. I just want to make sure the proper format is chosen so it goes
+through the right channels.
+
+If everything else fails, I can send the patch on your behalf while keeping
+your authorship.
+
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
