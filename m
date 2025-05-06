@@ -1,128 +1,234 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB16722D4C8;
-	Fri,  2 May 2025 11:26:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 893A327A457;
+	Tue,  6 May 2025 13:42:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=193.142.43.55
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1746185211; cv=none; b=ArB6NEpSnNg3ZO3WEfu062+fChqpANjya9myeDq8KCyVcOJHVepbl26vhyPqqugQhQkMxP9W1v6+eW/Dpl2g7e3Qc/LFn6jS5tT/gUggoMMBMivDEplHScSQ2DA3uFsrzbsBglX7pKo4iF7Fx297OGjgx8r6nGS7JAkQVPNbZjc=
+	t=1746538922; cv=none; b=Bn00Zo+MVOp58/hHjYKax14Z20wr7b4ZheCA4Z6bpqx2j8lKyH1XAY4sUpfJQ3qz/p6oeiRiAA2gaJ5KJa4+6YZGiV+lldxiz1azbKogjaAtEec4ooj6onW8GLSpQZce7aI26CjiuCy88gjva17OpBn4nN5HewHTX6EBfmRuWSE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1746185211; c=relaxed/simple;
-	bh=TVu53Z1WcqkvHK42PLg/ZYx2Pnqog5c/hPLqF1GlX+U=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=EC3CFMraICaDZc6e59c/O0hSsD1cY0oUlT7XNW37fVjEkIgbTZ1N5GzcNWrZi9v87U/HMZnXzy5NdYft+0I2ZqiM2HZP71oDznvO+9TmmBjlSYj3tsrmD9iW2R2UXmUam7+S+F/5a8y48i2SpFABBM0M/sw2eODEucip7tPp0x0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=ABCJeatZ; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1746538922; c=relaxed/simple;
+	bh=xid3ylr8PUedVja8ADfCHrXz8QvAkNFfRtSA6wAUKzs=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=BOWTKVe4n0LUdryLoHZH/aJfRi1sDEVCNP1qft31IJCAQDqm83zLGThbHDUMc8kpFvxSAGf5A/q+CFKuyM9iiiNzLhdmbXBSSf2PBiqlq4MOvs1X5nqZfszzi6jesuS76sYaXbCYt2eK2OfG0DFN3qGaz5srkngtoZLJn8CLe+U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de; spf=pass smtp.mailfrom=linutronix.de; dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=H+VsQc83; dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=A2WDNfDn; arc=none smtp.client-ip=193.142.43.55
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="ABCJeatZ"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=C5SCq8cDAQvOmVxRz+4lR3dSKFT+fPVPJ9EHwjtoThc=; t=1746185208; x=1746790008; 
-	b=ABCJeatZl7e+y/4tDIBDm7ZEfy067J7trF55bWiSXSQFkZzuMXpnf0ldAuG5pVuLsjmrvTBlFQv
-	S6AHE+EtZWeTJ17UPh8E+jAj7andxHPMldEhEkGwmu7XWPJOayQkd6DA0mAqpQ48Vaxsyhqv3NXJ4
-	9KoocFFuCj0unJZ6anrnGmGeIIw4zA2An0d/iTZMivfFZ8Tit1DivVxVdX5cWELZ1W4lXnm2HAoD6
-	bWUKl5LxieJcTFhP6MWjsGMyZDa9HIyILXRiCK2kdDvKDbosmhenRzIUcETlE190wFCYjTf5KwEDZ
-	8MhnpcQe0/mOKk+pOd2rcSQY3yzHQYFv0uGA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1uAoXW-00000003SY7-3hnL; Fri, 02 May 2025 13:26:46 +0200
-Received: from p5b13afe4.dip0.t-ipconnect.de ([91.19.175.228] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1uAoXW-000000004hl-2hzp; Fri, 02 May 2025 13:26:46 +0200
-Message-ID: <616fe930c9a38f3a0c4ac23f92287481834c9a1d.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: ecovec24: Make SPI mode explicit
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>, 	linux-sh@vger.kernel.org,
- linux-renesas-soc@vger.kernel.org
-Date: Fri, 02 May 2025 13:26:46 +0200
-In-Reply-To: <CAMuHMdVRU4LVKF-PMjWgnx+dyAUoyYkD3SFXjLSc=niZnkhUsQ@mail.gmail.com>
-References: 
-	<430f42c458dc8e514ae678099b298cd41a050fb9.1746184374.git.geert+renesas@glider.be>
-	 <c766ba851cde51b70c8516b921c5d1e2dc30c198.camel@physik.fu-berlin.de>
-	 <CAMuHMdVRU4LVKF-PMjWgnx+dyAUoyYkD3SFXjLSc=niZnkhUsQ@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.56.1 
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="H+VsQc83";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="A2WDNfDn"
+From: Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1746538918;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=6KIDdrTanUmKEwxmKjGlY7d/jG09aY8AhXQLqxXMqzQ=;
+	b=H+VsQc831BMBvRdCis3hR9IME8F22ohOOmKZluRXXeIChbYi1i570UHmhVD5rd7PsM0wkw
+	1HP7eA6z+5IOLUhZQhdmF7or5iTztS2QKJRbmEAgjwq+1Hky247NEhKEDwxezgoUgE8R63
+	V0qhDAjB+7b6J29c/AFLytdeXny2As20JkHKAF/cRWfC8kJjaTkOeduY468BYQE2K9Pe7t
+	RZn4xt/lidjhGxatyOKQrc3oS+XevZF44OnoNsT2EV+VMTLkWVspPyrnrP+fONNObWghO5
+	kqLvOAkiLKb35XcFpn3CDCCYGOIkDA8SOrbQ3Xkiok9AVLUm0v7enGUguU9+4Q==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1746538918;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=6KIDdrTanUmKEwxmKjGlY7d/jG09aY8AhXQLqxXMqzQ=;
+	b=A2WDNfDnfT0mD/DZk/nR0ud2qdiz1r7YzlYDJPAh4yEaDeywUZVRbpTk6UzDijgMvH2IBC
+	SeknVmXTWgr5wDBA==
+To: "Jiri Slaby (SUSE)" <jirislaby@kernel.org>
+Cc: maz@kernel.org, linux-kernel@vger.kernel.org, "Jiri Slaby (SUSE)"
+ <jirislaby@kernel.org>, Aaro Koskinen <aaro.koskinen@iki.fi>, Abhinav
+ Kumar <quic_abhinavk@quicinc.com>, Albert Ou <aou@eecs.berkeley.edu>,
+ Alexandre Belloni <alexandre.belloni@bootlin.com>, Alexandre Ghiti
+ <alex@ghiti.fr>, Alexandre Torgue <alexandre.torgue@foss.st.com>, Alex
+ Deucher <alexander.deucher@amd.com>, Alex Shi <alexs@kernel.org>, Alim
+ Akhtar <alim.akhtar@samsung.com>, Alvin =?utf-8?Q?=C5=A0ipraga?=
+ <alsi@bang-olufsen.dk>,
+ Alyssa Rosenzweig <alyssa@rosenzweig.io>, amd-gfx@lists.freedesktop.org,
+ Amit Kucheria <amitk@kernel.org>, Anatolij Gustschin <agust@denx.de>, Andi
+ Shyti <andi.shyti@kernel.org>, Andreas =?utf-8?Q?F=C3=A4rber?=
+ <afaerber@suse.de>, Andreas
+ Kemnade <andreas@kemnade.info>, Andrew Jeffery
+ <andrew@codeconstruct.com.au>, Andrew Lunn <andrew@lunn.ch>, Andy
+ Shevchenko <andy@kernel.org>, AngeloGioacchino Del Regno
+ <angelogioacchino.delregno@collabora.com>, Antoine Tenart
+ <atenart@kernel.org>, Anton Ivanov <anton.ivanov@cambridgegreys.com>, Anup
+ Patel <anup@brainfault.org>, Arnd Bergmann <arnd@arndb.de>,
+ asahi@lists.linux.dev, Bartosz Golaszewski <brgl@bgdev.pl>, Baruch Siach
+ <baruch@tkos.co.il>, Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+ Bharat Kumar Gogada <bharat.kumar.gogada@amd.com>, Bjorn Andersson
+ <andersson@kernel.org>, Bjorn Helgaas <bhelgaas@google.com>, Borislav
+ Petkov <bp@alien8.de>, Broadcom internal kernel review list
+ <bcm-kernel-feedback-list@broadcom.com>, Claudiu Beznea
+ <claudiu.beznea@tuxon.dev>, Corentin Chary <corentin.chary@gmail.com>,
+ Daire McNamara <daire.mcnamara@microchip.com>, Daniel Golle
+ <daniel@makrotopia.org>, Daniel Lezcano <daniel.lezcano@linaro.org>,
+ Daniel Mack <daniel@zonque.org>, Daniel Palmer <daniel@thingy.jp>, Dave
+ Hansen <dave.hansen@linux.intel.com>, David Airlie <airlied@gmail.com>,
+ "David S. Miller" <davem@davemloft.net>, DENG Qingfang <dqfext@gmail.com>,
+ Dinh Nguyen <dinguyen@kernel.org>, Dmitry Baryshkov
+ <dmitry.baryshkov@linaro.org>, Dongliang Mu <dzm91@hust.edu.cn>, Doug
+ Berger <opendmb@gmail.com>, dri-devel@lists.freedesktop.org, Eddie James
+ <eajames@linux.ibm.com>, Eric Dumazet <edumazet@google.com>, Fabio Estevam
+ <festevam@gmail.com>, Florian Fainelli <florian.fainelli@broadcom.com>,
+ Geoff Levand <geoff@infradead.org>, Greg Kroah-Hartman
+ <gregkh@linuxfoundation.org>, Gregory Clement
+ <gregory.clement@bootlin.com>, Guo Ren <guoren@kernel.org>, Hans de Goede
+ <hdegoede@redhat.com>, Haojian Zhuang <haojian.zhuang@gmail.com>, Haojian
+ Zhuang <haojian.zhuang@linaro.org>, Heiko Stuebner <heiko@sntech.de>,
+ Herve Codina <herve.codina@bootlin.com>, Hou Zhiqiang
+ <Zhiqiang.Hou@nxp.com>, "H. Peter Anvin" <hpa@zytor.com>, Huacai Chen
+ <chenhuacai@kernel.org>, Changhuang Liang
+ <changhuang.liang@starfivetech.com>, Chen-Yu Tsai <wens@csie.org>,
+ "Chester A. Unal" <chester.a.unal@arinc9.com>, Christian =?utf-8?Q?K?=
+ =?utf-8?Q?=C3=B6nig?=
+ <christian.koenig@amd.com>, Christophe Leroy
+ <christophe.leroy@csgroup.eu>, Chris Zankel <chris@zankel.net>, Ilpo
+ =?utf-8?Q?J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>, Imre Kaloz
+ <kaloz@openwrt.org>,
+ Ingo Molnar <mingo@redhat.com>, Jakub Kicinski <kuba@kernel.org>, James
+ Morse <james.morse@arm.com>, Janne Grunau <j@jannau.net>, Janusz
+ Krzysztofik <jmkrzyszt@gmail.com>, Jaroslav Kysela <perex@perex.cz>, Jassi
+ Brar <jassisinghbrar@gmail.com>, Jernej Skrabec
+ <jernej.skrabec@gmail.com>, Jerome Brunet <jbrunet@baylibre.com>, Jianjun
+ Wang <jianjun.wang@mediatek.com>, Jiawen Wu <jiawenwu@trustnetic.com>,
+ Jiaxun Yang <jiaxun.yang@flygoat.com>, Jim Quinlan <jim2101024@gmail.com>,
+ Jingoo Han <jingoohan1@gmail.com>, Joel Stanley <joel@jms.id.au>, Johannes
+ Berg <johannes@sipsolutions.net>, John Crispin <john@phrozen.org>, John
+ Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Jonas Bonn
+ <jonas@southpole.se>, Jonathan Cameron <jic23@kernel.org>, Jonathan Corbet
+ <corbet@lwn.net>, Jonathan Hunter <jonathanh@nvidia.com>, Jonathan
+ =?utf-8?Q?Neusch=C3=A4fer?= <j.neuschaefer@gmx.net>, Joyce Ooi
+ <joyce.ooi@intel.com>,
+ Karthikeyan Mitran <m.karthikeyan@mobiveil.co.in>, Keerthy
+ <j-keerthy@ti.com>, Kevin Hilman <khilman@baylibre.com>, Konrad Dybcio
+ <konradybcio@kernel.org>, Krzysztof Kozlowski <krzk@kernel.org>, Krzysztof
+ =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>, Kunihiko Hayashi
+ <hayashi.kunihiko@socionext.com>, Lakshmi Sowjanya D
+ <lakshmi.sowjanya.d@intel.com>, Lars-Peter Clausen <lars@metafoo.de>, Lee
+ Jones <lee@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Linus Walleij
+ <linus.walleij@linaro.org>, Linus Walleij <linusw@kernel.org>,
+ linux-amlogic@lists.infradead.org, linux-arm-kernel@lists.infradead.org,
+ linux-arm-msm@vger.kernel.org, linux-doc@vger.kernel.org,
+ linux-edac@vger.kernel.org, linux-gpio@vger.kernel.org,
+ linux-iio@vger.kernel.org, linux-i2c@vger.kernel.org,
+ linux-mediatek@lists.infradead.org, linux-mips@vger.kernel.org,
+ linux-omap@vger.kernel.org, linux-pci@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-remoteproc@vger.kernel.org,
+ linux-riscv@lists.infradead.org, linux-rpi-kernel@lists.infradead.org,
+ linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+ linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com,
+ linux-um@lists.infradead.org, linux-wireless@vger.kernel.org,
+ loongarch@lists.linux.dev, Lorenzo Pieralisi <lpieralisi@kernel.org>,
+ Ludovic Desroches <ludovic.desroches@microchip.com>, Lukasz Luba
+ <lukasz.luba@arm.com>, "Luke D. Jones" <luke@ljones.dev>, Madhavan
+ Srinivasan <maddy@linux.ibm.com>, Manivannan Sadhasivam
+ <manivannan.sadhasivam@linaro.org>, Marek =?utf-8?Q?Beh=C3=BAn?=
+ <kabel@kernel.org>, Marijn
+ Suijten <marijn.suijten@somainline.org>, Mark Brown <broonie@kernel.org>,
+ Mark-PK Tsai <mark-pk.tsai@mediatek.com>, Martin Blumenstingl
+ <martin.blumenstingl@googlemail.com>, Masami Hiramatsu
+ <mhiramat@kernel.org>, Mathieu Poirier <mathieu.poirier@linaro.org>,
+ Matthias Brugger <matthias.bgg@gmail.com>, Mauro Carvalho Chehab
+ <mchehab@kernel.org>, Max Filippov <jcmvbkbc@gmail.com>, Maxime Coquelin
+ <mcoquelin.stm32@gmail.com>, Mengyuan Lou <mengyuanlou@net-swift.com>,
+ Michael Buesch <m@bues.ch>, Michael Ellerman <mpe@ellerman.id.au>, Michal
+ Simek <michal.simek@amd.com>, Miodrag Dinic <miodrag.dinic@mips.com>,
+ Naveen N Rao <naveen@kernel.org>, Neil Armstrong
+ <neil.armstrong@linaro.org>, netdev@vger.kernel.org, Nicolas Ferre
+ <nicolas.ferre@microchip.com>, Nicolas Saenz Julienne <nsaenz@kernel.org>,
+ Nicholas Piggin <npiggin@gmail.com>, Nikhil Agarwal
+ <nikhil.agarwal@amd.com>, Nipun Gupta <nipun.gupta@amd.com>, Nishanth
+ Menon <nm@ti.com>, Pali =?utf-8?Q?Roh=C3=A1r?= <pali@kernel.org>, Palmer
+ Dabbelt
+ <palmer@dabbelt.com>, Paolo Abeni <pabeni@redhat.com>, Paul Cercueil
+ <paul@crapouillou.net>, Paul Walmsley <paul.walmsley@sifive.com>,
+ Pengutronix Kernel Team <kernel@pengutronix.de>, Peter Rosin
+ <peda@axentia.se>, Philipp Zabel <p.zabel@pengutronix.de>, Piotr
+ Wojtaszczyk <piotr.wojtaszczyk@timesys.com>,
+ platform-driver-x86@vger.kernel.org, Prasad Kumpatla
+ <quic_pkumpatl@quicinc.com>, Qiang Zhao <qiang.zhao@nxp.com>, Qin Jian
+ <qinjian@cqplus1.com>, "Rafael J. Wysocki" <rafael@kernel.org>, Randy
+ Dunlap <rdunlap@infradead.org>, Ray Jui <rjui@broadcom.com>, Rengarajan
+ Sundararajan <Rengarajan.S@microchip.com>, Richard Cochran
+ <richardcochran@gmail.com>, Richard Weinberger <richard@nod.at>, Rich
+ Felker <dalias@libc.org>, Rob Clark <robdclark@gmail.com>, Robert Jarzmik
+ <robert.jarzmik@free.fr>, Robert Richter <rric@kernel.org>, Rob Herring
+ <robh@kernel.org>, Roger Quadros <rogerq@kernel.org>, Russell King
+ <linux@armlinux.org.uk>, Ryan Chen <ryan_chen@aspeedtech.com>, Ryder Lee
+ <ryder.lee@mediatek.com>, Samuel Holland <samuel@sholland.org>, Santosh
+ Shilimkar <ssantosh@kernel.org>, Sascha Hauer <s.hauer@pengutronix.de>,
+ Scott Branden <sbranden@broadcom.com>, Scott Wood <oss@buserror.net>, Sean
+ Paul <sean@poorly.run>, Sean Wang <sean.wang@kernel.org>, Sean Wang
+ <sean.wang@mediatek.com>, Sebastian Hesselbarth
+ <sebastian.hesselbarth@gmail.com>, Sergio Paracuellos
+ <sergio.paracuellos@gmail.com>, Shawn Guo <shawnguo@kernel.org>, Shawn Lin
+ <shawn.lin@rock-chips.com>, Siddharth Vadapalli <s-vadapalli@ti.com>,
+ Simona Vetter <simona@ffwll.ch>, Stafford Horne <shorne@gmail.com>, Stefan
+ Kristiansson <stefan.kristiansson@saunalahti.fi>, Stephen Boyd
+ <sboyd@kernel.org>, Sven Peter <sven@svenpeter.dev>, Takashi Iwai
+ <tiwai@suse.com>, Talel Shenhar <talel@amazon.com>, Tero Kristo
+ <kristo@kernel.org>, Thangaraj Samynathan <Thangaraj.S@microchip.com>,
+ Thara Gopinath <thara.gopinath@gmail.com>, Thierry Reding
+ <thierry.reding@gmail.com>, Thomas Bogendoerfer
+ <tsbogend@alpha.franken.de>, Thomas Petazzoni
+ <thomas.petazzoni@bootlin.com>, Toan Le <toan@os.amperecomputing.com>,
+ Tony Lindgren <tony@atomide.com>, Tony Luck <tony.luck@intel.com>,
+ UNGLinuxDriver@microchip.com, Uwe =?utf-8?Q?Kleine-K=C3=B6nig?=
+ <ukleinek@kernel.org>,
+ Vignesh Raghavendra <vigneshr@ti.com>, Vineet Gupta <vgupta@kernel.org>,
+ Vladimir Oltean <olteanv@gmail.com>, Vladimir Zapolskiy <vz@mleia.com>,
+ WANG Xuerui <kernel@xen0n.name>, Woojung Huh <woojung.huh@microchip.com>,
+ x86@kernel.org, Yanteng Si <si.yanteng@linux.dev>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Zhang Rui <rui.zhang@intel.com>
+Subject: Re: [PATCH v2 00/57] irqdomain: Cleanups and Documentation
+In-Reply-To: <20250319092951.37667-1-jirislaby@kernel.org>
+References: <20250319092951.37667-1-jirislaby@kernel.org>
+Date: Tue, 06 May 2025 15:41:57 +0200
+Message-ID: <874ixxonyy.ffs@tglx>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain
 
-On Fri, 2025-05-02 at 13:19 +0200, Geert Uytterhoeven wrote:
-> Hi Adrian,
->=20
-> On Fri, 2 May 2025 at 13:18, John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
-> > On Fri, 2025-05-02 at 13:13 +0200, Geert Uytterhoeven wrote:
-> > > Commit cf9e4784f3bde3e4 ("spi: sh-msiof: Add slave mode support") add=
-ed
-> > > a new mode member to the sh_msiof_spi_info structure, but did not upd=
-ate
-> > > any board files.  Hence all users in board files rely on the default
-> > > being host mode.
-> > >=20
-> > > Make this unambiguous by configuring host mode explicitly.
-> > >=20
-> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > ---
-> > >  arch/sh/boards/mach-ecovec24/setup.c | 1 +
-> > >  1 file changed, 1 insertion(+)
-> > >=20
-> > > diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/ma=
-ch-ecovec24/setup.c
-> > > index 6f13557eecd6bb21..a641e26f8fdf7369 100644
-> > > --- a/arch/sh/boards/mach-ecovec24/setup.c
-> > > +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> > > @@ -825,6 +825,7 @@ static struct spi_board_info spi_bus[] =3D {
-> > >  /* MSIOF0 */
-> > >  static struct sh_msiof_spi_info msiof0_data =3D {
-> > >       .num_chipselect =3D 1,
-> > > +     .mode =3D MSIOF_SPI_HOST,
-> > >  };
-> > >=20
-> > >  static struct resource msiof0_resources[] =3D {
-> >=20
-> > Is MSIOF_SPI_HOST actually the correct identifier?
-> >=20
-> > I'm asking because the commit above lists only MISOF_SPI_MASTER and _SL=
-AVE:
-> >=20
-> > enum {
-> >         MSIOF_SPI_MASTER,
-> >         MSIOF_SPI_SLAVE,
-> > };
-> >=20
-> > Unless the identifiers were renamed a few years later to avoid politica=
-l issues.
->=20
-> They were indeed renamed in commit 1cb3ebc417fe6cc5 ("spi:
-> sh-msiof: switch to use modern name") in v6.6.
+On Wed, Mar 19 2025 at 10:28, Jiri Slaby wrote:
 
-OK, thanks. Might be an idea to mention that in the commit message.
+> Hi,
+>
+> tl;dr if patches are agreed upon, I ask subsys maintainers to take the
+> respective ones via their trees (as they are split per subsys), so that
+> the IRQ tree can take only the rest. That would minimize churn/conflicts
+> during merges.
 
-Otherwise the patch looks good to me.
+So. It's rc5 by now and I picked up everything which did not show up in
+next yet. As there are some patches in next, I delayed the removal of
+functions for the merge window so that we don't end up with merge
+dependencies.
 
-Adrian
+To reducde conflicts, I grabbed the irq branch from the PCI tree under
+the assumption that this branch is stable.
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+The series sits now in
+
+   git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git irq/cleanups
+
+and will be in next soon. If there are duplicates showing up in next,
+I'm going to remove them from my branch, so the branch is not for basing
+development on.
+
+@Jiri, I fixed up all your subject prefixes as
+
+  'irqdomain: subsys: Switch to foo()'
+
+does not make any sense at all. These subsystems have their regular
+prefixes and these changes do not justify made up irqdomain special
+prefixes at all.
+
+Thanks,
+
+        tglx
