@@ -1,288 +1,360 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB32025EFA0;
-	Mon, 12 May 2025 09:56:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 858FA294A11
+	for <linux-sh@vger.kernel.org>; Mon, 12 May 2025 13:19:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1747043783; cv=none; b=ighws9hBnn4+T36krcuA8Q8RKMwC1ut9qET56ZOy8Ke361AJl3FymeK+cVQdNi37+tselLZOZBL2WOCmBH7qLYHyMVjIt1gPb5kwgZKKdw6V1M16mbcaWRIouIhMBVqZ3sBt8p+nKIs4lYXDhw7n6NLnBEvkVPzS+CJdNUQrczY=
+	t=1747055965; cv=none; b=ZveODDhyJafXcQEn28NwcskQWRHgjni/Vw7UwJeCMQJBHXDxl1tyGOBe4ESkWdx6JO75dWeEXlz0JxN8eINigm1nDYbIGgl+zhOf7zvjNuWiLi7qhPE/3jCmGKE5Le1IMoULZagNXDxftFhsU55T69F5I+fx18oTbIZuuF7YEec=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1747043783; c=relaxed/simple;
-	bh=i+C4MquKCE5DzjebZIg1suA7nSkmpPf5qHNeApUsg1A=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=sOAB7g/ALFTR4u7FslLdb3p7+khLm2vxKDb7Gop/W/tZvgS7E2IjB68QzGUg2y2kCUn3KN3CPQ4AnDxUAGJws1wjnwIuizjgZTYCFGVxpXvpYfC/S3EfJbgDeas1zxzNi+rTWxLLInDmOw02yEdW+0rQ8QFNbH5cjXoUpdNwN/0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=qRopC9c+; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1747055965; c=relaxed/simple;
+	bh=DoJT2dz8txJo2HLysgqy6uqVMVeur99HqA28GNGz35o=;
+	h=From:Subject:Date:Message-Id:MIME-Version:To:Cc:Content-Type; b=G+UX1vYJ8Pq2q2mUBnB5ouVxmz0XlNG3rmtJde3u09UYsslGArSKWF+uj0vUzsFRKbwg37iMDBCFhn7jnJ1jdh0tJDrcxdM25MZFyH7DbWT0c4Q/Um2nY0Q84uX6KnuDEHsRHO9jbIqhvDZKmQWLcEX+7YOw14dj80vkuHzosdI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=faIl6RqO; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="qRopC9c+"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C20E1C4CEE7;
-	Mon, 12 May 2025 09:55:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1747043779;
-	bh=i+C4MquKCE5DzjebZIg1suA7nSkmpPf5qHNeApUsg1A=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=qRopC9c+wx/+YYC0sJ/UvJzWi+Nuq8Af/LOL6TTdw1ObAiA1N4EP+e6QolBr4MpT6
-	 p5ltChjlCbyDDYRz89R5OVuaZ83tbLw+pYcksx/XVXGNoBUri07jOIpHu8d097AHB/
-	 gSDUJRuD+w/qmayEwLfKcRkm+4e+sfpRcvHaPFTEPbrRTxGpnFsatWWUdcTBd7OQnA
-	 w+ym87xDkxssPWo79tPQu/rSntgc4PEKUjTQ4e3C6qaM9CVgjCp/lHxzZltc1AavRM
-	 /LPUSo4AklmCrtIuWgWZpLqR0YnBmCrfB22k4a1IjHg5OgJnYBulNV1QgQrtx5KTRE
-	 uIiF1y2I3VB1w==
-Message-ID: <a40c0dfc-b531-4cc0-80b2-5b972d9fb65c@kernel.org>
-Date: Mon, 12 May 2025 11:55:32 +0200
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="faIl6RqO"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1747055962;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=znSs0IWOkqtw8MwO3eoXgDf53PvMGgHP2+ODqAezjoE=;
+	b=faIl6RqOrvus5eSfQBcTcgoGIjofnUr2eu2ZTOt4jMbZhgVr8q4pHPzF44k+bIDRKwsWYE
+	FmCG225pSejpOwNLv77GA1wMQzizs7R2T9c43IUWiKgrQGMo79Lz8pQtIGh9jRBHwDNQoU
+	8vionBdfY9fLFpi/Z1KWQUJMPLRx/wI=
+Received: from mail-ej1-f71.google.com (mail-ej1-f71.google.com
+ [209.85.218.71]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-230-rFQU4ReNNmaX2YUYA2MR9A-1; Mon, 12 May 2025 09:19:20 -0400
+X-MC-Unique: rFQU4ReNNmaX2YUYA2MR9A-1
+X-Mimecast-MFC-AGG-ID: rFQU4ReNNmaX2YUYA2MR9A_1747055960
+Received: by mail-ej1-f71.google.com with SMTP id a640c23a62f3a-ad240e3f501so160999666b.1
+        for <linux-sh@vger.kernel.org>; Mon, 12 May 2025 06:19:20 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1747055955; x=1747660755;
+        h=cc:to:content-transfer-encoding:mime-version:message-id:date
+         :subject:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=znSs0IWOkqtw8MwO3eoXgDf53PvMGgHP2+ODqAezjoE=;
+        b=r/YwpDfpoGz6666zVPKiSwR3gFSc0ahZH4ud6zjXT7WyYFntY7DDkJ0utbX8oC0KQH
+         nkbW7r4mN1zFVZBGMaHctbwRKdUoGGJInlnBOMSynRGBs+ZO0Vz6XgURulF+Z/nxjuFx
+         /OtApoKrKaq+/rFU52HL0luAnlRlGdchVPdY+yQNzIJ1SZyM8rfEb2VGPNr8CiJR1vrz
+         iWEGFLbmsS0UCEG3pomDQ9ZkMZjf2th3ays3r4KQLkKax1FU1dEb1OI0njklLLV63zSG
+         tc3a3wY6UNekKktnULnsiiyjR6oeZOrgVFdgc//gnxlgfsla11G2nVh0OiHd5s75xnza
+         xMZw==
+X-Forwarded-Encrypted: i=1; AJvYcCWWX9Calsuvh7+RwrruVIC9tlDXy1J3ctQBMg/ZF0lqxPtBY/DaNzIcrXM3mpruMk7wvCS+YmkrmQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxLtCxEE3DN4yT7DF7PNGiQctQz9n6O84AE71YU0GZyP1KS0KDw
+	z7WD8aRX0hjnk2aZpbnDZzQwjTijVZTNzCx1v4HnMx6jwnoYjg1g0ZHJ2y8ZXyvbdxZO3tESK0Z
+	VJWQ7nv6vx4mlk8Ll84gSjMpcwHrM3d3Hyt1te/TtgU6JpyBC2Rp5hYE=
+X-Gm-Gg: ASbGncsq6ExdVJXcwr+vAxkiB15uTpfxgnvLVe8zYU6Bg9rEF+5EBTqKyZ+cdnVLAWI
+	ek3oMkuQqY4U6V3/YMCMKxGkS4YcFyytjoE+MTexe7KwlLtxoW7+JrBfAqhBki3rCLlhJzQ83XQ
+	uaUH5IGSqULA1+Rli/H5jgNGWzM5q14hkFFk9NG2ci0EtahsfdWUPys9czfn6kNLJXJAoe8KCEQ
+	QnF9awANBC1xdhIiX6c3lQ9+uDFULtnHhZOBJgNbkWITzK7bGI5aLaUaJIAo0GgylNc1ZuuRofT
+	NlTQqp2rLH/dGcOPCOPVNMvozEY=
+X-Received: by 2002:a17:907:3e1f:b0:ad2:4fa0:88d1 with SMTP id a640c23a62f3a-ad24fa08b96mr397881166b.9.1747055954457;
+        Mon, 12 May 2025 06:19:14 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IF2gaN4nId6A/kunm1rnCP/+7J7Yrf/475CQq5wTNUNFEpBtRjClSuGrdC8wxlG4kjN+bjbbw==
+X-Received: by 2002:a17:907:3e1f:b0:ad2:4fa0:88d1 with SMTP id a640c23a62f3a-ad24fa08b96mr397878666b.9.1747055953940;
+        Mon, 12 May 2025 06:19:13 -0700 (PDT)
+Received: from [127.0.0.1] (109-92-26-237.static.isp.telekom.rs. [109.92.26.237])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-ad2197bde09sm612328766b.125.2025.05.12.06.19.11
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 12 May 2025 06:19:13 -0700 (PDT)
+From: Andrey Albershteyn <aalbersh@redhat.com>
+X-Google-Original-From: Andrey Albershteyn <aalbersh@kernel.org>
+Subject: [PATCH v5 0/7] fs: introduce file_getattr and file_setattr
+ syscalls
+Date: Mon, 12 May 2025 15:18:53 +0200
+Message-Id: <20250512-xattrat-syscall-v5-0-a88b20e37aae@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 00/57] irqdomain: Cleanups and Documentation
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: maz@kernel.org, linux-kernel@vger.kernel.org,
- Aaro Koskinen <aaro.koskinen@iki.fi>,
- Abhinav Kumar <quic_abhinavk@quicinc.com>, Albert Ou
- <aou@eecs.berkeley.edu>, Alexandre Belloni <alexandre.belloni@bootlin.com>,
- Alexandre Ghiti <alex@ghiti.fr>,
- Alexandre Torgue <alexandre.torgue@foss.st.com>,
- Alex Deucher <alexander.deucher@amd.com>, Alex Shi <alexs@kernel.org>,
- Alim Akhtar <alim.akhtar@samsung.com>, =?UTF-8?Q?Alvin_=C5=A0ipraga?=
- <alsi@bang-olufsen.dk>, Alyssa Rosenzweig <alyssa@rosenzweig.io>,
- amd-gfx@lists.freedesktop.org, Amit Kucheria <amitk@kernel.org>,
- Anatolij Gustschin <agust@denx.de>, Andi Shyti <andi.shyti@kernel.org>,
- =?UTF-8?Q?Andreas_F=C3=A4rber?= <afaerber@suse.de>,
- Andreas Kemnade <andreas@kemnade.info>,
- Andrew Jeffery <andrew@codeconstruct.com.au>, Andrew Lunn <andrew@lunn.ch>,
- Andy Shevchenko <andy@kernel.org>,
- AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
- Antoine Tenart <atenart@kernel.org>,
- Anton Ivanov <anton.ivanov@cambridgegreys.com>,
- Anup Patel <anup@brainfault.org>, Arnd Bergmann <arnd@arndb.de>,
- asahi@lists.linux.dev, Bartosz Golaszewski <brgl@bgdev.pl>,
- Baruch Siach <baruch@tkos.co.il>,
- Benjamin Herrenschmidt <benh@kernel.crashing.org>,
- Bharat Kumar Gogada <bharat.kumar.gogada@amd.com>,
- Bjorn Andersson <andersson@kernel.org>, Bjorn Helgaas <bhelgaas@google.com>,
- Borislav Petkov <bp@alien8.de>,
- Broadcom internal kernel review list
- <bcm-kernel-feedback-list@broadcom.com>,
- Claudiu Beznea <claudiu.beznea@tuxon.dev>,
- Corentin Chary <corentin.chary@gmail.com>,
- Daire McNamara <daire.mcnamara@microchip.com>,
- Daniel Golle <daniel@makrotopia.org>,
- Daniel Lezcano <daniel.lezcano@linaro.org>, Daniel Mack <daniel@zonque.org>,
- Daniel Palmer <daniel@thingy.jp>, Dave Hansen <dave.hansen@linux.intel.com>,
- David Airlie <airlied@gmail.com>, "David S. Miller" <davem@davemloft.net>,
- DENG Qingfang <dqfext@gmail.com>, Dinh Nguyen <dinguyen@kernel.org>,
- Dmitry Baryshkov <dmitry.baryshkov@linaro.org>,
- Dongliang Mu <dzm91@hust.edu.cn>, Doug Berger <opendmb@gmail.com>,
- dri-devel@lists.freedesktop.org, Eddie James <eajames@linux.ibm.com>,
- Eric Dumazet <edumazet@google.com>, Fabio Estevam <festevam@gmail.com>,
- Florian Fainelli <florian.fainelli@broadcom.com>,
- Geoff Levand <geoff@infradead.org>,
- Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
- Gregory Clement <gregory.clement@bootlin.com>, Guo Ren <guoren@kernel.org>,
- Hans de Goede <hdegoede@redhat.com>,
- Haojian Zhuang <haojian.zhuang@gmail.com>,
- Haojian Zhuang <haojian.zhuang@linaro.org>, Heiko Stuebner
- <heiko@sntech.de>, Herve Codina <herve.codina@bootlin.com>,
- Hou Zhiqiang <Zhiqiang.Hou@nxp.com>, "H. Peter Anvin" <hpa@zytor.com>,
- Huacai Chen <chenhuacai@kernel.org>,
- Changhuang Liang <changhuang.liang@starfivetech.com>,
- Chen-Yu Tsai <wens@csie.org>, "Chester A. Unal" <chester.a.unal@arinc9.com>,
- =?UTF-8?Q?Christian_K=C3=B6nig?= <christian.koenig@amd.com>,
- Christophe Leroy <christophe.leroy@csgroup.eu>,
- Chris Zankel <chris@zankel.net>,
- =?UTF-8?Q?Ilpo_J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>,
- Imre Kaloz <kaloz@openwrt.org>, Ingo Molnar <mingo@redhat.com>,
- Jakub Kicinski <kuba@kernel.org>, James Morse <james.morse@arm.com>,
- Janne Grunau <j@jannau.net>, Janusz Krzysztofik <jmkrzyszt@gmail.com>,
- Jaroslav Kysela <perex@perex.cz>, Jassi Brar <jassisinghbrar@gmail.com>,
- Jernej Skrabec <jernej.skrabec@gmail.com>,
- Jerome Brunet <jbrunet@baylibre.com>,
- Jianjun Wang <jianjun.wang@mediatek.com>, Jiawen Wu
- <jiawenwu@trustnetic.com>, Jiaxun Yang <jiaxun.yang@flygoat.com>,
- Jim Quinlan <jim2101024@gmail.com>, Jingoo Han <jingoohan1@gmail.com>,
- Joel Stanley <joel@jms.id.au>, Johannes Berg <johannes@sipsolutions.net>,
- John Crispin <john@phrozen.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Jonas Bonn <jonas@southpole.se>, Jonathan Cameron <jic23@kernel.org>,
- Jonathan Corbet <corbet@lwn.net>, Jonathan Hunter <jonathanh@nvidia.com>,
- =?UTF-8?Q?Jonathan_Neusch=C3=A4fer?= <j.neuschaefer@gmx.net>,
- Joyce Ooi <joyce.ooi@intel.com>,
- Karthikeyan Mitran <m.karthikeyan@mobiveil.co.in>, Keerthy
- <j-keerthy@ti.com>, Kevin Hilman <khilman@baylibre.com>,
- Konrad Dybcio <konradybcio@kernel.org>, Krzysztof Kozlowski
- <krzk@kernel.org>, =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>,
- Kunihiko Hayashi <hayashi.kunihiko@socionext.com>,
- Lakshmi Sowjanya D <lakshmi.sowjanya.d@intel.com>,
- Lars-Peter Clausen <lars@metafoo.de>, Lee Jones <lee@kernel.org>,
- Liam Girdwood <lgirdwood@gmail.com>, Linus Walleij
- <linus.walleij@linaro.org>, Linus Walleij <linusw@kernel.org>,
- linux-amlogic@lists.infradead.org, linux-arm-kernel@lists.infradead.org,
- linux-arm-msm@vger.kernel.org, linux-doc@vger.kernel.org,
- linux-edac@vger.kernel.org, linux-gpio@vger.kernel.org,
- linux-iio@vger.kernel.org, linux-i2c@vger.kernel.org,
- linux-mediatek@lists.infradead.org, linux-mips@vger.kernel.org,
- linux-omap@vger.kernel.org, linux-pci@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-remoteproc@vger.kernel.org,
- linux-riscv@lists.infradead.org, linux-rpi-kernel@lists.infradead.org,
- linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
- linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com,
- linux-um@lists.infradead.org, linux-wireless@vger.kernel.org,
- loongarch@lists.linux.dev, Lorenzo Pieralisi <lpieralisi@kernel.org>,
- Ludovic Desroches <ludovic.desroches@microchip.com>,
- Lukasz Luba <lukasz.luba@arm.com>, "Luke D. Jones" <luke@ljones.dev>,
- Madhavan Srinivasan <maddy@linux.ibm.com>,
- Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>,
- =?UTF-8?Q?Marek_Beh=C3=BAn?= <kabel@kernel.org>,
- Marijn Suijten <marijn.suijten@somainline.org>,
- Mark Brown <broonie@kernel.org>, Mark-PK Tsai <mark-pk.tsai@mediatek.com>,
- Martin Blumenstingl <martin.blumenstingl@googlemail.com>,
- Masami Hiramatsu <mhiramat@kernel.org>,
- Mathieu Poirier <mathieu.poirier@linaro.org>,
- Matthias Brugger <matthias.bgg@gmail.com>,
- Mauro Carvalho Chehab <mchehab@kernel.org>, Max Filippov
- <jcmvbkbc@gmail.com>, Maxime Coquelin <mcoquelin.stm32@gmail.com>,
- Mengyuan Lou <mengyuanlou@net-swift.com>, Michael Buesch <m@bues.ch>,
- Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <michal.simek@amd.com>,
- Miodrag Dinic <miodrag.dinic@mips.com>, Naveen N Rao <naveen@kernel.org>,
- Neil Armstrong <neil.armstrong@linaro.org>, netdev@vger.kernel.org,
- Nicolas Ferre <nicolas.ferre@microchip.com>,
- Nicolas Saenz Julienne <nsaenz@kernel.org>,
- Nicholas Piggin <npiggin@gmail.com>, Nikhil Agarwal
- <nikhil.agarwal@amd.com>, Nipun Gupta <nipun.gupta@amd.com>,
- Nishanth Menon <nm@ti.com>, =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>,
- Palmer Dabbelt <palmer@dabbelt.com>, Paolo Abeni <pabeni@redhat.com>,
- Paul Cercueil <paul@crapouillou.net>,
- Paul Walmsley <paul.walmsley@sifive.com>,
- Pengutronix Kernel Team <kernel@pengutronix.de>,
- Peter Rosin <peda@axentia.se>, Philipp Zabel <p.zabel@pengutronix.de>,
- Piotr Wojtaszczyk <piotr.wojtaszczyk@timesys.com>,
- platform-driver-x86@vger.kernel.org,
- Prasad Kumpatla <quic_pkumpatl@quicinc.com>, Qiang Zhao
- <qiang.zhao@nxp.com>, Qin Jian <qinjian@cqplus1.com>,
- "Rafael J. Wysocki" <rafael@kernel.org>, Randy Dunlap
- <rdunlap@infradead.org>, Ray Jui <rjui@broadcom.com>,
- Rengarajan Sundararajan <Rengarajan.S@microchip.com>,
- Richard Cochran <richardcochran@gmail.com>,
- Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>,
- Rob Clark <robdclark@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>,
- Robert Richter <rric@kernel.org>, Rob Herring <robh@kernel.org>,
- Roger Quadros <rogerq@kernel.org>, Russell King <linux@armlinux.org.uk>,
- Ryan Chen <ryan_chen@aspeedtech.com>, Ryder Lee <ryder.lee@mediatek.com>,
- Samuel Holland <samuel@sholland.org>, Santosh Shilimkar
- <ssantosh@kernel.org>, Sascha Hauer <s.hauer@pengutronix.de>,
- Scott Branden <sbranden@broadcom.com>, Scott Wood <oss@buserror.net>,
- Sean Paul <sean@poorly.run>, Sean Wang <sean.wang@kernel.org>,
- Sean Wang <sean.wang@mediatek.com>,
- Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
- Sergio Paracuellos <sergio.paracuellos@gmail.com>,
- Shawn Guo <shawnguo@kernel.org>, Shawn Lin <shawn.lin@rock-chips.com>,
- Siddharth Vadapalli <s-vadapalli@ti.com>, Simona Vetter <simona@ffwll.ch>,
- Stafford Horne <shorne@gmail.com>,
- Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
- Stephen Boyd <sboyd@kernel.org>, Sven Peter <sven@svenpeter.dev>,
- Takashi Iwai <tiwai@suse.com>, Talel Shenhar <talel@amazon.com>,
- Tero Kristo <kristo@kernel.org>,
- Thangaraj Samynathan <Thangaraj.S@microchip.com>,
- Thara Gopinath <thara.gopinath@gmail.com>,
- Thierry Reding <thierry.reding@gmail.com>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Thomas Petazzoni <thomas.petazzoni@bootlin.com>,
- Toan Le <toan@os.amperecomputing.com>, Tony Lindgren <tony@atomide.com>,
- Tony Luck <tony.luck@intel.com>, UNGLinuxDriver@microchip.com,
- =?UTF-8?Q?Uwe_Kleine-K=C3=B6nig?= <ukleinek@kernel.org>,
- Vignesh Raghavendra <vigneshr@ti.com>, Vineet Gupta <vgupta@kernel.org>,
- Vladimir Oltean <olteanv@gmail.com>, Vladimir Zapolskiy <vz@mleia.com>,
- WANG Xuerui <kernel@xen0n.name>, Woojung Huh <woojung.huh@microchip.com>,
- x86@kernel.org, Yanteng Si <si.yanteng@linux.dev>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Zhang Rui <rui.zhang@intel.com>
-References: <20250319092951.37667-1-jirislaby@kernel.org>
- <874ixxonyy.ffs@tglx>
-Content-Language: en-US
-From: Jiri Slaby <jirislaby@kernel.org>
-Autocrypt: addr=jirislaby@kernel.org; keydata=
- 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
-In-Reply-To: <874ixxonyy.ffs@tglx>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+X-B4-Tracking: v=1; b=H4sIAD31IWgC/23NTQrCMBCG4auUrI0kkx9bV95DXCTNRIOllaSEl
+ tK7m4ogosv3g3lmIQljwESO1UIi5pDC0JdQu4q0N9NfkQZXmgADxTiXdDLjGM1I05xa03VUG86
+ FduCsaki5ekT0YXqJ50vpW0jjEOfXgwzb+rYAfqwMlFNlhWZOettaON0x9tjth3glG5bFBwDOf
+ wFRAMMOjitfN/UfQH4AAX8ASRkVWANqbwVo+QWs6/oEtac3pDEBAAA=
+X-Change-ID: 20250114-xattrat-syscall-6a1136d2db59
+To: Richard Henderson <richard.henderson@linaro.org>, 
+ Matt Turner <mattst88@gmail.com>, Russell King <linux@armlinux.org.uk>, 
+ Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, 
+ Geert Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>, 
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
+ Helge Deller <deller@gmx.de>, Madhavan Srinivasan <maddy@linux.ibm.com>, 
+ Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, 
+ Christophe Leroy <christophe.leroy@csgroup.eu>, 
+ Naveen N Rao <naveen@kernel.org>, Heiko Carstens <hca@linux.ibm.com>, 
+ Vasily Gorbik <gor@linux.ibm.com>, 
+ Alexander Gordeev <agordeev@linux.ibm.com>, 
+ Christian Borntraeger <borntraeger@linux.ibm.com>, 
+ Sven Schnelle <svens@linux.ibm.com>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ "David S. Miller" <davem@davemloft.net>, 
+ Andreas Larsson <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>, 
+ Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, 
+ Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>, 
+ x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
+ Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, 
+ Alexander Viro <viro@zeniv.linux.org.uk>, 
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
+ =?utf-8?q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>, 
+ =?utf-8?q?G=C3=BCnther_Noack?= <gnoack@google.com>, 
+ Arnd Bergmann <arnd@arndb.de>, 
+ =?utf-8?q?Pali_Roh=C3=A1r?= <pali@kernel.org>, 
+ Paul Moore <paul@paul-moore.com>, James Morris <jmorris@namei.org>, 
+ "Serge E. Hallyn" <serge@hallyn.com>, 
+ Stephen Smalley <stephen.smalley.work@gmail.com>, 
+ Ondrej Mosnacek <omosnace@redhat.com>, Tyler Hicks <code@tyhicks.com>, 
+ Miklos Szeredi <miklos@szeredi.hu>, Amir Goldstein <amir73il@gmail.com>
+Cc: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ linux-arm-kernel@lists.infradead.org, linux-m68k@lists.linux-m68k.org, 
+ linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, 
+ linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, 
+ linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
+ linux-fsdevel@vger.kernel.org, linux-security-module@vger.kernel.org, 
+ linux-api@vger.kernel.org, linux-arch@vger.kernel.org, 
+ selinux@vger.kernel.org, ecryptfs@vger.kernel.org, 
+ linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org, 
+ Andrey Albershteyn <aalbersh@kernel.org>, 
+ Andrey Albershteyn <aalbersh@redhat.com>
+X-Mailer: b4 0.15-dev
+X-Developer-Signature: v=1; a=openpgp-sha256; l=7943; i=aalbersh@kernel.org;
+ h=from:subject:message-id; bh=DoJT2dz8txJo2HLysgqy6uqVMVeur99HqA28GNGz35o=;
+ b=owJ4nJvAy8zAJea2/JXEGuOHHIyn1ZIYMhS/+ikUz/+zKeDcJU4Vu/2bX35T2jNhmd4FXg6HD
+ +dm71lmfeB2RykLgxgXg6yYIss6aa2pSUVS+UcMauRh5rAygQxh4OIUgIk8E2D4p9yRo7vd7Fx2
+ +08doV9xDvUxK48fv6Khpfy+e1bF/469nIwMx3ZVrBNbc1PypFML49PkHfx7zu9tPaBw836nz26
+ zZV/5OQBQ90ss
+X-Developer-Key: i=aalbersh@kernel.org; a=openpgp;
+ fpr=AE1B2A9562721A6FC4307C1F46A7EA18AC33E108
+X-Mimecast-Spam-Score: 0
+X-Mimecast-MFC-PROC-ID: axo3km-CbLNmqU0V8hv68xgEZu0mW4xxszU8eejsB70_1747055960
+X-Mimecast-Originator: redhat.com
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 
-On 06. 05. 25, 15:41, Thomas Gleixner wrote:
-> On Wed, Mar 19 2025 at 10:28, Jiri Slaby wrote:
-> 
->> Hi,
->>
->> tl;dr if patches are agreed upon, I ask subsys maintainers to take the
->> respective ones via their trees (as they are split per subsys), so that
->> the IRQ tree can take only the rest. That would minimize churn/conflicts
->> during merges.
-> 
-> So. It's rc5 by now and I picked up everything
+This patchset introduced two new syscalls file_getattr() and
+file_setattr(). These syscalls are similar to FS_IOC_FSSETXATTR ioctl()
+except they use *at() semantics. Therefore, there's no need to open the
+file to get a fd.
 
-Good, thanks.
+These syscalls allow userspace to set filesystem inode attributes on
+special files. One of the usage examples is XFS quota projects.
 
-> which did not show up in next yet. 
+XFS has project quotas which could be attached to a directory. All
+new inodes in these directories inherit project ID set on parent
+directory.
 
-Which is the majority -- routing through subsystems didn't work as well 
-as I anticipated.
+The project is created from userspace by opening and calling
+FS_IOC_FSSETXATTR on each inode. This is not possible for special
+files such as FIFO, SOCK, BLK etc. Therefore, some inodes are left
+with empty project ID. Those inodes then are not shown in the quota
+accounting but still exist in the directory. This is not critical but in
+the case when special files are created in the directory with already
+existing project quota, these new inodes inherit extended attributes.
+This creates a mix of special files with and without attributes.
+Moreover, special files with attributes don't have a possibility to
+become clear or change the attributes. This, in turn, prevents userspace
+from re-creating quota project on these existing files.
 
-I planned to retry with v3 after the next merge window, but you were faster.
+NAME
 
-V3 contains a switch from nodes to dev_fwnode() in some cases. It 
-simplifies the code there. This did not get lost, I will send this 
-separately to maintainers once everything from this series settles in 
-the tree. I.e. likely after the next merge window.
+	file_getattr/file_setattr - get/set filesystem inode attributes
 
-> @Jiri, I fixed up all your subject prefixes as
-> 
->    'irqdomain: subsys: Switch to foo()'
-> 
-> does not make any sense at all. These subsystems have their regular
-> prefixes and these changes do not justify made up irqdomain special
-> prefixes at all.
+SYNOPSIS
 
-Yes.
+	#include <sys/syscall.h>    /* Definition of SYS_* constants */
+	#include <unistd.h>
 
-thanks,
+	long syscall(SYS_file_getattr, int dirfd, const char *pathname,
+		struct fsxattr *fsx, size_t size, unsigned int at_flags);
+	long syscall(SYS_file_setattr, int dirfd, const char *pathname,
+		struct fsxattr *fsx, size_t size, unsigned int at_flags);
+
+	Note: glibc doesn't provide for file_getattr()/file_setattr(),
+	use syscall(2) instead.
+
+DESCRIPTION
+
+	The syscalls take fd and path. If path is absolute, fd is not
+	used. If path is empty, fd can be AT_FDCWD or any valid fd which
+	will be used to get/set attributes on.
+
+	This is an alternative to FS_IOC_FSGETXATTR/FS_IOC_FSSETXATTR
+	ioctl with a difference that file don't need to be open as we
+	can reference it with a path instead of fd. By having this we
+	can manipulated filesystem inode attributes not only on regular
+	files but also on special ones. This is not possible with
+	FS_IOC_FSSETXATTR ioctl as with special files we can not call
+	ioctl() directly on the filesystem inode using file descriptor.
+
+	at_flags can be set to AT_SYMLINK_NOFOLLOW or AT_EMPTY_PATH.
+
+RETURN VALUE
+
+	On success, 0 is returned.  On error, -1 is returned, and errno
+	is set to indicate the error.
+
+ERRORS
+
+	EINVAL		Invalid at_flag specified (only
+			AT_SYMLINK_NOFOLLOW and AT_EMPTY_PATH is
+			supported).
+
+	EINVAL		Size was smaller than any known version of
+			struct fsxattr.
+
+	EINVAL		Invalid combination of parameters provided in
+			fsxattr for this type of file.
+
+	E2BIG		Size of input argument **struct fsxattr** is too
+			big.
+
+	EBADF		Invalid file descriptor was provided.
+
+	EPERM		No permission to change this file.
+
+	EOPNOTSUPP	Filesystem does not support setting attributes
+			on this type of inode
+
+HISTORY
+
+	Added in Linux 6.15.
+
+EXAMPLE
+
+Create directory and file "mkdir ./dir && touch ./dir/foo" and then
+execute the following program:
+
+	#include <fcntl.h>
+	#include <errno.h>
+	#include <string.h>
+	#include <linux/fs.h>
+	#include <stdio.h>
+	#include <sys/syscall.h>
+	#include <unistd.h>
+
+	int
+	main(int argc, char **argv) {
+		int dfd;
+		int error;
+		struct fsxattr fsx;
+
+		dfd = open("./dir", O_RDONLY);
+		if (dfd == -1) {
+			printf("can not open ./dir");
+			return dfd;
+		}
+
+		error = syscall(467, dfd, "./foo", &fsx, 0);
+		if (error) {
+			printf("can not call 467: %s", strerror(errno));
+			return error;
+		}
+
+		printf("dir/foo flags: %d\n", fsx.fsx_xflags);
+
+		fsx.fsx_xflags |= FS_XFLAG_NODUMP;
+		error = syscall(468, dfd, "./foo", &fsx, 0);
+		if (error) {
+			printf("can not call 468: %s", strerror(errno));
+			return error;
+		}
+
+		printf("dir/foo flags: %d\n", fsx.fsx_xflags);
+
+		return error;
+	}
+
+SEE ALSO
+
+	ioctl(2), ioctl_iflags(2), ioctl_xfs_fsgetxattr(2)
+
+---
+Changes in v5:
+- Remove setting of LOOKUP_EMPTY flags which does not have any effect
+- Return -ENOSUPP from vfs_fileattr_set()
+- Add fsxattr masking (by Amir)
+- Fix UAF issue dentry
+- Fix getname_maybe_null() issue with NULL path
+- Implement file_getattr/file_setattr hooks
+- Return LSM return code from file_setattr
+- Rename from getfsxattrat/setfsxattrat to file_getattr/file_setattr
+- Link to v4: https://lore.kernel.org/r/20250321-xattrat-syscall-v4-0-3e82e6fb3264@kernel.org
+
+Changes in v4:
+- Use getname_maybe_null() for correct handling of dfd + path semantic
+- Remove restriction for special files on which flags are allowed
+- Utilize copy_struct_from_user() for better future compatibility
+- Add draft man page to cover letter
+- Convert -ENOIOCTLCMD to -EOPNOSUPP as more appropriate for syscall
+- Add missing __user to header declaration of syscalls
+- Link to v3: https://lore.kernel.org/r/20250211-xattrat-syscall-v3-1-a07d15f898b2@kernel.org
+
+Changes in v3:
+- Remove unnecessary "dfd is dir" check as it checked in user_path_at()
+- Remove unnecessary "same filesystem" check
+- Use CLASS() instead of directly calling fdget/fdput
+- Link to v2: https://lore.kernel.org/r/20250122-xattrat-syscall-v2-1-5b360d4fbcb2@kernel.org
+
+v1:
+https://lore.kernel.org/linuxppc-dev/20250109174540.893098-1-aalbersh@kernel.org/
+
+Previous discussion:
+https://lore.kernel.org/linux-xfs/20240520164624.665269-2-aalbersh@redhat.com/
+
+---
+Amir Goldstein (1):
+      fs: prepare for extending file_get/setattr()
+
+Andrey Albershteyn (6):
+      fs: split fileattr related helpers into separate file
+      lsm: introduce new hooks for setting/getting inode fsxattr
+      selinux: implement inode_file_[g|s]etattr hooks
+      fs: split fileattr/fsxattr converters into helpers
+      fs: make vfs_fileattr_[get|set] return -EOPNOSUPP
+      fs: introduce file_getattr and file_setattr syscalls
+
+ arch/alpha/kernel/syscalls/syscall.tbl      |   2 +
+ arch/arm/tools/syscall.tbl                  |   2 +
+ arch/arm64/tools/syscall_32.tbl             |   2 +
+ arch/m68k/kernel/syscalls/syscall.tbl       |   2 +
+ arch/microblaze/kernel/syscalls/syscall.tbl |   2 +
+ arch/mips/kernel/syscalls/syscall_n32.tbl   |   2 +
+ arch/mips/kernel/syscalls/syscall_n64.tbl   |   2 +
+ arch/mips/kernel/syscalls/syscall_o32.tbl   |   2 +
+ arch/parisc/kernel/syscalls/syscall.tbl     |   2 +
+ arch/powerpc/kernel/syscalls/syscall.tbl    |   2 +
+ arch/s390/kernel/syscalls/syscall.tbl       |   2 +
+ arch/sh/kernel/syscalls/syscall.tbl         |   2 +
+ arch/sparc/kernel/syscalls/syscall.tbl      |   2 +
+ arch/x86/entry/syscalls/syscall_32.tbl      |   2 +
+ arch/x86/entry/syscalls/syscall_64.tbl      |   2 +
+ arch/xtensa/kernel/syscalls/syscall.tbl     |   2 +
+ fs/Makefile                                 |   3 +-
+ fs/ecryptfs/inode.c                         |   8 +-
+ fs/file_attr.c                              | 475 ++++++++++++++++++++++++++++
+ fs/ioctl.c                                  | 309 ------------------
+ fs/overlayfs/inode.c                        |   2 +-
+ include/linux/fileattr.h                    |  26 ++
+ include/linux/lsm_hook_defs.h               |   2 +
+ include/linux/security.h                    |  16 +
+ include/linux/syscalls.h                    |   6 +
+ include/uapi/asm-generic/unistd.h           |   8 +-
+ include/uapi/linux/fs.h                     |   3 +
+ security/security.c                         |  30 ++
+ security/selinux/hooks.c                    |  14 +
+ 29 files changed, 621 insertions(+), 313 deletions(-)
+---
+base-commit: 0d8d44db295ccad20052d6301ef49ff01fb8ae2d
+change-id: 20250114-xattrat-syscall-6a1136d2db59
+
+Best regards,
 -- 
-js
-suse labs
+Andrey Albershteyn <aalbersh@kernel.org>
+
