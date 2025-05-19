@@ -1,187 +1,153 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-vk1-f177.google.com (mail-vk1-f177.google.com [209.85.221.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6EDB835957;
-	Mon, 19 May 2025 10:12:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CA1874C92;
+	Mon, 19 May 2025 10:39:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1747649558; cv=none; b=HjaupA7uqE9u7r9kVscyw3aO2IHY2vT3k68kHNj8xi1w1JVaTBeHXQ8K28t32XExNnE6Bj9AMcWVeqQglgwGOHZVctOBKZyUdazQtTY0WbwuJ0W91qeFUxWQw9PaRNUabF7VsCt9Ra1oyvsK7Uvdrx2o08LcGb9rB/KxM/vwBLo=
+	t=1747651170; cv=none; b=fXSJnI1PVDNTAZIUmiWBDPgyLqZPz1wspKvKvyx+Lh0WCjo3kMpjN3sFkncEgAnus+U5WCtDGc8321kQoixGYvJ+cioplI/S+6NogrlO1niD6RkqH7vn7Y/6Ox1V6mBVcasEOb+AAH1QclGy4XFspQ4XPhulPRcl2vI8vFCPBd8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1747649558; c=relaxed/simple;
-	bh=36bTK+sJWp8PopkJbOlgwt9Ctf7FBzVSvSeBcSMc0sE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=b4QI6M4hH612+ZUsQlN8JivqYO8abq96p7lGWrLJpFxuVdVE6tbdD6HxUcwU8yqkxCVu9Yom2GoMPnzHdY0p1+olg8S508PndUiSpOwoCaju+o/gDRjVHf9mCE8j+96MymOcnuxyr+/wUznGVyJxxpRs/ISElAhKECQKNYFG/8c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=nscdB7qP; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="nscdB7qP"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1230AC4CEE4;
-	Mon, 19 May 2025 10:12:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1747649557;
-	bh=36bTK+sJWp8PopkJbOlgwt9Ctf7FBzVSvSeBcSMc0sE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=nscdB7qPs2zNee5BR3hmpAZQZCQBcXkdlF7Y6HsbM6UzPRdA3dF1BnWAVcJTPuKIv
-	 O3FYecQBdB24pQIIhnt57UfVPAxV9LgWpjYqCVizpPuKxRzp3e1tGtoxdxzCiww3pg
-	 KrBMVyUKbWn6bQi5E33gX2v1WUEStGoaCf1YS4m8mdcMbsKi6bgaKULPdgFE1O08w4
-	 NTbvxawzw3RhqwBP/2mlOvuL311cjPZ4d3W4fwM+V1XeLsP7wD/Giz/f3N3kZmH93H
-	 7tJGZQKhVupyasLyUF8vXgTKkesU5dptYyyOeOnTmIGAbpjsR1fJD00I4DSLdkVhBQ
-	 vnhqqJsWmqhWw==
-Date: Mon, 19 May 2025 12:12:21 +0200
-From: Christian Brauner <brauner@kernel.org>
-To: Amir Goldstein <amir73il@gmail.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, 
-	Andrey Albershteyn <aalbersh@redhat.com>, Richard Henderson <richard.henderson@linaro.org>, 
-	Matt Turner <mattst88@gmail.com>, Russell King <linux@armlinux.org.uk>, 
-	Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, 
-	Geert Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>, 
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
-	"James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>, Helge Deller <deller@gmx.de>, 
-	Madhavan Srinivasan <maddy@linux.ibm.com>, Michael Ellerman <mpe@ellerman.id.au>, 
-	Nicholas Piggin <npiggin@gmail.com>, Christophe Leroy <christophe.leroy@csgroup.eu>, 
-	Naveen N Rao <naveen@kernel.org>, Heiko Carstens <hca@linux.ibm.com>, 
-	Vasily Gorbik <gor@linux.ibm.com>, Alexander Gordeev <agordeev@linux.ibm.com>, 
-	Christian Borntraeger <borntraeger@linux.ibm.com>, Sven Schnelle <svens@linux.ibm.com>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, "David S . Miller" <davem@davemloft.net>, 
-	Andreas Larsson <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>, 
-	Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
-	Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, 
-	Alexander Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>, 
-	=?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic@digikod.net>, =?utf-8?Q?G=C3=BCnther?= Noack <gnoack@google.com>, 
-	Pali =?utf-8?B?Um9ow6Fy?= <pali@kernel.org>, Paul Moore <paul@paul-moore.com>, 
-	James Morris <jmorris@namei.org>, "Serge E. Hallyn" <serge@hallyn.com>, 
-	Stephen Smalley <stephen.smalley.work@gmail.com>, Ondrej Mosnacek <omosnace@redhat.com>, 
-	Tyler Hicks <code@tyhicks.com>, Miklos Szeredi <miklos@szeredi.hu>, linux-alpha@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, 
-	linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
-	sparclinux@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	linux-security-module@vger.kernel.org, linux-api@vger.kernel.org, 
-	Linux-Arch <linux-arch@vger.kernel.org>, selinux@vger.kernel.org, ecryptfs@vger.kernel.org, 
-	linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org, 
-	Andrey Albershteyn <aalbersh@kernel.org>
-Subject: Re: [PATCH v5 0/7] fs: introduce file_getattr and file_setattr
- syscalls
-Message-ID: <20250519-reklamieren-unsolidarisch-7cd73317561d@brauner>
-References: <20250513-xattrat-syscall-v5-0-22bb9c6c767f@kernel.org>
- <399fdabb-74d3-4dd6-9eee-7884a986dab1@app.fastmail.com>
- <20250515-bedarf-absagen-464773be3e72@brauner>
- <CAOQ4uxicuEkOas2UR4mqfus9Q2RAeKKYTwbE2XrkcE_zp8oScQ@mail.gmail.com>
+	s=arc-20240116; t=1747651170; c=relaxed/simple;
+	bh=2M0MlmTnRgcrRCoz5Y9ZGHAKugv49nF7Ios6u1T54y0=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=W3RUWGwb6tugTGVAQeywyhMUSfqh1BoxGF+WmZOyCSRKu+dH4DQgY8UpgGsWMbDKpnx0nO5Di+r5iUyaZsFqlPjjE58APxpabsfzHTF9l7aQ0LXdEpStgwXpaaddB0G8InrPdCaVX8xptZJpAXg6FCMYetQaBrH71xOyr+r0T28=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-vk1-f177.google.com with SMTP id 71dfb90a1353d-52dd77335a3so183398e0c.1;
+        Mon, 19 May 2025 03:39:28 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1747651167; x=1748255967;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=dIUIMLg8OyOkQVobLgePv9WbYlvjAsV4vX7+Q8pM40Y=;
+        b=QcluPGOegOOjHtDHn9x7UyORsDqV09V8LjfzNseToi0TEi52lxknIzvhxNZkahBdpp
+         pN5N5anuhpsPG27F5RRnVi5Le6ecnhr1CBRSm3znOeosiCpBkh4JodKm13T7mHxu1FPZ
+         Tb7eoYG1K+xSoqt2WTlAVvIHVjMO7BPHxdGmqrHSMk0E90GSgEvM/YD85SjSStLyBgM6
+         nVRD/hv74G9NN/LKi4J/zeDDf2kTn+qYaRbPs3LiR/gaPtQlO+HINgozwiUpOfkKgEFu
+         d5Rd1wy+BeVDzcLWjl0s3klDiqGwUINqLbzNYOHbG21uysE/eEC0DA4EK14RuBIaNKLn
+         Jo8Q==
+X-Forwarded-Encrypted: i=1; AJvYcCUQKXKilzZJ8OIfvz/VqjJ48ZJyGi4IVY08qgVnbha8JGgS7e4wmkbHReAvagEhKZ++48BvST+radjxufw=@vger.kernel.org, AJvYcCXu9EpOA81DjzaHKw9fckKw2GbgSkCBPaPA/Z5Zgfp3zCttZYXgbWIxfimd36/Pj50sAyEcE6Ahg68=@vger.kernel.org
+X-Gm-Message-State: AOJu0YzYO6pmsBvi2O5OlHR3xDniANyh4jkE7aSAsEnJe0hG3NRYA6EA
+	o6KFaP2ed71PKiAinty5Ps50Kmo+R59SCumI1TngehPmFw3FZruwu3qan2HejJo/
+X-Gm-Gg: ASbGnctx3yUYm4bdEEBNqQqP6OaZWOwoPLFSu9dA9KTKZjJGraS29mY5dNhs3BFZZ+S
+	rbo4hXuC/AHrtzfCskUW+sc09xTrAKDSRHYjE8ZitgfC+OAPplVJRCDptvAXPJHEeHABe2M/Jx3
+	iBIaw8zWtBK2MqoEL+SxtWPgvhO/APmcN2e7HrBxQt3LnJwxNZUMV3C/Eu9/wSL9SRz49/DZbzp
+	rXoOINkzd684FChdi7t/N9XbfzjW+ZGrPZxdp8ADIlaMLYD3bHne3nUqpggGqKoSTlWbjh4fAZr
+	QYEcLXX8fnaR0UQlSzxisNE+dhdcpsi68/LDjmjIaKRZHplvzViBFbUdKl3NvF90uN/Pm/S5PeD
+	w2ycn2Or5TnnxCg==
+X-Google-Smtp-Source: AGHT+IHvnvavGrrNkov3HdTyXLIqWoxVJ3dxooTIshVbXqa+mNK5uOM6jQOKtVV+f6JUE5TjUI7BgQ==
+X-Received: by 2002:a05:6122:2049:b0:52d:bbab:2055 with SMTP id 71dfb90a1353d-52dbbab9460mr7036760e0c.10.1747651167142;
+        Mon, 19 May 2025 03:39:27 -0700 (PDT)
+Received: from mail-ua1-f47.google.com (mail-ua1-f47.google.com. [209.85.222.47])
+        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-52dba910d55sm6388874e0c.5.2025.05.19.03.39.26
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 19 May 2025 03:39:26 -0700 (PDT)
+Received: by mail-ua1-f47.google.com with SMTP id a1e0cc1a2514c-87bfe95866fso459637241.1;
+        Mon, 19 May 2025 03:39:26 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCWOywm+xpZBqZqrp6DvAqNT7Zo/g1OJGbi7cJMs9y0bf8rOjDJB405bLhF2Es7hl2qx6lt+wCoTp6I=@vger.kernel.org, AJvYcCX76l6ITzyqrvrNtSj+GMkrzlI0Mp9vOY6PYgLxoW1GkQO79e9Y+VIw1g7IPD3euCPRLCMmQ9scyiD9oFk=@vger.kernel.org
+X-Received: by 2002:a05:6102:2089:b0:4e2:83d1:5422 with SMTP id
+ ada2fe7eead31-4e283d15566mr2038705137.12.1747651166595; Mon, 19 May 2025
+ 03:39:26 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAOQ4uxicuEkOas2UR4mqfus9Q2RAeKKYTwbE2XrkcE_zp8oScQ@mail.gmail.com>
+References: <20250517093048.1149919-1-rppt@kernel.org> <CAMuHMdURQWHY2hAe+_sA8cVh1ERD4EfvJqg=NZDA0iXW-sBX+A@mail.gmail.com>
+ <aCsBk6OUnkKGSJm3@kernel.org>
+In-Reply-To: <aCsBk6OUnkKGSJm3@kernel.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 19 May 2025 12:39:14 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdU-JhAU-n7sPgHG7aOHW8qhLS-MDtiyiotdAcJ0d0ZFFg@mail.gmail.com>
+X-Gm-Features: AX0GCFsUK_wt65xWyOW_y2Who7rMlINwtXttrNMHKLDDnhlKTMZHkgvVC9YNLUA
+Message-ID: <CAMuHMdU-JhAU-n7sPgHG7aOHW8qhLS-MDtiyiotdAcJ0d0ZFFg@mail.gmail.com>
+Subject: Re: [PATCH] sh: kprobes: remove unused variables in kprobe_exceptions_notify()
+To: Mike Rapoport <rppt@kernel.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Mike Rapoport <rppt@gmail.com>, 
+	Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, 
+	kernel test robot <lkp@intel.com>, Masami Hiramatsu <mhiramat@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 
-On Thu, May 15, 2025 at 12:33:31PM +0200, Amir Goldstein wrote:
-> On Thu, May 15, 2025 at 11:02 AM Christian Brauner <brauner@kernel.org> wrote:
-> >
-> > On Tue, May 13, 2025 at 11:53:23AM +0200, Arnd Bergmann wrote:
-> > > On Tue, May 13, 2025, at 11:17, Andrey Albershteyn wrote:
+Hi Mike,
+
+On Mon, 19 May 2025 at 12:02, Mike Rapoport <rppt@kernel.org> wrote:
+> On Mon, May 19, 2025 at 10:48:20AM +0200, Geert Uytterhoeven wrote:
+> > On Sat, 17 May 2025 at 11:30, Mike Rapoport <rppt@kernel.org> wrote:
+> > > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 > > >
-> > > >
-> > > >     long syscall(SYS_file_getattr, int dirfd, const char *pathname,
-> > > >             struct fsxattr *fsx, size_t size, unsigned int at_flags);
-> > > >     long syscall(SYS_file_setattr, int dirfd, const char *pathname,
-> > > >             struct fsxattr *fsx, size_t size, unsigned int at_flags);
+> > > kbuild reports the following warning:
 > > >
-> > > I don't think we can have both the "struct fsxattr" from the uapi
-> > > headers, and a variable size as an additional argument. I would
-> > > still prefer not having the extensible structure at all and just
+> > >    arch/sh/kernel/kprobes.c: In function 'kprobe_exceptions_notify':
+> > > >> arch/sh/kernel/kprobes.c:412:24: warning: variable 'p' set but not used [-Wunused-but-set-variable]
+> > >      412 |         struct kprobe *p = NULL;
+> > >          |                        ^
+> > >
+> > > The variable 'p' is indeed unused since the commit fa5a24b16f94
+> > > ("sh/kprobes: Don't call the ->break_handler() in SH kprobes code")
+> > >
+> > > Remove that variable along with 'kprobe_opcode_t *addr' which also
+> > > becomes unused after 'p' is removed.
+> > >
+> > > Reported-by: kernel test robot <lkp@intel.com>
+> > > Closes: https://lore.kernel.org/oe-kbuild-all/202505151341.EuRFR22l-lkp@intel.com/
+> > > Fixes: fa5a24b16f94 ("sh/kprobes: Don't call the ->break_handler() in SH kprobes code")
+> > > Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 > >
-> > We're not going to add new interfaces that are fixed size unless for the
-> > very basic cases. I don't care if we're doing that somewhere else in the
-> > kernel but we're not doing that for vfs apis.
+> > Thanks for your patch!
 > >
-> > > use fsxattr, but if you want to make it extensible in this way,
-> > > it should use a different structure (name). Otherwise adding
-> > > fields after fsx_pad[] would break the ioctl interface.
+> > "p" and "addr" are definitely unused (besides side-effects?), so
+> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > >
-> > Would that really be a problem? Just along the syscall simply add
-> > something like:
+> > > --- a/arch/sh/kernel/kprobes.c
+> > > +++ b/arch/sh/kernel/kprobes.c
+> > > @@ -404,13 +404,10 @@ int __kprobes kprobe_fault_handler(struct pt_regs *regs, int trapnr)
+> > >  int __kprobes kprobe_exceptions_notify(struct notifier_block *self,
+> > >                                        unsigned long val, void *data)
+> > >  {
+> > > -       struct kprobe *p = NULL;
+> > >         struct die_args *args = (struct die_args *)data;
+> > >         int ret = NOTIFY_DONE;
+> > > -       kprobe_opcode_t *addr = NULL;
+> > >         struct kprobe_ctlblk *kcb = get_kprobe_ctlblk();
+> > >
+> > > -       addr = (kprobe_opcode_t *) (args->regs->pc);
+> > >         if (val == DIE_TRAP &&
+> > >             args->trapnr == (BREAKPOINT_INSTRUCTION & 0xff)) {
+> > >                 if (!kprobe_running()) {
+> > > @@ -421,7 +418,6 @@ int __kprobes kprobe_exceptions_notify(struct notifier_block *self,
+> > >                                 ret = NOTIFY_DONE;
+> > >                         }
+> > >                 } else {
+> > > -                       p = get_kprobe(addr);
+> > >                         if ((kcb->kprobe_status == KPROBE_HIT_SS) ||
+> > >                             (kcb->kprobe_status == KPROBE_REENTER)) {
+> > >                                 if (post_kprobe_handler(args->regs))
 > >
-> > diff --git a/fs/ioctl.c b/fs/ioctl.c
-> > index c91fd2b46a77..d3943805c4be 100644
-> > --- a/fs/ioctl.c
-> > +++ b/fs/ioctl.c
-> > @@ -868,12 +868,6 @@ static int do_vfs_ioctl(struct file *filp, unsigned int fd,
-> >         case FS_IOC_SETFLAGS:
-> >                 return ioctl_setflags(filp, argp);
-> >
-> > -       case FS_IOC_FSGETXATTR:
-> > -               return ioctl_fsgetxattr(filp, argp);
-> > -
-> > -       case FS_IOC_FSSETXATTR:
-> > -               return ioctl_fssetxattr(filp, argp);
-> > -
-> >         case FS_IOC_GETFSUUID:
-> >                 return ioctl_getfsuuid(filp, argp);
-> >
-> > @@ -886,6 +880,20 @@ static int do_vfs_ioctl(struct file *filp, unsigned int fd,
-> >                 break;
-> >         }
-> >
-> > +       switch (_IOC_NR(cmd)) {
-> > +       case _IOC_NR(FS_IOC_FSGETXATTR):
-> > +               if (WARN_ON_ONCE(_IOC_TYPE(cmd) != _IOC_TYPE(FS_IOC_FSGETXATTR)))
-> > +                       return SOMETHING_SOMETHING;
-> > +               /* Only handle original size. */
-> > +               return ioctl_fsgetxattr(filp, argp);
-> > +
-> > +       case _IOC_NR(FFS_IOC_FSSETXATTR):
-> > +               if (WARN_ON_ONCE(_IOC_TYPE(cmd) != _IOC_TYPE(FFS_IOC_FSSETXATTR)))
-> > +                       return SOMETHING_SOMETHING;
-> > +               /* Only handle original size. */
-> > +               return ioctl_fssetxattr(filp, argp);
-> > +       }
-> > +
-> 
-> I think what Arnd means is that we will not be able to change struct
-> sfxattr in uapi
-> going forward, because we are not going to deprecate the ioctls and
-> certainly not
-> the XFS specific ioctl XFS_IOC_FSGETXATTRA.
+> > I have no idea what this code is supposed to do, and if it actually
+> > works.  Red flags are that the assigned "p" was never used at all
+> > since the inception of this function.
+>
+> "p" was used before fa5a24b16f94 ("sh/kprobes: Don't call the
+> ->break_handler() in SH kprobes code"), but I can't say I understand that
+> code either :)
 
-Sure, I'm just saying this could very likely be handled without the
-kernel or userspace having to care about the changed structure provided
-we teach the kernel to use the ioctl number, not the command and only
-ever copy v1 of the struct for the ioctls in new kernels. But anyway...
+Yes, the _variable_ "p" was used before, but not before assigning a
+different value to it first.
 
-> 
-> This struct is part of XFS uapi:
-> https://man7.org/linux/man-pages/man2/ioctl_xfs_fsgetxattr.2.html
-> 
-> Should we will need to depart from this struct definition and we might
-> as well do it for the initial release of the syscall rather than later on, e.g.:
-> 
-> --- a/include/uapi/linux/fs.h
-> +++ b/include/uapi/linux/fs.h
-> @@ -148,6 +148,17 @@ struct fsxattr {
->         unsigned char   fsx_pad[8];
->  };
-> 
-> +/*
-> + * Variable size structure for file_[sg]et_attr().
-> + */
-> +struct fsx_fileattr {
-> +       __u32           fsx_xflags;     /* xflags field value (get/set) */
-> +       __u32           fsx_extsize;    /* extsize field value (get/set)*/
-> +       __u32           fsx_nextents;   /* nextents field value (get)   */
-> +       __u32           fsx_projid;     /* project identifier (get/set) */
-> +       __u32           fsx_cowextsize; /* CoW extsize field value (get/set)*/
-> +};
-> +
-> +#define FSXATTR_SIZE_VER0 20
-> +#define FSXATTR_SIZE_LATEST FSXATTR_SIZE_VER0
-> +
-> 
-> Right?
+I guess this is where Rust would be helpful? Although C can and does
+give a warning here, too...
 
-Sure, I don't have a problem with that since I find the current name
-with "fsxattr" quite problematic anyway.
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
