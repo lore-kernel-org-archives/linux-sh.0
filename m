@@ -1,55 +1,56 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B957DCA5A;
-	Sat,  7 Jun 2025 13:09:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 94428CA5A;
+	Sat,  7 Jun 2025 13:10:17 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749301746; cv=none; b=WH2V0zmYtOZhklRyF/xJBHzOz9CAxnGADwZqNIVDYdYHhGVFZ+pPScWuMg58/TRFEWKY+dz/06hWfO43qQpeZ7fyArORPzWT3r/viTaBu1OQNDMh24OgUwmzSLo3r4EnxPb/41SMX70OxQrdFwWsqavJNyNRxVYqL5VtdvMgeak=
+	t=1749301821; cv=none; b=FaAOLSH6IxyiMviTRBcBjDoQiaj0FoAHORFfEzWpaDR7zQ10yB1WcDeMojOAuJizme8dnawYfaIS6b1MAa0vbJgh25JZDJ2IkjdPzflanXndXxOZTH/b40dY6cN/CVt8EPoAZcM3HpmiHVhtEbuttWq/0upzXbpOvTgooAnCPfg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749301746; c=relaxed/simple;
-	bh=PvDMXouBiecHrvxx2Xohozp4qwovdV5idHEQUOIMmxs=;
+	s=arc-20240116; t=1749301821; c=relaxed/simple;
+	bh=ZGXW3yTEtfflID6rpetqiNuf8Uo0UZsBZ4vRucq8s/s=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=Rv6x3LX5McvllGxfKmjuS5dZX4vFafCB0EJGMv8NOVsS0XEOhvpgdelhEWmvn5hZQCj82PzDK/aMIuOrw5V5I4XG/YBxrd/STxljilv6C+4PxkjUpAXMII8qha80E+W8U5MBHGuuryHymRiXIvZO33DtWXh8P0KjTv+5KMCBUkk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=BHZfiSeF; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=K1ofAAfJTU/sNno1+gSLoV2oj8DGVpKNBuDorJdiOIgiaOrGoy9+GFylYBqsCMzt8higAarUypl2pOfbV73WRSsTSyU+hPlcQHg2EbV2kREkMrlLyQu+jZbKWZfSGSwpyTYua2dz+n0tvm0k/tOU1TrfQVIwIh8LjM8wxpxgfGc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=k4CCYGBN; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="BHZfiSeF"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="k4CCYGBN"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=kSJhLDE3C0fmzlnSBVXMsxH/IsHASEZfW2DU5E2IPJk=; t=1749301742; x=1749906542; 
-	b=BHZfiSeFgOoBToLGM/eZFPwPNYo+F/HNtZpNYXqrkNtS56CIdcBT1tuvhTnXb8Mlo82SZYu4ejT
-	ul4AudHdOFnHYd7FJZ0aLb9Umi+zWtLFx6aPfkrrvyPRslHaX3TaVTFhrO2OTbDo6dcz3M9M7LvL4
-	MvM91HLCM5pfjxZfMlKa+UVGVIZuOTdtXTYNai4P6ieSsS5CVd9sgnjMF10qDdB+VOM7CAeq9zde0
-	1Za3vJoHd2MuZ/v177En0X6emVFPtmKb0CFVbx7gVvSJ1UPTGHbRSdo0k+ADw/kSS5FkC2XfgdA+z
-	6SwB1//T2dPJ1r3d79TG/b/0B8MtyEVHtM5g==;
+	bh=tpZAQGYDOmCp2YaW91iZMhaPFMiPEM4BDksv9/9/IYE=; t=1749301818; x=1749906618; 
+	b=k4CCYGBNTOXd5as4qHu7mWxpUPthzdhrLcUHqQgUGAFJK9w92pyOzgjiyWBYLigSkRsVRpZsx5b
+	R7sOnHoAdKjCOGtVhA40OdzPC7WG7pOtlzn6MRC+JZptin2mW1mmQyHzbrWhbX6or2Bv0/lE8t7RZ
+	IMXi94gvKv/alAp2wFdK25SEbAj7WszlbjtkZRbEAfKe/VTmPM3jPBl2LEWaf+vY9q3HLJ6RH0CNx
+	qXZnPfFq9bAbZgRt2ORaUIIRo+6+gd2CD/gLNvPF7xMF0G1nrKWsYpAWwsqIKu4o3Mm+W3I40CaOq
+	hngV2C3HbHnOvRaiEnwOpxPH0O9Kglo4JeZQ==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.98)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1uNtIC-00000001nvi-1EU0; Sat, 07 Jun 2025 15:09:00 +0200
+          id 1uNtJP-00000001oAw-1CBm; Sat, 07 Jun 2025 15:10:15 +0200
 Received: from p5b13afe4.dip0.t-ipconnect.de ([91.19.175.228] helo=[192.168.178.61])
           by inpost2.zedat.fu-berlin.de (Exim 4.98)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1uNtIC-00000003OkQ-0L9p; Sat, 07 Jun 2025 15:09:00 +0200
-Message-ID: <1bd561fc01d6164af3bc3e007cfc5bfa1ef5800c.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: ecovec24: Make SPI mode explicit
+          id 1uNtJP-00000003Ovv-0Gyd; Sat, 07 Jun 2025 15:10:15 +0200
+Message-ID: <916e98179181eebbfbfc2548a40a800e8c703525.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: kprobes: remove unused variables in
+ kprobe_exceptions_notify()
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Yoshinori Sato
-	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org
-Date: Sat, 07 Jun 2025 15:08:59 +0200
-In-Reply-To: <430f42c458dc8e514ae678099b298cd41a050fb9.1746184374.git.geert+renesas@glider.be>
-References: 
-	<430f42c458dc8e514ae678099b298cd41a050fb9.1746184374.git.geert+renesas@glider.be>
+To: Mike Rapoport <rppt@kernel.org>
+Cc: Mike Rapoport <rppt@gmail.com>, Rich Felker <dalias@libc.org>, Yoshinori
+ Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org,
+ linux-sh@vger.kernel.org,  kernel test robot	 <lkp@intel.com>
+Date: Sat, 07 Jun 2025 15:10:14 +0200
+In-Reply-To: <20250517093048.1149919-1-rppt@kernel.org>
+References: <20250517093048.1149919-1-rppt@kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.56.2 
@@ -62,36 +63,69 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Geert,
+Hi Mike,
 
-On Fri, 2025-05-02 at 13:13 +0200, Geert Uytterhoeven wrote:
-> Commit cf9e4784f3bde3e4 ("spi: sh-msiof: Add slave mode support") added
-> a new mode member to the sh_msiof_spi_info structure, but did not update
-> any board files.  Hence all users in board files rely on the default
-> being host mode.
+On Sat, 2025-05-17 at 12:30 +0300, Mike Rapoport wrote:
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 >=20
-> Make this unambiguous by configuring host mode explicitly.
+> kbuild reports the following warning:
 >=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>    arch/sh/kernel/kprobes.c: In function 'kprobe_exceptions_notify':
+> > > arch/sh/kernel/kprobes.c:412:24: warning: variable 'p' set but not us=
+ed [-Wunused-but-set-variable]
+>      412 |         struct kprobe *p =3D NULL;
+>          |                        ^
+>=20
+> The variable 'p' is indeed unused since the commit fa5a24b16f94
+> ("sh/kprobes: Don't call the ->break_handler() in SH kprobes code")
+>=20
+> Remove that variable along with 'kprobe_opcode_t *addr' which also
+> becomes unused after 'p' is removed.
+>=20
+> Reported-by: kernel test robot <lkp@intel.com>
+> Closes: https://lore.kernel.org/oe-kbuild-all/202505151341.EuRFR22l-lkp@i=
+ntel.com/
+> Fixes: fa5a24b16f94 ("sh/kprobes: Don't call the ->break_handler() in SH =
+kprobes code")
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 > ---
->  arch/sh/boards/mach-ecovec24/setup.c | 1 +
->  1 file changed, 1 insertion(+)
 >=20
-> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-e=
-covec24/setup.c
-> index 6f13557eecd6bb21..a641e26f8fdf7369 100644
-> --- a/arch/sh/boards/mach-ecovec24/setup.c
-> +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> @@ -825,6 +825,7 @@ static struct spi_board_info spi_bus[] =3D {
->  /* MSIOF0 */
->  static struct sh_msiof_spi_info msiof0_data =3D {
->  	.num_chipselect =3D 1,
-> +	.mode =3D MSIOF_SPI_HOST,
->  };
+> I don't know why the warning poped up only now, the code there didn't
+> change for some time :/
+>=20
+>  arch/sh/kernel/kprobes.c | 4 ----
+>  1 file changed, 4 deletions(-)
+>=20
+> diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
+> index 49c4ffd782d6..a250fb1b9420 100644
+> --- a/arch/sh/kernel/kprobes.c
+> +++ b/arch/sh/kernel/kprobes.c
+> @@ -404,13 +404,10 @@ int __kprobes kprobe_fault_handler(struct pt_regs *=
+regs, int trapnr)
+>  int __kprobes kprobe_exceptions_notify(struct notifier_block *self,
+>  				       unsigned long val, void *data)
+>  {
+> -	struct kprobe *p =3D NULL;
+>  	struct die_args *args =3D (struct die_args *)data;
+>  	int ret =3D NOTIFY_DONE;
+> -	kprobe_opcode_t *addr =3D NULL;
+>  	struct kprobe_ctlblk *kcb =3D get_kprobe_ctlblk();
 > =20
->  static struct resource msiof0_resources[] =3D {
+> -	addr =3D (kprobe_opcode_t *) (args->regs->pc);
+>  	if (val =3D=3D DIE_TRAP &&
+>  	    args->trapnr =3D=3D (BREAKPOINT_INSTRUCTION & 0xff)) {
+>  		if (!kprobe_running()) {
+> @@ -421,7 +418,6 @@ int __kprobes kprobe_exceptions_notify(struct notifie=
+r_block *self,
+>  				ret =3D NOTIFY_DONE;
+>  			}
+>  		} else {
+> -			p =3D get_kprobe(addr);
+>  			if ((kcb->kprobe_status =3D=3D KPROBE_HIT_SS) ||
+>  			    (kcb->kprobe_status =3D=3D KPROBE_REENTER)) {
+>  				if (post_kprobe_handler(args->regs))
 
-As mentioned in the previous discussion, looks good to me.
+Thanks for catching this! Looks good to me!
 
 Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
