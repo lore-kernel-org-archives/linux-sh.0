@@ -1,31 +1,31 @@
 Received: from todd.t-8ch.de (todd.t-8ch.de [159.69.126.157])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1BFA8165F1A;
-	Mon,  9 Jun 2025 09:29:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D35F1FC7E7;
+	Mon,  9 Jun 2025 09:29:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=159.69.126.157
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749461346; cv=none; b=bL4h787s1cCmgSlbRV2W4IFBtFaA6ePDbV4Ndif6oWZJz4uyXXS3OR41jhUjRtOGEFBF0p2fCXuYp3/j7AHQWXP7laCZ/ipkK7XPzSfTK9A8AWb6sW4XefYrCwESjMyrCs/lRkMBd7OM8EtltDRaeHrPfKlbqLhpPt1IkgeZde8=
+	t=1749461347; cv=none; b=d4xXIt1R8MNmt3ZGOIRn7Z2C4kZSjVekax3+nub95udfbueIhZXQQGmQ4DwNGolcoXfaMuNyLGWVsyMNpWw25rDptc8SoNx2LWfnYAXOzpZfTmD7Trhk+pVywXutoWZvs0T4WnBSji4G5raweIk/ZNktZK/tA9wgLoE3Q1FWVsk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749461346; c=relaxed/simple;
-	bh=v4ezPEZovuA0iUYK/5IU5vDj4sw+aQC7K3OLjjVnTGo=;
-	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=GSim0Iu3W8Ox1I4NO4i3YKmAAF6wfhKsqaL7WxVWp2C1Yu7REuKryDLSK4N2tjdJ6Xxpp+4MXwFxrQipRa8EugX6uK9lRwsYaRqrwu9+VvLwvkXohaxtSGhXW7jI/ss3tVtaiqMygpSLQEzsTk2ADk+xtkQPJYMU+4I2ZmM1XQ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net; spf=pass smtp.mailfrom=weissschuh.net; dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b=O46bqCM3; arc=none smtp.client-ip=159.69.126.157
+	s=arc-20240116; t=1749461347; c=relaxed/simple;
+	bh=qdPGpd0OBf2lCfW2sBZZl1KesI547PXMUYolLF8VpwI=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=qsmeQ45hOPqKS0OL3JA86KfoCkOnamdfXYd3letOpJAecS3/8EEtrWAspU7/I6Gkm+mETVe95Mzx/VEoNXdl5xeRytwqqjL6uhjcXfK7vzhG4fNBj9b2QKtnB4CsQwP+8PUZMLcEA6N22AO0eKIH3+miX8o8lA5nfdhxoA5+sxY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net; spf=pass smtp.mailfrom=weissschuh.net; dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b=NggJ67Vd; arc=none smtp.client-ip=159.69.126.157
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=weissschuh.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b="O46bqCM3"
+	dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b="NggJ67Vd"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=weissschuh.net;
-	s=mail; t=1749461342;
-	bh=v4ezPEZovuA0iUYK/5IU5vDj4sw+aQC7K3OLjjVnTGo=;
-	h=From:Subject:Date:To:Cc:From;
-	b=O46bqCM3CTXZqGsFuRc14dHUTvYYPUL5O0Hp7uRANgLLYBKTsCTpprXIY8XNeflNp
-	 uOd/rjet1trtr89nqVR6U3rcCnfjMfge/AbECpQ32VwLrsi6yQBSjmrr+yNsFeEUBE
-	 FCHJOgj2I4CDGH0mI/DUlwQG5G76lSgBlzpTKOAY=
+	s=mail; t=1749461343;
+	bh=qdPGpd0OBf2lCfW2sBZZl1KesI547PXMUYolLF8VpwI=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
+	b=NggJ67Vd3teVZAIa8Sc4kpyxr27x9qFYYDl4ZQ8FDr6eupskos5w162NgXNbiarwc
+	 SWJx/byeLfJTk40x2QfXMAX2d/AJVP3cjY+OaEo38haBAc0LeYODJXJPktkR7P4VTm
+	 j76+Qu/WJ2tWIP4M4Oahaf/CdfsZOJZjGAu5AaNY=
 From: =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <linux@weissschuh.net>
-Subject: [PATCH 0/3] tools/nolibc: add support for SuperH
-Date: Mon, 09 Jun 2025 11:28:56 +0200
-Message-Id: <20250609-nolibc-sh-v1-0-9dcdb1b66bb5@weissschuh.net>
+Date: Mon, 09 Jun 2025 11:28:58 +0200
+Subject: [PATCH 2/3] selftests/nolibc: use file driver for QEMU serial
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -34,10 +34,9 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-X-B4-Tracking: v=1; b=H4sIAFipRmgC/6tWKk4tykwtVrJSqFYqSi3LLM7MzwNyDHUUlJIzE
- vPSU3UzU4B8JSMDI1MDUyML3bz8nMykZN3iDF2LJJNU46Qki9S05CQloPqCotS0zAqwWdGxtbU
- AW9k7kFsAAAA=
-X-Change-ID: 20250528-nolibc-sh-8b4e3bb8efcb
+Message-Id: <20250609-nolibc-sh-v1-2-9dcdb1b66bb5@weissschuh.net>
+References: <20250609-nolibc-sh-v1-0-9dcdb1b66bb5@weissschuh.net>
+In-Reply-To: <20250609-nolibc-sh-v1-0-9dcdb1b66bb5@weissschuh.net>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>, 
  Rich Felker <dalias@libc.org>, 
  John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
@@ -46,37 +45,46 @@ Cc: linux-sh@vger.kernel.org, linux-kselftest@vger.kernel.org,
  linux-kernel@vger.kernel.org, 
  =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <linux@weissschuh.net>
 X-Mailer: b4 0.14.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1749461342; l=869;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1749461342; l=1709;
  i=linux@weissschuh.net; s=20221212; h=from:subject:message-id;
- bh=v4ezPEZovuA0iUYK/5IU5vDj4sw+aQC7K3OLjjVnTGo=;
- b=QkGw2Q/V4exjx3XeAYhT3LnWSt3TScPga8Ev4W7m2VJKE9wR14eUZSHbfpaM3InI/W0/3xx3V
- z9mOroqTsYvBCiHlgsbsADgVy47IANbFJXcu/TFwt7SNZSHei+a1Ycm
+ bh=qdPGpd0OBf2lCfW2sBZZl1KesI547PXMUYolLF8VpwI=;
+ b=7y+2WNcedXjbu5lqzEjTwB3qLJBOz5oIFvGlL0cOzzXxKdifehE9ZdTc3TT7ODkmX582d46Ke
+ 5GRGvwe4OBLDqalJi1AB+JdCKBrjGHEh6MIRzOI5KlMkwpmQHL3TwpC
 X-Developer-Key: i=linux@weissschuh.net; a=ed25519;
  pk=KcycQgFPX2wGR5azS7RhpBqedglOZVgRPfdFSPB1LNw=
 
-Add support for SuperH/"sh" to nolibc.
-Only sh4 is tested for now.
+For the test implementation of the SuperH architecture a second serial
+serial port needs to be used. Unfortunately the currently used 'stdio'
+driver does not support multiple serial ports at the same time.
 
-This is only tested on QEMU so far.
-Additional testing would be very welcome.
+Switch to the 'file' driver which does support multiple ports and is
+sufficient for the nolibc-test usecase.
 
 Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
 ---
-Thomas Weißschuh (3):
-      selftests/nolibc: fix EXTRACONFIG variables ordering
-      selftests/nolibc: use file driver for QEMU serial
-      tools/nolibc: add support for SuperH
+ tools/testing/selftests/nolibc/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- tools/include/nolibc/arch-sh.h              | 162 ++++++++++++++++++++++++++++
- tools/include/nolibc/arch.h                 |   2 +
- tools/testing/selftests/nolibc/Makefile     |  15 ++-
- tools/testing/selftests/nolibc/run-tests.sh |   3 +-
- 4 files changed, 177 insertions(+), 5 deletions(-)
----
-base-commit: 6275a61db2f0586b8a5d651dfc7b4aacf9d0b2d6
-change-id: 20250528-nolibc-sh-8b4e3bb8efcb
+diff --git a/tools/testing/selftests/nolibc/Makefile b/tools/testing/selftests/nolibc/Makefile
+index 22da78a4bfea0274f66abec319d34b3d2a2824ac..238acaa7bb06dcdbcadd9d3190c2de726e1a40b1 100644
+--- a/tools/testing/selftests/nolibc/Makefile
++++ b/tools/testing/selftests/nolibc/Makefile
+@@ -315,12 +315,12 @@ kernel-standalone: initramfs | defconfig
+ 
+ # run the tests after building the kernel
+ run: kernel initramfs.cpio
+-	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial stdio $(QEMU_ARGS) > "$(CURDIR)/run.out"
++	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial file:/dev/stdout $(QEMU_ARGS) > "$(CURDIR)/run.out"
+ 	$(Q)$(REPORT) $(CURDIR)/run.out
+ 
+ # re-run the tests from an existing kernel
+ rerun:
+-	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial stdio $(QEMU_ARGS) > "$(CURDIR)/run.out"
++	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial file:/dev/stdout $(QEMU_ARGS) > "$(CURDIR)/run.out"
+ 	$(Q)$(REPORT) $(CURDIR)/run.out
+ 
+ # report with existing test log
 
-Best regards,
 -- 
-Thomas Weißschuh <linux@weissschuh.net>
+2.49.0
 
