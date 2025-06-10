@@ -1,89 +1,119 @@
-Received: from todd.t-8ch.de (todd.t-8ch.de [159.69.126.157])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B6FD143ABC;
-	Mon,  9 Jun 2025 10:05:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=159.69.126.157
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B3B8024166B;
+	Tue, 10 Jun 2025 16:28:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1749463523; cv=none; b=hVv2ItOj3b1Kc1ljnQ9EmG0kWRH7t+GQS3iVgGGAV7D8I9/Zyv8cUthwMlP8FgeO/RiXyG1nYdLuKlVfDGwMxT6IZtfrgMs7wqpW5RT0NWSf75ntuWTRQl/w6y8Lv2Re+ItjykZ4mmIrGFsIUuiPxYmtbmbwGIdx6wVKd44aQuo=
+	t=1749572889; cv=none; b=N3/2lJnIY02UVZgxjMqRzEHCY+RY4TTJ3LN+XhfnP3S6109zEamIbWOLmlfdmGgC7M2tm+VyPR60PazJpE83t2366uh0FwYVV2Xdt+3uLoVtd2AjAlaO4MNTTjYXB5C6lLkChM/mThOv2YabC1duX18SVSKS0ItHXSADx+jZydw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1749463523; c=relaxed/simple;
-	bh=LIaYfTdy4VX2SijSB1fsERZSR/2FSunWOglQaGexf38=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=VZ/iIKWS5tue13YnRsOeAfcywbH9hndGxrH+kKTMRyYxvQoc/hWmJfC+VBjY5Yy0ertGtMMoiTwGn+TNofVgxxXgu5YHmxN2Tuld+H3nn+TQh9ItrT1n09vT+wF67YMlYsLtRL0FyrxBvp7A7Kun4HrTjl1IGIjQ1L9m/15XhAc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net; spf=pass smtp.mailfrom=weissschuh.net; dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b=cL1OvQ+7; arc=none smtp.client-ip=159.69.126.157
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=weissschuh.net
+	s=arc-20240116; t=1749572889; c=relaxed/simple;
+	bh=VGaA2UjcATw5usDRARWAGHoyvA3nRCcXodZF/+d4fPQ=;
+	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
+	 In-Reply-To:To:Cc; b=cRL7VOGtrA/8IooI67lQAjAprtTkDPiTx4O/41+GvUl8+VEw7vM6ER/AI6HbVFIkTa2jxIllHPB2aNTZ4Ce/JFppjOd657tuePT1QPUl+aBL1ETTcqyYKXnJxawLT859Tzm16ccrs0zdCq5AFXKKEHhbBfeuxuqSrqTm4YHYfZ8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=JJ1f2Y7N; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b="cL1OvQ+7"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=weissschuh.net;
-	s=mail; t=1749463518;
-	bh=LIaYfTdy4VX2SijSB1fsERZSR/2FSunWOglQaGexf38=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=cL1OvQ+7LsfOUWE3rHXhvHPEooM2uTSuf9JmQZBP4cMkLtVfP5lxnRYlps6BLkWpy
-	 UZNls2o1oZoFErLIvQnIjlSfRjLhtg+obZx/kPsuFWK/qlxy8IB1b5O7+jkXYhLHew
-	 21zgt0otmTBl/5DHfU9yKpOcmjRhLWdpmAQpNP7w=
-Date: Mon, 9 Jun 2025 12:05:18 +0200
-From: Thomas =?utf-8?Q?Wei=C3=9Fschuh?= <linux@weissschuh.net>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, Willy Tarreau <w@1wt.eu>, Shuah Khan <shuah@kernel.org>, 
-	linux-sh@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: Re: [PATCH 0/3] tools/nolibc: add support for SuperH
-Message-ID: <66678d81-b1ac-48de-be82-1c82ca1c3e31@t-8ch.de>
-References: <20250609-nolibc-sh-v1-0-9dcdb1b66bb5@weissschuh.net>
- <0bd3da32be2d82f8ee6f6a544d9d8f8b48b02cd0.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="JJ1f2Y7N"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 89E19C4CEF0;
+	Tue, 10 Jun 2025 16:28:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1749572889;
+	bh=VGaA2UjcATw5usDRARWAGHoyvA3nRCcXodZF/+d4fPQ=;
+	h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
+	b=JJ1f2Y7NQSd54tSszQLRiQIl7dD277rRFw5CD03cct8JsOIa9MeckGxwgeTNERJbY
+	 /Aq7k/QdxMobJHlLVMWLaBVYiO7WUz7b5oZF8aZHHmpn5SGMFxfrabCx4zi/NelVA7
+	 9tpmie/ZR7eRtm/GQUxR12kWA/MXW8KxThnLlIuGSON9FK96/TttZtzzrp91aMtCTf
+	 nkrgxszvlyVUm0gGo8/i60pLDKogQxJCIy6qqOtv6fYwtbh3P8fqWAcjVqLwJncDb0
+	 2wdFJTUv8YDSR+ksvQyqg1NCDe5af7sVQqmJb6cWow02fsajDICno0naOHZ+D1dFYd
+	 UMToThilj3zfw==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 33D5B39D6540;
+	Tue, 10 Jun 2025 16:28:41 +0000 (UTC)
+Content-Type: text/plain; charset="utf-8"
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <0bd3da32be2d82f8ee6f6a544d9d8f8b48b02cd0.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 2/2] arch: use always-$(KBUILD_BUILTIN) for vmlinux.lds
+From: patchwork-bot+linux-riscv@kernel.org
+Message-Id: 
+ <174957291974.2454024.16546912662876416180.git-patchwork-notify@kernel.org>
+Date: Tue, 10 Jun 2025 16:28:39 +0000
+References: <20250602181256.529033-2-masahiroy@kernel.org>
+In-Reply-To: <20250602181256.529033-2-masahiroy@kernel.org>
+To: Masahiro Yamada <masahiroy@kernel.org>
+Cc: linux-riscv@lists.infradead.org, linux-kbuild@vger.kernel.org,
+ aou@eecs.berkeley.edu, agordeev@linux.ibm.com, alex@ghiti.fr,
+ andreas@gaisler.com, anton.ivanov@cambridgegreys.com, bp@alien8.de,
+ bcain@kernel.org, catalin.marinas@arm.com, chris@zankel.net,
+ borntraeger@linux.ibm.com, christophe.leroy@csgroup.eu,
+ dave.hansen@linux.intel.com, davem@davemloft.net, dinguyen@kernel.org,
+ geert@linux-m68k.org, guoren@kernel.org, hpa@zytor.com, hca@linux.ibm.com,
+ deller@gmx.de, chenhuacai@kernel.org, mingo@redhat.com,
+ James.Bottomley@HansenPartnership.com, johannes@sipsolutions.net,
+ glaubitz@physik.fu-berlin.de, jonas@southpole.se, maddy@linux.ibm.com,
+ mattst88@gmail.com, jcmvbkbc@gmail.com, mpe@ellerman.id.au, monstr@monstr.eu,
+ naveen@kernel.org, npiggin@gmail.com, palmer@dabbelt.com,
+ paul.walmsley@sifive.com, dalias@libc.org, richard.henderson@linaro.org,
+ richard@nod.at, linux@armlinux.org.uk, shorne@gmail.com,
+ stefan.kristiansson@saunalahti.fi, svens@linux.ibm.com,
+ tsbogend@alpha.franken.de, tglx@linutronix.de, gor@linux.ibm.com,
+ vgupta@kernel.org, kernel@xen0n.name, will@kernel.org,
+ ysato@users.sourceforge.jp, linux-alpha@vger.kernel.org,
+ linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+ linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org,
+ linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+ sparclinux@vger.kernel.org, x86@kernel.org
 
-Hi Adrian,
+Hello:
 
-On 2025-06-09 11:53:25+0200, John Paul Adrian Glaubitz wrote:
-> On Mon, 2025-06-09 at 11:28 +0200, Thomas Weißschuh wrote:
-> > Add support for SuperH/"sh" to nolibc.
-> > Only sh4 is tested for now.
-> > 
-> > This is only tested on QEMU so far.
-> > Additional testing would be very welcome.
-> > 
-> > Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
-> > ---
-> > Thomas Weißschuh (3):
-> >       selftests/nolibc: fix EXTRACONFIG variables ordering
-> >       selftests/nolibc: use file driver for QEMU serial
-> >       tools/nolibc: add support for SuperH
-> > 
-> >  tools/include/nolibc/arch-sh.h              | 162 ++++++++++++++++++++++++++++
-> >  tools/include/nolibc/arch.h                 |   2 +
-> >  tools/testing/selftests/nolibc/Makefile     |  15 ++-
-> >  tools/testing/selftests/nolibc/run-tests.sh |   3 +-
-> >  4 files changed, 177 insertions(+), 5 deletions(-)
-> > ---
-> > base-commit: 6275a61db2f0586b8a5d651dfc7b4aacf9d0b2d6
-> > change-id: 20250528-nolibc-sh-8b4e3bb8efcb
+This patch was applied to riscv/linux.git (fixes)
+by Masahiro Yamada <masahiroy@kernel.org>:
+
+On Tue,  3 Jun 2025 03:12:54 +0900 you wrote:
+> The extra-y syntax is deprecated. Instead, use always-$(KBUILD_BUILTIN),
+> which behaves equivalently.
 > 
-> I have no experience with the selftest code but I can definitely test
-> on real hardware if you can point me to some instructions on how to
-> run the tests.
+> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+> ---
+> 
+>  arch/alpha/kernel/Makefile      | 2 +-
+>  arch/arc/kernel/Makefile        | 2 +-
+>  arch/arm/kernel/Makefile        | 2 +-
+>  arch/arm64/kernel/Makefile      | 2 +-
+>  arch/csky/kernel/Makefile       | 2 +-
+>  arch/hexagon/kernel/Makefile    | 2 +-
+>  arch/loongarch/kernel/Makefile  | 2 +-
+>  arch/m68k/kernel/Makefile       | 2 +-
+>  arch/microblaze/kernel/Makefile | 2 +-
+>  arch/mips/kernel/Makefile       | 2 +-
+>  arch/nios2/kernel/Makefile      | 2 +-
+>  arch/openrisc/kernel/Makefile   | 2 +-
+>  arch/parisc/kernel/Makefile     | 2 +-
+>  arch/powerpc/kernel/Makefile    | 2 +-
+>  arch/riscv/kernel/Makefile      | 2 +-
+>  arch/s390/kernel/Makefile       | 2 +-
+>  arch/sh/kernel/Makefile         | 2 +-
+>  arch/sparc/kernel/Makefile      | 2 +-
+>  arch/um/kernel/Makefile         | 2 +-
+>  arch/x86/kernel/Makefile        | 2 +-
+>  arch/xtensa/kernel/Makefile     | 2 +-
+>  21 files changed, 21 insertions(+), 21 deletions(-)
 
-That would be much appreciated.
-You can compile the selftests like this:
+Here is the summary with links:
+  - [2/2] arch: use always-$(KBUILD_BUILTIN) for vmlinux.lds
+    https://git.kernel.org/riscv/c/e21efe833eae
 
-$ cd tools/testing/selftests/nolibc
-$ make [CC= CFLAGS_EXTRA=] nolibc-test
-$ ./nolibc-test
-
-The test executable is fully self-contained, you can also cross-compile
-it and copy it around.
+You are awesome, thank you!
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/patchwork/pwbot.html
 
 
-Thomas
