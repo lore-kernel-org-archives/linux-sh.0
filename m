@@ -1,82 +1,87 @@
-Received: from 1wt.eu (ded1.1wt.eu [163.172.96.212])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id B211730E824;
-	Fri, 20 Jun 2025 08:01:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=163.172.96.212
+Received: from todd.t-8ch.de (todd.t-8ch.de [159.69.126.157])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C214C2628C;
+	Mon, 23 Jun 2025 21:16:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=159.69.126.157
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750406464; cv=none; b=lfiKXBcUTcN2fd88L5PqQJUqCbeebKP2oj2hQU3GhPFXTFM/fB5HWZrnzVx0o2I/jdZZzVM9MYprwDZezwbM8yT2pDNVf4lU3TnaBd5XNTEOd8l1sdoJqnpHRlJf5fuq9c+j+yRKUPb1I0Kg/UaOYj4659MYJHgLB7au5NgzsNM=
+	t=1750713372; cv=none; b=i3baRM5hIDflqPRMVALZ6akOpP8dQu7PO2Hk/p3eYEYlEA5tsARqPEI1MJbGCelSnof8e/VVwFI3A19SDJgB8sZ4SJUisgaoW8cE5ZuUJthDn+KbPPGinmTUYAKZACc7MfAGgduCnyVg/wKk0SQMXiR1HFsWxsmsYnEiDSVsNQw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750406464; c=relaxed/simple;
-	bh=AGwI9uUo58D8rhz4PFt/7iXNiYZDkRmoqVfEo+Wsk3I=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=GdQVSGzFVWXZi+ARs55sdquwSJJDwNQxx39xOe+w2yLs5Gvv6uYfcTMOSc4AVtV9yiMrHUc6FUE4Mkn7MU3ccEqimrf574zNo5CBw95Za7rsjbJMOvYsH1jWsTySaMsUiv7/xmy0K280MKzLv1J7NB1snHggL1tlrWToe4vFLD0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=1wt.eu; spf=pass smtp.mailfrom=1wt.eu; arc=none smtp.client-ip=163.172.96.212
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=1wt.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=1wt.eu
-Received: (from willy@localhost)
-	by pcw.home.local (8.15.2/8.15.2/Submit) id 55K7pQKq022946;
-	Fri, 20 Jun 2025 09:51:26 +0200
-Date: Fri, 20 Jun 2025 09:51:26 +0200
-From: Willy Tarreau <w@1wt.eu>
-To: Thomas =?iso-8859-1?Q?Wei=DFschuh?= <linux@weissschuh.net>
-Cc: Yoshinori Sato <ysato@users.osdn.me>, Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Shuah Khan <shuah@kernel.org>, linux-sh@vger.kernel.org,
-        linux-kselftest@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 2/3] selftests/nolibc: use file driver for QEMU serial
-Message-ID: <20250620075126.GB22550@1wt.eu>
-References: <20250609-nolibc-sh-v1-0-9dcdb1b66bb5@weissschuh.net>
- <20250609-nolibc-sh-v1-2-9dcdb1b66bb5@weissschuh.net>
+	s=arc-20240116; t=1750713372; c=relaxed/simple;
+	bh=JXT55h1kBuOnOzqPmpYxX1L2/iZn2J8XhrAQLZByMqA=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=MA+PX76WKnPvvC7lcL8elAXrJpMOi6OfuvUFHYCC08bBN1V5Eo7Ejgj29d8U/Rawzh/O6Wo+n3v7GrQoXZNGL70s9GshGLS+RzpDRC6SPSiH8Z1ku9paDmE9SHlM5dDLKTwcghwkCbQBiu173D1nSCxptVtViszJtUBn7MxW5VU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net; spf=pass smtp.mailfrom=weissschuh.net; dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b=WZofouo4; arc=none smtp.client-ip=159.69.126.157
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=weissschuh.net
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=weissschuh.net header.i=@weissschuh.net header.b="WZofouo4"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=weissschuh.net;
+	s=mail; t=1750713368;
+	bh=JXT55h1kBuOnOzqPmpYxX1L2/iZn2J8XhrAQLZByMqA=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
+	b=WZofouo4A2DqrhUw/NzUbOORc1oZ1Cphg/szyquc7/xvEXDls6ZxwWlBncnHj1qQe
+	 gAO2pIpdJJF0R8l6Xk7Q9T3w5dKQkkWqZ//XCUXFTblTeCN86d2m6fQ37QUK5y89FX
+	 5GVrH7BHmv1dMQjpz3pM+g9U5hhXVxtvSNOoK36M=
+From: =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <linux@weissschuh.net>
+Date: Mon, 23 Jun 2025 23:15:52 +0200
+Subject: [PATCH v2 1/3] selftests/nolibc: fix EXTRACONFIG variables
+ ordering
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20250609-nolibc-sh-v1-2-9dcdb1b66bb5@weissschuh.net>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Message-Id: <20250623-nolibc-sh-v2-1-0f5b4b303025@weissschuh.net>
+References: <20250623-nolibc-sh-v2-0-0f5b4b303025@weissschuh.net>
+In-Reply-To: <20250623-nolibc-sh-v2-0-0f5b4b303025@weissschuh.net>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, 
+ Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ Willy Tarreau <w@1wt.eu>, Shuah Khan <shuah@kernel.org>
+Cc: linux-sh@vger.kernel.org, linux-kselftest@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, 
+ =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <linux@weissschuh.net>
+X-Mailer: b4 0.14.2
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1750713367; l=1123;
+ i=linux@weissschuh.net; s=20221212; h=from:subject:message-id;
+ bh=JXT55h1kBuOnOzqPmpYxX1L2/iZn2J8XhrAQLZByMqA=;
+ b=Ju5eduvCW7qTCKhvkS1NoIMcxHMmg5crbapxtIQIsSvPZMv49Y4FKGSIkeO6QotRGU2GcNKxf
+ uzkdHSsYPXvA76PcHrxb6ua/ucMrX6E8OFmZfLbo0kLA+2n0+uUJAju
+X-Developer-Key: i=linux@weissschuh.net; a=ed25519;
+ pk=KcycQgFPX2wGR5azS7RhpBqedglOZVgRPfdFSPB1LNw=
 
-Hi Thomas,
+The variable block got disordered at some point.
 
-On Mon, Jun 09, 2025 at 11:28:58AM +0200, Thomas Weiﬂschuh wrote:
-> For the test implementation of the SuperH architecture a second serial
-> serial port needs to be used. Unfortunately the currently used 'stdio'
-> driver does not support multiple serial ports at the same time.
-> 
-> Switch to the 'file' driver which does support multiple ports and is
-> sufficient for the nolibc-test usecase.
-> 
-> Signed-off-by: Thomas Weiﬂschuh <linux@weissschuh.net>
-> ---
->  tools/testing/selftests/nolibc/Makefile | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/tools/testing/selftests/nolibc/Makefile b/tools/testing/selftests/nolibc/Makefile
-> index 22da78a4bfea0274f66abec319d34b3d2a2824ac..238acaa7bb06dcdbcadd9d3190c2de726e1a40b1 100644
-> --- a/tools/testing/selftests/nolibc/Makefile
-> +++ b/tools/testing/selftests/nolibc/Makefile
-> @@ -315,12 +315,12 @@ kernel-standalone: initramfs | defconfig
->  
->  # run the tests after building the kernel
->  run: kernel initramfs.cpio
-> -	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial stdio $(QEMU_ARGS) > "$(CURDIR)/run.out"
-> +	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial file:/dev/stdout $(QEMU_ARGS) > "$(CURDIR)/run.out"
->  	$(Q)$(REPORT) $(CURDIR)/run.out
->  
->  # re-run the tests from an existing kernel
->  rerun:
-> -	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial stdio $(QEMU_ARGS) > "$(CURDIR)/run.out"
-> +	$(Q)qemu-system-$(QEMU_ARCH) -display none -no-reboot -kernel "$(IMAGE)" -initrd initramfs.cpio -serial file:/dev/stdout $(QEMU_ARGS) > "$(CURDIR)/run.out"
+Use the correct ordering.
 
-I'm cautious every time we touch the -serial output after having faced
-issues earlier when trying to use pipes. Here I think it's OK, however,
-I'm wondering if "file:$(CURDIR)/run.out" wouldn't be clearer, and also
-encourage future changes to stick to a file and avoid piping the output
-to a filter command. No strong opinion though.
+Signed-off-by: Thomas Wei√üschuh <linux@weissschuh.net>
+Acked-by: Willy Tarreau <w@1wt.eu>
+---
+ tools/testing/selftests/nolibc/Makefile.nolibc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-In any case: Acked-by: Willy Tarreau <w@1wt.eu>
+diff --git a/tools/testing/selftests/nolibc/Makefile.nolibc b/tools/testing/selftests/nolibc/Makefile.nolibc
+index 6d62f350d0c16405785a8aabc7f5741b82e55370..9e220a733d97f3f916c6aa38df2414781f17ef94 100644
+--- a/tools/testing/selftests/nolibc/Makefile.nolibc
++++ b/tools/testing/selftests/nolibc/Makefile.nolibc
+@@ -107,10 +107,10 @@ DEFCONFIG_sparc64    = sparc64_defconfig
+ DEFCONFIG_m68k       = virt_defconfig
+ DEFCONFIG            = $(DEFCONFIG_$(XARCH))
+ 
+-EXTRACONFIG_m68k      = -e CONFIG_BLK_DEV_INITRD
+-EXTRACONFIG           = $(EXTRACONFIG_$(XARCH))
+ EXTRACONFIG_arm       = -e CONFIG_NAMESPACES
+ EXTRACONFIG_armthumb  = -e CONFIG_NAMESPACES
++EXTRACONFIG_m68k      = -e CONFIG_BLK_DEV_INITRD
++EXTRACONFIG           = $(EXTRACONFIG_$(XARCH))
+ 
+ # optional tests to run (default = all)
+ TEST =
 
-Thanks,
-Willy
+-- 
+2.50.0
+
