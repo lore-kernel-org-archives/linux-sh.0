@@ -1,72 +1,99 @@
-Received: from 1wt.eu (ded1.1wt.eu [163.172.96.212])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 6C80E19AD48;
-	Tue, 24 Jun 2025 06:16:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=163.172.96.212
+Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B7D32798E5;
+	Tue, 24 Jun 2025 08:56:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.154.21.10
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1750745823; cv=none; b=cK4tjyQOViJlXbxUKACVAIJk8R9w0U8Uu/mAR+qydg7rORLd97yL0FeARYPTLxNjNYyDQ51+skP9pax69QDiES1lkqOpgSYX215RonBnUnFIc3ZfkyZsZr70ZgZ9yEXbVKyh1Mm9RjsbX8dCqSQWzmAMhu/BmAbN4J0jA4Caf9w=
+	t=1750755383; cv=none; b=HysM0D0LCfH0/P83ayyhs3/7C4CfsScVIMlx3yZhUPN8pV/e0s/7nsjvRVPyFy5HJx1N5X52p6v/4+ReVXdVoYSETKC0qGxvCVTO3SCFTQLGuvZZJdo1GW13+GXOT6bxCnzhnUYTmdinCY4INc0D4/XhFpSrsHHBKV6d4qhNoZA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1750745823; c=relaxed/simple;
-	bh=0aNwrtkXI+uUiY/BGNksdhClK5e8HwszF3+9vayo5j4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=hrlJ8bxNH6B+OOHwK0GLbqSq+NwYhYGnwZh27ihlpIe6yNyi1HHvl6VEEcKO+4ArTRwbAXDqCg7ca60+4DrLOkVRmW0ak+zAvnJPRqT6VnbgRRr4Yx9eOgY5XN8kQm12wIoK7JFdJZMioDYOuyA+7PulT5Su1M/lR8jHCwPoQYQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=1wt.eu; spf=pass smtp.mailfrom=1wt.eu; arc=none smtp.client-ip=163.172.96.212
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=1wt.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=1wt.eu
-Received: (from willy@localhost)
-	by pcw.home.local (8.15.2/8.15.2/Submit) id 55O67OOW030925;
-	Tue, 24 Jun 2025 08:07:24 +0200
-Date: Tue, 24 Jun 2025 08:07:24 +0200
-From: Willy Tarreau <w@1wt.eu>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Thomas =?iso-8859-1?Q?Wei=DFschuh?= <linux@weissschuh.net>,
-        Yoshinori Sato <ysato@users.osdn.me>, Rich Felker <dalias@libc.org>,
-        Shuah Khan <shuah@kernel.org>, linux-sh@vger.kernel.org,
-        linux-kselftest@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 0/3] tools/nolibc: add support for SuperH
-Message-ID: <20250624060724.GA30919@1wt.eu>
-References: <20250623-nolibc-sh-v2-0-0f5b4b303025@weissschuh.net>
- <6d83088ebfeee7f7d3190872234f7b53ee758c65.camel@physik.fu-berlin.de>
+	s=arc-20240116; t=1750755383; c=relaxed/simple;
+	bh=4/2mDbpEcmUAamYK6r1mQJlE6J3XAy0ImGOMNDLNOL4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:CC:References:From:
+	 In-Reply-To:Content-Type; b=E+jXX/NqOCghPz+bbWatCbYL0JQokLrlRCduKMS4+n8F5h/gBoqFb8Zo08cL/CzzXyhwyLg66G4xAM7vOtxeDFJHA24h5K5/Rg6czVrKvl3ZGMTjpsjxYtYBomH1ijy2SSeNuvCcM49ZBhY/rU22ZB3udVLmNuiFkIU4JuoFt0Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=omp.ru; spf=pass smtp.mailfrom=omp.ru; arc=none smtp.client-ip=90.154.21.10
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=omp.ru
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=omp.ru
+Received: from [192.168.2.102] (213.87.157.108) by msexch01.omp.ru
+ (10.188.4.12) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.1258.12; Tue, 24 Jun
+ 2025 11:56:15 +0300
+Message-ID: <af7b93bf-6f9c-4d4b-85fd-ccf93769d346@omp.ru>
+Date: Tue, 24 Jun 2025 11:56:14 +0300
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 2/3] selftests/nolibc: use file driver for QEMU serial
+To: =?UTF-8?Q?Thomas_Wei=C3=9Fschuh?= <linux@weissschuh.net>, Yoshinori Sato
+	<ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, John Paul Adrian
+ Glaubitz <glaubitz@physik.fu-berlin.de>, Willy Tarreau <w@1wt.eu>, Shuah Khan
+	<shuah@kernel.org>
+CC: <linux-sh@vger.kernel.org>, <linux-kselftest@vger.kernel.org>,
+	<linux-kernel@vger.kernel.org>
+References: <20250623-nolibc-sh-v2-0-0f5b4b303025@weissschuh.net>
+ <20250623-nolibc-sh-v2-2-0f5b4b303025@weissschuh.net>
+Content-Language: en-US
+From: Sergey Shtylyov <s.shtylyov@omp.ru>
+Organization: Open Mobile Platform
+In-Reply-To: <20250623-nolibc-sh-v2-2-0f5b4b303025@weissschuh.net>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <6d83088ebfeee7f7d3190872234f7b53ee758c65.camel@physik.fu-berlin.de>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
+ (10.188.4.12)
+X-KSE-ServerInfo: msexch01.omp.ru, 9
+X-KSE-AntiSpam-Interceptor-Info: scan successful
+X-KSE-AntiSpam-Version: 6.1.1, Database issued on: 06/24/2025 08:35:40
+X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
+X-KSE-AntiSpam-Method: none
+X-KSE-AntiSpam-Rate: 0
+X-KSE-AntiSpam-Info: Lua profiles 194289 [Jun 24 2025]
+X-KSE-AntiSpam-Info: Version: 6.1.1.11
+X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
+X-KSE-AntiSpam-Info: LuaCore: 62 0.3.62
+ e2af3448995f5f8a7fe71abf21bb23519d0f38c3
+X-KSE-AntiSpam-Info: {rep_avail}
+X-KSE-AntiSpam-Info: {Tracking_uf_ne_domains}
+X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
+X-KSE-AntiSpam-Info:
+	omp.ru:7.1.1;127.0.0.199:7.1.2;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1
+X-KSE-AntiSpam-Info: {Tracking_ip_hunter}
+X-KSE-AntiSpam-Info: FromAlignment: s
+X-KSE-AntiSpam-Info: ApMailHostAddress: 213.87.157.108
+X-KSE-AntiSpam-Info: Rate: 0
+X-KSE-AntiSpam-Info: Status: not_detected
+X-KSE-AntiSpam-Info: Method: none
+X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
+ smtp.mailfrom=omp.ru;dkim=none
+X-KSE-Antiphishing-Info: Clean
+X-KSE-Antiphishing-ScanningType: Heuristic
+X-KSE-Antiphishing-Method: None
+X-KSE-Antiphishing-Bases: 06/24/2025 08:37:00
+X-KSE-Antivirus-Interceptor-Info: scan successful
+X-KSE-Antivirus-Info: Clean, bases: 6/24/2025 7:08:00 AM
+X-KSE-Attachment-Filter-Triggered-Rules: Clean
+X-KSE-Attachment-Filter-Triggered-Filters: Clean
+X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
 
-Hi Adrian,
+On 6/24/25 12:15 AM, Thomas Weißschuh wrote:
 
-On Tue, Jun 24, 2025 at 08:03:47AM +0200, John Paul Adrian Glaubitz wrote:
-> Hi Thomas,
+> For the test implementation of the SuperH architecture a second serial
+> serial port needs to be used. Unfortunately the currently used 'stdio'
+
+   "Serial" typed twice? :-)
+
+> driver does not support multiple serial ports at the same time.
 > 
-> On Mon, 2025-06-23 at 23:15 +0200, Thomas Wei�schuh wrote:
-> > Add support for SuperH/"sh" to nolibc.
-> > Only sh4 is tested for now.
-> > 
-> > This is only tested on QEMU so far.
-> > Additional testing would be very welcome.
-> > Test instructions:
-> > $ cd tools/testings/selftests/nolibc/
-> > $ make -f Makefile.nolibc ARCH=sh CROSS_COMPILE=sh4-linux- nolibc-test
-> > $ file nolibc-test
-> > nolibc-test: ELF 32-bit LSB executable, Renesas SH, version 1 (SYSV), statically linked, not stripped
-> > $ ./nolibc-test
-> > Running test 'startup'
-> > 0 argc = 1                                                        [OK]
-> > ...
-> > Total number of errors: 0
-> > Exiting with status 0
+> Switch to the 'file' driver which does support multiple ports and is
+> sufficient for the nolibc-test usecase.
 > 
-> Apologies, I haven't been able to test this yet as my board currently
-> doesn't want to boot kernels newer than v6.5.0 and I have not been able
-> to bisect the problem yet.
-> 
-> Can I test this on v6.5.0 as well?
+> Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
+> Acked-by: Willy Tarreau <w@1wt.eu>
 
-In theory it should be OK as we try to support oldest supported kernels.
+[...]
 
-Willy
+MBR, Sergey
+
