@@ -1,103 +1,114 @@
-Received: from tarta.nabijaczleweli.xyz (tarta.nabijaczleweli.xyz [139.28.40.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oi1-f170.google.com (mail-oi1-f170.google.com [209.85.167.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 298902F2705;
-	Thu,  3 Jul 2025 18:21:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=139.28.40.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6EFF6482EB;
+	Tue,  8 Jul 2025 13:07:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1751566879; cv=none; b=JvUrKuFNrSC4iX2NxNcIcDQVRpD+6Cp9dAaT7N+sGZfIgXSON6X2D0fGOLRAz1YyS1c8WlHL6ayjJHL9PJYpmhwAFg5PALDFAuDECiXg90GTuLYhnl3P6bQ1VuIedCbzjjsIuIIUt+EwSAv5BveD9SOe9U17FdBFLQ13fjWcTh0=
+	t=1751980073; cv=none; b=deq07VbM6+CrRteSEDmEBUUg2FkBx+azEjDfO+hixB512FAidfOXru1bteCalDFVSA/Zn8T/B/vboIehKP98BMh7va9q8hgrsOKBpUEo0ZHa2UqDF6qpNyXRsdoKvyQzBwqz9lDriP1D+lzTnMcREiEbnCd0oVm9CJQ547BSDNo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1751566879; c=relaxed/simple;
-	bh=BRfL2TOlEvi6pyY9teEBUUixQwvNjrah6DozVzUrims=;
-	h=Date:From:Cc:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition; b=RmairYsSoimgvzAWEUz0QJ9O8JjsrnnfomG/sO4tHFInY53uJi2WN0VBoTa/LP9Cr8qmln4j6xolZHgdWMtt8/Y3dGG9nTxiyTee9sccMokfAGoJIfGZo4rFAWgbcl5Kwi4LChxis3w9wRR3d5HsF4h2fnfBDV1h+qxit+N46i4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=nabijaczleweli.xyz; spf=pass smtp.mailfrom=nabijaczleweli.xyz; dkim=pass (2048-bit key) header.d=nabijaczleweli.xyz header.i=@nabijaczleweli.xyz header.b=KGcLeWik; arc=none smtp.client-ip=139.28.40.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=nabijaczleweli.xyz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=nabijaczleweli.xyz
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=nabijaczleweli.xyz header.i=@nabijaczleweli.xyz header.b="KGcLeWik"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nabijaczleweli.xyz;
-	s=202505; t=1751566875;
-	bh=BRfL2TOlEvi6pyY9teEBUUixQwvNjrah6DozVzUrims=;
-	h=Date:From:Cc:Subject:From;
-	b=KGcLeWikW8A1oI6CQXXbdC3x5cs5PerEHmfc24KQ9SzrlpJ6xmPDwiC3UAyr0rIhv
-	 luJeYWGiLEOoT9Z4D57CiJTAK7cKk0zH/eokCHP+4PRYlUkaZLvldk5kG4fqW/RsN6
-	 xbP1aTOyBCKZuOt7mg0UT9Cqiy7gbHejVBOn/By2PoKBDkMrTrqlaqE/l0ApasE1XQ
-	 2OTs8Md4LuMp8GkCOlYmdySEnrqCNi555wA+/3pKmRb7qBg2Gn/5EFKoX4wjztXp5v
-	 VqbGISurlEMk0uafeIm4ARBRWGPHvC1josYmy6ItvTeVS2R0QLh9FgpzWQ3xUbLB6o
-	 dmCuc0oDzShbA==
-Received: from tarta.nabijaczleweli.xyz (unknown [192.168.1.250])
-	by tarta.nabijaczleweli.xyz (Postfix) with ESMTPSA id F14CE6B2;
-	Thu,  3 Jul 2025 20:21:14 +0200 (CEST)
-Date: Thu, 3 Jul 2025 20:21:14 +0200
-From: 
-	Ahelenia =?utf-8?Q?Ziemia=C5=84ska?= <nabijaczleweli@nabijaczleweli.xyz>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v2] SH: pci-sh7780: fix "for a while" typo
-Message-ID: <7dtq2gt7vellawns5uqak3j22fzubp5n4qqpo75bzofdpgalsi@tarta.nabijaczleweli.xyz>
+	s=arc-20240116; t=1751980073; c=relaxed/simple;
+	bh=9W7qqefQpClCYAe+CNqL+Vje4qUSx79iKdzEQLybd74=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=i0zjCIcYmN/czuHQJtKzwaTzDphMnWpkuNVHCCqiGwn8mffQFr2isENkeGTBCcZ+AHDRl7Kd+gHDFO732XO/lKzyT+3HMtqAaFEeEWZcOuXR1z92xbeIfgsdk/wbDThnxMExmBtEviSZ4ojwb/WXn5WqPDMa5FnkFsvwJG++jCk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.167.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-oi1-f170.google.com with SMTP id 5614622812f47-40669fd81b5so2602185b6e.1;
+        Tue, 08 Jul 2025 06:07:51 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1751980070; x=1752584870;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=zHA6gEHX9MZ7s4PrlO2orh8wTUytyNLu+VlwMAwqKLs=;
+        b=t8x99avWtJfFrmwvgabMRR5514l4ER9IJMIB2eBsyqzIt39XWLlSv1P6VwBMBdiepV
+         sorQgNB6UaQArIjAt58Z04ekn9VE99BEFeqLtj9fF6AxbUdhmY0sjjfGpF7TUgL7Za7s
+         QduSCA3NAOTWT3qLnTYEtZ8WrG/laRqH4R4hdHayeqJtRg3CnfA6TNeaL0RlPVo7dkLR
+         yfDm0uwqrw6rJ1qzO2UoR26B19dvDo5kbD9Ff+lwfz3bUwFqouwvHA/JVSSNuiqqKPi5
+         0Zj54wbM9X/vy866iO5SDJiWncaccuC49RZjus11bYlPCryhakCIN+mMeOiW4p/gWBzg
+         79Sw==
+X-Forwarded-Encrypted: i=1; AJvYcCV/Z4z3wVfDe38Ym02G2rBDoC58mOwcYfhFFOxdW0BZzhhcqI0NqaMmM7dQS4z/8NdCbcSTe3O/BrYFdhBm@vger.kernel.org, AJvYcCVN1npCOtWwoHN7+BiNCE+LONLQwinUq3HFqhSfZWdOOi/p8oB/mpY+PLYO+6f9rHuLvRppBFtVTUc=@vger.kernel.org, AJvYcCX3cZijt9cDwBJZQmNiQ7+0JL0Bj7dfeYenO57BuVwrWFxWoSWKoERIy692J99heFFEBugf0vO0LvY=@vger.kernel.org
+X-Gm-Message-State: AOJu0Yzqq3VzLEOJj0bACTeC1st4hZ7gON2yQKRX8g0uQTRjuSULE3rp
+	B9DhW4ViUKExXHMx0J3KoVtqwEAf0s7cOgf428e2ZIOyZbgutNTSzRFdNNux7mtq
+X-Gm-Gg: ASbGncsDe0XajQwciALwCsx3b5nnjubz0JgqPLy+Ia5FUgWjjW6skcH7YaUl71xF0VY
+	vykjLcuX1q4+eBA0HxOau9CNMEx0hxO92g834G6VcjQCQcmCwIHnNa0aHr0BdAIQnxBEuyNxKkQ
+	YfHk84Q+0WYdxs1mm1unBtlmKafAEXeIaECD1froKXdM+/z/QjdRhhPMi8Rk8effukh0GiiLJth
+	Uor4cJZy7KsGoN5r527/exgzufDlNz+DLCuylZhi1DMuAXr6g6Z/wkEePxFcu2epk5rAZnl0tqP
+	CIkLjsRt6tLegnwx+N0Sgu/K9gTJKxDMt3boVyV7BRwEFwGHl6K/6dtskw4Utzna7ia/gGEXXBX
+	lx8ALM9qHRQ5/6vFnlcjIr64liJglFL0STm/rL0g=
+X-Google-Smtp-Source: AGHT+IGzOm4F12WKyZyhYSva1PlcU9gg0OaESdzqG7slaO6MzKoFZKwa4gvt3PvPvKuVHl6Mcxf7QQ==
+X-Received: by 2002:a05:6808:4f11:b0:40b:3bdd:ba22 with SMTP id 5614622812f47-40d073cce09mr10668022b6e.24.1751980066586;
+        Tue, 08 Jul 2025 06:07:46 -0700 (PDT)
+Received: from mail-oi1-f172.google.com (mail-oi1-f172.google.com. [209.85.167.172])
+        by smtp.gmail.com with ESMTPSA id 5614622812f47-40d02a442d3sm1666412b6e.13.2025.07.08.06.07.46
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 08 Jul 2025 06:07:46 -0700 (PDT)
+Received: by mail-oi1-f172.google.com with SMTP id 5614622812f47-40669fd81b5so2602103b6e.1;
+        Tue, 08 Jul 2025 06:07:46 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCUC/JEkl5IhVGA+jeuExUCHBdt0Y4VDhfXsD12xJz6f2PPmdpaiH73tDOtojgziUL3WIYEDw2wUcQo=@vger.kernel.org, AJvYcCWwrlZ9Z5XgcFcK32kWMCw/8QsizYCoEeEeNNmp3UBo/kbKesDhq7gtQWGr8wQbmdW+A0MRH4ERdqQ=@vger.kernel.org, AJvYcCXGUmbEy+HVYgexhSKg8OvPWJmBjKmX+wb05ejJp057Z5uZoPUheA1TOFQwZFT0gzOjbuMODC+et92ZkVk2@vger.kernel.org
+X-Received: by 2002:a05:6808:211f:b0:40c:5b58:c9f9 with SMTP id
+ 5614622812f47-40d073ccd23mr11010099b6e.22.1751980065545; Tue, 08 Jul 2025
+ 06:07:45 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="midcd5sg5rny2et5"
-Content-Disposition: inline
-User-Agent: NeoMutt/20231221-2-4202cf-dirty
+References: <20250404122114.359087-1-krzysztof.kozlowski@linaro.org>
+In-Reply-To: <20250404122114.359087-1-krzysztof.kozlowski@linaro.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 8 Jul 2025 15:07:33 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdUn=qOoKp+tNNCepb1eBXpnikJxg8w6aRR50QK562tE1w@mail.gmail.com>
+X-Gm-Features: Ac12FXwubtqCI7AQOEbn8rPLHwCHn9Lj_ZNicF63P3NXB5Z4ojYkRq3WlQv2Kds
+Message-ID: <CAMuHMdUn=qOoKp+tNNCepb1eBXpnikJxg8w6aRR50QK562tE1w@mail.gmail.com>
+Subject: Re: [PATCH 1/2] dmaengine: sh: Do not enable SH_DMAE_BASE by default
+ during compile testing
+To: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Cc: Vinod Koul <vkoul@kernel.org>, Peter Ujfalusi <peter.ujfalusi@gmail.com>, 
+	dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 
+CC linux-sh
 
---midcd5sg5rny2et5
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Hi Krzysztof,
 
-Signed-off-by: Ahelenia Ziemia=C5=84ska <nabijaczleweli@nabijaczleweli.xyz>
----
-v1: https://lore.kernel.org/lkml/h2ieddqja5jfrnuh3mvlxt6njrvp352t5rfzp2cvnr=
-ufop6tch@tarta.nabijaczleweli.xyz/t/#u
+On Fri, 4 Apr 2025 at 14:22, Krzysztof Kozlowski
+<krzysztof.kozlowski@linaro.org> wrote:
+> Enabling the compile test should not cause automatic enabling of all
+> drivers.
+>
+> Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 
- arch/sh/drivers/pci/pci-sh7780.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thanks for your patch, which is now commit 587dd30449fb1012
+("dmaengine: sh: Do not enable SH_DMAE_BASE by default during
+compile testing") in dmaengine/next.
 
-diff --git a/arch/sh/drivers/pci/pci-sh7780.c b/arch/sh/drivers/pci/pci-sh7=
-780.c
-index 9a624a6ee354..f41d6939a3d9 100644
---- a/arch/sh/drivers/pci/pci-sh7780.c
-+++ b/arch/sh/drivers/pci/pci-sh7780.c
-@@ -153,7 +153,7 @@ static irqreturn_t sh7780_pci_serr_irq(int irq, void *d=
-ev_id)
- 	/* Deassert SERR */
- 	__raw_writel(SH4_PCIINTM_SDIM, hose->reg_base + SH4_PCIINTM);
-=20
--	/* Back off the IRQ for awhile */
-+	/* Back off the IRQ for a while */
- 	disable_irq_nosync(irq);
- 	hose->serr_timer.expires =3D jiffies + HZ;
- 	add_timer(&hose->serr_timer);
---=20
-2.39.5
+> --- a/drivers/dma/sh/Kconfig
+> +++ b/drivers/dma/sh/Kconfig
+> @@ -16,7 +16,7 @@ config SH_DMAE_BASE
+>         depends on SUPERH || COMPILE_TEST
+>         depends on !SUPERH || SH_DMA
+>         depends on !SH_DMA_API
+> -       default y
+> +       default SUPERH || SH_DMA
 
---midcd5sg5rny2et5
-Content-Type: application/pgp-signature; name="signature.asc"
+I think the check for SUPERH is superfluous, due to the dependency on
+"!SUPERH || SH_DMA" above.
 
------BEGIN PGP SIGNATURE-----
+>         select RENESAS_DMA
+>         help
+>           Enable support for the Renesas SuperH DMA controllers.
 
-iQIzBAABCgAdFiEEfWlHToQCjFzAxEFjvP0LAY0mWPEFAmhmyhoACgkQvP0LAY0m
-WPHhjQ//aNPSeoMHM2y4omDzecqKl6AjM5PSZDUwBzjPb4hjv6Kj/0zr3dBjS4Tg
-+FHtf3v8jFJ+sCK1/H56jRXkhUofzMSn41O7398fT22OV15htd+zw/K2pazxf0YU
-fMNHmf3S2SiWKaIvyo0rw7VEEiDBhdjVlM+gxzhqCk5Sw8JEs//S1yipR4J6DvNC
-D9V83n9915c1kmL/AiGFxMcWmXixGStPSI44nHzloSwvdIjDlX+Ly6UHSECQZsVs
-CxVW8iDnJZjF+qUce9qffZVCM2D53JKlvB6pdrD6GLItgG0R0J2wQAmyNGTt1vjc
-0++6OLcVGMi77IsF89QNUMLDh5pv8zCmx9h8PlQqofp4XhUWpzwh5odxeYUkxaxp
-kp17DmJaJCSilcBk/BSv3XsCHEFqpd5/Ol3hQpKT3lDTyptaNb2uehF/m0W4vai3
-L31hu1tCI/DQ8EDuHSMZ0SPD+t7jh8NYCMWUHmLWEO29fH1xAs3FqCrgJXsyB++S
-PqibSX6wttFaRkQgus6vTk0PDI7al0u/JZBkbekWMte5PHpg11cUN4/X/0S8G+Za
-Gxu6Ey7j3xoenAjvCF6tg72aiyv9JKlZYm0h29fMbUiiX46oig87fm3LFUez4/qt
-rVSWaCNEaC55BQJiNmDueilZ+jJUNrnnrXbkSOsm2nQ5Qk2+v60=
-=F85i
------END PGP SIGNATURE-----
+Gr{oetje,eeting}s,
 
---midcd5sg5rny2et5--
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
