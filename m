@@ -1,135 +1,245 @@
-Received: from mail-pf1-f171.google.com (mail-pf1-f171.google.com [209.85.210.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from www3579.sakura.ne.jp (www3579.sakura.ne.jp [49.212.243.89])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F089EEA8;
-	Tue,  8 Jul 2025 13:31:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4C0F174C08;
+	Wed,  9 Jul 2025 05:13:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=49.212.243.89
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1751981520; cv=none; b=NMYDi44Fpqy9x9fXRGnSRzuGGxNXQelrsnQXtpjrGLCeuNU4ICfnXCaTICVv917LrL2sbrlSktrobqlZfiAIYR26vSrJeAxDc5Ww0UXyfmN+A+ycW0u3bKsO3SDQ+xihSaxaeTyj67sRT3l+7P8QqQ+tin89M3OKVAlBKqZmotw=
+	t=1752038034; cv=none; b=cYNceocUiHN7nmUHZm3xfZqQ9l+jSV8and5OxWDnUgOUb7IHSi1Sdy0XkjEBHzy5Q2m6v0uBFRd+X613+2tB9LV5xSxdwRJeaC10G0vRoseQ1XO7X2sAbSGZQfCk7YiAErXR8tEZ751T+qeSanFDNxz4acBxGvJ7NxkVApq9lMQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1751981520; c=relaxed/simple;
-	bh=g9yFXkB8Qe9fQYPOMXlv3LTCqj74YDJQiyagwz2sdJM=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=W1pjMpLjAEuK7d8dBV4TZKN3p0XV81jpb9CKqseOKw28vab3V2LnV7Bu0zVjaHwmKz9Vc8FWZ9M4AvxTsQ4W8UO05YLVStpgicCQpeg2NLGJYZUsMmOog1v2sCpj9jYsyZ8nbOjxyfc7rtI18O+HIkNJ9v/KcFsBGJlcMGXFjvY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.210.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-pf1-f171.google.com with SMTP id d2e1a72fcca58-7399a2dc13fso5094491b3a.2;
-        Tue, 08 Jul 2025 06:31:58 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1751981517; x=1752586317;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=xxhuRDHiukzLToUdkGAkho9cpYP0RcWZ4Jmct4r6kbk=;
-        b=Vz/2Orz4LHAxCTMMeyGmJp2vW1BQUS0taksW+HR8XsJiCHYPD4KlBO/WyBzSGqLktT
-         PPv98bq1RR9DxQQymLU5w7w4sPccKyrDLm9l1hWfFAWde3lOoBH44Wum1dFkM26i3t2E
-         zmmjVvD6zXfl2aF1NEVZARYlZwI/W5oKX/v7+S9RFKKPeqnOpwcmg09lwKpSotudULzs
-         ZFS5OYTAwg6K/DLtxgkljYb+Tl+TVchahNZ0Lx62POckRyzpkIsEwAFHoT/qDnUNMcvE
-         ldx6Gi6AcnY2zMrNJW8DOv2uLL4OTT7CobKP5QE9VatoQz/sDnghwgWDMywP3LrgQMQV
-         F1Hw==
-X-Forwarded-Encrypted: i=1; AJvYcCUEpfEYXbFe4EJWYOWx6t8/Nbkl4TCOrsrDPDbZ0qjYQ36Agu4wD9QWMwEYKup8bgBX9AURSwvndNY=@vger.kernel.org, AJvYcCV5z8NFpnFhAYCgA/KIl7QyQ07Kpq80D94iSc8R4cGONF94w7CFyh8iGqefJcRy6tV41HiTA8Swa9lif4mO@vger.kernel.org, AJvYcCXPj7QjhFgjbnlbuRN1Lnaqhd8EK1xvwmc41rTrG30Z7M66MR77TB9WKB7EcbvHqe8aZs1Gh4gpcnY=@vger.kernel.org
-X-Gm-Message-State: AOJu0YxzKZzxLK4pi6v2Di3nV/+xlc38KP5BTy3EHVuyDCeC8HbT+tpr
-	QnIbOne7RBJnkcSRZJN743o61xVlw6WGRTtJe1aQEMlB/f8jd2mDo4177xXX3/z9
-X-Gm-Gg: ASbGncv22xriW/4m009WcJmst7lWqJ9HCekKJ3pznsIyQh7J9nFBJkcxcIa1HubJ4I1
-	lYjC0MOLWvc3bHpdCt1D/n9UMEWTYdSS3nnOeLW5jxGbHvDFrAsJ337ytfu2XHg1/D2ODFrYHaF
-	1VkSZuU8uieWjCSdSTj9SUVkBWymKZyrtxhYnD/aLO/wegKJzzQsLgStGgKU5IVq0NNzB2wffiP
-	FFDryeRY8AGanvsea1TgQblnjvp2tbUjgQluVn+c6A2TmLsSK6cJc5nOBwdjG1+y2gmqoDM7ysH
-	7bnVlhxIVevHNpD/Hp0Vamkf8LyNzuKdXMbBYCiE65t9eFO/4pJfJg+aREIxr56vpVKAccQWlEJ
-	yzln02xS3jFRGrdV3E+HrnS2lUm0CzSpRpmzz7I8=
-X-Google-Smtp-Source: AGHT+IEysCHVUtKRTrt64N2f6FKBX5ZwE4vgbFd7q8GPNtkqQJMq1aESpxzZOiFktQKqFN0eWhutZQ==
-X-Received: by 2002:a05:6a00:14c9:b0:748:eb38:8830 with SMTP id d2e1a72fcca58-74ce6669b0emr20723005b3a.13.1751981516595;
-        Tue, 08 Jul 2025 06:31:56 -0700 (PDT)
-Received: from mail-pl1-f172.google.com (mail-pl1-f172.google.com. [209.85.214.172])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-74ce42cefadsm11835787b3a.151.2025.07.08.06.31.56
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 08 Jul 2025 06:31:56 -0700 (PDT)
-Received: by mail-pl1-f172.google.com with SMTP id d9443c01a7336-23508d30142so52390835ad.0;
-        Tue, 08 Jul 2025 06:31:56 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCU/r049bN+/o8nqDNsDeEDTIfy1C8UL8Dw5FSU29GU/dFX7TJQ2MBgGIK1I5Uye5fMxOcem5G9q5g0=@vger.kernel.org, AJvYcCUPvJXJuJliwV5UorTVfxL45gRag05AzBWChgMMgTLTdYLcULtyszTvpqxh1c5ZHiNOTkFf3l1yX4z3o9Au@vger.kernel.org, AJvYcCWbSvrc5H10d+KZHjwIeie02aIW5TjJSBnsHczgmrKI7l6D8mm4Pn2OjoHdxpiZDWaNyNghLYo8dB8=@vger.kernel.org
-X-Received: by 2002:a17:902:f686:b0:235:a9b:21e0 with SMTP id
- d9443c01a7336-23c85cb3bd8mr241105105ad.0.1751981515563; Tue, 08 Jul 2025
- 06:31:55 -0700 (PDT)
+	s=arc-20240116; t=1752038034; c=relaxed/simple;
+	bh=EN5ByLBGywGLTiCp1bK3fyTglM7Zbn5pwSVlzcDFN2s=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=pGaipwUU/aWjK1ythTQJVB8GAk8/oF60HBsfg6QT1XCQjprEGRFucFBWqmHYIaM3ejuBgZ/jCUyxmBwom6aUfqrJ0vh1E8NKq2nX79cFGQHyA9TWijFUzHMFWfgbCQzhY4jrJSPu8MAc6O0OLzDJm7f+MPTYH/P8/ezZAE14tFI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=rsg.ci.i.u-tokyo.ac.jp; spf=pass smtp.mailfrom=rsg.ci.i.u-tokyo.ac.jp; dkim=fail (0-bit key) header.d=rsg.ci.i.u-tokyo.ac.jp header.i=@rsg.ci.i.u-tokyo.ac.jp header.b=P+9TWd4x reason="key not found in DNS"; arc=none smtp.client-ip=49.212.243.89
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=rsg.ci.i.u-tokyo.ac.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rsg.ci.i.u-tokyo.ac.jp
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=fail reason="key not found in DNS" (0-bit key) header.d=rsg.ci.i.u-tokyo.ac.jp header.i=@rsg.ci.i.u-tokyo.ac.jp header.b="P+9TWd4x"
+Received: from [157.82.206.39] ([157.82.206.39])
+	(authenticated bits=0)
+	by www3579.sakura.ne.jp (8.16.1/8.16.1) with ESMTPSA id 56955rZV065688
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NO);
+	Wed, 9 Jul 2025 14:05:53 +0900 (JST)
+	(envelope-from odaki@rsg.ci.i.u-tokyo.ac.jp)
+DKIM-Signature: a=rsa-sha256; bh=4clTUl4sMeFn+3+ZKeZuCK2i1/1ZYbUuPzsuXuco86k=;
+        c=relaxed/relaxed; d=rsg.ci.i.u-tokyo.ac.jp;
+        h=Message-ID:Date:Subject:To:From;
+        s=rs20250326; t=1752037554; v=1;
+        b=P+9TWd4xgbOJt4IAGxHHsFZCUP5mU2LruCqB6XvGSTxPuNiG88lEdFqKSI5e8GV9
+         IZQ027gIzqE6R884yIAbqFDeeb+QV4d98ETFvdXUnoX+FYopiMFnNscVsB2zI9Wa
+         2l2RcZyKqEBQDUjGZTaMI0r6Rf5IedBu6hCBpXk/895FEVdR2zQg58ehwJmyxgfF
+         XT9yXnMK/B98pfOeSBYxC5A9B18qaCU6AclyvtM00Ovo46CMOeuPcCCb07Ssut/I
+         yGZrAOC9hnteaFT0HuEm66QoaIAFlJenYdCL8L9SlWdVr/Lxm01+5vFw0NVbVwNR
+         jKgFire83dealgPIcgL8rg==
+Message-ID: <36c0213c-6b14-4ad2-969e-3d8e356bb680@rsg.ci.i.u-tokyo.ac.jp>
+Date: Wed, 9 Jul 2025 14:05:53 +0900
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20250404122114.359087-1-krzysztof.kozlowski@linaro.org>
- <CAMuHMdUn=qOoKp+tNNCepb1eBXpnikJxg8w6aRR50QK562tE1w@mail.gmail.com> <99ca93ef-ab26-4d6b-bc7b-fd2f98aecabe@linaro.org>
-In-Reply-To: <99ca93ef-ab26-4d6b-bc7b-fd2f98aecabe@linaro.org>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 8 Jul 2025 15:31:41 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUSudUvm-ZhTBMtYn814+My2On3_nag60AHNOfX9eGEcw@mail.gmail.com>
-X-Gm-Features: Ac12FXxs-6JOzLBYbGJZr_Ju2YGiG9r7OtCO8RqDkOV1Do5ThXuxslQiGqbF7wU
-Message-ID: <CAMuHMdUSudUvm-ZhTBMtYn814+My2On3_nag60AHNOfX9eGEcw@mail.gmail.com>
-Subject: Re: [PATCH 1/2] dmaengine: sh: Do not enable SH_DMAE_BASE by default
- during compile testing
-To: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-Cc: Vinod Koul <vkoul@kernel.org>, Peter Ujfalusi <peter.ujfalusi@gmail.com>, 
-	dmaengine@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	Linux-sh list <linux-sh@vger.kernel.org>, 
-	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 00/23] binfmt_elf,arch/*: Use elf.h for coredump note
+ names
+To: Dave Martin <Dave.Martin@arm.com>, linux-kernel@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>, "H. Peter Anvin"
+ <hpa@zytor.com>,
+        "James E.J. Bottomley"
+ <James.Bottomley@HansenPartnership.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Alexandre Ghiti <alex@ghiti.fr>, Andreas Larsson <andreas@gaisler.com>,
+        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+        Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Chris Zankel <chris@zankel.net>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        Dinh Nguyen
+ <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>, Guo Ren <guoren@kernel.org>,
+        Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>,
+        Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+        Johannes Berg <johannes@sipsolutions.net>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Jonas Bonn <jonas@southpole.se>, Kees Cook <kees@kernel.org>,
+        Madhavan Srinivasan <maddy@linux.ibm.com>,
+        Max Filippov
+ <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>, Oleg Nesterov <oleg@redhat.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Paul Walmsley
+ <paul.walmsley@sifive.com>,
+        Rich Felker <dalias@libc.org>, Richard Weinberger <richard@nod.at>,
+        Russell King <linux@armlinux.org.uk>,
+        Stafford Horne <shorne@gmail.com>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Sven Schnelle <svens@linux.ibm.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>,
+        WANG Xuerui <kernel@xen0n.name>, Will Deacon <will@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-um@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+        loongarch@lists.linux.dev, sparclinux@vger.kernel.org, x86@kernel.org
+References: <20250701135616.29630-1-Dave.Martin@arm.com>
+Content-Language: en-US
+From: Akihiko Odaki <odaki@rsg.ci.i.u-tokyo.ac.jp>
+In-Reply-To: <20250701135616.29630-1-Dave.Martin@arm.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Hi Krzysztof,
+On 2025/07/01 22:55, Dave Martin wrote:
+> This series aims to clean up an aspect of coredump generation:
+> 
+> ELF coredumps contain a set of notes describing the state of machine
+> registers and other information about the dumped process.
+> 
+> Notes are identified by a numeric identifier n_type and a "name"
+> string, although this terminology is somewhat misleading.  Officially,
+> the "name" of a note is really an "originator" or namespace identifier
+> that indicates how to interpret n_type [1], although in practice it is
+> often used more loosely.
+> 
+> Either way, each kind of note needs _both_ a specific "name" string and
+> a specific n_type to identify it robustly.
+> 
+> To centralise this knowledge in one place and avoid the need for ad-hoc
+> code to guess the correct name for a given note, commit 7da8e4ad4df0
+> ("elf: Define note name macros") [2] added an explicit NN_<foo> #define
+> in elf.h to give the name corresponding to each named note type
+> NT_<foo>.
+> 
+> Now that the note name for each note is specified explicitly, the
+> remaining guesswork for determining the note name for common and
+> arch-specific regsets in ELF core dumps can be eliminated.
+> 
+> This series aims to do just that:
+> 
+>   * Patch 2 adds a user_regset field to specify the note name, and a
+>     helper macro to populate it correctly alongside the note type.
+> 
+>   * Patch 3 ports away the ad-hoc note names in the common coredump
+>     code.
+> 
+>   * Patches 4-22 make the arch-specific changes.  (This is pretty
+>     mechanical for most arches.)
+> 
+>   * The final patch adds a WARN() when no note name is specified,
+>     and simplifies the fallback guess.  This should only be applied
+>     when all arches have ported across.
+> 
+> See the individual patches for details.
+> 
+> 
+> Testing:
+> 
+>   * x86, arm64: Booted in a VM and triggered a core dump with no WARN(),
+>     and verified that the dumped notes are the same.
+> 
+>   * arm: Build-tested only (for now).
+> 
+>   * Other arches: not tested yet
+> 
+> Any help with testing is appreciated.  If the following generates the
+> same notes (as dumped by readelf -n core) and doesn't trigger a WARN,
+> then we are probably good.
+> 
+> $ sleep 60 &
+> $ kill -QUIT $!
+> 
+> (Register content might differ between runs, but it should be safe to
+> ignore that -- this series only deals with the note names and types.)
+> 
+> Cheers
+> ---Dave
+> 
+> 
+> [1] System V Application Binary Interface, Edition 4.1,
+> Section 5 (Program Loading and Dynamic Linking) -> "Note Section"
+> 
+> https://refspecs.linuxfoundation.org/elf/gabi41.pdf
+> 
+> [2] elf: Define note name macros
+> 
+> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/include/uapi/linux/elf.h?id=7da8e4ad4df0dd12f37357af62ce1b63e75ae2e6
+> 
+> 
+> Dave Martin (23):
+>    regset: Fix kerneldoc for struct regset_get() in user_regset
+>    regset: Add explicit core note name in struct user_regset
+>    binfmt_elf: Dump non-arch notes with strictly matching name and type
+>    ARC: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    ARM: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    arm64: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    csky: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    hexagon: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    LoongArch: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    m68k: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    MIPS: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    nios2: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    openrisc: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    parisc: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    powerpc/ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    riscv: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    s390/ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    sh: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    sparc: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    x86/ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    um: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+>    xtensa: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note
+>      names
+>    binfmt_elf: Warn on missing or suspicious regset note names
+> 
+>   arch/arc/kernel/ptrace.c                 |  4 +-
+>   arch/arm/kernel/ptrace.c                 |  6 +-
+>   arch/arm64/kernel/ptrace.c               | 52 ++++++++---------
+>   arch/csky/kernel/ptrace.c                |  4 +-
+>   arch/hexagon/kernel/ptrace.c             |  2 +-
+>   arch/loongarch/kernel/ptrace.c           | 16 ++---
+>   arch/m68k/kernel/ptrace.c                |  4 +-
+>   arch/mips/kernel/ptrace.c                | 20 +++----
+>   arch/nios2/kernel/ptrace.c               |  2 +-
+>   arch/openrisc/kernel/ptrace.c            |  4 +-
+>   arch/parisc/kernel/ptrace.c              |  8 +--
+>   arch/powerpc/kernel/ptrace/ptrace-view.c | 74 ++++++++++++------------
+>   arch/riscv/kernel/ptrace.c               | 12 ++--
+>   arch/s390/kernel/ptrace.c                | 42 +++++++-------
+>   arch/sh/kernel/ptrace_32.c               |  4 +-
+>   arch/sparc/kernel/ptrace_32.c            |  4 +-
+>   arch/sparc/kernel/ptrace_64.c            |  8 +--
+>   arch/x86/kernel/ptrace.c                 | 22 +++----
+>   arch/x86/um/ptrace.c                     | 10 ++--
+>   arch/xtensa/kernel/ptrace.c              |  4 +-
+>   fs/binfmt_elf.c                          | 36 +++++++-----
+>   fs/binfmt_elf_fdpic.c                    | 17 +++---
+>   include/linux/regset.h                   | 12 +++-
+>   23 files changed, 194 insertions(+), 173 deletions(-)
+> 
+> 
+> base-commit: 86731a2a651e58953fc949573895f2fa6d456841
 
-On Tue, 8 Jul 2025 at 15:21, Krzysztof Kozlowski
-<krzysztof.kozlowski@linaro.org> wrote:
-> On 08/07/2025 15:07, Geert Uytterhoeven wrote:
-> > On Fri, 4 Apr 2025 at 14:22, Krzysztof Kozlowski
-> > <krzysztof.kozlowski@linaro.org> wrote:
-> >> Enabling the compile test should not cause automatic enabling of all
-> >> drivers.
-> >>
-> >> Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-> >
-> > Thanks for your patch, which is now commit 587dd30449fb1012
-> > ("dmaengine: sh: Do not enable SH_DMAE_BASE by default during
-> > compile testing") in dmaengine/next.
-> >
-> >> --- a/drivers/dma/sh/Kconfig
-> >> +++ b/drivers/dma/sh/Kconfig
-> >> @@ -16,7 +16,7 @@ config SH_DMAE_BASE
-> >>         depends on SUPERH || COMPILE_TEST
-> >>         depends on !SUPERH || SH_DMA
-> >>         depends on !SH_DMA_API
-> >> -       default y
-> >> +       default SUPERH || SH_DMA
-> >
-> > I think the check for SUPERH is superfluous, due to the dependency on
-> > "!SUPERH || SH_DMA" above.
->
-> Indeed it might be, but I must admit I don't understand the dependencies
-> here at all. I think commit 9f2c2bb31258 ("dmaengine: sh: Rework Kconfig
-> and Makefile") from Laurent made it confusing and this later just grew
-> to even more confusing.
->
-> What is the intention for "depends on"? This should be enabled when
-> SUPERH AND SH_DMA are enabled?
->
-> SH_DMA cannot be enabled without SUPERH (no compile test), right? But
-> this "depends on !SUPERH || SH_DMA" suggests it could be. This should be
-> read for humans as "if not SUPERH, then require at least SH_DMA".
-> Otherwise what is the meaning for humans? This driver will work fine
-> without SUERPH?
->
-> My change for default could be rewritten but I don't understand the goal
-> behind current depends, so not sure how should I rewrite it.
+For the whole series:
+Reviewed-by: Akihiko Odaki <odaki@rsg.ci.i.u-tokyo.ac.jp>
 
-I think the original plan was to use the SH DMA drivers on ARM SH-Mobile
-SoCs, too.  But enabling SH_DMA on ARM SH-Mobile was never integrated
-upstream, and the focus shifted to ARM R-Car SoCs, for which the shiny new
-R-Car DMA driver was written...
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Regards,
+Akihiko Odaki
