@@ -1,87 +1,178 @@
-Received: from mail-qk1-f180.google.com (mail-qk1-f180.google.com [209.85.222.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DAE5423C4FE;
-	Wed,  9 Jul 2025 19:03:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.180
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9526D9460;
+	Tue, 15 Jul 2025 05:37:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1752087823; cv=none; b=HCvVXDTKngphVm6Qp/UJstG9v0pPap8ZRWDGJaYiCTHAfsNDR9T3XyDhSOxgbf5bHnEx6DoR+kUEbKSCeE3lmZcMhb8Pum69ntmOGVrKOGgm67QLGmb7E35Gto8BEmZmV3JvYEAbNrNGcb2JVHx0AGOmlSLzkpxRbUFxi7mH4Ks=
+	t=1752557840; cv=none; b=BkjkvlFmc7ipMRdreq/sefIL+nfspa10FQRKJubaWeQN0irHvJFtLGMuhXvx3S68KnzmMQYLqzE+jEud7mGZFcQAKfrRDPQ9SwQzmEuUd8acTAPul035h45Q1tT5BfslTeedT8K6Wr9lrTy6PGmRAvMvtCRdx/HQ57/hCkxk5eY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1752087823; c=relaxed/simple;
-	bh=dbQ6yFQ3FFviBApF8t06O+SuXNB8Hm+OERWMZU9Z6oA=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=DxQ6hKhV4sNBjaTzvENPquDlLQnLWmSIPBkO051scEhpAsd4pN+omU5kRxvg4XvPJML2/EV5L8qRmC1g5Fr8T8tY+xtm/QJGEgnJvTb+RMc4qdCUDqCjUUq3qCdKum34tKEmjpiEEw1T1lPFbYbideyfauKmpm7Tf8vOOnh6zPw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-qk1-f180.google.com with SMTP id af79cd13be357-7d9e2f85ab4so19418185a.3;
-        Wed, 09 Jul 2025 12:03:40 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1752087819; x=1752692619;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=IK7wLEDDGqAnvkVp+22bCllHhK7jta3H8Yu04LUbZuI=;
-        b=SSfBl7YGOWJQqlWrUMjvz8xIw2i1P5JZsS7+UAoK3gw5BQcHki6i40fFj6VqIRHvNn
-         ALnX633bvNrZarvq+mWcYlWD7ItsnvClpIky7+h0PcHb9/IH2uFZ1kGIUvHI4AoTuDps
-         nQ95y/qQhBAtdxnQ3BrxOnON2oyk7vSqzgEGgOW1RtMq3Z+ys0I8/AHHdseHtRfuoSkb
-         M19YSSxK0Rz95AX/6nsOfWz2uLuyhasP09RZEcnANk3CVUOqOcc2W9WsY5jYVEQM7CVU
-         xuxqA2qo3vwRgPNmVLDzVZyDERdacZ0jmKSPOEbmiJMoy7nn/6TorpWm4gCSWUtZ1dCF
-         AJkQ==
-X-Forwarded-Encrypted: i=1; AJvYcCUdYc1z8I85nJxkiejDjsIkwM9QQBSy7qJ76vLELA4StXavO/vXSxqFMyDgB8P2itI71AU9NRDqY6vrvKSw8wMFgw==@vger.kernel.org, AJvYcCXu/flVQqAvBZz86HJnlxQLhG5aqjLZmaXotJCJuWk6Bk0eGDy9jtix6mRx2KMRgPn3yhirNQgb5a0=@vger.kernel.org
-X-Gm-Message-State: AOJu0YxiEO4u9lTYNYVDrNlJN1Hhe932r6FnYQ7M/V0ra1TDOmcuMkA6
-	EfQmvKl/oUamZm3Z7FRaSWquz3dHISie4zY89AwNFYQHW614EmTmxkmDeL6TE9ar
-X-Gm-Gg: ASbGncvzZUTuaE2qE2HX2sUwpJHLte+R9zhqal5I5aR9cmxSk0CJMbjRO1twdl0yPHj
-	4cCIauokMRGpWUfKJqRgE1a3S+yz+tBRCeDTciKAUFCQyGMrRWNmsUPQw6YoOzTovSHBhsxiHNI
-	+2w8yuiueNmpz+bBzQDbpek4lLUPM0MdnpIABci9BW646cG7dfvUrFy8rMwodUbuVpoxBuDTJwx
-	nuGTKm/OrfJ3sIO3EYUlNPIY2WzeEmauj+lqJtR8jcuBJd9VIqtWBMYmR6w0XTgjBS3vHlz3AXs
-	vs3cLOcvwqHaNSNYSV9JpLSxcaP8gd5OAZhP2Ghoj1WSQmro4EMmczb2XwF/OaCs/eG/MiXYZt9
-	logxCYX4+A6C7sDiWIwHhb8G1T+DN
-X-Google-Smtp-Source: AGHT+IE2BgxSmZCy6nQg5MTycOEYc8g5e0tOtUdahtxSq9INAerGmgdKSFRw1hopwlI3M/S/GIfGCg==
-X-Received: by 2002:a05:620a:f84:b0:7d3:f15c:ee33 with SMTP id af79cd13be357-7db7b121192mr414504685a.10.1752087819188;
-        Wed, 09 Jul 2025 12:03:39 -0700 (PDT)
-Received: from mail-qk1-f169.google.com (mail-qk1-f169.google.com. [209.85.222.169])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-7d5dbdb73e2sm977765885a.36.2025.07.09.12.03.38
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 09 Jul 2025 12:03:38 -0700 (PDT)
-Received: by mail-qk1-f169.google.com with SMTP id af79cd13be357-7d09f11657cso25019085a.0;
-        Wed, 09 Jul 2025 12:03:38 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCXDwYAvKzb1VND3lcZO1hELfVyRMcGJ2M6zhKLH9oYAv7wlgR5gpf4SBPv2YrMY+glKwOl444xuojwgV6t8yt2gug==@vger.kernel.org, AJvYcCXqcaAJQNEhzTWRqldK/vxDNq9wguWflvWSop/lZyPJ6788Mr/n1J4mZIeJRv2Y4naFRsXtZCGq5n4=@vger.kernel.org
-X-Received: by 2002:a05:620a:1a95:b0:7d4:1e5a:95cf with SMTP id
- af79cd13be357-7db7d3a58d7mr548228985a.47.1752087818534; Wed, 09 Jul 2025
- 12:03:38 -0700 (PDT)
+	s=arc-20240116; t=1752557840; c=relaxed/simple;
+	bh=6J3hCrPuy++HUhp2ZStrBO9vMI6jCI0BvgNUFtgBHOI=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=V2aReAtwNHQlYSU87Y84psucLvrdkSN1qRLdXnddAuZVm28YmtzffoiSKJ6qgj2rjs5bvXnVmgCgHkyPuELj6L4PHfUErH3Pd0FjCFiQ6538zZMPOQj3YfxcVkOUhmqFxdvUmtnJ/tOzwSkca3a1WROOH6WDgwkMtC1DCWTaXuI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=OD3WsebZ; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="OD3WsebZ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0FCD8C4CEE3;
+	Tue, 15 Jul 2025 05:37:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1752557840;
+	bh=6J3hCrPuy++HUhp2ZStrBO9vMI6jCI0BvgNUFtgBHOI=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+	b=OD3WsebZ74BNCweLXWK6ZDpiy1GYCnmXu2xh27/ENvLdsLSkrLFQ6mR5l1mP+HUMG
+	 MShniYJqNM1s31wMmQw8FxDkHjit4SvfyoI6wUc1GOv+6z5AyvmnmyD6drAojuQ7np
+	 fOs0Zsj44GMv/NBf25ahV1vQZSouQi2ASuXroB6TqmINioyqTPuLu3wfF4V0KxSSjK
+	 0PR45/X7hWdpadu6p9W0SgtO5vmgSyqWPe258S/Buu2TrZcJGDDU9K/fmM8I4Uoql0
+	 Hu69E3heOIAt/PsIe2m0WLAzWWr5PZ0Gr/ihpETockVthBQZ9NoB8xkXw0f93zawy2
+	 SFMRROjblWu6w==
+From: Kees Cook <kees@kernel.org>
+To: linux-kernel@vger.kernel.org,
+	Dave Martin <Dave.Martin@arm.com>
+Cc: Kees Cook <kees@kernel.org>,
+	"David S. Miller" <davem@davemloft.net>,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+	Akihiko Odaki <akihiko.odaki@daynix.com>,
+	Albert Ou <aou@eecs.berkeley.edu>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Alexandre Ghiti <alex@ghiti.fr>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Brian Cain <bcain@kernel.org>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Chris Zankel <chris@zankel.net>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Guo Ren <guoren@kernel.org>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Helge Deller <deller@gmx.de>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Jonas Bonn <jonas@southpole.se>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Oleg Nesterov <oleg@redhat.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Paul Walmsley <paul.walmsley@sifive.com>,
+	Rich Felker <dalias@libc.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>,
+	Stafford Horne <shorne@gmail.com>,
+	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Vineet Gupta <vgupta@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Will Deacon <will@kernel.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-arch@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-snps-arc@lists.infradead.org,
+	linux-um@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org,
+	loongarch@lists.linux.dev,
+	sparclinux@vger.kernel.org,
+	x86@kernel.org
+Subject: Re: [PATCH 00/23] binfmt_elf,arch/*: Use elf.h for coredump note names
+Date: Mon, 14 Jul 2025 22:37:11 -0700
+Message-Id: <175255782864.3413694.2008555655056311560.b4-ty@kernel.org>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20250701135616.29630-1-Dave.Martin@arm.com>
+References: <20250701135616.29630-1-Dave.Martin@arm.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <a5628fe028362ae3f8729021a7864dd39f7869bf.1752086885.git.geert+renesas@glider.be>
-In-Reply-To: <a5628fe028362ae3f8729021a7864dd39f7869bf.1752086885.git.geert+renesas@glider.be>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 9 Jul 2025 21:03:24 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdU_PgqFyYczf+bsJ6BLRtQz65zkjw+H9Whoct49GEfrNA@mail.gmail.com>
-X-Gm-Features: Ac12FXxfid5XamUE-HLX9WyHBs5ltMj3xKDA9nzEEuoscbbx6cV3FOZvwIoRmc0
-Message-ID: <CAMuHMdU_PgqFyYczf+bsJ6BLRtQz65zkjw+H9Whoct49GEfrNA@mail.gmail.com>
-Subject: Re: [PATCH] serial: sh-sci: Convert to DEFINE_SIMPLE_DEV_PM_OPS()
-To: Alexandre Belloni <alexandre.belloni@bootlin.com>, 
-	Wolfram Sang <wsa+renesas@sang-engineering.com>
-Cc: linux-rtc@vger.kernel.org, linux-renesas-soc@vger.kernel.org, 
-	linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 
-On Wed, 9 Jul 2025 at 21:00, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> Convert the Renesas SuperH SCI(F) serial port driver from
+On Tue, 01 Jul 2025 14:55:53 +0100, Dave Martin wrote:
+> This series aims to clean up an aspect of coredump generation:
+> 
+> ELF coredumps contain a set of notes describing the state of machine
+> registers and other information about the dumped process.
+> 
+> Notes are identified by a numeric identifier n_type and a "name"
+> string, although this terminology is somewhat misleading.  Officially,
+> the "name" of a note is really an "originator" or namespace identifier
+> that indicates how to interpret n_type [1], although in practice it is
+> often used more loosely.
+> 
+> [...]
 
-My apologies, this was not meant to be sent to the RTC subsystem.
+Applied to for-next/execve, thanks!
 
-Gr{oetje,eeting}s,
+[01/23] regset: Fix kerneldoc for struct regset_get() in user_regset
+        https://git.kernel.org/kees/c/6fd9e1aa0784
+[02/23] regset: Add explicit core note name in struct user_regset
+        https://git.kernel.org/kees/c/85a7f9cbf8a8
+[03/23] binfmt_elf: Dump non-arch notes with strictly matching name and type
+        https://git.kernel.org/kees/c/9674a1be4dd5
+[04/23] ARC: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/237dc8d79627
+[05/23] ARM: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/49b849d11cd1
+[06/23] arm64: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/87b0d081dc98
+[07/23] csky: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/2c2fb861fc59
+[08/23] hexagon: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/55821111b1b3
+[09/23] LoongArch: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/1260e3b13584
+[10/23] m68k: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/e572168e8d2a
+[11/23] MIPS: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/18bd88faa246
+[12/23] nios2: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/8368cd0e4636
+[13/23] openrisc: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/10cd957a895f
+[14/23] parisc: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/92acdd819b5d
+[15/23] powerpc/ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/307035acefbd
+[16/23] riscv: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/c9502cc7bef5
+[17/23] s390/ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/d6a883cb40fc
+[18/23] sh: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/afe74eecd88f
+[19/23] sparc: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/c9d4cb25e94e
+[20/23] x86/ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/3de0414dec7b
+[21/23] um: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/40d3a88594b5
+[22/23] xtensa: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+        https://git.kernel.org/kees/c/cb32fb722f4b
+[23/23] binfmt_elf: Warn on missing or suspicious regset note names
+        https://git.kernel.org/kees/c/a55128d392e8
 
-                        Geert
+Take care,
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Kees Cook
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
