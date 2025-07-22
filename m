@@ -1,157 +1,150 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B33E421B18B;
-	Sat, 19 Jul 2025 06:52:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BACD1288C01;
+	Tue, 22 Jul 2025 13:56:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1752907965; cv=none; b=GtagsNOEqY2n+jaMpFUEvdzU/ev/wH5DI7Wtt89e6EHqYgLrUugcbg+PKHLgEJ5dGso2cFk5g5wHLh/L96NomTOgszfedyXWWkHVT88/nNjhIkbPLXoUKaajAIslPnIbcbjnskMiLzjydSdALpiulN9Igev/ehprk5zKKMcaqsE=
+	t=1753192608; cv=none; b=lj6VovM8Pc1ZLCSTZV6ysKP2Pb6KBByC82E4nh+H6Fmf01GL3QYLH9N83TxIUsGnC2cP0mFRGOJYIEXjXg9ZyVPlZF8ZL3Aknlh/uVXvsinBVXHMTjLOGUp8zmS/O4Swt2QxYfn4iWjc+0gcJFKAmF5qEFRopFXZ1FIVUhrtb38=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1752907965; c=relaxed/simple;
-	bh=6OH2X3Wst3e0vy94IdDlrw8pEvX7FDKjFs7Y/qkgnGA=;
+	s=arc-20240116; t=1753192608; c=relaxed/simple;
+	bh=kYYGasiChIGrOp2WfdbyJu8FXaB5dOTDpOSPPXTmqKc=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=iR1tO3V0DCKrJUv/OwbqUopLhS0y70sFi4zXFmVqxGa/1vkRaLozZc6mrQCGbx1Au2ayrA4TBzgvH62IelkZNe9KGIXRsnugLUx1hV/Q2VxXqhtIyP6qHbHAojmVd3fVGLh//1aaYFJEX0B4asCOGnsoOe6t/Mt07UINQfHZZCY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b=xKbO697j; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=Isdz7THZ7xXLLi5fH+IKr/BsB8TU+4qy5Rrgjns4j8J6LbeQVLTJDKspN7Atn8H8yjAVm/W9SNK5uSh7NTb8WC3MvNkp68MDZFvdWuH08eAneaneJAVX1O60SjN2DEv0/nRtKa4tqcDZG3ooQN6jq4jtYV3coFHFZxyVAd5izcg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MTF8JVtM; arc=none smtp.client-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="xKbO697j"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7D7EAC4CEE3;
-	Sat, 19 Jul 2025 06:52:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-	s=korg; t=1752907965;
-	bh=6OH2X3Wst3e0vy94IdDlrw8pEvX7FDKjFs7Y/qkgnGA=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=xKbO697jatzdRrok3rYuTBbyv8uR0uNOxEioC1xrZuTZJNDfY9ulx1P0yONafeWyS
-	 AQntVtchLzGHw9/6TbYdhlZFHgCGrMFLVe22um6xdMjrqZ5867cidTVu/m90RtpCV5
-	 ZbC3nSzJqX3/m1/V4xxVP6s321IisGi081KQRfis=
-Date: Sat, 19 Jul 2025 08:52:41 +0200
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: Thierry Reding <thierry.reding@gmail.com>
-Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-riscv@lists.infradead.org, linux-mips@vger.kernel.org,
-	loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
-	linux-sh@vger.kernel.org, linux-pci@vger.kernel.org,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MTF8JVtM"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-45610582d07so43416425e9.0;
+        Tue, 22 Jul 2025 06:56:45 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1753192604; x=1753797404; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=juq2LsaB2ZlgXJfLDxNWAXy+l+g+CamQA/55GYnNXGQ=;
+        b=MTF8JVtMdMfifC7WMEG5jFRRgshh2dk4WsmDSnnHnMOhK2U9M04ZL/0X+r46Gttd+t
+         TUoJdwShZPbr5wvm3m6dZKML+9vxPvGQ+aBwqapqoJYjwVyTDYhNosuJTvtpN7iE5jfp
+         a7tO455Ql2nkDUBvl0IFdHw7021yPU8cZJnNNyTwLCLxu/Hppwwcmwk1qxHaUjg6oncI
+         kkQdrZ/dQSPDjhpoRt/if2zcK1B6/7in26kSntWsfBbeXmq6qZEVU+6VhctuW0q5wDrV
+         Hapk88JXd3tQROZARhaZ+De4/nUTTC8IiqQJi4/h6qVq775aYoas2njGBSGvajgrHBdX
+         sDMg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1753192604; x=1753797404;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=juq2LsaB2ZlgXJfLDxNWAXy+l+g+CamQA/55GYnNXGQ=;
+        b=H2/enbslyVmfAbdjqjb9fGsJqzOtVBVE7PF1XQXGL98F1d/0prT8yo5PJxYU+Ej4Qb
+         EfkltjI9wqw7NbAkAbMcODVg0HejLrKO2r8D9iEJn134q02GHlSNEV/rIVGTM1CN4Pld
+         rzFh9d0zzf7L29hj5N1ioMhvJ/WVoAgi/20XcD9TJhRWiKLSqWe0QhvbAsYfdzuw2Fw0
+         TgvFON+qVIw2N5K4AQ/3x6jWmouUjF9qAgmivNCDJZ0Z2euLOecOSTmzrs90ZOOmoNlt
+         pDm9FPDXIdp20Bw+iots5IgUXl+IQFzLKI2mH9NW4GQSxVMTnMmSKizdg9fz9scJZ3/0
+         K/Yg==
+X-Forwarded-Encrypted: i=1; AJvYcCUApe6s2fksXuUZlg1hX4fxXAZS+NS1F3WvfAiMIWt9yBm0V44FFul9rzbPfl83zpQKLELv57O9XWfcyssa@vger.kernel.org, AJvYcCUU59zv/vSrCcdQzolNQ9eAlhcIg7p/mh5kRfpDtbZb4p1gnUSNUNFZAM+Y2SHvhBWqn+FtRCwZSLbc@vger.kernel.org, AJvYcCUykiTcRYOrPN0b/mSfOgDMvSt33jgUp/RMyle1+cBe9yOy2hUerMsSASwkR0peowtK8y8Ia93Et884@vger.kernel.org, AJvYcCVS1OaIfZAsZNo82qthNxiU2es0KZ/YkGNjFvo87ZE85q9k0k/MX3voYYT2DcD5x1KWQekaH8Zwzaut4w==@vger.kernel.org, AJvYcCWrFODVljnhkpRLphUK24v1pQi3+dKxn9BaNFQuFBLICe3ROzwTMc7okbrB4NDdM9u9iRQi4Su2o/g=@vger.kernel.org
+X-Gm-Message-State: AOJu0YwBMDjysXRIJR9IHggEhZvP4qd3gLRMjlL863QagtEZmuWwl+A6
+	ajjenTAIuJbmjKEH2oIVnsl4w0hLHgwUjA7xrygVz6hEyzHm4mcZcpEBjlzoHQ==
+X-Gm-Gg: ASbGncuGRNOXeMvc+TkpmaQk/x0ZPr/3OOJ/Z2h/wvpv5SZ1+9i8Ezq80EMHE/Qu40Y
+	zw5WEGu1mf3/+gbnZPQ1Q0hvddH1HnL/XljvRxRYxF594kOrHTGWbToTlczFAACDCEPiJwbBQbX
+	UUj7G0ErpLkeWvLRpGZRp3fhKfvsSgXeGa22sBSBqEmL4wTrw+EcQxpp8fWIDbUx9wlSQ+ICyOW
+	nvVO/rSZFwNURADwpH5IQHh2ZUtbsaECsiPsGgOmE8VsMR1y5yP+pwRoOGSfE4VZHaiDq/rkTyj
+	hS/wVi802+PWnllhG2zWyV6LgEWvMeZP4io1IyeWyMsM/rGBF6Ug2s9E3Imckx4l2t2037a4IAg
+	zJEuNfnIEIz0oZ8qLIPFvm66FnvSRksPuieik5z+cEk38cys3dI/yRzkU8a/iEw2Q53rz4pBFAA
+	3NiVH5eufQ
+X-Google-Smtp-Source: AGHT+IEXfV5AQDvaaCQOegEyKdsH0umt5I9YjBYWNMUwcatDOEmZLLM8MRQ3Lk0kGHyWW+MsfUSbDg==
+X-Received: by 2002:a05:600c:c16d:b0:442:dc75:5625 with SMTP id 5b1f17b1804b1-456352d0b70mr190106725e9.5.1753192603600;
+        Tue, 22 Jul 2025 06:56:43 -0700 (PDT)
+Received: from orome (p200300e41f4e9b00f22f74fffe1f3a53.dip0.t-ipconnect.de. [2003:e4:1f4e:9b00:f22f:74ff:fe1f:3a53])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4562e7f2d4fsm197624025e9.4.2025.07.22.06.56.41
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 22 Jul 2025 06:56:42 -0700 (PDT)
+Date: Tue, 22 Jul 2025 15:56:40 +0200
+From: Thierry Reding <thierry.reding@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, 
+	linux-riscv@lists.infradead.org, linux-mips@vger.kernel.org, loongarch@lists.linux.dev, 
+	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, 
 	linux-acpi@vger.kernel.org, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH v2 0/7] syscore: Pass context data to callbacks
-Message-ID: <2025071919-patience-cattishly-cf7c@gregkh>
+Message-ID: <l54i36uk33je744w4f47tehdopk5dsjotvozfv5b2hehmxrwpq@eins7awyq4dy>
 References: <20250717103241.2806798-1-thierry.reding@gmail.com>
  <2025071716-phoney-object-1648@gregkh>
  <rzbzah5iigz25jtxyqadnitkzkazxsaxntajhlfrfdslyioevk@pylcjkfh5n42>
+ <2025071919-patience-cattishly-cf7c@gregkh>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="sm7baow4ljogvsjb"
 Content-Disposition: inline
-In-Reply-To: <rzbzah5iigz25jtxyqadnitkzkazxsaxntajhlfrfdslyioevk@pylcjkfh5n42>
+In-Reply-To: <2025071919-patience-cattishly-cf7c@gregkh>
 
-On Fri, Jul 18, 2025 at 03:49:37PM +0200, Thierry Reding wrote:
-> On Thu, Jul 17, 2025 at 02:11:41PM +0200, Greg Kroah-Hartman wrote:
-> > On Thu, Jul 17, 2025 at 12:32:34PM +0200, Thierry Reding wrote:
-> > > From: Thierry Reding <treding@nvidia.com>
-> > > 
-> > > Hi,
-> > > 
-> > > Something that's been bugging me over the years is how some drivers have
-> > > had to adopt file-scoped variables to pass data into something like the
-> > > syscore operations. This is often harmless, but usually leads to drivers
-> > > not being able to deal with multiple instances, or additional frameworks
-> > > or data structures needing to be created to handle multiple instances.
-> > > 
-> > > This series proposes to "objectify" struct syscore_ops by passing a
-> > > pointer to struct syscore_ops to the syscore callbacks. Implementations
-> > > of these callbacks can then make use of container_of() to get access to
-> > > contextual data that struct syscore_ops was embedded in. This elegantly
-> > > avoids the need for file-scoped, singleton variables, by tying syscore
-> > > to individual instances.
-> > > 
-> > > Patch 1 contains the bulk of these changes. It's fairly intrusive
-> > > because it does the conversion of the function signature all in one
-> > > patch. An alternative would've been to introduce new callbacks such that
-> > > these changes could be staged in. However, the amount of changes here
-> > > are not quite numerous enough to justify that, in my opinion, and
-> > > syscore isn't very frequently used, so the risk of another user getting
-> > > added while this is merged is rather small. All in all I think merging
-> > > this in one go is the simplest way.
-> > 
-> > All at once is good, I like the idea, but:
-> > 
-> > > Patches 2-7 are conversions of some existing drivers to take advantage
-> > > of this new parameter and tie the code to per-instance data.
-> > 
-> > That's great, but none of these conversions actually get rid of the
-> > global structure, so what actually was helped here other than the churn
-> > of this "potentially" allowing the global data variables from being
-> > removed in the future?
-> > 
-> > So how does this actually help?
-> 
-> Thanks for pointing this out and letting me look at it again. Most of
-> these actually do get rid of the global data variables. The MIPS patch
-> doesn't because I forgot, but the __alchemy_pci_ctx is no longer used
-> after the patch (except where it's initialized to the ctx variable, but
-> that's no longer needed now). I've updated that patch.
-> 
-> The Ingenic TCU patch gets rid of it, and so do the clk/mvebu and
-> irq-imx-gpcv2 patches. The two exceptions where it wasn't possible to
-> get rid of the global data variables are mvebu-mbus and Tegra PMC, in
-> both cases because there is other functionality that relies on the
-> global variable. The bits that make it very difficult to remove these
-> entirely is that they export functions that are called without context
-> from other parts of code.
 
-Ah, I must have looked at the wrong examples in the patch series, sorry.
+--sm7baow4ljogvsjb
+Content-Type: text/plain; protected-headers=v1; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+Subject: Re: [PATCH v2 0/7] syscore: Pass context data to callbacks
+MIME-Version: 1.0
 
-> I have a fairly large series on top of this that converts the Tegra PMC
-> driver to move away from this as much as possible. It's not possible to
-> do on 32-bit ARM because there is some low-level CPU code that needs to
-> call into this function. However, the goal is to at least make the PMC
-> driver data completely instance-specific on 64-bit ARM so that we can
-> support multiple instances eventually.
-> 
-> Maybe something similar could be done for mvebu-bus, but I'm not sure
-> it's worth it. Typically for these cases you need some form of context
-> in order to replace the global data. On Tegra we do have that in many
-> cases (via DT phandle references), but I'm not familiar enough with
-> mvebu to know if something similar exists.
-> 
-> My goal with this series is to get this a bit more established so that
-> people don't use the lack of context in syscore as an excuse for not
-> properly encapsulating things. These usually tend to go hand in hand,
-> where people end up using a global data variable for syscore and since
-> they can't get around that one, they keep using it for a bunch of other
-> shortcuts.
+On Sat, Jul 19, 2025 at 08:52:41AM +0200, Greg Kroah-Hartman wrote:
+> On Fri, Jul 18, 2025 at 03:49:37PM +0200, Thierry Reding wrote:
+> > On Thu, Jul 17, 2025 at 02:11:41PM +0200, Greg Kroah-Hartman wrote:
+> > > On Thu, Jul 17, 2025 at 12:32:34PM +0200, Thierry Reding wrote:
+[...]
+> > 	struct syscore;
+> >=20
+> > 	struct syscore_ops {
+> > 		int (*suspend)(struct syscore *syscore);
+> > 		void (*resume)(struct syscore *syscore);
+> > 		void (*shutdown)(struct syscore *syscore);
+> > 	};
+> >=20
+> > 	struct syscore {
+> > 		const struct syscore_ops *ops;
+> > 		struct list_head node;
+> > 	};
+> >=20
+> > Is that what you had in mind?
+>=20
+> I missed the list_head, so yes, this would be better, but don't pass
+> back the syscore structure, how about just a void * instead, making the
+> whole container_of() stuff go away?
 
-I agree, I overall like this change, just expected to see more global
-structures being able to be removed.
+Yeah, that's a possibility. I personally don't like passing the void *
+around because it's easier to make mistakes that way. I also find it
+unintuitive because it doesn't immediately show you what the functions
+expect.
 
-> > Also, small nit, make the function pointers const please :)
-> 
-> I originally tried that. Unfortunately, the struct syscore_ops contains
-> a struct list_head to add it to the global list of structures. I suppose
-> I could move the function pointers into a different structure and make
-> pointers to that const, something like this:
-> 
-> 	struct syscore;
-> 
-> 	struct syscore_ops {
-> 		int (*suspend)(struct syscore *syscore);
-> 		void (*resume)(struct syscore *syscore);
-> 		void (*shutdown)(struct syscore *syscore);
-> 	};
-> 
-> 	struct syscore {
-> 		const struct syscore_ops *ops;
-> 		struct list_head node;
-> 	};
-> 
-> Is that what you had in mind?
+My understanding is that the container_of() should get optimized away
+most of the time, so there aren't any obvious downsides that I can see.
 
-I missed the list_head, so yes, this would be better, but don't pass
-back the syscore structure, how about just a void * instead, making the
-whole container_of() stuff go away?
+But I don't feel very strongly, so if you have a strong preference for
+void pointers, I can do that.
 
-thanks,
+Thierry
 
-greg k-h
+--sm7baow4ljogvsjb
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEEiOrDCAFJzPfAjcif3SOs138+s6EFAmh/mJUACgkQ3SOs138+
+s6FyzhAAq8z/gI18SVH4qmKTQkcFaPuXBegHTP2dgId1CA1dad3cmBj4tcAz1+Ng
+liio3geyWrxKqZSJTrQOYYYloM4s9UhkY3AvXvDB+L4/DZC/HBgAGnL5dMKte/WQ
+sNUniNOWw1gW2tluO+vi9saSGE4Test34XaIWpBaItJYO9uhuiAC57jJw9Uutl0h
+wkjvwyxaOXSleKiCSwlnSBx31PCz7k5nhb8pIeptnxbxw+Q7+IsDzK/cH2PrV979
+7AzVNifmqUfpO9Xy0FsSrYU0SrUCM7I8WU6elGSeuswDL7+Mlsh9kn/KfVyL86ed
+0jP2iQRyzteg2ATh6dQJLM7KEPK8DnGZqaLDLJlzn3af7Mv5MvRGO1cx7dVGhcTA
+ADto5YN6dKXC63ijHppnQ2xjZ725T1zuVpj1z5OTlXpKtlGvYiIejh+B5tjFMMrr
+zTNbjIBbykgIZXvIvn52ttFRDrLgpnh2mQPzI8VWp9Bv0DaBH6Q1jfxUlWXQiSaQ
+bWrFys6N7IBy5+o83FiAGZvQ//IFZhyF8T/6HD+6OuoX26vTOa5vwrPgs5qru2/s
+T5iJf9UOqnHAuzssCGk2OZcqcVn17seSpXcJScckVPt/HhegIgcgxoVTCOBQ0K7J
+xUhlsns/ZnbEGVKtLr2T/t7UTeCDZIkqo0pEloVCu9UGfeAI16c=
+=Cczj
+-----END PGP SIGNATURE-----
+
+--sm7baow4ljogvsjb--
