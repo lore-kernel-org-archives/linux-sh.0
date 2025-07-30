@@ -1,65 +1,107 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9ACF21A3179;
-	Tue, 29 Jul 2025 01:11:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 819141EEA3C;
+	Wed, 30 Jul 2025 07:35:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1753751496; cv=none; b=RVpD+xGwXaZxurLmjchsBAqEqWExB29AytC+MKATHC3dkrWJfm+XLk8hquTlGPVQrzm8ez3C/PAOfOWiSghsacnHXw70RFlcBKY1e6FO+fhcIeI1rKCGCubn5Puh04Od3Wyuhnb7oBLlukmN8xrqV8qqHgmD5P95WYT4tyUtIS0=
+	t=1753860924; cv=none; b=OP9UJxd5IOH81EbPB0YynGJF5RPI390WvUfgXa/XFPori5ZSytlE+90gGGBUW88ZLDCVDlOBedMPG3jYaHSG2stJoCh337Uk+0tRwuuOaUWycuayasc+TUjSPZOslB5jVWAUkk59kXLUbkhMp9ItUarsn87nq1yXiGVP1Bzuq9E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1753751496; c=relaxed/simple;
-	bh=8ZaxoHBTEhVL12axKf/WX+LwUM3Y/BFGh5lAMOgD5zg=;
-	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=UTZZzhhFFmnHGy8MNxOlmms2pMURZYHdtKvwv0UpDYQU9lfj91GU3qIo4VDYcJfmG7+q2m2wUqDlVojK1TpJEpnTKKEb0HGqAlcx6jaBYhXwgwTaadWEtTRJRkhB8dzbDVX+NLY4i40IC+gcGsZ92xznkGXwsdEYHgAT+pMfZ24=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VYacduDB; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1753860924; c=relaxed/simple;
+	bh=VlXnZibtdmdKimqu6qXZyu/DjzJ+xUxz1yDOIaJW3z4=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=TsbVL/JS3mS5xTS9tsSjTtHrweb/l8xutSzf25Z8Rm1lzLldwMvFqNDMH54IjwfW3XLqe1ycSPwIQJ3ke5+BSWYYq7DMsGv8NaDTJrVIqdnm6M+BjMyrw4i7cy6vZtKab1StuDTcDDQQj0iPSe+DUuZmcmzGesw5OzBA68VvopA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=O7aANDc9; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VYacduDB"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7A163C4CEE7;
-	Tue, 29 Jul 2025 01:11:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1753751496;
-	bh=8ZaxoHBTEhVL12axKf/WX+LwUM3Y/BFGh5lAMOgD5zg=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-	b=VYacduDBsz15Xg+SgB5nuf2LLCwR/ZQLnHAeY89QssQwJkwueQk+gOc3P9X3M8ERc
-	 StQHaCIjU+ApLe7jJ1kkQ1SZSrlnoE0XfZBTw8Yh+roL1ES9ZIfl3oMlPK7Nd5vIme
-	 keZEIUjTWzO7k+Xn5laz3kmccx4u/wXUQCxvKazPAkCcbgCoN5asGQOK49wsxNUWzg
-	 4V8Tr4vXYS3H1wOaKUIe57TRZzvYstxc8p2ZRo6fWA+RbWlSndzB3fEL4aGd9Fgn3b
-	 ZBNnQvFR6RJKhSTgEfjDhuJgvmCxPS2qK55MY85inxik6zCKjNO7RH2cHI8IhVIhst
-	 yOtThARlrGBsA==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 34A0C383BF5F;
-	Tue, 29 Jul 2025 01:11:54 +0000 (UTC)
-Subject: Re: [GIT PULL] execve updates for v6.17
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <202507261437.F2079B3B7@keescook>
-References: <202507261437.F2079B3B7@keescook>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <202507261437.F2079B3B7@keescook>
-X-PR-Tracked-Remote: https://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git tags/execve-v6.17
-X-PR-Tracked-Commit-Id: 7f71195c15dcf5f34c4c7f056603659374e3a525
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: d900c4ce638d707f09c7e5c2afa71e035c0bb33d
-Message-Id: <175375151288.918485.7118599213274098690.pr-tracker-bot@kernel.org>
-Date: Tue, 29 Jul 2025 01:11:52 +0000
-To: Kees Cook <kees@kernel.org>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Akihiko Odaki <akihiko.odaki@daynix.com>, Akihiko Odaki <odaki@rsg.ci.i.u-tokyo.ac.jp>, Albert Ou <aou@eecs.berkeley.edu>, Alexander Gordeev <agordeev@linux.ibm.com>, Alexandre Ghiti <alex@ghiti.fr>, Andreas Larsson <andreas@gaisler.com>, Anton Ivanov <anton.ivanov@cambridgegreys.com>, Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>, Catalin Marinas <catalin.marinas@arm.com>, Christian Borntraeger <borntraeger@linux.ibm.com>, Christophe Leroy <christophe.leroy@csgroup.eu>, Chris Zankel <chris@zankel.net>, Dave Hansen <dave.hansen@linux.intel.com>, Dave Martin <Dave.Martin@arm.com>, David Hildenbrand <david@redhat.com>, "David S. Miller" <davem@davemloft.net>, Dinh Nguyen <dinguyen@kernel.org>, Dishank Jogi <dishank.jogi@siqol.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>, "H. Peter Anvin" <hpa@
- zytor.com>, Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>, "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, Johannes Berg <johannes@sipsolutions.net>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Jonas Bonn <jonas@southpole.se>, Kees Cook <kees@kernel.org>, "Liam R. Howlett" <Liam.Howlett@oracle.com>, linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org, loongarch@lists.linux.dev, Lorenzo Stoakes <lorenzo.stoakes@oracle.com>, Madhavan Srinivasan <maddy@linux.ibm.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, Oleg Nesterov
-  <oleg@redhat.com>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Walmsley <paul.walmsley@sifive.com>, Richard Weinberger <richard@nod.at>, Rich Felker <dalias@libc.org>, Russell King <linux@armlinux.org.uk>, sparclinux@vger.kernel.org, Stafford Horne <shorne@gmail.com>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Sven Schnelle <svens@linux.ibm.com>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>, WANG Xuerui <kernel@xen0n.name>, Will Deacon <will@kernel.org>, x86@kernel.org, Yin Fengwei <fengwei_yin@linux.alibaba.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="O7aANDc9"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=jzhbZhe6tjjT85IYcBPClShujk44zmFvIfzzOCZVjl8=; t=1753860920; x=1754465720; 
+	b=O7aANDc9KjSkZIR+A+P6kxJ+PHdaFItE/dDC2QVDNcSlu8j//twHpCCvEXo0a4Xhh79tEybG+W1
+	McrH3z8TdF/6FEVrpvZ/gFnwKeHBZIwbMXRRWP07D6DWi+4vCakb7Kopy8x3ACgFBT7I+1Y7YQmRk
+	oyfXO++EscT1vhvIOLcyo9nxWUwZwstuJSqDpU6LEQeboDjTL/qXdiZaN9crKSyUaD3baOVhDAxpw
+	FCfSCbfI9HUwAi5nrODYfg3zknAciHrd3r+/uLVDZjtHosn177QRBhLFNfQESWKfqWRrTLvRTf4Ux
+	OSRprA6hDJkMaDOdcSRXTmYw0vZk18cmqKfA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1uh1LB-00000003x53-2PLV; Wed, 30 Jul 2025 09:35:09 +0200
+Received: from dynamic-002-242-133-026.2.242.pool.telefonica.de ([2.242.133.26] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1uh1LB-00000001ACF-1Udf; Wed, 30 Jul 2025 09:35:09 +0200
+Message-ID: <949b52e4e97f7531cd5f40d13e7689ae7768cde3.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.17
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Ben Hutchings <benh@debian.org>, Rich Felker <dalias@libc.org>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh
+ <linux-sh@vger.kernel.org>, linux-kernel	 <linux-kernel@vger.kernel.org>
+Date: Wed, 30 Jul 2025 09:35:08 +0200
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-The pull request you sent on Sat, 26 Jul 2025 14:39:20 -0700:
+Hi Linus,
 
-> https://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git tags/execve-v6.17
+this is my pull request for v6.17 which contains just one patch.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/d900c4ce638d707f09c7e5c2afa71e035c0bb33d
+The patch Ben Hutchings replaces the hyphen in the exported variable ld-bfd
+with an underscore to avoid issues with certain shells such as dash which
+do not pass through environment variables whose name includes a hyphen.
 
-Thank you!
+The following changes since commit 19272b37aa4f83ca52bdf9c16d5d81bdd1354494=
+:
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+  Linux 6.16-rc1 (2025-06-08 13:44:43 -0700)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
+sh-for-v6.17-tag1
+
+for you to fetch changes up to c32969d0362a790fbc6117e0b6a737a7e510b843:
+
+  sh: Do not use hyphen in exported variable name (2025-07-26 17:15:41 +020=
+0)
+
+Thanks for pulling!
+
+Adrian
+
+----------------------------------------------------------------
+sh updates for v6.17
+
+- sh: Do not use hyphen in exported variable name
+
+----------------------------------------------------------------
+Ben Hutchings (1):
+      sh: Do not use hyphen in exported variable name
+
+ arch/sh/Makefile                 | 10 +++++-----
+ arch/sh/boot/compressed/Makefile |  4 ++--
+ arch/sh/boot/romimage/Makefile   |  4 ++--
+ 3 files changed, 9 insertions(+), 9 deletions(-)
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
