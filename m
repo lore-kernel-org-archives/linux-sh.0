@@ -1,117 +1,260 @@
-Received: from relay1-d.mail.gandi.net (relay1-d.mail.gandi.net [217.70.183.193])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9FCE8262FF8;
-	Thu,  7 Aug 2025 14:43:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.193
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68188645;
+	Fri,  8 Aug 2025 15:19:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1754577803; cv=none; b=dEED8LkZu/EpkzJXBhwRQ8b99IAGOmNEfhBW5EY7xE8EO6oxmaS62Dwu7UdMjSvtHW00HVRRjWRVV81REiNj9KzpzLx4JdPV5uXIsPl54a0Lk4/VV38uk9b9mopdXJqb3j2bet5qeU1x5WbmigJTdaqrUxnySV60J3AwB6tKAKo=
+	t=1754666350; cv=none; b=d/qNzJTtFz9c6cgj0aU/25vaDo+9LHMBs4Q0FASsCap1QV/p8zm1fu1w8XEIK7vr0zOEjSqjPdLmFWj7ijEYBmbihd2Ya9yawV2AZyZZ3QjQioGZkN10bHldrUQIuKUmfJSI1PDX6Sbr92Ag4xVvrLOK3MVYB9ZqxiRkTj4pquo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1754577803; c=relaxed/simple;
-	bh=y//IMsBANN67YjgRvFs1TqJNvAqanY/RR7wYOqvwarQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=j072cA7J2Xq6pyO2GSQS4o81rGlMfPRyEpUD/o+fZ6v5th8youJk50D4N1/pqeXoYf2GRFgN6dyqDKS8k5gGp2ioh2Mp1N7PBMFwkTpZ9l1wP37Cn1gt7Q1Wo7I33uBjniH3qTRT63NDXNymUAvGo3QqPjH5D/tIrUgmxkph27k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ghiti.fr; spf=pass smtp.mailfrom=ghiti.fr; arc=none smtp.client-ip=217.70.183.193
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ghiti.fr
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ghiti.fr
-Received: by mail.gandi.net (Postfix) with ESMTPSA id D90BA4432A;
-	Thu,  7 Aug 2025 14:43:12 +0000 (UTC)
-Message-ID: <53b98e1e-4f7e-4320-8d04-d84dd2c4092d@ghiti.fr>
-Date: Thu, 7 Aug 2025 16:43:09 +0200
+	s=arc-20240116; t=1754666350; c=relaxed/simple;
+	bh=tsdeCPIPkX+wdlJnsaj55GinnOFi+s4xef6Bgzt4ay4=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=AmKyVvIKw95CU5dFGVPeMHqMJKyY00nyqTtIAOLCVgykrovIj/Ls3VRWfv1+EneRS24bLlgFSppVkQQNmUO5p8TERLAbRgK+7EJ+XdS1Twl7/WCpbQUCfbunI+rLlJHLH+niBQinFM61pgSfNHmROLIum4rtVx2Hb4Ch93oqjfs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jEKu1+Qa; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jEKu1+Qa"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1BA27C4CEED;
+	Fri,  8 Aug 2025 15:18:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1754666350;
+	bh=tsdeCPIPkX+wdlJnsaj55GinnOFi+s4xef6Bgzt4ay4=;
+	h=From:To:Cc:Subject:Date:From;
+	b=jEKu1+QacMpqQYXBXccohR6zFIE5s3psXsmyHRGVtrVZ0pnr1KmEtw/7ur1/cNOIW
+	 7yaC0tT7pE/PEjOsCREluDbIOYElxV91R5zU3GXDduQNPG8iQNtdKgQXXVLW71gXl5
+	 fRmW8W+WmqtOuYX/bt+7acRqoQOvMWs/tb/l9dLqifK5e8D6y8omqS0IUDwTvWnmUF
+	 1F33T1JsWwfXSls+ht4OCwM/ynfr2/txGMl1BZG+D42MTMRH6wjt8FtNVLI5StDKkm
+	 cyfFCwSelTNh5o5BUDnQ68xW+NwKXbG9KE6xPzchGCg1TuE5BEY10KBkXbjn1Yy2DL
+	 MtO6m2yoXCqug==
+From: Arnd Bergmann <arnd@kernel.org>
+To: Bartosz Golaszewski <brgl@bgdev.pl>,
+	Linus Walleij <linus.walleij@linaro.org>,
+	linux-gpio@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>,
+	Andrew Lunn <andrew@lunn.ch>,
+	Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+	Gregory Clement <gregory.clement@bootlin.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Daniel Mack <daniel@zonque.org>,
+	Haojian Zhuang <haojian.zhuang@gmail.com>,
+	Robert Jarzmik <robert.jarzmik@free.fr>,
+	Krzysztof Kozlowski <krzk@kernel.org>,
+	Alim Akhtar <alim.akhtar@samsung.com>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+	Lee Jones <lee@kernel.org>,
+	Pavel Machek <pavel@kernel.org>,
+	Mauro Carvalho Chehab <mchehab@kernel.org>,
+	Matti Vaittinen <mazziesaccount@gmail.com>,
+	Florian Fainelli <florian.fainelli@broadcom.com>,
+	Jeff Johnson <jjohnson@kernel.org>,
+	Hans de Goede <hansg@kernel.org>,
+	=?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Jaroslav Kysela <perex@perex.cz>,
+	Takashi Iwai <tiwai@suse.com>,
+	Liam Girdwood <lgirdwood@gmail.com>,
+	Mark Brown <broonie@kernel.org>,
+	Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+	"Dr. David Alan Gilbert" <linux@treblig.org>,
+	linux-arm-kernel@lists.infradead.org,
+	linux-kernel@vger.kernel.org,
+	linux-samsung-soc@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-input@vger.kernel.org,
+	linux-leds@vger.kernel.org,
+	linux-media@vger.kernel.org,
+	patches@opensource.cirrus.com,
+	netdev@vger.kernel.org,
+	linux-wireless@vger.kernel.org,
+	ath10k@lists.infradead.org,
+	platform-driver-x86@vger.kernel.org,
+	linux-usb@vger.kernel.org,
+	linux-sound@vger.kernel.org
+Subject: [PATCH 00/21] gpiolib: fence off legacy interfaces
+Date: Fri,  8 Aug 2025 17:17:44 +0200
+Message-Id: <20250808151822.536879-1-arnd@kernel.org>
+X-Mailer: git-send-email 2.39.5
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 09/17] riscv: Add __attribute_const__ to ffs()-family
- implementations
-To: Kees Cook <kees@kernel.org>, linux-arch@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, x86@kernel.org,
- linux-alpha@vger.kernel.org, linux-csky@vger.kernel.org,
- linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
- linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
- linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, llvm@lists.linux.dev,
- linux-hardening@vger.kernel.org
-References: <20250804163910.work.929-kees@kernel.org>
- <20250804164417.1612371-9-kees@kernel.org>
-Content-Language: en-US
-From: Alexandre Ghiti <alex@ghiti.fr>
-In-Reply-To: <20250804164417.1612371-9-kees@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-GND-State: clean
-X-GND-Score: -100
-X-GND-Cause: gggruggvucftvghtrhhoucdtuddrgeeffedrtdefgdduvdduudelucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuifetpfffkfdpucggtfgfnhhsuhgsshgtrhhisggvnecuuegrihhlohhuthemuceftddunecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjughrpefkffggfgfuvfevfhfhjggtgfesthejredttddvjeenucfhrhhomheptehlvgigrghnughrvgcuifhhihhtihcuoegrlhgvgiesghhhihhtihdrfhhrqeenucggtffrrghtthgvrhhnpeehiefhuddtuddukeetkeehhedtffduhfevfeeftdefveffgfeuffejjeejfeekueenucffohhmrghinhepghhithhhuhgsrdgtohhmnecukfhppedvtddtudemkeeiudemfeefkedvmegvfheltdemlehftghfmeeksghfleemleeludgumeekrggrfhenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepihhnvghtpedvtddtudemkeeiudemfeefkedvmegvfheltdemlehftghfmeeksghfleemleeludgumeekrggrfhdphhgvlhhopeglkffrggeimedvtddtudemkeeiudemfeefkedvmegvfheltdemlehftghfmeeksghfleemleeludgumeekrggrfhgnpdhmrghilhhfrhhomheprghlvgigsehghhhithhirdhfrhdpnhgspghrtghpthhtohepudekpdhrtghpthhtohepkhgvvghssehkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdgrrhgthhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehli
- hhnuhigqdhkvghrnhgvlhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopeigkeeisehkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdgrlhhphhgrsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugidqtghskhihsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugidqhhgvgigrghhonhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdhmieekkheslhhishhtshdrlhhinhhugidqmheikehkrdhorhhg
-X-GND-Sasl: alex@ghiti.fr
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Hi Kees,
+From: Arnd Bergmann <arnd@arndb.de>
 
-On 8/4/25 18:44, Kees Cook wrote:
-> While tracking down a problem where constant expressions used by
-> BUILD_BUG_ON() suddenly stopped working[1], we found that an added static
-> initializer was convincing the compiler that it couldn't track the state
-> of the prior statically initialized value. Tracing this down found that
-> ffs() was used in the initializer macro, but since it wasn't marked with
-> __attribute__const__, the compiler had to assume the function might
-> change variable states as a side-effect (which is not true for ffs(),
-> which provides deterministic math results).
->
-> Add missing __attribute_const__ annotations to RISC-V's implementations of
-> variable__ffs(), variable__fls(), and variable_ffs() functions. These are pure
-> mathematical functions that always return the same result for the same
-> input with no side effects, making them eligible for compiler optimization.
->
-> Build tested ARCH=riscv defconfig with GCC riscv64-linux-gnu 14.2.0.
->
-> Link: https://github.com/KSPP/linux/issues/364 [1]
-> Signed-off-by: Kees Cook <kees@kernel.org>
-> ---
->   arch/riscv/include/asm/bitops.h | 6 +++---
->   1 file changed, 3 insertions(+), 3 deletions(-)
->
-> diff --git a/arch/riscv/include/asm/bitops.h b/arch/riscv/include/asm/bitops.h
-> index d59310f74c2b..77880677b06e 100644
-> --- a/arch/riscv/include/asm/bitops.h
-> +++ b/arch/riscv/include/asm/bitops.h
-> @@ -45,7 +45,7 @@
->   #error "Unexpected BITS_PER_LONG"
->   #endif
->   
-> -static __always_inline unsigned long variable__ffs(unsigned long word)
-> +static __always_inline __attribute_const__ unsigned long variable__ffs(unsigned long word)
->   {
->   	asm goto(ALTERNATIVE("j %l[legacy]", "nop", 0,
->   				      RISCV_ISA_EXT_ZBB, 1)
-> @@ -74,7 +74,7 @@ static __always_inline unsigned long variable__ffs(unsigned long word)
->   	 (unsigned long)__builtin_ctzl(word) :	\
->   	 variable__ffs(word))
->   
-> -static __always_inline unsigned long variable__fls(unsigned long word)
-> +static __always_inline __attribute_const__ unsigned long variable__fls(unsigned long word)
->   {
->   	asm goto(ALTERNATIVE("j %l[legacy]", "nop", 0,
->   				      RISCV_ISA_EXT_ZBB, 1)
-> @@ -103,7 +103,7 @@ static __always_inline unsigned long variable__fls(unsigned long word)
->   	 (unsigned long)(BITS_PER_LONG - 1 - __builtin_clzl(word)) :	\
->   	 variable__fls(word))
->   
-> -static __always_inline int variable_ffs(int x)
-> +static __always_inline __attribute_const__ int variable_ffs(int x)
->   {
->   	asm goto(ALTERNATIVE("j %l[legacy]", "nop", 0,
->   				      RISCV_ISA_EXT_ZBB, 1)
+Commit 678bae2eaa81 ("gpiolib: make legacy interfaces optional") was
+merged for linux-6.17, so now it is possible to use the legacy interfaces
+conditionally and eventually have the support left out of the kernel
+whenever it is not needed.
 
+I created six patches to force-enable CONFIG_GPIOLIB_LEGACY on the
+few (mostly ancient) platforms that still require this, plus a set of
+patches to either add the corresponding Kconfig dependencies that make
+the device drivers conditional on that symbol, or change them to no
+longer require it.
 
-Tested-by: Alexandre Ghiti <alexghiti@rivosinc.com>
-Acked-by: Alexandre Ghiti <alexghiti@rivosinc.com>
+The final patch ends up turning the Kconfig symbol off by default,
+which of course depends on everything else getting merged first to avoid
+build errors.
 
-Thanks,
+I would suggest that patches 1-20 can just get merged through the
+respective maintainer trees independently when they are deemed ready,
+and the final patch can wait another merge window.
 
-Alex
+     Arnd
 
+Arnd Bergmann (21):
+  ARM: select legacy gpiolib interfaces where used
+  m68k: coldfire: select legacy gpiolib interface for mcfqspi
+  mips: select legacy gpiolib interfaces where used
+  sh: select legacy gpiolib interface
+  x86/platform: select legacy gpiolib interfaces where used
+  x86/olpc: select GPIOLIB_LEGACY
+  mfd: wm8994: remove dead legacy-gpio code
+  ASoC: add GPIOLIB_LEGACY dependency where needed
+  input: gpio-keys: make legacy gpiolib optional
+  leds: gpio: make legacy gpiolib interface optional
+  media: em28xx: add special case for legacy gpiolib interface
+  mfd: arizona: make legacy gpiolib interface optional
+  mfd: si476x: add GPIOLIB_LEGACY dependency
+  mfd: aat2870: add GPIOLIB_LEGACY dependency
+  dsa: b53: hide legacy gpiolib usage on non-mips
+  ath10k: remove gpio number assignment
+  nfc: marvell: convert to gpio descriptors
+  nfc: s3fwrn5: convert to gpio descriptors
+  usb: udc: pxa: remove unused platform_data
+  ASoC: pxa: add GPIOLIB_LEGACY dependency
+  gpiolib: turn off legacy interface by default
 
+ arch/arm/mach-mv78xx0/Kconfig                 |  1 +
+ arch/arm/mach-orion5x/Kconfig                 |  1 +
+ arch/arm/mach-pxa/Kconfig                     |  1 +
+ arch/arm/mach-pxa/devices.c                   |  7 --
+ arch/arm/mach-pxa/gumstix.c                   |  1 -
+ arch/arm/mach-pxa/udc.h                       |  8 --
+ arch/arm/mach-s3c/Kconfig.s3c64xx             |  1 +
+ arch/arm/mach-sa1100/Kconfig                  |  1 +
+ arch/m68k/Kconfig.cpu                         |  1 +
+ arch/mips/Kconfig                             |  5 +
+ arch/mips/alchemy/Kconfig                     |  1 -
+ arch/mips/txx9/Kconfig                        |  1 +
+ arch/sh/Kconfig                               |  1 +
+ arch/sh/boards/Kconfig                        |  8 ++
+ arch/sh/boards/mach-highlander/Kconfig        |  1 +
+ arch/sh/boards/mach-rsk/Kconfig               |  3 +
+ arch/x86/Kconfig                              |  1 +
+ drivers/gpio/Kconfig                          | 11 ++-
+ drivers/input/keyboard/gpio_keys.c            |  5 +-
+ drivers/input/keyboard/gpio_keys_polled.c     |  2 +
+ drivers/input/misc/Kconfig                    |  3 +
+ drivers/leds/leds-gpio.c                      |  8 +-
+ drivers/media/usb/em28xx/Kconfig              |  1 +
+ drivers/media/usb/em28xx/em28xx-dvb.c         |  4 +-
+ drivers/mfd/Kconfig                           |  2 +
+ drivers/mfd/arizona-irq.c                     |  5 +-
+ drivers/mfd/rohm-bd71828.c                    |  2 +
+ drivers/mfd/rohm-bd718x7.c                    |  2 +
+ drivers/mfd/wm8994-irq.c                      | 94 +------------------
+ drivers/net/dsa/b53/b53_common.c              | 17 +---
+ drivers/net/dsa/b53/b53_priv.h                | 24 +++--
+ drivers/net/wireless/ath/ath10k/leds.c        |  3 +-
+ drivers/nfc/nfcmrvl/main.c                    | 47 +++-------
+ drivers/nfc/nfcmrvl/nfcmrvl.h                 |  5 +-
+ drivers/nfc/nfcmrvl/uart.c                    |  5 -
+ drivers/nfc/nfcmrvl/usb.c                     |  1 -
+ drivers/nfc/s3fwrn5/i2c.c                     | 42 +++------
+ drivers/nfc/s3fwrn5/phy_common.c              | 12 +--
+ drivers/nfc/s3fwrn5/phy_common.h              |  4 +-
+ drivers/nfc/s3fwrn5/uart.c                    | 30 ++----
+ drivers/platform/x86/Kconfig                  |  3 +
+ .../platform/x86/x86-android-tablets/Kconfig  |  1 +
+ drivers/usb/gadget/udc/pxa25x_udc.c           | 41 +++-----
+ drivers/usb/gadget/udc/pxa25x_udc.h           |  2 +-
+ drivers/usb/gadget/udc/pxa27x_udc.c           | 35 +------
+ drivers/usb/gadget/udc/pxa27x_udc.h           |  2 -
+ include/linux/gpio_keys.h                     |  2 +
+ include/linux/leds.h                          |  2 +
+ include/linux/mfd/arizona/pdata.h             |  6 ++
+ include/linux/mfd/wm8994/pdata.h              |  5 -
+ include/linux/platform_data/pxa2xx_udc.h      | 15 ---
+ sound/pci/Kconfig                             |  1 +
+ sound/soc/codecs/Kconfig                      |  4 +
+ sound/soc/codecs/arizona-jack.c               | 17 +++-
+ sound/soc/pxa/Kconfig                         |  4 +-
+ 55 files changed, 192 insertions(+), 320 deletions(-)
+ delete mode 100644 arch/arm/mach-pxa/udc.h
+
+-- 
+2.39.5
+
+Cc: Linus Walleij <linus.walleij@linaro.org> (maintainer:GPIO SUBSYSTEM,commit_signer:1/2=50%)
+Cc: Bartosz Golaszewski <brgl@bgdev.pl> (maintainer:GPIO SUBSYSTEM,commit_signer:1/7=14%,commit_signer:1/2=50%)
+Cc: linux-gpio@vger.kernel.org (open list:GPIO SUBSYSTEM)
+
+Cc: Andrew Lunn <andrew@lunn.ch> (maintainer:ARM/Marvell Dove/MV78xx0/Orion SOC support)
+Cc: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com> (maintainer:ARM/Marvell Dove/MV78xx0/Orion SOC support)
+Cc: Gregory Clement <gregory.clement@bootlin.com> (maintainer:ARM/Marvell Dove/MV78xx0/Orion SOC support)
+Cc: Russell King <linux@armlinux.org.uk> (maintainer:ARM PORT)
+Cc: Daniel Mack <daniel@zonque.org> (maintainer:PXA2xx/PXA3xx SUPPORT)
+Cc: Haojian Zhuang <haojian.zhuang@gmail.com> (maintainer:PXA2xx/PXA3xx SUPPORT)
+Cc: Robert Jarzmik <robert.jarzmik@free.fr> (maintainer:PXA2xx/PXA3xx SUPPORT)
+Cc: Krzysztof Kozlowski <krzk@kernel.org> (maintainer:ARM/SAMSUNG S3C, S5P AND EXYNOS ARM ARCHITECTURES,commit_signer:1/2=50%)
+Cc: Alim Akhtar <alim.akhtar@samsung.com> (reviewer:ARM/SAMSUNG S3C, S5P AND EXYNOS ARM ARCHITECTURES)
+Cc: Geert Uytterhoeven <geert@linux-m68k.org> (maintainer:M68K ARCHITECTURE,commit_signer:1/4=25%,authored:1/4=25%,added_lines:2/13=15%,removed_lines:2/6=33%)
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de> (maintainer:MIPS)
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp> (maintainer:SUPERH)
+Cc: Rich Felker <dalias@libc.org> (maintainer:SUPERH)
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de> (maintainer:SUPERH,commit_signer:2/4=50%)
+Cc: Thomas Gleixner <tglx@linutronix.de> (maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT),added_lines:4/36=11%,removed_lines:6/49=12%)
+Cc: Ingo Molnar <mingo@redhat.com> (maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT))
+Cc: Borislav Petkov <bp@alien8.de> (maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT))
+Cc: Dave Hansen <dave.hansen@linux.intel.com> (maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT))
+Cc: x86@kernel.org (maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT))
+Cc: "H. Peter Anvin" <hpa@zytor.com> (reviewer:X86 ARCHITECTURE (32-BIT AND 64-BIT))
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com> (maintainer:INPUT (KEYBOARD, MOUSE, JOYSTICK, TOUCHSCREEN)...,commit_signer:5/7=71%,authored:1/7=14%,added_lines:17/36=47%,removed_lines:27/49=55%,commit_signer:1/2=50%,commit_signer:3/5=60%)
+Cc: Lee Jones <lee@kernel.org> (maintainer:LED SUBSYSTEM,commit_signer:2/5=40%)
+Cc: Pavel Machek <pavel@kernel.org> (maintainer:LED SUBSYSTEM)
+Cc: Mauro Carvalho Chehab <mchehab@kernel.org> (maintainer:EM28XX VIDEO4LINUX DRIVER)
+Cc: Matti Vaittinen <mazziesaccount@gmail.com> (maintainer:ROHM POWER MANAGEMENT IC DEVICE DRIVERS)
+Cc: Florian Fainelli <florian.fainelli@broadcom.com> (maintainer:BROADCOM B53/SF2 ETHERNET SWITCH DRIVER)
+Cc: Jeff Johnson <jjohnson@kernel.org> (maintainer:QUALCOMM ATHEROS ATH10K WIRELESS DRIVER)
+Cc: Hans de Goede <hansg@kernel.org> (maintainer:X86 PLATFORM DRIVERS,commit_signer:1/7=14%)
+Cc: "Ilpo Järvinen" <ilpo.jarvinen@linux.intel.com> (maintainer:X86 PLATFORM DRIVERS)
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org> (maintainer:USB SUBSYSTEM)
+Cc: Jaroslav Kysela <perex@perex.cz> (maintainer:SOUND)
+Cc: Takashi Iwai <tiwai@suse.com> (maintainer:SOUND,commit_signer:1/3=33%,authored:1/3=33%,removed_lines:2/2=100%)
+Cc: Liam Girdwood <lgirdwood@gmail.com> (maintainer:SOUND - SOC LAYER / DYNAMIC AUDIO POWER MANAGEM...)
+Cc: Mark Brown <broonie@kernel.org> (maintainer:SOUND - SOC LAYER / DYNAMIC AUDIO POWER MANAGEM...,commit_signer:26/29=90%,commit_signer:1/3=33%)
+Cc: Andy Shevchenko <andriy.shevchenko@linux.intel.com> (authored:1/7=14%,added_lines:4/36=11%,removed_lines:6/49=12%,commit_signer:1/2=50%,authored:1/2=50%,added_lines:5/7=71%,removed_lines:7/7=100%,added_lines:7/7=100%,removed_lines:2/7=29%)
+Cc: "Dr. David Alan Gilbert" <linux@treblig.org> (commit_signer:1/5=20%,authored:1/5=20%,removed_lines:7/10=70%)
+Cc: linux-arm-kernel@lists.infradead.org (moderated list:ARM/Marvell Dove/MV78xx0/Orion SOC support)
+Cc: linux-kernel@vger.kernel.org (open list)
+Cc: linux-samsung-soc@vger.kernel.org (open list:ARM/SAMSUNG S3C, S5P AND EXYNOS ARM ARCHITECTURES)
+Cc: linux-m68k@lists.linux-m68k.org (open list:M68K ARCHITECTURE)
+Cc: linux-mips@vger.kernel.org (open list:MIPS)
+Cc: linux-sh@vger.kernel.org (open list:SUPERH)
+Cc: linux-input@vger.kernel.org (open list:INPUT (KEYBOARD, MOUSE, JOYSTICK, TOUCHSCREEN)...)
+Cc: linux-leds@vger.kernel.org (open list:LED SUBSYSTEM)
+Cc: linux-media@vger.kernel.org (open list:EM28XX VIDEO4LINUX DRIVER)
+Cc: patches@opensource.cirrus.com (open list:WOLFSON MICROELECTRONICS DRIVERS)
+Cc: netdev@vger.kernel.org (open list:BROADCOM B53/SF2 ETHERNET SWITCH DRIVER)
+Cc: linux-wireless@vger.kernel.org (open list:QUALCOMM ATHEROS ATH10K WIRELESS DRIVER)
+Cc: ath10k@lists.infradead.org (open list:QUALCOMM ATHEROS ATH10K WIRELESS DRIVER)
+Cc: platform-driver-x86@vger.kernel.org (open list:X86 PLATFORM DRIVERS)
+Cc: linux-usb@vger.kernel.org (open list:USB SUBSYSTEM)
+Cc: linux-sound@vger.kernel.org (open list:SOUND)
