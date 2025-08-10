@@ -1,53 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95DAF283141;
-	Fri,  8 Aug 2025 15:20:10 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B3ED827BF7E;
+	Sun, 10 Aug 2025 21:12:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1754666410; cv=none; b=KeBXQXs0OaMgN1p2R8uzCwJbGGARu+y2C2lxVsjqlvF8Uv3za8T963uJ/KfS9SSR5yarajbHhS4QYhE12+0AJscJ2o04cauNj4RmfQTpu9NmQgx7jlWXipmuiIV5N58ZoZ0ajWeURrBmQZlYju7G0roULX5kUsFHyNqHyYASPZ4=
+	t=1754860351; cv=none; b=aYhCmA1wcMmdwi4LMrSPG+ppKTdybylLhkYs4Jb7QOLy8yD5XWGE62tfWDuN4YZ6SGUk11tr8esAdxNyKMxPW6A2cmfqD0s3rScas9vvbBpAxJXSk9D/IiMyp8zBnHrNveWJBznjFcxs4bGf3DaDtABWeLU4uPIFmMAdUIukylU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1754666410; c=relaxed/simple;
-	bh=75ld2ewRILgYi943fpVictpUlkWQ9Vf7v7jfrpBO0yM=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=nd274kYolAVH9HAy/QRoSCquYiSE6O/WhNDW5+pNf2L7ceLGf0gepZhccgwTft5W4uWAkpJNkInY1RiP4ahxXiTrtlQq6rkQPt36vmDPKqf8Jg5WO5y3njtW7L7MviiE5oH998NwYBcH9ZLHgPdWQRBq/m+JwoPKBghDAQ+7X9o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=B4vEHyt7; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1754860351; c=relaxed/simple;
+	bh=+EPDIqigYF0dLwDVKm4n7P07Soa8UCdwgsSbIhQglhg=;
+	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
+	 In-Reply-To:To:Cc; b=oyUgp3qRB2j4IMdggGxG2kfr9C3Dp9FbXnN2SAJV4dQgskndKgIrP57GITai/O90fWuVpif9A9ruVSCtGy7JSHrqy4KYKpSVlfz1Naco4FfKvprxsZz4qCP/YZ/fCzlEvmBjjzjAC6lyNFc1oJ437rv4W/K3oZIPDFW8mzvZuUo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PRWX9qby; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="B4vEHyt7"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9C02DC4CEED;
-	Fri,  8 Aug 2025 15:20:07 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PRWX9qby"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5E2A6C4CEF1;
+	Sun, 10 Aug 2025 21:12:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1754666410;
-	bh=75ld2ewRILgYi943fpVictpUlkWQ9Vf7v7jfrpBO0yM=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=B4vEHyt7o58FJApQEXnLFlvpHynRZE+9UHEGodhKsxWL6CQxpEf39Y/jwvS2vqXm/
-	 fvjGnMMpz0xIGaL9xQFUR/GVBYqYpeJzleKOqj7ObIE/Q6LRh2qyoBinsptmrdMk6Q
-	 B+8m478ojXCmAVtY/OGnNFVU1dvduSNvz6bSu7qz6zkwB22nnYMntwnnmBmQ3XBmAM
-	 xaF8GWN3KXSrRtX3wV0xzmqgx/iUQqIPlvLIX+CdXyt7OzlxPxwBUSTKUTzfuVHP6M
-	 1Io1Y2/qghst3i7zFGL7Ldyv+ldAAV0k4m0mPXXlANxkb2wi2YtCiAdyv1atKc9jsJ
-	 XRNnuMlGWb/vw==
-From: Arnd Bergmann <arnd@kernel.org>
-To: Bartosz Golaszewski <brgl@bgdev.pl>,
-	Linus Walleij <linus.walleij@linaro.org>,
-	linux-gpio@vger.kernel.org,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Arnd Bergmann <arnd@arndb.de>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	"Paul E. McKenney" <paulmck@kernel.org>,
-	Masahiro Yamada <masahiroy@kernel.org>,
-	Dave Vasilevsky <dave@vasilevsky.ca>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH 04/21] sh: select legacy gpiolib interface
-Date: Fri,  8 Aug 2025 17:17:48 +0200
-Message-Id: <20250808151822.536879-5-arnd@kernel.org>
-X-Mailer: git-send-email 2.39.5
-In-Reply-To: <20250808151822.536879-1-arnd@kernel.org>
-References: <20250808151822.536879-1-arnd@kernel.org>
+	s=k20201202; t=1754860351;
+	bh=+EPDIqigYF0dLwDVKm4n7P07Soa8UCdwgsSbIhQglhg=;
+	h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
+	b=PRWX9qbyv9u6FbnKrFjePyfsaZ737MOhr4mO7TsZ7R+GzU8zlYvZAYf8JD/OXtEUT
+	 hA9ZGe4MgMB70B1Zw0njMIw4A2/fhOmu8/xlsiHxmIUZJvNyZW6a8uiunB9JTjc62k
+	 WQvCcnsGvL3edUrU5mU3msfwtOhFXOborJRekZFipn3fdTQKLp1K+FdaZrtWvHMoCG
+	 BjGMfqHcgkkIzLtrpEo6cyj4t26pG93hr2845rzETZe270MpglUmq+wxcG1OLi+DB/
+	 81Kg/BR1SiRTfzYt5r1OrTvGUw8lrqFdyiU9Eqy8LtRG2Wu0knKnUQq5VbApAR7XFV
+	 wpBAVMLGZQIKw==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 33BB739D0C2B;
+	Sun, 10 Aug 2025 21:12:45 +0000 (UTC)
+Content-Type: text/plain; charset="utf-8"
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -55,138 +37,65 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+Subject: Re: [PATCH 00/23] binfmt_elf,arch/*: Use elf.h for coredump note
+ names
+From: patchwork-bot+linux-riscv@kernel.org
+Message-Id: 
+ <175486036374.1221929.319441619761028585.git-patchwork-notify@kernel.org>
+Date: Sun, 10 Aug 2025 21:12:43 +0000
+References: <20250701135616.29630-1-Dave.Martin@arm.com>
+In-Reply-To: <20250701135616.29630-1-Dave.Martin@arm.com>
+To: Dave Martin <Dave.Martin@arm.com>
+Cc: linux-riscv@lists.infradead.org, linux-kernel@vger.kernel.org,
+ davem@davemloft.net, hpa@zytor.com, James.Bottomley@HansenPartnership.com,
+ akihiko.odaki@daynix.com, aou@eecs.berkeley.edu, agordeev@linux.ibm.com,
+ alex@ghiti.fr, andreas@gaisler.com, anton.ivanov@cambridgegreys.com,
+ bp@alien8.de, bcain@kernel.org, catalin.marinas@arm.com, chris@zankel.net,
+ borntraeger@linux.ibm.com, christophe.leroy@csgroup.eu,
+ dave.hansen@linux.intel.com, dinguyen@kernel.org, geert@linux-m68k.org,
+ guoren@kernel.org, hca@linux.ibm.com, deller@gmx.de, chenhuacai@kernel.org,
+ mingo@redhat.com, johannes@sipsolutions.net, glaubitz@physik.fu-berlin.de,
+ jonas@southpole.se, kees@kernel.org, maddy@linux.ibm.com, jcmvbkbc@gmail.com,
+ mpe@ellerman.id.au, npiggin@gmail.com, oleg@redhat.com, palmer@dabbelt.com,
+ paul.walmsley@sifive.com, dalias@libc.org, richard@nod.at,
+ linux@armlinux.org.uk, shorne@gmail.com, stefan.kristiansson@saunalahti.fi,
+ svens@linux.ibm.com, tsbogend@alpha.franken.de, tglx@linutronix.de,
+ gor@linux.ibm.com, vgupta@kernel.org, kernel@xen0n.name, will@kernel.org,
+ ysato@users.sourceforge.jp, linux-arch@vger.kernel.org,
+ linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+ linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+ linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+ linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org,
+ linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+ linux-um@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+ loongarch@lists.linux.dev, sparclinux@vger.kernel.org, x86@kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+Hello:
 
-Many board files on sh reference the legacy gpiolib interfaces that
-are becoming optional. To ensure the boards can keep building, select
-CONFIG_GPIOLIB_LEGACY on each of the boards that have one of the
-hardcoded calls.
+This patch was applied to riscv/linux.git (fixes)
+by Kees Cook <kees@kernel.org>:
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
----
- arch/sh/Kconfig                        | 1 +
- arch/sh/boards/Kconfig                 | 8 ++++++++
- arch/sh/boards/mach-highlander/Kconfig | 1 +
- arch/sh/boards/mach-rsk/Kconfig        | 3 +++
- 4 files changed, 13 insertions(+)
+On Tue,  1 Jul 2025 14:55:53 +0100 you wrote:
+> This series aims to clean up an aspect of coredump generation:
+> 
+> ELF coredumps contain a set of notes describing the state of machine
+> registers and other information about the dumped process.
+> 
+> Notes are identified by a numeric identifier n_type and a "name"
+> string, although this terminology is somewhat misleading.  Officially,
+> the "name" of a note is really an "originator" or namespace identifier
+> that indicates how to interpret n_type [1], although in practice it is
+> often used more loosely.
+> 
+> [...]
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index d5795067befa..d60f1d5a94c0 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -462,6 +462,7 @@ config CPU_SUBTYPE_SHX3
- 	select CPU_SHX3
- 	select GENERIC_CLOCKEVENTS_BROADCAST if SMP
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select PINCTRL
- 
- # SH4AL-DSP Processor Support
-diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
-index 1af93be61b1f..d89b74177233 100644
---- a/arch/sh/boards/Kconfig
-+++ b/arch/sh/boards/Kconfig
-@@ -80,6 +80,7 @@ config SH_7724_SOLUTION_ENGINE
- 	select SOLUTION_ENGINE
- 	depends on CPU_SUBTYPE_SH7724
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	imply SND_SOC_AK4642 if SND_SIMPLE_CARD
- 	help
-@@ -199,6 +200,7 @@ config SH_SH7757LCR
- 	bool "SH7757LCR"
- 	depends on CPU_SUBTYPE_SH7757
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 
- config SH_SH7785LCR
-@@ -226,6 +228,7 @@ config SH_URQUELL
- 	bool "Urquell"
- 	depends on CPU_SUBTYPE_SH7786
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select HAVE_PCI
- 	select NO_IOPORT_MAP if !PCI
- 
-@@ -233,6 +236,7 @@ config SH_MIGOR
- 	bool "Migo-R"
- 	depends on CPU_SUBTYPE_SH7722
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	help
- 	  Select Migo-R if configuring for the SH7722 Migo-R platform
-@@ -242,6 +246,7 @@ config SH_AP325RXA
- 	bool "AP-325RXA"
- 	depends on CPU_SUBTYPE_SH7723
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	help
- 	  Renesas "AP-325RXA" support.
-@@ -251,6 +256,7 @@ config SH_KFR2R09
- 	bool "KFR2R09"
- 	depends on CPU_SUBTYPE_SH7724
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	help
- 	  "Kit For R2R for 2009" support.
-@@ -259,6 +265,7 @@ config SH_ECOVEC
- 	bool "EcoVec"
- 	depends on CPU_SUBTYPE_SH7724
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	imply SND_SOC_DA7210 if SND_SIMPLE_CARD
- 	help
-@@ -329,6 +336,7 @@ config SH_MAGIC_PANEL_R2
- 	bool "Magic Panel R2"
- 	depends on CPU_SUBTYPE_SH7720
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	help
- 	  Select Magic Panel R2 if configuring for Magic Panel R2.
-diff --git a/arch/sh/boards/mach-highlander/Kconfig b/arch/sh/boards/mach-highlander/Kconfig
-index b0abd03cac4e..cd3a553ce30c 100644
---- a/arch/sh/boards/mach-highlander/Kconfig
-+++ b/arch/sh/boards/mach-highlander/Kconfig
-@@ -20,6 +20,7 @@ config SH_R7785RP
- 	bool "R7785RP board support"
- 	depends on CPU_SUBTYPE_SH7785
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 
- endchoice
- 
-diff --git a/arch/sh/boards/mach-rsk/Kconfig b/arch/sh/boards/mach-rsk/Kconfig
-index f0299bc4416f..3810937aa5d4 100644
---- a/arch/sh/boards/mach-rsk/Kconfig
-+++ b/arch/sh/boards/mach-rsk/Kconfig
-@@ -12,16 +12,19 @@ config SH_RSK7201
- config SH_RSK7203
- 	bool "RSK7203"
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	depends on CPU_SUBTYPE_SH7203
- 
- config SH_RSK7264
- 	bool "RSK2+SH7264"
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	depends on CPU_SUBTYPE_SH7264
- 
- config SH_RSK7269
- 	bool "RSK2+SH7269"
- 	select GPIOLIB
-+	select GPIOLIB_LEGACY
- 	depends on CPU_SUBTYPE_SH7269
- 
- endchoice
+Here is the summary with links:
+  - [16/23] riscv: ptrace: Use USER_REGSET_NOTE_TYPE() to specify regset note names
+    https://git.kernel.org/riscv/c/c9502cc7bef5
+
+You are awesome, thank you!
 -- 
-2.39.5
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/patchwork/pwbot.html
+
 
