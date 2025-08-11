@@ -1,167 +1,131 @@
-Received: from TYDPR03CU002.outbound.protection.outlook.com (mail-japaneastazon11013033.outbound.protection.outlook.com [52.101.127.33])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f173.google.com (mail-pl1-f173.google.com [209.85.214.173])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5D4513AC1;
-	Mon, 11 Aug 2025 07:06:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.127.33
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1754895965; cv=fail; b=Rm0LrfVevdmgm9azbXTvCKt5oLhFb0rXLuo91op+xK5XlKmKh7x3wYuYyNkozwceVLIJkLsIKVKm+5RWyNwDLQ32WulSbqEEVWwd6yaLlma4EhgDK+8M9QlDZQzFIsCXbVHptWET4M8Xf5Yvij2BOUop3UJliIeX02XZ/nqjeRw=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1754895965; c=relaxed/simple;
-	bh=Dir9tKZ/pPb0Kab86gxBtQLuPu1usX8yPxqnjbE+eg0=;
-	h=From:To:Cc:Subject:Date:Message-Id:Content-Type:MIME-Version; b=X2pDv6yURzr7hrGFrC4TyntcBrQQ9/5AEZQY1rJBKQcyReXt+gE9dwJISk+LTYcbTd7z/yxAqiBjU5U3FEmEm1wy6m4Xj1ZbLbLRB2qPnUBsAjBYH2/4+XsELO5jTRyE/89z7OsNHsqItvxqXbderh76iiLLn9sa+Rp+m3dI/z4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=vivo.com; spf=pass smtp.mailfrom=vivo.com; dkim=pass (2048-bit key) header.d=vivo.com header.i=@vivo.com header.b=DHgszwVh; arc=fail smtp.client-ip=52.101.127.33
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=vivo.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=vivo.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4001C2D97B5
+	for <linux-sh@vger.kernel.org>; Mon, 11 Aug 2025 13:10:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.173
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1754917840; cv=none; b=pn537aLruY3ly73xMeAWUHWYTqGOVXSSlpMaAaRInksDAaxZD21B69WDCqPZMDdo085F0soWl7c7zrsxzzCmlc88cjKQWN3WfW9vlnRw83LNxkM8uvKP3cmgRprwejS1jFv8fjs7aCx1cu6SlParGQlpwOZhwcxUbj+6BSBaij4=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1754917840; c=relaxed/simple;
+	bh=YdcvZYKwitUcECgcbI2UhLZ6metpTwEak9n/5y6m0SA=;
+	h=From:In-Reply-To:MIME-Version:References:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=AqOT7HU0VumjmdCQaM+EM6ACssesCkWsNTQS7GnDAk8drgTHw0iUCP/pQEIbi5Odpb1c3OocF2z/Bx8ZbVrxMg8etiXQayis6mSlcVg9BJX140yP2vnpqaOH+RTdX+Dm7/+fw8YBXVsIDQtASUfLWXtg4yf4fQw1yGCB4ZOhgkM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bgdev.pl; spf=none smtp.mailfrom=bgdev.pl; dkim=pass (2048-bit key) header.d=bgdev-pl.20230601.gappssmtp.com header.i=@bgdev-pl.20230601.gappssmtp.com header.b=ojjnhV8s; arc=none smtp.client-ip=209.85.214.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bgdev.pl
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bgdev.pl
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=vivo.com header.i=@vivo.com header.b="DHgszwVh"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=LyGpsf6xItE3ZqeYYflrP4x/7NykKGhtmR2VU/Wm1QAy2Aw7vd0DJwbjZ04mLjSKZs95ihYGi3In407RQQEGP/A9qqIG7Vh15kNYodJwQRZPJP5A8WE5G8i6hSr8AXYE0YqWWo8EOQ4m3gVqg+Lll9CXJPbORPILqEhOGKuF9tmiSJwiFJKzrWn5YTTZWZZAW+dK/QQXhiNRP7t0HUvthIxiiFwUk+x+qWIF9kzzqwZNJT7ZDaPz5145iCsAVc0oVCBmvJIevZyTYk4uW6gBkFGBx7SpOZ3mKvUzbTbl196dYXLoNWP1nRGXd4uZAUzjr4WnhEeWSHUg8pDEJ9ZkHA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=p8u3nDtlS0PM/t9Q7IlhaAmKTEM/e8xbNfjjbtbOd6E=;
- b=IEpxnSEzy9VppgwsMci0984OcqFaI9EW8IdLLs5VtmGGjwOta7tPJxvM/cp0bW7op7s/i1afi/OWI1ZL0lUjcpO6ToBEut+Ek3CiqD6q479KlYwQBhezj961XDcWs20U8WzyuaSrZkXBGt9+ejqHgSCCf6y1ouY6gJB3dXuLoHbwmSBDOXS9PpWtt5afqmYas+MnvrTvflSm/zFpbcqg9dZbMeq42z4DVloGk6ouPbMWsGWjyh8XVmBb9ZGf/Gh4lBfyRXowf6JJyLygbJaFWNhV9ei+n7wSfkPaHNfYhhbe1aAaMlb7ORXzU/fZn+eG17CYfpwDKWQpRg19QbqKpA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=vivo.com; dmarc=pass action=none header.from=vivo.com;
- dkim=pass header.d=vivo.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=vivo.com; s=selector2;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=p8u3nDtlS0PM/t9Q7IlhaAmKTEM/e8xbNfjjbtbOd6E=;
- b=DHgszwVhnTr4oP6ZizJG4Jp+rxuUVFyivjrdaLA5GuaUFOqjubgYEirRrf6hZcbfGZD9ajW4V8Cg8Sdlk1qwtATdn8xMNSIss8Ir+cL+k2U+08LSwvYRNDFHbj/bAY0Bv/o1E07wvVsX2fzj9WEcglnxaAWyRIlOsKBSCfWear7BmgTfz4JUiIp+8RcH2xpIQ0Tv157lnt40aNBTe7k2ql91QW2lvcxDi4L4ApieLSVGcLa2XC04z3+PQCsYqRoE3GSNFLnzJvwV6288Ln4jXpNKqeYwzU/i1n3KYM/lEcoD6JCm1bIh7UGd3WNFZ8EPh0D9/7O7TrJSmdCegbWpFg==
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=vivo.com;
-Received: from KL1PR06MB6020.apcprd06.prod.outlook.com (2603:1096:820:d8::5)
- by TYQPR06MB8085.apcprd06.prod.outlook.com (2603:1096:405:2f8::7) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9009.21; Mon, 11 Aug
- 2025 07:05:58 +0000
-Received: from KL1PR06MB6020.apcprd06.prod.outlook.com
- ([fe80::4ec9:a94d:c986:2ceb]) by KL1PR06MB6020.apcprd06.prod.outlook.com
- ([fe80::4ec9:a94d:c986:2ceb%5]) with mapi id 15.20.9009.018; Mon, 11 Aug 2025
- 07:05:58 +0000
-From: Xichao Zhao <zhao.xichao@vivo.com>
-To: ysato@users.sourceforge.jp,
-	dalias@libc.org,
-	glaubitz@physik.fu-berlin.de
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Xichao Zhao <zhao.xichao@vivo.com>
-Subject: [PATCH] sh: intc: Use BUG_ON instead of if condition followed by BUG
-Date: Mon, 11 Aug 2025 15:05:48 +0800
-Message-Id: <20250811070548.352955-1-zhao.xichao@vivo.com>
-X-Mailer: git-send-email 2.34.1
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: TYCP301CA0082.JPNP301.PROD.OUTLOOK.COM
- (2603:1096:405:7b::20) To KL1PR06MB6020.apcprd06.prod.outlook.com
- (2603:1096:820:d8::5)
+	dkim=pass (2048-bit key) header.d=bgdev-pl.20230601.gappssmtp.com header.i=@bgdev-pl.20230601.gappssmtp.com header.b="ojjnhV8s"
+Received: by mail-pl1-f173.google.com with SMTP id d9443c01a7336-24099fade34so30103185ad.0
+        for <linux-sh@vger.kernel.org>; Mon, 11 Aug 2025 06:10:37 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=bgdev-pl.20230601.gappssmtp.com; s=20230601; t=1754917837; x=1755522637; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:references:mime-version:in-reply-to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=YdcvZYKwitUcECgcbI2UhLZ6metpTwEak9n/5y6m0SA=;
+        b=ojjnhV8sG5RePBCOlfNn+HKKrpovehYP/8l1sr0vNYpFHhYyNj9xWMV43bJeaTo+kp
+         pGJmmwo0JTwJGp+EMoH+TiRmSHHwCWtSKYf/ADQ+n41Fq7MLbvF4puoYKzMZIfAb5Yr5
+         rfyUeS8+hBywvWWe45et8EVilsYHrox7Ct03tWZtWfpes3F5MB7MSmpvGYu3l/KMy0Lm
+         Xz5nZcHYvM5pMpkmNGOifNAmrO7N485x8Dy3qu1/BQr+p2mpzG31DunBz5mKNnrnKK8W
+         RdKVIPz8XNIoKoiGQOe1wq9OXTmtM2HvY5MHwnIuZgNfLGAMI4k+PY6m2DfBQiYd+C7+
+         Xhsg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1754917837; x=1755522637;
+        h=cc:to:subject:message-id:date:references:mime-version:in-reply-to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=YdcvZYKwitUcECgcbI2UhLZ6metpTwEak9n/5y6m0SA=;
+        b=eGt3uvJO+Bezrl8bTeittFGdn+DnXWAnzKPUqE+Rq0ELY9wyRfu/3+hHzi85gmjLn5
+         4nYWa6XqrkrhIcdFo4LKNKcOKTHMOqYJd367rKO29Pv6oY3YSshI9pG/SMsNw0ITyaVf
+         4+lww4oWUtqUj/ka/NSUxvrBRvfn9aIs9Q8WiEt9eD6XUQUFPKOTYLW3Rzjv5FIVRnMI
+         TfgdZFDHgwFPwf9NAwEHTAhqjwyDuTUoAb1v2rpfx6fD8y5T9D7ppbsPpeG/xFMKAq7a
+         Y/Ar2o0ZxgYzUn2fscX50JzRWDRmyjENE9VUjkiusXoY1h88sF7Pne2K5W6ZEBc1vLed
+         uOhA==
+X-Forwarded-Encrypted: i=1; AJvYcCUWUE5NH51whbLSsWNlMkNtNUx67twRm1BKEbSOsBHXxCleaNIVWlMSQw5TSIGmmrMWWY24aVxZOA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy3U8tUB2TgRswPJtr7dPaEbKnZsUSi94zuuuwDjU553tpfWQBZ
+	UNxSGYlxEp8N32OO5rXQqW98OCxf/yTqFycQlSSyroT5qrU3H5RdRnz5+PEA5nOUaz/dfnvYlua
+	IccdOtRXxYU1ffEDx9GsrIEqWqSkFHLqu5TT6h8kWCg==
+X-Gm-Gg: ASbGnctESWg4nEy36k0KiwLZGzjepPsS7JSqgFMsAC4qKyPhqtRu0BlEBbUckllR0dp
+	gGnsO3Tk8rzMhJb26XIl9w4NCPJxo/ZUTLTmojzBvHyAFysrXJhkIGNGpljsoeGZ/3lykeKF7CS
+	sV7yhzwH8BZdyPpBNHKO32AtJ/GbsDvU0Di6obwF6Dn6aayKueSOxQLxRgLMnCeFDiFUmPDfw3s
+	g3NQL91XZ37a+mEemsRevSXe14A2yQxDGfMXW4=
+X-Google-Smtp-Source: AGHT+IEgMvtsNpCEbzm+bQO3Dq6oVeggGu7qnt+f1HYUPfLnzNmxpfjIx2ohdBUK5XJ+fhQGIjFsq0lNMPvywZaOZwE=
+X-Received: by 2002:a17:903:32cb:b0:240:96a:b812 with SMTP id
+ d9443c01a7336-242c203d030mr203994295ad.24.1754917837398; Mon, 11 Aug 2025
+ 06:10:37 -0700 (PDT)
+Received: from 969154062570 named unknown by gmailapi.google.com with
+ HTTPREST; Mon, 11 Aug 2025 06:10:31 -0700
+Received: from 969154062570 named unknown by gmailapi.google.com with
+ HTTPREST; Mon, 11 Aug 2025 06:10:31 -0700
+From: Bartosz Golaszewski <brgl@bgdev.pl>
+In-Reply-To: <20250808151822.536879-1-arnd@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: KL1PR06MB6020:EE_|TYQPR06MB8085:EE_
-X-MS-Office365-Filtering-Correlation-Id: a8cca3f4-fa40-49ec-834e-08ddd8a585eb
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|366016|1800799024|376014|52116014|38350700014;
-X-Microsoft-Antispam-Message-Info:
-	=?us-ascii?Q?DQ1IVKlrRyL1s/gXRQHH4M2k8151/G/9zUrwBLanfnH7N4tF9s8MllxoVO/Y?=
- =?us-ascii?Q?yEZKx3UJ+OMz6C6ZbTzhogBJHBJ6wl3aoHf1eha3QMd7dshd36uMZKu5QFn9?=
- =?us-ascii?Q?xPTPJU6yGZq4RfMj/MK0dv6YAMPc8d5dqqU4mF9ptxxkAR2kfeXkkjjzZom4?=
- =?us-ascii?Q?+lml+u1qIg1yaqcids/kAa+Ohl7//2NoeIk5XVUacsh8u6wT42EH+d2AN7g3?=
- =?us-ascii?Q?n3Adx88O8jFhZXhIe5f+RsSPzTpK1WH0JYe+CpnIH+S0MiV4gWldpsbfuMIu?=
- =?us-ascii?Q?g1xXkN8wz5GJ9mG269Ez5PR7jhB77vKdQ5QA5qy/8cAyAAjJ5KPJvRY02sth?=
- =?us-ascii?Q?315IpFLpKKnIuzYejA48mE4hEZjY/1Qh/Y8X/QpbeN2dCA1GCslcbFnCCwdQ?=
- =?us-ascii?Q?nmsByAe3eOGCPB+pwwN7xNCAObh41bak/xmfR0ReihFJrXsrFze8GYgCn8sD?=
- =?us-ascii?Q?D54PmfqUTYROQSt+DudGAlrlB7tEPRJeU3CNm5kWS4u18YgCERMtD8FM4COj?=
- =?us-ascii?Q?x1GyD6Cufif7PB+EoPKBUS0TfqxOZuengRkb0iRJxaVla+whV5UyhuBwz7nZ?=
- =?us-ascii?Q?d5Jq9LG1lsaMU9Mwr5vcRTipBXf53YCG9cYXUNk4LWC275CERJyIFPmjhUnG?=
- =?us-ascii?Q?jqPajZbvpH1WjJSnAiWDk2ERT5H4PJ0cP7HQdExX3AHFQHwTb54eNlNNwuVG?=
- =?us-ascii?Q?Sn0uYE7ZI+mfIchfG7ngH4KGDngL+rekuXMnR7+OoXMCMjg6oCGDd6rF6q89?=
- =?us-ascii?Q?rs0mfrHgPg7PcuPOQzp/IczfQPXoBlDbU5xiyTryD1MdkkxK/33MIMRo4EMY?=
- =?us-ascii?Q?7XG41M1Y5fZ6nTjwAYwyDSsfZHAy3vKhh5awgf3iB4Sq2+VBjs22M7Bd6hJb?=
- =?us-ascii?Q?kDvsFaR1Dy26ZpATTKvks8H3gpfbVtEBD/8VGBN28OP74lMzeNiKp08Ql2ry?=
- =?us-ascii?Q?nhKiJxOrTqylfXkyKZlmw2FDe/ozBDgD1bVY+jjfywc6WNP9Ms4bvmwtJx2Y?=
- =?us-ascii?Q?HpDWJM7nQQrb6csQ5Yzp99MSihs+ngCwTRW29mI9Tyc1DIUIDZ9K5aaKNcUB?=
- =?us-ascii?Q?IAK5Gm7RBIYD3/IgLnSlLy080AcTTWCg3KofXHLOqMoziOjAkqZ5HLcsxe++?=
- =?us-ascii?Q?ovoIbhpz2XISbSBnSRRvqIrGcCKODku+iq9/M72rkfLFM+CD827OiGhlkSIV?=
- =?us-ascii?Q?W/LIjGkSBmMYyWJbEIRv+T1pUyImBUT9NkqbOHze2qy6vguEmFZih8h8Yt+s?=
- =?us-ascii?Q?rUMKVMen/M8gmyQTNWWm1MVr44t1v6MOFtiHRw19AwqrAq4zjj+UOciRSINW?=
- =?us-ascii?Q?D0Er8i4H3AVoj5NEHfANSWQUpKG1r+NU/9RTbLpTYPXoQJW4PyXxHKJOSX3+?=
- =?us-ascii?Q?AmXZBaoKpF3oe508MRWQj3jvXygGDRWlEU+wVI4/OWjlcaCnuLs4McIQnJvL?=
- =?us-ascii?Q?F/jz2Mn5ZNieJ5m/eKcPUjZ0jp15zujUyF6EgD3T5rjNAgm2I1s+5A=3D=3D?=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:KL1PR06MB6020.apcprd06.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(1800799024)(376014)(52116014)(38350700014);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?us-ascii?Q?56oXLbYlXQVf+SnPuoFNYxJ2Vs9FH4FJbB4Lgk+hziFm6tfGs7hSzMqkpJpF?=
- =?us-ascii?Q?wTqk+7dqvPP584hmBO+wOehCkwfkIKdXO8MU43+Q0ihAq/Hq34IlCRC/S/vL?=
- =?us-ascii?Q?GzL8GtuMAkYqmDCX2FppNSEOoV7au4+UlgO14BhcNav2RQg6fi3mRGuV0sYK?=
- =?us-ascii?Q?L4ZLXI+FHjzLCBfLLQiKP1K5rLPBLqOnkLTDMsDDInlficDw6oKkytAqDQpr?=
- =?us-ascii?Q?T2PVchMYIXjX9Lpae2jLn0CgxwktQz9hMtz+oDGOF7wpaEYXV9PH6zpeOgWa?=
- =?us-ascii?Q?MVXBaAUAAXo7eyGoa5lqgR3HbzqRZkpEionvxZX20idhIIMP5vf8nqgkUb65?=
- =?us-ascii?Q?DNns57jJJuWR1RY3lLuFjtutHIwVj67VXkzJHL/7hAxT7rOIo1JLjwvz0fbO?=
- =?us-ascii?Q?tpEvfy0ItvB+bT4MtRQh3LhHp8lmJKUvdx/ZqcYYMGz7h0DSM/suB3Uk06Aw?=
- =?us-ascii?Q?ehtbSIMKICl9nvbt8dtqpp7X93uSTUx4P6sl1EL5KQ6GFdSRMtW3d5tcv7oC?=
- =?us-ascii?Q?+vJyVKupvL03O8zrVuhNpnbgUJQS0+PeQheyUijSkKzcG8ljJee5wAfWCZeO?=
- =?us-ascii?Q?3p+Up1U1mbN4ijYND1T9f6d4KkBKEzQEqKtfwYxab6qdFHY1wMDAPPNs8wFs?=
- =?us-ascii?Q?9L6vHhE97S3e7U6aIXmeCFzIegWuOwnB77CBBudTPbDOWUqJDYxnJhmMR4rL?=
- =?us-ascii?Q?gPt4bd7HTAZHGmwd3dJq9pKLMbaQQ0Pg7+bccrfHUc4fO7hamMRe5P5TvL2V?=
- =?us-ascii?Q?KvRiu2nU0+iVyzXAbU24so87k7gEFAIdtG0fzCZtTJn7XnilhXlH1xNesxnK?=
- =?us-ascii?Q?jIww0+hFwJp0HZVmYyvispJiv31yotuWTJO82fQwrLO5uqvFFF3VgKnchwpb?=
- =?us-ascii?Q?tB4rNrF2ecKIV/prfuG+/ML4tjOZJPL4kFYJvaHYXDIocrJfMGyAWjNKvQT8?=
- =?us-ascii?Q?zLJxz4RpbPMpUCm7maO00a/E57iyzUAtf1P8KZzdk8dmuIgyIJhCZrVaYJrZ?=
- =?us-ascii?Q?74Lpo65icz3ac+9zi2HogDQ6P7mfjghl2h2yoLw113WATVQs7QZJoz/rDFPg?=
- =?us-ascii?Q?7Jf9wZ3Sg/CMByb5LU8VJ2bc/qDX4SlQ5ylkMior8D9TJssZu9qdfq/wCAfm?=
- =?us-ascii?Q?PJAebJj7/798gXKE2P4dKAe//tMXPKdabUBo2qiKfqa5u4wh1XquIDMYqidv?=
- =?us-ascii?Q?b/jMJuT8C0RX/6g5YWKoMj+U9R5A8GcjZMkDPLT9c9ItAl+zBhZzx0VuJLS5?=
- =?us-ascii?Q?w7XYnlSfwbP/ZgJtmwhQYms2JVKSIvHOFIXg2q7w3M2+mAlLYouHbbulaeQ7?=
- =?us-ascii?Q?47PSfPLuwRtmQ5H3jCKeo7BJ6sUVoqqvSaRfPOlzEgH4iek77VfPc54/LiUb?=
- =?us-ascii?Q?QxCaek6lUne/dmX7/4k7YfUyfp3hQIULkfWzjjp3Pw6eh0We8mh4jSbj79RJ?=
- =?us-ascii?Q?LQgsGL/d2b5hSiIuOyKPDN7lklgc58K8XOnv3hMtPtkoP3MbKT5xnJjWkFVz?=
- =?us-ascii?Q?dntfrGODTXnhjgNerOC+4pctLR5fmEoj5Ex27UK/0diUBfw7/AV2VdB+aj47?=
- =?us-ascii?Q?xCaVxR9AStO/oDYk3Do2e3uDTV94hymQkfY5CALz?=
-X-OriginatorOrg: vivo.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: a8cca3f4-fa40-49ec-834e-08ddd8a585eb
-X-MS-Exchange-CrossTenant-AuthSource: KL1PR06MB6020.apcprd06.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 11 Aug 2025 07:05:58.6546
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 923e42dc-48d5-4cbe-b582-1a797a6412ed
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: KiLlqAQ3Fg1/HQBKa8Aba11/OChuLaYbqwyH08/29garrZIGfGOpRIvkGh02JJdcoyu0if2Z3yi1zVNooUWl+g==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: TYQPR06MB8085
+References: <20250808151822.536879-1-arnd@kernel.org>
+Date: Mon, 11 Aug 2025 06:10:31 -0700
+X-Gm-Features: Ac12FXxi-t7kK_6HIDwsxWJsHZcp5BcOM26Y8X32Zi2av6pcVu6UuipKim4OtEQ
+Message-ID: <CAMRc=MeyW8gtG_hsLWytCpufQRmg3s5QZenxCvP3MNGmaoo2cA@mail.gmail.com>
+Subject: Re: [PATCH 00/21] gpiolib: fence off legacy interfaces
+To: Arnd Bergmann <arnd@kernel.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Andrew Lunn <andrew@lunn.ch>, 
+	Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, 
+	Gregory Clement <gregory.clement@bootlin.com>, Russell King <linux@armlinux.org.uk>, 
+	Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, 
+	Robert Jarzmik <robert.jarzmik@free.fr>, Krzysztof Kozlowski <krzk@kernel.org>, 
+	Alim Akhtar <alim.akhtar@samsung.com>, Geert Uytterhoeven <geert@linux-m68k.org>, 
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+	Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, 
+	"H. Peter Anvin" <hpa@zytor.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Lee Jones <lee@kernel.org>, 
+	Pavel Machek <pavel@kernel.org>, Mauro Carvalho Chehab <mchehab@kernel.org>, 
+	Matti Vaittinen <mazziesaccount@gmail.com>, Florian Fainelli <florian.fainelli@broadcom.com>, 
+	Jeff Johnson <jjohnson@kernel.org>, Hans de Goede <hansg@kernel.org>, 
+	=?UTF-8?Q?Ilpo_J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>, 
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jaroslav Kysela <perex@perex.cz>, 
+	Takashi Iwai <tiwai@suse.com>, Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, 
+	Andy Shevchenko <andriy.shevchenko@linux.intel.com>, 
+	"Dr. David Alan Gilbert" <linux@treblig.org>, linux-arm-kernel@lists.infradead.org, 
+	linux-kernel@vger.kernel.org, linux-samsung-soc@vger.kernel.org, 
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-input@vger.kernel.org, 
+	linux-leds@vger.kernel.org, linux-media@vger.kernel.org, 
+	patches@opensource.cirrus.com, netdev@vger.kernel.org, 
+	linux-wireless@vger.kernel.org, ath10k@lists.infradead.org, 
+	platform-driver-x86@vger.kernel.org, linux-usb@vger.kernel.org, 
+	linux-sound@vger.kernel.org, Bartosz Golaszewski <brgl@bgdev.pl>, 
+	Linus Walleij <linus.walleij@linaro.org>, linux-gpio@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-BUG_ON uses unlikely in if(), it can be optimized at compile time.
+On Fri, 8 Aug 2025 17:17:44 +0200, Arnd Bergmann <arnd@kernel.org> said:
+> From: Arnd Bergmann <arnd@arndb.de>
+>
+> Commit 678bae2eaa81 ("gpiolib: make legacy interfaces optional") was
+> merged for linux-6.17, so now it is possible to use the legacy interfaces
+> conditionally and eventually have the support left out of the kernel
+> whenever it is not needed.
+>
+> I created six patches to force-enable CONFIG_GPIOLIB_LEGACY on the
+> few (mostly ancient) platforms that still require this, plus a set of
+> patches to either add the corresponding Kconfig dependencies that make
+> the device drivers conditional on that symbol, or change them to no
+> longer require it.
+>
+> The final patch ends up turning the Kconfig symbol off by default,
+> which of course depends on everything else getting merged first to avoid
+> build errors.
+>
+> I would suggest that patches 1-20 can just get merged through the
+> respective maintainer trees independently when they are deemed ready,
+> and the final patch can wait another merge window.
+>
 
-Usually, the condition in if() is not satisfied. In my opinion,
-this can improve the efficiency of the multi-stage pipeline.
+Oh, not at all, I'm fine sending a second PR late into the merge window to
+get that done in a single cycle.
 
-Signed-off-by: Xichao Zhao <zhao.xichao@vivo.com>
----
- drivers/sh/intc/handle.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+Thanks for doing this, awesome work!
 
-diff --git a/drivers/sh/intc/handle.c b/drivers/sh/intc/handle.c
-index 7863a44918a2..defa8780b566 100644
---- a/drivers/sh/intc/handle.c
-+++ b/drivers/sh/intc/handle.c
-@@ -128,8 +128,7 @@ static unsigned int __init _intc_prio_data(struct intc_desc *desc,
- 			} else {
- 				fn = REG_FN_MODIFY_BASE;
- 				mode = MODE_PRIO_REG;
--				if (!pr->set_reg)
--					BUG();
-+				BUG_ON(!pr->set_reg);
- 				reg_e = pr->set_reg;
- 				reg_d = pr->set_reg;
- 			}
--- 
-2.34.1
-
+Bartosz
