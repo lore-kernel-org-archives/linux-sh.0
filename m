@@ -1,133 +1,96 @@
-Received: from fout-b7-smtp.messagingengine.com (fout-b7-smtp.messagingengine.com [202.12.124.150])
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.14])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2DE972D6619;
-	Tue, 12 Aug 2025 21:29:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.150
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC68278F3E;
+	Wed, 13 Aug 2025 12:50:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.14
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1755034164; cv=none; b=a7x2Z6ba1JE9eB0nFj+7Wa0LBMlQi73VWdWqxZylVyVPminrF7lY1qVIgzG22p1Ta4/p3U/cB5cxEO7SBUgxoYQcjZHjQlEq+8tpNR2qFRsED0DuiQpJl8sZp72nYAKdRX697ChuNvXfhGlkNalqGdnuBfWk5i31dW1ZxH1GSVQ=
+	t=1755089416; cv=none; b=kq8dEz9pg5wafy84RDXqEb527wM2tPKgYbWWeBZcGUNmsXf6/koPpG7+DgiMaN6hRjUyZiPwYTsQn0Bs1iLeTSM8ZDr3lc1r2e17VYUwcqjzOq18Fzyrs1NY6Bkaf1GxR14n0Af53DRs2LR5288BhjxcKByw3dBbiFmFeb54pKg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1755034164; c=relaxed/simple;
-	bh=m+K/AlYj6sFpDViOsi+7YVub9fm04RF467U2Bgdxm4s=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=gBxcu16xJaUgwXuQK2lIYBSlDb8394TiiWdlWpN+1Xy7crg7qHxQ628juw8wHhz5R/EppKu3/0WlTZ0up8LhgEnGRwqivjUNb0S66l9KSikP7TqvuST8NKw7Dhj+6tVMDBQq3/7JdiR2g6FahfBkbn4IJEMCSm9cPjgBs+ynzj4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=Bznh4Yn7; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=M2JsktkK; arc=none smtp.client-ip=202.12.124.150
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
+	s=arc-20240116; t=1755089416; c=relaxed/simple;
+	bh=h2qE3d1k4zX4J4eMjjnoCt2JzG6oQDrjoGfgN+AZASY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=tCLlD6UQl4MhVMiPfe2xwgeRtmH54U3COeSKFRfJafpCc+imxBsGY4XMRs2qP9i8KpIahH/B9tpdgIchgh/+rubvlLZSbjX8VEiLpPy5OthLo9fPI1KfKdE/FGnHRPszjjZBuSySsdgp+LcDHUU1ognJiO7hH4ByS05wM59XyM4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com; spf=none smtp.mailfrom=linux.intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=jSgkgc8d; arc=none smtp.client-ip=192.198.163.14
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux.intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="Bznh4Yn7";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="M2JsktkK"
-Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
-	by mailfout.stl.internal (Postfix) with ESMTP id DCDCD1D0011D;
-	Tue, 12 Aug 2025 17:29:20 -0400 (EDT)
-Received: from phl-imap-02 ([10.202.2.81])
-  by phl-compute-05.internal (MEProxy); Tue, 12 Aug 2025 17:29:21 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1755034160;
-	 x=1755120560; bh=lbs7wklbxmzRpXaW4E8RAy4dqvO2ltqvef6oxyXevvA=; b=
-	Bznh4Yn7V0ie0KyWMyoEvQJOHUzGPETC4xDdS5LF7U8Gz/yqR02DoUEYwpHi9xXO
-	oD0ZF757xFqRVjWs+iRYj2bR5KSZB6zEhpThknnA9IMT4Ke417jWsil5YiPdfOSd
-	Ye7fARZtAZ1T9SCZlttSpCiUe6U4NoI59G1CrRy72wm2IZ++nRpVTBI5ChDQBLIq
-	/ANAQIhrNdXNfUQTUXblXDrS14c0nZ6BP2T65JkCZT5XNAaFPm/2M0somUYgwyO6
-	TtQuP79u+X/kuU9IxsgfaS5Gmt6M1PJQ5MQHCHqxLV1E5rPyzib2owmPDPBo3Xo8
-	ZOFmIwXF4HGr4g0FUYEA6w==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1755034160; x=
-	1755120560; bh=lbs7wklbxmzRpXaW4E8RAy4dqvO2ltqvef6oxyXevvA=; b=M
-	2JsktkKAbWoNiQGi2MqZqVunuBW4m5QszIndv/w35s6JwiA7qVutZ23PBjn8lZRe
-	lg+VVATG9a0U0ckFqA2w0/N8GMmlpcmMLqEul3bIrBYx/DLw2T5wf13f6Ibe8zlD
-	+Dr/nAJoojfYoIo7VdE5sZc+TM16p66owEKX7ghoFNgBar465QIl0mxh2yEDFawJ
-	+cIaAapu+cTFyO4XwA/VV9PwLuVA+9WwXqAiqxJJyds4Ba2SeBYzDkdB+HbnKjOw
-	bU8I7oeC7dPk2RsvcExcqM8/a4axXesp73b3jTL++c29cKW8NjgTjOP5q0b5sRzI
-	RnwYuUrNiZn20GV4Ko4ow==
-X-ME-Sender: <xms:KrKbaAnSuJrr233c4CrYMALw3gG_oVU-yEdpQeBYRIOzPKIdhZANpw>
-    <xme:KrKbaP2fp6PsjOsLr4s6ELlQa0fiumR2ywhDgSHmnJDftlkV9gD8bCqFfOZqM33vi
-    o_ytWY3gJ0pvNgnUFY>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeeffedrtdefgddufeeigeduucetufdoteggodetrf
-    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
-    rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
-    gurhepofggfffhvfevkfgjfhfutgfgsehtjeertdertddtnecuhfhrohhmpedftehrnhgu
-    uceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrthhtvg
-    hrnhephfdthfdvtdefhedukeetgefggffhjeeggeetfefggfevudegudevledvkefhvdei
-    necuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprghrnh
-    gusegrrhhnuggsrdguvgdpnhgspghrtghpthhtohepudeipdhmohguvgepshhmthhpohhu
-    thdprhgtphhtthhopegsrhhglhessghguggvvhdrphhlpdhrtghpthhtohepmhhpvgesvg
-    hllhgvrhhmrghnrdhiugdrrghupdhrtghpthhtohepghgvvghrthdorhgvnhgvshgrshes
-    ghhlihguvghrrdgsvgdprhgtphhtthhopehrohhsthgvughtsehgohhoughmihhsrdhorh
-    hgpdhrtghpthhtoheprghrnhgusehkvghrnhgvlhdrohhrghdprhgtphhtthhopehmrghs
-    rghhihhrohihsehkvghrnhgvlhdrohhrghdprhgtphhtthhopehprghulhhmtghksehkvg
-    hrnhgvlhdrohhrghdprhgtphhtthhopehrohgssehlrghnughlvgihrdhnvghtpdhrtghp
-    thhtohepuggrlhhirghssehlihgstgdrohhrgh
-X-ME-Proxy: <xmx:KrKbaLGLANg2iu2E9nJSHOy59LLCLZBvZjrZDy4ZWbRDkVwxeamS6A>
-    <xmx:KrKbaMci3nSHQPp-4KYqB3adv175iViWoJZpB3-ji7jOpbQqcdxOWg>
-    <xmx:KrKbaKJXjEC95J7iwGgoxNgDY4whTIcl6PTOBbZeV7xMBfpCWhKS0Q>
-    <xmx:KrKbaDp4tpq2VTJCKzfruaw1XKsOQGuSAimUeHnI6AhzR_5UcqQgbw>
-    <xmx:MLKbaIswpiNVCYAkrxdlxctSUj48ckr5RFxcHZEgDzKdP_ek3rSXROgh>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 4915470006A; Tue, 12 Aug 2025 17:29:14 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="jSgkgc8d"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1755089415; x=1786625415;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=h2qE3d1k4zX4J4eMjjnoCt2JzG6oQDrjoGfgN+AZASY=;
+  b=jSgkgc8dgDRfiJrX5U6Vn9gHZGvIeLJEtIOKi5aoVbvAGgxkcSKXpkkg
+   jPi0xxKVkN4B1Tyxzv5JBBAd53y4H23kywPl1smNf5UwYNZvFwphDWBhe
+   O0OUNyGUBCKDKfyGh0TpHpWuHj/8YiBibm5vVMdeZ1Rb0LVWl57t5Z3Vi
+   nFhrlTS6b5Hn/eLGBfV0k0gqtEQL+g5UNSbbSm4YSLfCbjN18KUSemyDo
+   ccLrYMiK3w6bOCT1SqyWnZChU+wCcyN4xJiBQ33XS4IJdJl2mFW2rPR2c
+   4fdAInUySeEloBRccurmfMKVCJ0NbUEbVEvl26YMkAIBuOwC+NYnbfJ4t
+   A==;
+X-CSE-ConnectionGUID: O3ubndyQSwGT5ZIyj2OM3w==
+X-CSE-MsgGUID: YLh33sXtR1WljhghmkLFWA==
+X-IronPort-AV: E=McAfee;i="6800,10657,11520"; a="57447265"
+X-IronPort-AV: E=Sophos;i="6.17,285,1747724400"; 
+   d="scan'208";a="57447265"
+Received: from orviesa002.jf.intel.com ([10.64.159.142])
+  by fmvoesa108.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Aug 2025 05:50:14 -0700
+X-CSE-ConnectionGUID: sA//6IphQF6LcBtvr79B4w==
+X-CSE-MsgGUID: 4WtPgmLCRV+BdQ3OQvaPjw==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.17,285,1747724400"; 
+   d="scan'208";a="197462068"
+Received: from smile.fi.intel.com ([10.237.72.52])
+  by orviesa002.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Aug 2025 05:50:12 -0700
+Received: from andy by smile.fi.intel.com with local (Exim 4.98.2)
+	(envelope-from <andriy.shevchenko@linux.intel.com>)
+	id 1umAvh-00000005REG-1hcZ;
+	Wed, 13 Aug 2025 15:50:09 +0300
+Date: Wed, 13 Aug 2025 15:50:09 +0300
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Arnd Bergmann <arnd@kernel.org>,
+	Bartosz Golaszewski <brgl@bgdev.pl>, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: mach-rsk: rsk7203: use static device properties for
+ LEDs and GPIO buttons
+Message-ID: <aJyKAQJUG7hmO2pT@smile.fi.intel.com>
+References: <jwtdoptatzfo47mbpmmjwhhhjn4mbw6ekp4gtoopca7azbcelo@uvtz4w2ga5qn>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Tue, 12 Aug 2025 23:28:31 +0200
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Rob Landley" <rob@landley.net>, "Arnd Bergmann" <arnd@kernel.org>,
- "Bartosz Golaszewski" <brgl@bgdev.pl>,
- "Linus Walleij" <linus.walleij@linaro.org>,
- "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>,
- "Rich Felker" <dalias@libc.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>
-Cc: "Michael Ellerman" <mpe@ellerman.id.au>,
- "Steven Rostedt" <rostedt@goodmis.org>,
- "Paul E. McKenney" <paulmck@kernel.org>,
- "Masahiro Yamada" <masahiroy@kernel.org>,
- "Dave Vasilevsky" <dave@vasilevsky.ca>,
- "Geert Uytterhoeven" <geert+renesas@glider.be>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org
-Message-Id: <e7128300-31f7-409f-9158-c5af915ed598@app.fastmail.com>
-In-Reply-To: <543b5d42-a007-4f13-824e-1f8a27dfbd33@landley.net>
-References: <20250808151822.536879-1-arnd@kernel.org>
- <20250808151822.536879-5-arnd@kernel.org>
- <543b5d42-a007-4f13-824e-1f8a27dfbd33@landley.net>
-Subject: Re: [PATCH 04/21] sh: select legacy gpiolib interface
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <jwtdoptatzfo47mbpmmjwhhhjn4mbw6ekp4gtoopca7azbcelo@uvtz4w2ga5qn>
+Organization: Intel Finland Oy - BIC 0357606-4 - c/o Alberga Business Park, 6
+ krs, Bertel Jungin Aukio 5, 02600 Espoo
 
-On Tue, Aug 12, 2025, at 20:28, Rob Landley wrote:
-> On 8/8/25 10:17, Arnd Bergmann wrote:
->> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
->> index d5795067befa..d60f1d5a94c0 100644
->> --- a/arch/sh/Kconfig
->> +++ b/arch/sh/Kconfig
->> @@ -462,6 +462,7 @@ config CPU_SUBTYPE_SHX3
->>   	select CPU_SHX3
->>   	select GENERIC_CLOCKEVENTS_BROADCAST if SMP
->>   	select GPIOLIB
->> +	select GPIOLIB_LEGACY
->>   	select PINCTRL
->
-> Is there a reason to have both rather than having GPIOLIB_LEGACY select 
-> GPIOLIB? (Does the legacy one ever NOT use the new one?)
+On Mon, Aug 11, 2025 at 03:44:57PM -0700, Dmitry Torokhov wrote:
+> Convert the board to use static device properties instead of platform
+> data to describe LEDs and GPIO-connected buttons on the board, so
+> that support for platform data can be removed from gpio-keys and other
+> drivers, unifying their behavior.
 
-The way I've staged the series was
+...
 
-1. add GPIOLIB_LEGACY as an always-enabled symbol in 6.17
-2. add the 'select' and 'depends on' for that symbol in 6.18
-3. turn it off for all configs that don't select it already
+> --- a/arch/sh/boards/mach-rsk/devices-rsk7203.c
+> +++ b/arch/sh/boards/mach-rsk/devices-rsk7203.c
 
-Having GPIOLIB_LEGACY select GPIOLIB does sound like a nice
-idea in stage 3, but that doesn't work with the first step
-that's already merged now.
+>  #include <linux/gpio.h>
 
-      Arnd
+Do we still need this one?
+
+Ditto for the rest similar cases.
+
+-- 
+With Best Regards,
+Andy Shevchenko
+
+
