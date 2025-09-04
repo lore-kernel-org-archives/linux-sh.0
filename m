@@ -1,64 +1,150 @@
-Received: from vps0.lunn.ch (vps0.lunn.ch [156.67.10.101])
+Received: from fout-a3-smtp.messagingengine.com (fout-a3-smtp.messagingengine.com [103.168.172.146])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4AD422D6630;
-	Thu,  4 Sep 2025 18:38:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=156.67.10.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CAF721F872D;
+	Thu,  4 Sep 2025 20:32:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.146
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757011094; cv=none; b=egD9023teQfQ2Ljs7nSU3CAGAoY5AUdeJgDT1lCnoahdR8M2+eq5Nv8XAN+kArNdwu+CffBdCmjuMiwh3rq7w4Uwwq2Gt28MFYYjOOCekHhEDmZbVMuWnojlbRGytkHJAiVh/u0Tl5VUPiv2aNU7id5Y/QjUms5gqnkaF1KWMwc=
+	t=1757017950; cv=none; b=YB+FiN2I0mCDVD5rwD3hm7MyYm2Bw7gOk2bhV0dnLG2/iZX9/nTpIsWDAhP/QOlC+WtyYpxD0xc3Z5ACjj2q23bz8C2p41DKlewHVVvr34TWqi4pE5OK0uC0gowpWPhjQ9Feo+fBKDT7uSUw31Mcuj1URTufyhnxWbt4XuVaKNw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757011094; c=relaxed/simple;
-	bh=7ZM4gYor2Oovgm5w/3fx+oYeIFJdMfwRVOiY52xewhI=;
+	s=arc-20240116; t=1757017950; c=relaxed/simple;
+	bh=ChqRXOId2/fE5fa6prCpjwRvG3GGfhESxSeulGAq+Mc=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=XM4cJSz9QHGCrZZzasfTPFawoFCWr6GX5B2rJwxw2eU4Le17K+QN13+DM0Uymq6H2KrSO4ZC8us+kPcAeL3CrBG59tf/5Q1Xh3LHmC2oskgLD3WjFKEyZg8IqXPSYLcuu0S63KdLf7tFWjgU4MDXDqICEJnjEaSuQOSgI/c4Zh4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lunn.ch; spf=pass smtp.mailfrom=lunn.ch; dkim=pass (1024-bit key) header.d=lunn.ch header.i=@lunn.ch header.b=f/va8AFY; arc=none smtp.client-ip=156.67.10.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lunn.ch
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lunn.ch
+	 Content-Type:Content-Disposition:In-Reply-To; b=fdAl9Gpv7a9E/zhy8z6dbuiwK+E1WEEHNzMPjjvk6hiBNcy+JEZXfuXf748iHmbknjOHYFo2HXfcabbUOeZwXC7n9qyRImSnRombCANgjfZTjV13ae5pHWfwBwfvjDyVsNK5gAmy3THN/YLsJGnjkWtDTgELiyrDXOIf4qx9+TE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ragnatech.se; spf=pass smtp.mailfrom=ragnatech.se; dkim=pass (2048-bit key) header.d=ragnatech.se header.i=@ragnatech.se header.b=XR/msGir; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=UNGlcOUO; arc=none smtp.client-ip=103.168.172.146
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ragnatech.se
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ragnatech.se
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=lunn.ch header.i=@lunn.ch header.b="f/va8AFY"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=lunn.ch;
-	s=20171124; h=In-Reply-To:Content-Disposition:Content-Type:MIME-Version:
-	References:Message-ID:Subject:Cc:To:From:Date:From:Sender:Reply-To:Subject:
-	Date:Message-ID:To:Cc:MIME-Version:Content-Type:Content-Transfer-Encoding:
-	Content-ID:Content-Description:Content-Disposition:In-Reply-To:References;
-	bh=CCCXak8vuRbEff2dpkystrR6rmvUolqqpIXg8SeBTuA=; b=f/va8AFYdOzfopSGuNjk8X6U0B
-	jvxB6jPQzjv0f1z3zKymT2cLWvXCDsiVJIqyh5vdIfGYTWLimVfHnqRlzeBcufk6i0SaK1qz6IW+z
-	XDiMbLagql9FEGE2ErSvG28+uZ5kAVdIBNmcNh85eKUZqEzFyW7fFlCOeXAYipTchONY=;
-Received: from andrew by vps0.lunn.ch with local (Exim 4.94.2)
-	(envelope-from <andrew@lunn.ch>)
-	id 1uuEqT-007Fsx-Lf; Thu, 04 Sep 2025 20:38:05 +0200
-Date: Thu, 4 Sep 2025 20:38:05 +0200
-From: Andrew Lunn <andrew@lunn.ch>
+	dkim=pass (2048-bit key) header.d=ragnatech.se header.i=@ragnatech.se header.b="XR/msGir";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="UNGlcOUO"
+Received: from phl-compute-10.internal (phl-compute-10.internal [10.202.2.50])
+	by mailfout.phl.internal (Postfix) with ESMTP id EA9E3EC00DC;
+	Thu,  4 Sep 2025 16:32:25 -0400 (EDT)
+Received: from phl-mailfrontend-02 ([10.202.2.163])
+  by phl-compute-10.internal (MEProxy); Thu, 04 Sep 2025 16:32:25 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ragnatech.se; h=
+	cc:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to; s=fm3; t=1757017945;
+	 x=1757104345; bh=Ebt/vstwY0jx28xgGFV3W5+WTrUhqm/jMksSJk03iCw=; b=
+	XR/msGirE0FDnQ+yJIXC/OBzyxilNO+vB4wIUWver24GM5mBQNP539WZ0poW8AL3
+	dyG+BAH4FFJf8SBOPJGoOWdBpSJd+QXRe04hj4SfA1jyB3qYAjnzW0fw9OCjosD0
+	spXWegIdtsmKhdoVLqaUhvuaoVGr+9V3QK8vpoZHpL5rFGDqtVeqfhYiVh1Jqtbc
+	75ZSBBuM+r6y8PkVTqfLJxq0Adpa/SGCLGCPAey2i8wAVXReOM5EHEYNiVzIGYH4
+	mMwv5HsqhHurlmQTIqG3SUmOC0CzY+FPhQ/fFsjwX9RjOWuaLYms65S47LfpLXFi
+	fwVA1OweJTcRc9h7lgBcZQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1757017945; x=
+	1757104345; bh=Ebt/vstwY0jx28xgGFV3W5+WTrUhqm/jMksSJk03iCw=; b=U
+	NGlcOUOPgTqd1HZoWE8AUOJ5vBH4HTT4tNq88iwVVjBLjVRt4iFPMUPMRx8lZ6Zz
+	XsEf8RVuo0I2ar6fZAXxDK0Wo/LhPz/KPNm9abua78RIqXAQQonW4n/e984hdhvN
+	ocef9BR2eQScO+e04gWJQv4eu1Q5aqXZ8Y8xYCy7WqvGIpRNU9OS4OpG8fkZduiW
+	62zB8lH6Ygw4OWqW5WOjrULnDCyrwIl/5+N53BEsHToABWB2kKlh8orflGOfpwd2
+	Wu+XNHSsC59/bw8koy7Ho+k1Hn3bnT8IDkHsv5UYIfx2QEi8G5PwgbMjuPHY11tV
+	AEMTX7QWMTvCnyuvfOSbg==
+X-ME-Sender: <xms:Wfe5aEe52u9PVSWvG4FO9ossShjsA5bTdQBUgS2g8w85P4hF9gl6qg>
+    <xme:Wfe5aHypEcslwKT_8b7ZYJ_S6a5kYv7BCWa1LQ6NwJa6zi65awbDnyTlffeBtesDn
+    MpUit_ul5mIO-xoIAc>
+X-ME-Received: <xmr:Wfe5aL145pJLzXrSR0ZUyrneaEUVJzjziLh-WV3qRHTDpetrNZmfCQM5zPW1itFIACtvGEejR7HFWmP0Ii_7J5pe0bg7Gvxr9A>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeeffedrtdeggdeileekucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceurghi
+    lhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurh
+    epfffhvfevuffkfhggtggugfgjsehtkeertddttdejnecuhfhrohhmpefpihhklhgrshcu
+    ufpnuggvrhhluhhnugcuoehnihhklhgrshdrshhouggvrhhluhhnugesrhgrghhnrghtvg
+    gthhdrshgvqeenucggtffrrghtthgvrhhnpeevteegtddvvdfhtdekgefhfeefheetheek
+    keegfeejudeiudeuleegtdehkeekteenucevlhhushhtvghrufhiiigvpedtnecurfgrrh
+    grmhepmhgrihhlfhhrohhmpehnihhklhgrshdrshhouggvrhhluhhnugesrhgrghhnrght
+    vggthhdrshgvpdhnsggprhgtphhtthhopeelpdhmohguvgepshhmthhpohhuthdprhgtph
+    htthhopehgvggvrhhtodhrvghnvghsrghssehglhhiuggvrhdrsggvpdhrtghpthhtohep
+    rghnughrvgifodhnvghtuggvvheslhhunhhnrdgthhdprhgtphhtthhopegurghvvghmse
+    gurghvvghmlhhofhhtrdhnvghtpdhrtghpthhtohepvgguuhhmrgiivghtsehgohhoghhl
+    vgdrtghomhdprhgtphhtthhopehkuhgsrgeskhgvrhhnvghlrdhorhhgpdhrtghpthhtoh
+    epphgrsggvnhhisehrvgguhhgrthdrtghomhdprhgtphhtthhopehnvghtuggvvhesvhhg
+    vghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdhrvghnvghsrghsqd
+    hsohgtsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugidqshhh
+    sehvghgvrhdrkhgvrhhnvghlrdhorhhg
+X-ME-Proxy: <xmx:Wfe5aFxvfUTk6DsUcxtVtZh79tdYc9oRwTci-GoS8WQNbRFxqz_5tQ>
+    <xmx:Wfe5aIUTunyDAbDrqc_Gy_U46_2JAiPgbq4sse-8nmK_BeM5AywczQ>
+    <xmx:Wfe5aJ-lffktgVIrTjMpbPbFTLYVp0FK_hp9CdNE5KYai_L4p8YE5w>
+    <xmx:Wfe5aDvW4oahmYj9crSTne112x-bTvc_wpTeI4ecaF-C20zX1swhpw>
+    <xmx:Wfe5aOwBWTo7aolamIZ8k94kpIpjrWrqxhu06NOLo16TonkKXZkLsDtX>
+Feedback-ID: i80c9496c:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 4 Sep 2025 16:32:24 -0400 (EDT)
+Date: Thu, 4 Sep 2025 22:32:22 +0200
+From: Niklas =?utf-8?Q?S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
 To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Niklas =?iso-8859-1?Q?S=F6derlund?= <niklas.soderlund@ragnatech.se>,
-	Andrew Lunn <andrew+netdev@lunn.ch>,
+Cc: Andrew Lunn <andrew+netdev@lunn.ch>,
 	"David S . Miller" <davem@davemloft.net>,
 	Eric Dumazet <edumazet@google.com>,
 	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
 	netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
 	linux-sh@vger.kernel.org
-Subject: Re: [PATCH net-next 3/3] sh_eth: Use async pm_runtime_put()
-Message-ID: <4a05bcbf-aebc-490f-b143-c6051af35a08@lunn.ch>
+Subject: Re: [PATCH net-next 0/3] sh_eth: PM-related cleanups
+Message-ID: <20250904203222.GA1560783@ragnatech.se>
 References: <cover.1756998732.git.geert+renesas@glider.be>
- <77562617360e30a47746e53e392905ea312a2f97.1756998732.git.geert+renesas@glider.be>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <77562617360e30a47746e53e392905ea312a2f97.1756998732.git.geert+renesas@glider.be>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <cover.1756998732.git.geert+renesas@glider.be>
 
-On Thu, Sep 04, 2025 at 05:18:58PM +0200, Geert Uytterhoeven wrote:
-> There is no stringent need to power down the device immediately after a
-> register read, or after a failed open.  Relax power down handling by
-> replacing calls to synchronous pm_runtime_put_sync() by calls to
-> asynchronous pm_runtime_put().
+Hi Geert,
+
+Thanks for your work.
+
+On 2025-09-04 17:18:55 +0200, Geert Uytterhoeven wrote:
+> 	Hi all,
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> This patch series contains various cleanups related to power management
+> for the Renesas SH Ethernet driver, as used on Renesas SH, ARM32, and
+> ARM64 platforms.
+> 
+> This has been tested on various SoCs (R-Mobile A1, RZ/A1H, RZ/A2M, R-Car
+> H1, R-Car M2-W).
 
-Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+For all three patches,
 
-    Andrew
+Reviewed-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+
+And I tested it on R-Car M2 so feel free to add,
+
+Tested-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+
+> 
+> Thanks for your comments!
+> 
+> Geert Uytterhoeven (3):
+>   net: sh_eth: Remove dummy Runtime PM callbacks
+>   net: sh_eth: Convert to DEFINE_SIMPLE_DEV_PM_OPS()
+>   net: sh_eth: Use async pm_runtime_put()
+> 
+>  drivers/net/ethernet/renesas/sh_eth.c | 30 ++++-----------------------
+>  1 file changed, 4 insertions(+), 26 deletions(-)
+> 
+> -- 
+> 2.43.0
+> 
+> Gr{oetje,eeting}s,
+> 
+> 						Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+> 							    -- Linus Torvalds
+
+-- 
+Kind Regards,
+Niklas Söderlund
