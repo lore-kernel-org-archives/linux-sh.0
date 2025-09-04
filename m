@@ -1,42 +1,46 @@
-Received: from mail.zeus03.de (zeus03.de [194.117.254.33])
+Received: from vps0.lunn.ch (vps0.lunn.ch [156.67.10.101])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 692202F3627
-	for <linux-sh@vger.kernel.org>; Thu,  4 Sep 2025 16:10:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.117.254.33
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A257D241103;
+	Thu,  4 Sep 2025 18:30:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=156.67.10.101
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757002210; cv=none; b=pNI06ag8E5uF4t9EkOh+OJo6e2SJSNc4IZzOlHDQuL6nYUOZ8zR4csfnInSL07I5S43H/YwsOCvubIm4jszcsvUK9gsVOYslAUtonP5mQNg1SdxCaH3J98uRLqGIqiqEKyH+1wzD+imtPyb0K9wNAOzw70KEoGnm5Qz/iyHjb9U=
+	t=1757010610; cv=none; b=lOrWJSMEsHuByWCJefCRa2+X+pJh4UkpQiODXmmBE9eOVPz5i05nPTsYcLd0sQFvlpeymDuom3cmgn097hV1xqL2o4HBVW28F9oHLc+2fxX6OB8JHVCzx1Tuv6MkBMZ+lzqVEZ690PeqBPGhvIF74ws/3/ve8b/CF9svsgxfIms=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757002210; c=relaxed/simple;
-	bh=PkmIbntlSSDbCIU3//pmB31oz3Tvb/BNxvNIJ97TuP4=;
+	s=arc-20240116; t=1757010610; c=relaxed/simple;
+	bh=ctyxHoBmGEd19N/XShEyFaX4n4/YV9lEFOn0IiD96ZY=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=oXULomF1hdEELsaiT4z1b1nCP7g+vCrvmVdMU+btnKiR6xQ4DeVwH/QMTr7moSYYq7+tA9besSOPLVVheX5fva/VePgYjx7dORjq0Gg8YvixjB91RThf3GzZ0DdzPRkAoIk9ORuL1yav5e6JmnP8LdZZqXQlY1GwjCX8xcO+8/0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com; spf=pass smtp.mailfrom=sang-engineering.com; dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b=BUzMEvRJ; arc=none smtp.client-ip=194.117.254.33
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sang-engineering.com
+	 Content-Type:Content-Disposition:In-Reply-To; b=SPMb7xX3oIACH5wF0iIftT67RgLpOb8vB0jFOBhwTgvIADB4yDsuLc8ELKNNUPMCaERwjmbpYM7wFBUExt7koN9kabuw6wFNwSBMkd2lEck7Rwz+kV2jX6XEp/JrvlM8zaTM91zrdx6G1f381LxHiAAuuKALsRHtDLe9vPuSbEA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lunn.ch; spf=pass smtp.mailfrom=lunn.ch; dkim=pass (1024-bit key) header.d=lunn.ch header.i=@lunn.ch header.b=XnhXtiuL; arc=none smtp.client-ip=156.67.10.101
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lunn.ch
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lunn.ch
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b="BUzMEvRJ"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	sang-engineering.com; h=date:from:to:cc:subject:message-id
-	:references:mime-version:content-type:in-reply-to; s=k1; bh=zZOr
-	5/vzHL2/W03R7cgpjsL8TTrFvZdllQGOy/p3JI8=; b=BUzMEvRJU+/xhCMHur2c
-	1yN7qM3GQZTCT7DDlzbIBokkVtydOfccHuZ+fnaedZRVgFNyE5VjfgJ7kEiNCP8y
-	jvf/fUfWNq9ZYbrUqI0jZlWuLmNnIGHN7F1Z1reRsv1ynFYZdmj1o8mTZwLRq1hD
-	W4lYdIreDjhTfg3s5Gwhk3+uun3hVAgo6ZjDxzGLWfpfqC87LNQfONPZX+PTa4fX
-	r/O8HaPWzFbUpKZei4l6gPOq7z7wMIKifkYMFgIZwWI2fQ1vfRb76e1LxRoL6jI5
-	2K0FHleZqMVRAuV0eMMhC3fPQJXGvkGDPS5aHJaiumNKQpJsY5GJKy7F15j2THGa
-	7A==
-Received: (qmail 3728061 invoked from network); 4 Sep 2025 18:10:06 +0200
-Received: by mail.zeus03.de with UTF8SMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 4 Sep 2025 18:10:06 +0200
-X-UD-Smtp-Session: l3s3148p1@hX9e9Ps9WNUujnuV
-Date: Thu, 4 Sep 2025 18:10:06 +0200
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+	dkim=pass (1024-bit key) header.d=lunn.ch header.i=@lunn.ch header.b="XnhXtiuL"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=lunn.ch;
+	s=20171124; h=In-Reply-To:Content-Disposition:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:From:Sender:Reply-To:Subject:
+	Date:Message-ID:To:Cc:MIME-Version:Content-Type:Content-Transfer-Encoding:
+	Content-ID:Content-Description:Content-Disposition:In-Reply-To:References;
+	bh=YB17rAFknzA/OC+TRlgDPtiCWVcjyS4YaD/1FsIUIKw=; b=XnhXtiuL2Uvt+67eS3YPLCUZrM
+	/G2XUyl99mJBMEa0UpQEmQdjnpWTwluhWj56krN5qg67nteuiT3hw5plsjYi0b/qOSlAPcrnyCz79
+	CEYWrFbDva2qi8r77PrO3mtEy3uFS/sypq/DcaAE6Uj2gmM2GVlbb9UwEBjS+SptT+Bk=;
+Received: from andrew by vps0.lunn.ch with local (Exim 4.94.2)
+	(envelope-from <andrew@lunn.ch>)
+	id 1uuEiY-007FiI-8O; Thu, 04 Sep 2025 20:29:54 +0200
+Date: Thu, 4 Sep 2025 20:29:54 +0200
+From: Andrew Lunn <andrew@lunn.ch>
 To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc@vger.kernel.org,
-	linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH] mmc: sh_mmcif: Remove dummy PM resume callback
-Message-ID: <aLm53kb0HWQK4mfe@ninjato>
-References: <8b73e2071a1d87c8d09b8bb24fc35f371779c2f3.1757000061.git.geert+renesas@glider.be>
+Cc: Niklas =?iso-8859-1?Q?S=F6derlund?= <niklas.soderlund@ragnatech.se>,
+	Andrew Lunn <andrew+netdev@lunn.ch>,
+	"David S . Miller" <davem@davemloft.net>,
+	Eric Dumazet <edumazet@google.com>,
+	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
+	netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-sh@vger.kernel.org
+Subject: Re: [PATCH net-next 1/3] sh_eth: Remove dummy Runtime PM callbacks
+Message-ID: <0f2a2181-f885-48a5-9f90-28483734dc83@lunn.ch>
+References: <cover.1756998732.git.geert+renesas@glider.be>
+ <ab2a8bb51eb7d02426f4072c27523c8f41ac1ad4.1756998732.git.geert+renesas@glider.be>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -45,13 +49,16 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <8b73e2071a1d87c8d09b8bb24fc35f371779c2f3.1757000061.git.geert+renesas@glider.be>
+In-Reply-To: <ab2a8bb51eb7d02426f4072c27523c8f41ac1ad4.1756998732.git.geert+renesas@glider.be>
 
-On Thu, Sep 04, 2025 at 05:35:43PM +0200, Geert Uytterhoeven wrote:
-> Unassigned system sleep callbacks were always treated the same as dummy
+On Thu, Sep 04, 2025 at 05:18:56PM +0200, Geert Uytterhoeven wrote:
+> Since commit 63d00be69348fda4 ("PM: runtime: Allow unassigned
+> ->runtime_suspend|resume callbacks"), unassigned
+> .runtime_{suspend,resume}() callbacks are treated the same as dummy
 > callbacks that just return zero.
 > 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
 
+    Andrew
