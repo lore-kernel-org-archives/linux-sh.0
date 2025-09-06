@@ -1,129 +1,83 @@
-Received: from fout-a1-smtp.messagingengine.com (fout-a1-smtp.messagingengine.com [103.168.172.144])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A863DBA42;
-	Fri,  5 Sep 2025 18:41:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.144
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 11C2517B425;
+	Sat,  6 Sep 2025 01:50:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757097672; cv=none; b=iWC2dwKde+FieElS7Gh/QN78twXg/MwJUeA7b254EqoTNy4o4RktPy6uQM+n5R/Iimi+k22lTAK8XRaxKovtraZWtYu1/QMYwc5JexdrIwakG7S0e0wHQ3mJInvfcIP69vQ06wuvHv34mU9FHqzUHHcjFDiJvxpvSMOk0U8gBR8=
+	t=1757123407; cv=none; b=Rc3M5b98wJ53ykdLaHL98hnI10/KcYQ0M+HMMyM07g4h9b36YPifwgKLwSw2VuXPPRoNUCgo5Sgy0el98mnfGSTUe1r/yxbhXuLJ+YqkyTY8zOXxcJqQzgjXJYqhREVvoUoHVl8BH4Z95REcokVa5GX6sW/R98u8ji2TInXNhv0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757097672; c=relaxed/simple;
-	bh=nKIpz5MYB+pV5XUpnBdek51xixMAAVMen0tPjnPjmvs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=HNNbxavZ2g0PYTxq3gHu+xqAhSBg7DKojUsm8Aej8UCJGncfVzuGWK8Cz3U++1qsctE5EHO7mekg1/6WMMurnBG+OrHG5qGG8XSI/Av6aHI5SoHrPxVRNWdde7W/r8Lqfj/9jo/YJthGAYne4Op2jos6m0ayzYOZi0Xpo7P1/pI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ragnatech.se; spf=pass smtp.mailfrom=ragnatech.se; dkim=pass (2048-bit key) header.d=ragnatech.se header.i=@ragnatech.se header.b=b7IBxzK8; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=jY1KznVu; arc=none smtp.client-ip=103.168.172.144
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ragnatech.se
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ragnatech.se
+	s=arc-20240116; t=1757123407; c=relaxed/simple;
+	bh=fYiTdSD4kxkoNV6CEXTLw+kH68SZUecAyQ8SFE4MKeM=;
+	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
+	 In-Reply-To:To:Cc; b=dsMt4Hm7N671Zwbph0Zjsull+aPpqzo7qSDjqOP4ewnPoJuRQum85vMxh+NZuaIE2cftqB7QvdMb8b9BmELJJcbzX1GrD+wVJQ+7euDYbIZJS5G+CK2U6OihJTjxk6ZezHbauvPLtOwfuE29f2qDG6ZMElNA6GC22NWDlqvj8n8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=aD0Hr3SL; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ragnatech.se header.i=@ragnatech.se header.b="b7IBxzK8";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="jY1KznVu"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.phl.internal (Postfix) with ESMTP id A14AFEC04B9;
-	Fri,  5 Sep 2025 14:41:06 -0400 (EDT)
-Received: from phl-mailfrontend-02 ([10.202.2.163])
-  by phl-compute-02.internal (MEProxy); Fri, 05 Sep 2025 14:41:06 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ragnatech.se; h=
-	cc:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm3; t=1757097666;
-	 x=1757184066; bh=0SnQdrC7772A3Jfi9YjFftYLT3J8CMkIL+U7gFU8u0k=; b=
-	b7IBxzK8bLmJ+WSk9x7VtNmgiycwfVCUmH4jDvhLifXEv2+S1gsNPcJ9raEI6hTW
-	mwFUJXpe4krPliPFGT3LYiasuzw5Rde9W6J4Ql5jQzjsIkCcC8uhGHuqRmKnFhh8
-	+zzg/2iAVFr79nwfjaRSE+C2Mwxi/007PQOK2ce2EfDhuZdNdtQ49tjt6w9gmEPa
-	oIt+mnJe2d6AZ8jtP7bVLtU3DztlzxKBXPQs2UzpUP5uU5Je8WThQt7GIPHaKzg0
-	Xenb7QhRa7po4Eu+gcUbAudiFoXzSjYZXwNk49gxynTL2WbDo50/jVjIEV9UOvr9
-	bhpY8idqI61tI6FQVwl5ww==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1757097666; x=
-	1757184066; bh=0SnQdrC7772A3Jfi9YjFftYLT3J8CMkIL+U7gFU8u0k=; b=j
-	Y1KznVuYZs0I5HpDl/LQ6GlYt41Kob4COHSQ2JTWuVgvMTVt3TuetkkgibqeLxHG
-	lsO2qD2+DX+OiuoukrpJna0fOd/aNKTnrf2hhGUyBSAkQQNhhu/65NODXTff15V9
-	BxT7KVzADf29NPA2zXO0PEzTca3/9jX1fLumWIcJmEOpldAt5RhSBi5kx3O5Dy/q
-	s+/AXWZhwVyJVzWtFEQXzwNbajppOq3SH8M7omYysurZAITZen8DI1zHjOkucx2G
-	vJZxjvbnAJWjorQN6GexpiCDXO/P3u3l0tW/oXvKaXQbNw3BceLJvKKZ6ezS0O05
-	IvUrL43AdmRf4XkcuYZuw==
-X-ME-Sender: <xms:wS67aCH6vvSbw1QyU1xrH2fjca_Dm4rewM1rb2if1nqvqsIz7eKDXw>
-    <xme:wS67aAuPNpIpVTLhHmwrqCKWlIcZDKTRlVIhJzEXLC77VNCR1GtXZE5cTk-Ps_Sl0
-    d_i8Cx_bU_-Rr3M6rQ>
-X-ME-Received: <xmr:wS67aFraVHBF7_u0LH0dl7k72-fgeo-IzsVX2O0Kw-vT8f56Wc9B09XvlLOOTsmChk9hYneIFmCK-tPT-KAbnatHIntj2VOG6w>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeeffedrtdeggdelieegucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceurghi
-    lhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurh
-    epfffhvfevuffkfhggtggugfgjsehtkeertddttdejnecuhfhrohhmpefpihhklhgrshcu
-    ufpnuggvrhhluhhnugcuoehnihhklhgrshdrshhouggvrhhluhhnugesrhgrghhnrghtvg
-    gthhdrshgvqeenucggtffrrghtthgvrhhnpeevteegtddvvdfhtdekgefhfeefheetheek
-    keegfeejudeiudeuleegtdehkeekteenucevlhhushhtvghrufhiiigvpedtnecurfgrrh
-    grmhepmhgrihhlfhhrohhmpehnihhklhgrshdrshhouggvrhhluhhnugesrhgrghhnrght
-    vggthhdrshgvpdhnsggprhgtphhtthhopedutddpmhhouggvpehsmhhtphhouhhtpdhrtg
-    hpthhtoheprghnughrvgifsehluhhnnhdrtghhpdhrtghpthhtohepghgvvghrtheslhhi
-    nhhugidqmheikehkrdhorhhgpdhrtghpthhtoheprghnughrvgifodhnvghtuggvvheslh
-    hunhhnrdgthhdprhgtphhtthhopegurghvvghmsegurghvvghmlhhofhhtrdhnvghtpdhr
-    tghpthhtohepvgguuhhmrgiivghtsehgohhoghhlvgdrtghomhdprhgtphhtthhopehkuh
-    gsrgeskhgvrhhnvghlrdhorhhgpdhrtghpthhtohepphgrsggvnhhisehrvgguhhgrthdr
-    tghomhdprhgtphhtthhopehnvghtuggvvhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprh
-    gtphhtthhopehlihhnuhigqdhrvghnvghsrghsqdhsohgtsehvghgvrhdrkhgvrhhnvghl
-    rdhorhhg
-X-ME-Proxy: <xmx:wS67aHWWwPCSy7X1Vs8Qx97B4-MIUI5vxRLK-cAk3KQXuPsFGNN0gA>
-    <xmx:wS67aN2zgRUpvCpDSw9Fei85Z0rKnGX95yWp7JjWxJdjaLSz6FDg2A>
-    <xmx:wS67aMtm3ByQ4Hxx7gW8Nxq0Wq06lNzgwytiYCVKro8M2W__ajfNsw>
-    <xmx:wS67aFX5OhKAPO436QzibrGK3U8RT1kVOrij2cf8-I116Q-V9R9R2g>
-    <xmx:wi67aD6hQ-VNvLa6iLOTzNDq34e1ZaVo8_u6_G6WmkASInu21t4OX6AQ>
-Feedback-ID: i80c9496c:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 5 Sep 2025 14:41:05 -0400 (EDT)
-Date: Fri, 5 Sep 2025 20:41:03 +0200
-From: Niklas =?utf-8?Q?S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
-To: Andrew Lunn <andrew@lunn.ch>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
-	Andrew Lunn <andrew+netdev@lunn.ch>,
-	"David S . Miller" <davem@davemloft.net>,
-	Eric Dumazet <edumazet@google.com>,
-	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
-	netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
-	linux-sh@vger.kernel.org
-Subject: Re: [PATCH net-next 2/3] sh_eth: Convert to
- DEFINE_SIMPLE_DEV_PM_OPS()
-Message-ID: <20250905184103.GA1887882@ragnatech.se>
-References: <cover.1756998732.git.geert+renesas@glider.be>
- <ee4def57eb68dd2c32969c678ea916d2233636ed.1756998732.git.geert+renesas@glider.be>
- <082d5554-7dae-4ff4-bbbe-853268865025@lunn.ch>
- <CAMuHMdU96u41ESayKOa9Z+fy2EvLCbKSNg256N5XZMJMB+9W6A@mail.gmail.com>
- <c1f6fb82-9188-48ed-9763-712afa71c481@lunn.ch>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="aD0Hr3SL"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9551BC4CEF1;
+	Sat,  6 Sep 2025 01:50:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1757123406;
+	bh=fYiTdSD4kxkoNV6CEXTLw+kH68SZUecAyQ8SFE4MKeM=;
+	h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
+	b=aD0Hr3SLRBCy+bgiJdHFCaM2FS9ohr34EfObiogBCtHIxcBEXm2WuJ+qscs84uu1M
+	 gWsa5pQBj1dhxphMMCO9xOSd4HcVf8eEBbEBCNx4sECGvvTyDDFQGo7+7VortNoH43
+	 0nWUtHoFqR/AX8VZOFDBWBQDq1hiPytXIPNvNH3Xq4IjFyYfDoTPoqR1RB8uH6BN0S
+	 +1i3x9z2hfm5H1WnMEIfJ2YfS5o4hlgmfu18bJ79gnlpiaVegTLjtVZ472Wm/aqnG1
+	 weGj6VorxTAm3MWaWpclJuulXbVHWtCNKjhUhmwz3IE/Ng1dxFsydYzr2NFYjiZVXG
+	 5pCqpjhf7g/ng==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 33CE3383BF69;
+	Sat,  6 Sep 2025 01:50:12 +0000 (UTC)
+Content-Type: text/plain; charset="utf-8"
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <c1f6fb82-9188-48ed-9763-712afa71c481@lunn.ch>
+Subject: Re: [PATCH net-next 0/3] sh_eth: PM-related cleanups
+From: patchwork-bot+netdevbpf@kernel.org
+Message-Id: 
+ <175712341100.2742584.3421281371078554809.git-patchwork-notify@kernel.org>
+Date: Sat, 06 Sep 2025 01:50:11 +0000
+References: <cover.1756998732.git.geert+renesas@glider.be>
+In-Reply-To: <cover.1756998732.git.geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: niklas.soderlund@ragnatech.se, andrew+netdev@lunn.ch, davem@davemloft.net,
+ edumazet@google.com, kuba@kernel.org, pabeni@redhat.com,
+ netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+ linux-sh@vger.kernel.org
 
-On 2025-09-05 13:57:05 +0200, Andrew Lunn wrote:
-> > You cannot enter system sleep without CONFIG_PM_SLEEP, so enabling
-> > WoL would be pointless.
+Hello:
+
+This series was applied to netdev/net-next.git (main)
+by Jakub Kicinski <kuba@kernel.org>:
+
+On Thu,  4 Sep 2025 17:18:55 +0200 you wrote:
+> Hi all,
 > 
-> Yet get_wol will return WoL can be used, and set_wol will allow you to
-> configure it. It seems like EOPNOTSUPP would be better.
-
-Out of curiosity. Are you suggesting a compile time check/construct for 
-CONFIG_PM_SLEEP be added in the driver itself, or in ethtool_set_wol() 
-and ethtool_get_wol() in net/ethtool/ioctl.c to complement the 
-
-    if (!dev->ethtool_ops->get_wol || !dev->ethtool_ops->set_wol)
-        return -EOPNOTSUPP;
-
-checks already there? To always return EOPNOTSUPP if PM_SLEEP is not 
-selected?
-
+> This patch series contains various cleanups related to power management
+> for the Renesas SH Ethernet driver, as used on Renesas SH, ARM32, and
+> ARM64 platforms.
 > 
-> 	  Andrew
+> This has been tested on various SoCs (R-Mobile A1, RZ/A1H, RZ/A2M, R-Car
+> H1, R-Car M2-W).
+> 
+> [...]
 
+Here is the summary with links:
+  - [net-next,1/3] sh_eth: Remove dummy Runtime PM callbacks
+    https://git.kernel.org/netdev/net-next/c/86e6257192c8
+  - [net-next,2/3] sh_eth: Convert to DEFINE_SIMPLE_DEV_PM_OPS()
+    https://git.kernel.org/netdev/net-next/c/3406114a303e
+  - [net-next,3/3] sh_eth: Use async pm_runtime_put()
+    https://git.kernel.org/netdev/net-next/c/ae52c3e846e1
+
+You are awesome, thank you!
 -- 
-Kind Regards,
-Niklas Söderlund
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/patchwork/pwbot.html
+
+
