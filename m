@@ -1,109 +1,118 @@
-Received: from mail-pj1-f54.google.com (mail-pj1-f54.google.com [209.85.216.54])
+Received: from mail-vk1-f176.google.com (mail-vk1-f176.google.com [209.85.221.176])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15D722FE575;
-	Mon,  8 Sep 2025 12:27:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B4FA30EF63;
+	Mon,  8 Sep 2025 14:36:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.176
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757334477; cv=none; b=NdNHxQJaVzmj2PtIFi5bs8Yj/7ncxOGt96pQPPsY90fRCyND+7CIAPbkeBZtn15jhS6WcEPdfEwLEGIifZkXv6MLLPyGvZ5iZ5QXT7GXoNiJpOe5uLsvQA2bVCb6bBsz6uDSkfTgQN5me8wdsvegxZTLF7cHwCXH6M01Yg/T74I=
+	t=1757342204; cv=none; b=nspIklDa0buRZ4aUm0DgLOREYNurmKjVey52Lxp7bQFcc3VPkFO5ZOC7ICbRF7eBHuM3efNh6kpFiDM9y+U3Dypp/JN8dpAvqsTAFCTGtfMwtNy4IGEuMYWHi76+k3UH9RCMrWoaTcGsWMFmZYAdSkihpKbnf+50x2wvGAK/k8U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757334477; c=relaxed/simple;
-	bh=CobATCIuufkdh2CoPh7fRJFuTf8ycBoABXNqnaHC3Bs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=M79jUC2IajmyBIGZEx5P4TTZU4RamcTbuu2JOBzOUL/p1jivjM/RIEYP697a08Y3PqVwm67O0PcCa1Nior/+HRLf26Dbfh1qG71Zie+eXGBRXavedncVOjviDKPevN/KTTRoMMZmQjmUoorwqh0mbKsOdGXc67/k/hfpgcK2T5c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=NyS4ZI6W; arc=none smtp.client-ip=209.85.216.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+	s=arc-20240116; t=1757342204; c=relaxed/simple;
+	bh=aWBxujX2uYswv8B0XTROSnJb0N5sPNs7CCncravmT00=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=Ok0HB1k5Z59fz2NShG5r5bPrZ3ukjtyT/RiIJlNDjrG3EFVOLU/Z6zptfAFaD/UYSkUdEigJYM+z53g1+MLqdk3GuoveffxMJg1TaPRSQC07MbROuy6Tx3U6i1GDqkBxJv+tPjbqFwZll2doeZvSuuSm5Geror8amG8KTB1RWZ8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.176
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NyS4ZI6W"
-Received: by mail-pj1-f54.google.com with SMTP id 98e67ed59e1d1-32b70820360so3292631a91.2;
-        Mon, 08 Sep 2025 05:27:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1757334475; x=1757939275; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=pAG530hlqAV9LUfzwpa6dHzQZK5LxCu86gjBzDFlS0Y=;
-        b=NyS4ZI6WE0XbjJZgZIzNGaNNzH/ftaqp9xsYuVoOYXHIzoRYbx1w6gHQE5580aD50S
-         YAMGF1ElDI96p+xMUI4vwlN5kj0GU3M7ltlxN7HnFw8AmZKCjsz08Q0RXvDxZhWJR8BY
-         oW0GccY78PioiYYkglcXrbjDd9wJmcwsX50Iw6bYRWdpkU8aVJG5ymzGDHfdWb8sXlR5
-         tS0CjwPRJg2SoWT2Sa+HNLQyEVOMnauVXhYeZ9WFwVLODeFbSY2LvVnHdt5iOaAFdiDV
-         rNlcmqZRtyr2+OV2w+pO7s0fNKEx4Raa8QjhzjmhTIeO+3MvxXmVrv7TBjy/SAdr97Zj
-         Z7aA==
+Received: by mail-vk1-f176.google.com with SMTP id 71dfb90a1353d-545e265e2d0so3618010e0c.1;
+        Mon, 08 Sep 2025 07:36:42 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1757334475; x=1757939275;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=pAG530hlqAV9LUfzwpa6dHzQZK5LxCu86gjBzDFlS0Y=;
-        b=BJEFuwdMlblBbw5KXgqlXnpuPNVkdjyc18MA9IFezJJY3U0ihBui33ATC0Ny8o/ObU
-         JcdcyfF56KrPrbwrzOUlOQHEtvJ2vqzH1haf/c2CIWADyz/9EBqX4QdQhySL6vvPwaI7
-         E6pdSsuFRGK6lDIlIVbVJwNA+JLlRFOYUVVp3ln3uK+0gm5c+fkki6RiVL/0VTYHQBBT
-         8d1QUBeKE3+ONCtZMCsQYoim97BBRYrvbjs27wLSfk6PJ6inhApjAPKRkxyK0bhH+KWP
-         UrcxsKFskkTpfvawl8Xv9sJWWeNxw0ucUetGQs/QF5ATiltai1pNb3yP+BgDMr6S8cyg
-         5KXA==
-X-Forwarded-Encrypted: i=1; AJvYcCW2Ja3ZmWHrQXHZcQ3+lvO0cTdGPfWPheNwprTZBo6kMSCKy1tcchfnk00F8K9Y33wov/sFz0tMYX12WEI=@vger.kernel.org, AJvYcCWaLXOgRShDTShd4474YBm8XwDC2uFd7KG8ri7euKzk4nMSHg/25kUwIbRtBY8HHOgs6MVQc5GK5ZQ=@vger.kernel.org
-X-Gm-Message-State: AOJu0YzFsaRBdWIIf+pbnAkJsSkJlPI8ZussPwX/XVVVWGTv66paaCZ+
-	Qnz/KgjfQwdIgIGmsf84K96W/0wrxK+GkqneZwW6BIAE1qMrej+fG9M2
-X-Gm-Gg: ASbGncvyCaW/VZSsKZW2QN8rlOGCUaND80WJG9lb1vUyd2yATMDMRHrKIwWYQhkvMWM
-	CUt1AM2jBS8GYKdXMgMz+jZF5HPK5W5TSXdNFbKoXXUXcSLut1Xf5HMj0PrxTx/cGRnxPDM3DmW
-	nNhjZBsJHPQeYVNMIvtiWQ1KS3lSJXlIXv44DGLomfumlXlrbWa3OcYgCmXUL/MXrout0AP3qvt
-	0Pfy+vJNHN07Injp7FJPVi6w+IdI37YCaDvvGZ1bOrlj0AXWAjrjGLZyVumoFOumufCgHYtBh6r
-	6TpTclvrmj9OYetF3owvYH/pTU9/PkgO+W/IWb16tMGwMdxkpjrf+yYni7O0KOB3rgQDnkrSFtt
-	OPUoviZZjaH8tFgW/i6LfOAjPtU2+HA9H
-X-Google-Smtp-Source: AGHT+IFjsnS8sjk91bGluYQIOQF1ofRZQZ9BwTJ/cXao0DgbRFnoyp+4oSbDtzaL2lqb0cIZdN5Lwg==
-X-Received: by 2002:a17:90b:280a:b0:32d:8eb1:4e26 with SMTP id 98e67ed59e1d1-32d8eb14e6amr2946278a91.30.1757334475210;
-        Mon, 08 Sep 2025 05:27:55 -0700 (PDT)
-Received: from google.com ([2620:15c:9d:2:6e8a:c590:dac:fd95])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-32b95d31976sm12822229a91.22.2025.09.08.05.27.54
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 08 Sep 2025 05:27:54 -0700 (PDT)
-Date: Mon, 8 Sep 2025 05:27:51 -0700
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-To: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Arnd Bergmann <arnd@kernel.org>, Bartosz Golaszewski <brgl@bgdev.pl>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] sh: mach-rsk: rsk7203: use static device properties for
- LEDs and GPIO buttons
-Message-ID: <kqtaw37b6upcuorurnccs6gqvp2aj33afanxnqye7txkmr5be6@k2omfqynjscv>
-References: <jwtdoptatzfo47mbpmmjwhhhjn4mbw6ekp4gtoopca7azbcelo@uvtz4w2ga5qn>
- <aJyKAQJUG7hmO2pT@smile.fi.intel.com>
+        d=1e100.net; s=20230601; t=1757342201; x=1757947001;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=uDyB2krlIE8rNxZZ8p/2zgSgW+1lAkY0Xa1KiP3J9sQ=;
+        b=p+1tIXBt/7YfvWAaPFksh6xhG4jBhHXC0n8M/xgFAd/CYPLmlxYQcBPoS0+Da+iaam
+         8KyN7zKLycO06A250Z3BLV2YBopLeXazatQgwa+mI8MSiFuBaFBXgetCRupFncJV3e/f
+         ZnLBeIOaU+444uPg2knuCSnE9RiLArWOh3nmlp5HfJnA2THVl2BlW02bYTD+9kjTAPcS
+         cfR0J3ntd6sU3yphp4bgrF5NcQC8JqovgnvBQ0CLWpI4mO63hej5m+AXjx+kI6twSXk9
+         6osyV0B2Cg/+vEve2lx2Lg+EIN9U5rZBLe6z0gJx1an2L6lbVJ2s98NBs4Eda2+EjqPl
+         l8gg==
+X-Forwarded-Encrypted: i=1; AJvYcCUTZxKkfNbPgOt3SOjTXALpQhNHdQwkxSVd7D64wcreA8KnDnSpYfuPeXGsunt3dKsF7aTzyhTMAbg=@vger.kernel.org, AJvYcCVTE+bj21w4rrHpu75S8yTCC1DS0q88UKAjw46aBsIZwL3+rcxAj//bGQPALoDA5oVsW8Apw7rl@vger.kernel.org, AJvYcCXdqHIYigTZh6Gb+sf3PJ/KhFJXknAFpwDBtHz39mXFuKfiN3lqhpfs0AIuLgczumOhcyEQlBL9UoO/nIWx1l+W0w==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzQ2+Yq5r1PIUDiEIdeRwcG16YskrmfADMuT+XR/lnaPHhTXGSi
+	e7+Fzcgb2q9JG56dThTcWz47fFDC9MxXl1DhBqZZT+fCuRvpx7KhX993SiQESIN0
+X-Gm-Gg: ASbGncsbRmjUbQI5NVLLpgp6Vp7NVNaFGzJyOTRdQTLQO8JaGod9FEwHzLl18tEfBjL
+	CixVZMPJ/F7j5nTm6k07gOG9faUDZaTgVByDgJFEr5yuPBFbZxI/CFjY2Iuofij1Z32QKuu7O8K
+	HxraoD0F6JEetG9ib5nc55JD2Aas9z8dyMgdvweNzPrfvjYKr+8XKgOPPP+U8JBOa+93C2rGoOP
+	TurIkZ4Gjnns61Wmn2kUIuOi8OlGqukwG7bAheaYciM/bmjfK2sz+3Ydt2ud3tWDm6TI/hInZaq
+	66AcCuIWoSbDjo+ItFt7FSofOscDva8JaPsjNKusJ9I+kzITdtMpZreBovIRbhWFb17lmLVz6x0
+	zteum8PpQkbXvbG6dzduD9D35wcuNivI0tWtQyVIMHtq83LOr8Rjncg9hylLIyDg/8PkzlAg=
+X-Google-Smtp-Source: AGHT+IFyFzZ+1rzFiWdnVuKdvfkF+8Uef9QTRxeTkoYkaS24GMFPbRpF7hxbZ/4CBNOa+1o8AJ287w==
+X-Received: by 2002:a05:6122:d02:b0:545:d9d2:a832 with SMTP id 71dfb90a1353d-5472aeed8f7mr2320048e0c.7.1757342200877;
+        Mon, 08 Sep 2025 07:36:40 -0700 (PDT)
+Received: from mail-ua1-f41.google.com (mail-ua1-f41.google.com. [209.85.222.41])
+        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-54491467546sm12196184e0c.17.2025.09.08.07.36.40
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 08 Sep 2025 07:36:40 -0700 (PDT)
+Received: by mail-ua1-f41.google.com with SMTP id a1e0cc1a2514c-8a1d640b50eso2522974241.1;
+        Mon, 08 Sep 2025 07:36:40 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCVG6mRLW//aOmwuBlo0Ccpo+48/euHSxb87O+Avm6WFHmWKS67WD6FYSmcIo2XF9axe58rcPWHn@vger.kernel.org, AJvYcCWCNXOih9ET8HbzWXwDSEm4m4PaEhtrJFn3tAOCZHOaXBWNoWFpfpSFVAboDpkSNts61olX3/Fpx28=@vger.kernel.org, AJvYcCXb7bo7/dRyP0BoC2f9x7vjaJr0SidF6UqedTUTMF8Uz1QiJwP8REa+9MAw8nNvkcyo5Qa080hGqy//B2gJjTxaTw==@vger.kernel.org
+X-Received: by 2002:a05:6102:5f04:b0:524:4800:77a8 with SMTP id
+ ada2fe7eead31-53d1aeacabbmr2149246137.5.1757342200407; Mon, 08 Sep 2025
+ 07:36:40 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <aJyKAQJUG7hmO2pT@smile.fi.intel.com>
+References: <cover.1756998732.git.geert+renesas@glider.be> <ee4def57eb68dd2c32969c678ea916d2233636ed.1756998732.git.geert+renesas@glider.be>
+ <082d5554-7dae-4ff4-bbbe-853268865025@lunn.ch> <CAMuHMdU96u41ESayKOa9Z+fy2EvLCbKSNg256N5XZMJMB+9W6A@mail.gmail.com>
+ <c1f6fb82-9188-48ed-9763-712afa71c481@lunn.ch> <20250905184103.GA1887882@ragnatech.se>
+In-Reply-To: <20250905184103.GA1887882@ragnatech.se>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 8 Sep 2025 16:36:29 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdU=Q6AZcryj1ZBGW+5F+iYvZCL=Eg0yPw0B4jnczmA8nw@mail.gmail.com>
+X-Gm-Features: AS18NWDDiJDUM99OjCO1NTM5SZENlk5h_nA_Wc3995eUm3tBgaiRGG6RUKZyn0U
+Message-ID: <CAMuHMdU=Q6AZcryj1ZBGW+5F+iYvZCL=Eg0yPw0B4jnczmA8nw@mail.gmail.com>
+Subject: Re: [PATCH net-next 2/3] sh_eth: Convert to DEFINE_SIMPLE_DEV_PM_OPS()
+To: =?UTF-8?Q?Niklas_S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
+Cc: Andrew Lunn <andrew@lunn.ch>, Andrew Lunn <andrew+netdev@lunn.ch>, 
+	"David S . Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>, 
+	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, netdev@vger.kernel.org, 
+	linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, Aug 13, 2025 at 03:50:09PM +0300, Andy Shevchenko wrote:
-> On Mon, Aug 11, 2025 at 03:44:57PM -0700, Dmitry Torokhov wrote:
-> > Convert the board to use static device properties instead of platform
-> > data to describe LEDs and GPIO-connected buttons on the board, so
-> > that support for platform data can be removed from gpio-keys and other
-> > drivers, unifying their behavior.
-> 
-> ...
-> 
-> > --- a/arch/sh/boards/mach-rsk/devices-rsk7203.c
-> > +++ b/arch/sh/boards/mach-rsk/devices-rsk7203.c
-> 
-> >  #include <linux/gpio.h>
-> 
-> Do we still need this one?
+Hi Niklas,
 
-Yes, at least this one still uses gpio_request() for configuring some
-GPIOs, so we need to keep it at least for now.
+On Fri, 5 Sept 2025 at 20:41, Niklas S=C3=B6derlund
+<niklas.soderlund@ragnatech.se> wrote:
+> On 2025-09-05 13:57:05 +0200, Andrew Lunn wrote:
+> > > You cannot enter system sleep without CONFIG_PM_SLEEP, so enabling
+> > > WoL would be pointless.
+> >
+> > Yet get_wol will return WoL can be used, and set_wol will allow you to
+> > configure it. It seems like EOPNOTSUPP would be better.
+>
+> Out of curiosity. Are you suggesting a compile time check/construct for
+> CONFIG_PM_SLEEP be added in the driver itself, or in ethtool_set_wol()
+> and ethtool_get_wol() in net/ethtool/ioctl.c to complement the
+>
+>     if (!dev->ethtool_ops->get_wol || !dev->ethtool_ops->set_wol)
+>         return -EOPNOTSUPP;
+>
+> checks already there? To always return EOPNOTSUPP if PM_SLEEP is not
+> selected?
 
-> 
-> Ditto for the rest similar cases.
+Iff we want to go that route, I'd vote for handling it in common code.
+Still, there is no guarantee that WoL will actually work, as on
+some systems it may depend on the firmware, too.  E.g. on ARM
+systems with PSCI, the SoC may be powered down during s2ram, so
+there is no guarantee that any of the wake-up sources shown in
+/sys/kernel/debug/wakeup_sources can actually wake up the system.
+I tried having a mechanism to describe that in DT, but it was rejected.
 
-I'll review them to make sure they are still needed.
+Gr{oetje,eeting}s,
 
-Thanks.
+                        Geert
 
--- 
-Dmitry
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
