@@ -1,104 +1,106 @@
-Received: from vps0.lunn.ch (vps0.lunn.ch [156.67.10.101])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C706230F55E;
-	Mon,  8 Sep 2025 16:18:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=156.67.10.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DCCC030FF37;
+	Thu, 11 Sep 2025 11:40:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757348321; cv=none; b=JfxPXp8CoG1CA+qDDs6W6+/ECqhs4H/7gjMOCtryD6Rr74a2yelbsk6UO76ckaNu3Mo6KUMPqg+Zt2H7A1AzZasOSCJgwHCf0XLnPrI4Pdd/eoFIKzeDussTJSs3no5TGDCr21PuIBv+9KqHvHJx6M0UoFB6bk2z7sOqeTrpm+E=
+	t=1757590813; cv=none; b=urxvJDQRzCfnMy4H+0yp4Mn5iZYD/DFBN9Hrz2gB0sUj2MifFpZBhE7MLjR1zqhFSmqsFFlRugipCThBHtYRFqnw8x9Q5aQW9WZ69XFUni9BAMSAIbBu1iu5BOi+Jda6D7Gbc/Pf3YSoaUwrBCvTF1gHPlZqfyKiqA5CiUUh8v4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757348321; c=relaxed/simple;
-	bh=HjaSUkvFe9Zf1Jko2GILk8f9W1Z02HpzK2jNLOVrTfg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=HUBIGcEpahvb42pz/jBdnPgbTzeBSyrdTxvkN7zX6UFAT84y0bQwzZldXYJkdjA2o+NU3/w+YsY7hIy3c+XlCQuQNgJ416XykPZsGjFbYz4lEurEBYDuigChORAXBY6c1/88D++3k3M/gH+341baKxcPPwpLnS1op/csgjRduvU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lunn.ch; spf=pass smtp.mailfrom=lunn.ch; dkim=pass (1024-bit key) header.d=lunn.ch header.i=@lunn.ch header.b=ZLYGhvrL; arc=none smtp.client-ip=156.67.10.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lunn.ch
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lunn.ch
+	s=arc-20240116; t=1757590813; c=relaxed/simple;
+	bh=HeA/ldE3WqSwxvdjIfauNmvC1J39cKeRiuVeAQ5DHxc=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=S/9bh6DwrnT//YPwyFn3B1IcpykNSpxRpxcL8HfGISPYftM4Nm5SgRygixmFjRTE41/B02cguC5QAHxmFwcAy/IEjD6/O+DWmA347a94q55dyJZDyacKV/lfrz+URVfvLbkX315cVY4sOGKB9BrwgtW6HfRD3TFxPznxEEOvxso=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=IhIo2/Yn; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=lunn.ch header.i=@lunn.ch header.b="ZLYGhvrL"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=lunn.ch;
-	s=20171124; h=In-Reply-To:Content-Transfer-Encoding:Content-Disposition:
-	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:From:
-	Sender:Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:Content-Disposition:
-	In-Reply-To:References; bh=EeR/8Ymk60ruReRK9ZfH2vJcsqf8z8v4x0XDb+bu+ZY=; b=ZL
-	YGhvrL54zOR4/eRylD1TF6eHvOG6RjgZwEQP5I41LWjf0AyYcjlCnLh/1brxEjfO98J3E4hP7Qhwh
-	o3Dhn4VhMoc53UfNVthkH75D3c0HM/sV0rJmim0SKrcE0UuSKz1ZEo0R9XvpjWw4nwXipkc8C7JeR
-	emA6E3N9cNojAqU=;
-Received: from andrew by vps0.lunn.ch with local (Exim 4.94.2)
-	(envelope-from <andrew@lunn.ch>)
-	id 1uveZW-007gf8-Vg; Mon, 08 Sep 2025 18:18:26 +0200
-Date: Mon, 8 Sep 2025 18:18:26 +0200
-From: Andrew Lunn <andrew@lunn.ch>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Niklas =?iso-8859-1?Q?S=F6derlund?= <niklas.soderlund@ragnatech.se>,
-	Andrew Lunn <andrew+netdev@lunn.ch>,
-	"David S . Miller" <davem@davemloft.net>,
-	Eric Dumazet <edumazet@google.com>,
-	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
-	netdev@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
-	linux-sh@vger.kernel.org
-Subject: Re: [PATCH net-next 2/3] sh_eth: Convert to
- DEFINE_SIMPLE_DEV_PM_OPS()
-Message-ID: <3952a6b6-6428-4c7b-9a3f-7ae9c8599077@lunn.ch>
-References: <cover.1756998732.git.geert+renesas@glider.be>
- <ee4def57eb68dd2c32969c678ea916d2233636ed.1756998732.git.geert+renesas@glider.be>
- <082d5554-7dae-4ff4-bbbe-853268865025@lunn.ch>
- <CAMuHMdU96u41ESayKOa9Z+fy2EvLCbKSNg256N5XZMJMB+9W6A@mail.gmail.com>
- <c1f6fb82-9188-48ed-9763-712afa71c481@lunn.ch>
- <20250905184103.GA1887882@ragnatech.se>
- <CAMuHMdU=Q6AZcryj1ZBGW+5F+iYvZCL=Eg0yPw0B4jnczmA8nw@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="IhIo2/Yn"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=s+xmyaZLa2vKOz2hyqmL2oRZcbiA467tYY0hF4MR6uc=; t=1757590809;
+	x=1758195609; b=IhIo2/YnbIVQFj+CldMwbXRHQUKByk9Mi8Cn9XzsJt5XV3yVuLbSpMLsXgd/3
+	fHJ6U1ZOTjxgh5dP7PffP6GeJnW18tLUMmR2QPU3G+iHvvOR1dl0jD/diehLZtwQYzuBozz9igS8w
+	x1J/uKRBQmj03gBurSV+8wucgmsOQlbI/aFoQ2NH+jVxwMWX8y4kZSIhlZDE1l8agQLS+8xWHexuo
+	HfCZApJQsqHpxpv7r55A5iFMXWGxmdMrtHB75eExdJ6vHw33Io1zAnRBYW+iH83Y4RhKYRDAQUtlG
+	CAIp2wztk7l9ZHTrhCB9w18I+/ECd69dUB863Dr3Nkara9uIIQ==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1uwfeh-00000001Wpf-04KL; Thu, 11 Sep 2025 13:39:59 +0200
+Received: from p5b13aa34.dip0.t-ipconnect.de ([91.19.170.52] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1uwfeg-00000002WGi-3Jfo; Thu, 11 Sep 2025 13:39:58 +0200
+Message-ID: <bccfde5bca138b8f3489f517ea62168ec4658336.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: mach-rsk: rsk7203: use static device properties for
+ LEDs and GPIO buttons
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Andy Shevchenko
+	 <andriy.shevchenko@linux.intel.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
+ <dalias@libc.org>,  Arnd Bergmann <arnd@kernel.org>, Bartosz Golaszewski
+ <brgl@bgdev.pl>, linux-sh@vger.kernel.org, 	linux-kernel@vger.kernel.org
+Date: Thu, 11 Sep 2025 13:39:58 +0200
+In-Reply-To: <kqtaw37b6upcuorurnccs6gqvp2aj33afanxnqye7txkmr5be6@k2omfqynjscv>
+References: 
+	<jwtdoptatzfo47mbpmmjwhhhjn4mbw6ekp4gtoopca7azbcelo@uvtz4w2ga5qn>
+	 <aJyKAQJUG7hmO2pT@smile.fi.intel.com>
+	 <kqtaw37b6upcuorurnccs6gqvp2aj33afanxnqye7txkmr5be6@k2omfqynjscv>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAMuHMdU=Q6AZcryj1ZBGW+5F+iYvZCL=Eg0yPw0B4jnczmA8nw@mail.gmail.com>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Mon, Sep 08, 2025 at 04:36:29PM +0200, Geert Uytterhoeven wrote:
-> Hi Niklas,
-> 
-> On Fri, 5 Sept 2025 at 20:41, Niklas Söderlund
-> <niklas.soderlund@ragnatech.se> wrote:
-> > On 2025-09-05 13:57:05 +0200, Andrew Lunn wrote:
-> > > > You cannot enter system sleep without CONFIG_PM_SLEEP, so enabling
-> > > > WoL would be pointless.
-> > >
-> > > Yet get_wol will return WoL can be used, and set_wol will allow you to
-> > > configure it. It seems like EOPNOTSUPP would be better.
-> >
-> > Out of curiosity. Are you suggesting a compile time check/construct for
-> > CONFIG_PM_SLEEP be added in the driver itself, or in ethtool_set_wol()
-> > and ethtool_get_wol() in net/ethtool/ioctl.c to complement the
-> >
-> >     if (!dev->ethtool_ops->get_wol || !dev->ethtool_ops->set_wol)
-> >         return -EOPNOTSUPP;
-> >
-> > checks already there? To always return EOPNOTSUPP if PM_SLEEP is not
-> > selected?
-> 
-> Iff we want to go that route, I'd vote for handling it in common code.
-> Still, there is no guarantee that WoL will actually work, as on
-> some systems it may depend on the firmware, too.  E.g. on ARM
-> systems with PSCI, the SoC may be powered down during s2ram, so
-> there is no guarantee that any of the wake-up sources shown in
-> /sys/kernel/debug/wakeup_sources can actually wake up the system.
-> I tried having a mechanism to describe that in DT, but it was rejected.
+Hi Dmitry,
 
-WoL is a bit of a mess. Russell has done a little cleanup for when the
-PHY does WoL, not the MAC.
+On Mon, 2025-09-08 at 05:27 -0700, Dmitry Torokhov wrote:
+> On Wed, Aug 13, 2025 at 03:50:09PM +0300, Andy Shevchenko wrote:
+> > On Mon, Aug 11, 2025 at 03:44:57PM -0700, Dmitry Torokhov wrote:
+> > > Convert the board to use static device properties instead of platform
+> > > data to describe LEDs and GPIO-connected buttons on the board, so
+> > > that support for platform data can be removed from gpio-keys and othe=
+r
+> > > drivers, unifying their behavior.
+> >=20
+> > ...
+> >=20
+> > > --- a/arch/sh/boards/mach-rsk/devices-rsk7203.c
+> > > +++ b/arch/sh/boards/mach-rsk/devices-rsk7203.c
+> >=20
+> > >  #include <linux/gpio.h>
+> >=20
+> > Do we still need this one?
+>=20
+> Yes, at least this one still uses gpio_request() for configuring some
+> GPIOs, so we need to keep it at least for now.
+>=20
+> >=20
+> > Ditto for the rest similar cases.
+>=20
+> I'll review them to make sure they are still needed.
 
-I don't think we can check for PM_SLEEP in the core. There are some
-PHYs which are powered by the standby voltage, so not effected by
-power off. And their WoL output is connected directly to the PMIC. So
-they have the ability to wake the system from off, not just suspend.
+OK, I'll look forward to your second version of the patch. I might pick it
+up for v6.18 provided that we'll manage to squeeze it in in time.
 
-For the hardware you are dealing with, the MAC does WoL. You know it
-cannot work without PM_SLEEP, so i think it needs to be the MAC which
-returns EOPNOTSUP.
+Adrian
 
-	Andrew
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
