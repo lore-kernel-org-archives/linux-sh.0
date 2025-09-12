@@ -1,114 +1,112 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yb1-f176.google.com (mail-yb1-f176.google.com [209.85.219.176])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99FCC28313F;
-	Fri, 12 Sep 2025 06:23:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B646930EF6F
+	for <linux-sh@vger.kernel.org>; Fri, 12 Sep 2025 13:34:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.176
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757658229; cv=none; b=N6r5WxcnYAnChbpBaT2j6t+c+GUO75oi97xTPT0QOWXesjcFrNEyan+zQJna0zETUIUa6cqrvpGRTEj5R9TPQA59c94UBiQ7oV/o3133G8ftICcaMJbXaicLhhr5qFl14CEdSMg0vscCY9MT65OBcxLNWKJkDpSzo53DEhR0n1k=
+	t=1757684092; cv=none; b=BDy0QbajAUWXKcxoIZMW/fDSF0FK+BAGoqaoYxqz/DLWRsb068yNkg+2/CqQ9cUDLCyoGUpaL4/okDwdhE7SR2yg+RW47HgvlnJgrg5vaq7e+FJ6wsjFj3hZJ0DR23bFpJcVo+WfqUGJ1GPMpW3L+TlXMtnstrzKSMszYfdWXO0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757658229; c=relaxed/simple;
-	bh=9T73VS9+o4Zoo6JQMDrxwkWyCcTGJSPu9bJ/JLxGhoI=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=XVQ44RrsQJ/rc5vcw5zCE3o71e247DhZ959G5xDqdHlBaWSe0NeXB3QDJ/wPhZ8fp6xakf2R9rXk99hOgze0Q4gh/ZqEjnDv7ejn8qEDQoqBiVSWDQ3WDj8PrVp+dDBIK6DnAadXHylgRP78cxIwmYgkqA6iEhW0nnRF8lVfCkU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=K+tUT9Ui; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1757684092; c=relaxed/simple;
+	bh=utugK4HcYY18T5CEwLLLvgU2oRcmpLnYaZhUun8E3dc=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=b5ShlZ/uMNOLDYjagC4bgahUFM5azscQLHgRzZtkpXMW2wf/5rftPFfooWhYZsTUPJkflj+ZrwgqcdowvwTvKZ6nZHCn2mFOwIhpSyGhRve2wTLDHWkpgPxMLC76emViBIUUYxhiL5Z10oEpPx9/zPdWvruwVNm0XB86YBxQb3U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org; spf=pass smtp.mailfrom=linaro.org; dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b=U8e7Z/OA; arc=none smtp.client-ip=209.85.219.176
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="K+tUT9Ui"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5749EC4CEF4;
-	Fri, 12 Sep 2025 06:23:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1757658229;
-	bh=9T73VS9+o4Zoo6JQMDrxwkWyCcTGJSPu9bJ/JLxGhoI=;
-	h=Date:Subject:To:References:From:In-Reply-To:From;
-	b=K+tUT9Ui0Lj0qetX4V8f8hxvGPJsm/BKTf0HW7pE5h0z0YOzKPHtIxQhImX/f+n88
-	 gIuNPwW4DTVun4DprE4qf5t+qx5He/qG+pETHjCT3CATCAXmMzjZ1vWuw+ac99zdfm
-	 +0aVzmrQL52bl6DV3bmQq+0IRUqRkRMDEuBcnmXuYaPcRJHCkC+i31tQKa7A3TQ56D
-	 n7cx6at6JYpOJZbx3fVBPZli50U6g2ppn8f3IMad24G4Qk3PIFAOv0b3LedhAUosuY
-	 IGi+43ynLvyWq4ea6CVaNvuE7ALbHzlh+dAhb+JmPcQZnJO83RCRsGrJ+lGYixbAwm
-	 91fKGAvuN2fkg==
-Message-ID: <295aa861-8e5c-4146-a137-20dcfc24e1c0@kernel.org>
-Date: Fri, 12 Sep 2025 08:23:43 +0200
+	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="U8e7Z/OA"
+Received: by mail-yb1-f176.google.com with SMTP id 3f1490d57ef6-e96ff16fea1so1325678276.0
+        for <linux-sh@vger.kernel.org>; Fri, 12 Sep 2025 06:34:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linaro.org; s=google; t=1757684090; x=1758288890; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=NMoRsZDotQQreQCt//iZViK8n2fFjlTpFk9lhVbhMl8=;
+        b=U8e7Z/OAo63BAc/rUXFgTYt/pAfB9UE1vutb55p7vqQlKIU39lrD1tFi4LETJRGIsz
+         kUGZvzBTUiZVuSY0eJqRXDM3uSfI0rxNGQ6LHFpWPJwAZGdMLkS+NGo+gvSOXYPWmhnt
+         jNY8lJZ79KcaB/lPfSb09T4z7eabgGo6/S/HG8l5pAnI/wSnZIQweGyJ0ksgOzYl6MAA
+         u8DCnlhKa6HAcwzclzxNWHVLvMfA/fqhWtBYx0e7s9YcALvIS9UO3jsDzG0iN9a0T8qH
+         MlF76j72+i0P+NKnjOhw4igvNZcz7CLqkvYYAVn/xM7v107VmHn82NzQ8kvLWVEo1w3X
+         8ZgA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1757684090; x=1758288890;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=NMoRsZDotQQreQCt//iZViK8n2fFjlTpFk9lhVbhMl8=;
+        b=iRAKtIoDVFktYg4NwtonB62GxGvy/S2WJnhYDD5uVD3o2YetEfyywoWlf8MQbq9YB0
+         WHRT2Ekk52zEHZTIxZeYB16IgcybnLI7cVWINmy1Fb9HyPeHkcFlk1Rkqov8rWA5kwPh
+         gGXYhivyxkuANLRk+yheUWGbdhzBHQ/JX/E1geEU92cRG9iNahsBghpUZZeiQMotGeDx
+         Nut8I1EV50A3dKHvATtbzwK5PaOms/nVZmrWRwvubldo9o4VhfPXRvtIeNcX8GAtvnA6
+         lJrBvh1CJXMGyzFW44G1AEozk4sGu43N35KtetUxr5G9vnNIU3A3+siL4I9cT0n+Hn2B
+         2cXg==
+X-Forwarded-Encrypted: i=1; AJvYcCVWXYbQIoVmv6yNeUrR/y8pM+JWfbbOWVmidhxwif/VQRflAOlHywXUjno/Dwlqy9yB++f9AJ+MJg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyoBs6G6IMUHUHMYByx4RKPk585sT1Z2oJAeJwn1JpWjuHK9f2s
+	ZZiJSKKMMcxjT96QDlNixx36mQ0+RQUKCAJzVVvPS0DPnA3EKX6E55kWHTtmmdijLuJzjhDx2aP
+	6XiE5FNHd6K+De134OZmQhf9ydrojjPyX98W4FkehOg==
+X-Gm-Gg: ASbGncvA1AGFUe+T3hxz/snZNcGgw3XLLv4F2UxHJXyaLYMURKn0hkKe1sHRjHg+ne0
+	nm06nRYW2JE6Esl49yXRZYCohXiPjJE1RcFcNBCkMS+Hnq/a25DGMq/j7O0sVQqaEJ0cMdA/Cho
+	sGDtBpwhDvqZcpCnCiReklvTsv+f8B8h0KY3naf2EIddo+tKiZh1crvtLBMb7JXzzq8TukuyKDe
+	ljaiiP96mQt58IKslA=
+X-Google-Smtp-Source: AGHT+IFVbjGOXpmv9Rz9ElJzGIgUxQm7xkANKyEMh4qj/MGGZlpYVw7OzTsjt8Ypn7pFOkm0TZmE85K/yB72VFG+JCw=
+X-Received: by 2002:a05:6902:1444:b0:e95:1a49:9735 with SMTP id
+ 3f1490d57ef6-ea3d9c74780mr2633370276.43.1757684089646; Fri, 12 Sep 2025
+ 06:34:49 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] defconfig: cleanup orphaned CONFIG_SCHED_DEBUG
-To: Trevor Woerner <twoerner@gmail.com>, linux-snps-arc@lists.infradead.org,
- linux-arm-kernel@lists.infradead.org, linux-aspeed@lists.ozlabs.org,
- linux-arm-msm@vger.kernel.org, openbmc@lists.ozlabs.org,
- linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
- linux-m68k@lists.linux-m68k.org, linux-stm32@st-md-mailman.stormreply.com,
- linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
- linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-kernel@vger.kernel.org
-References: <20250828103828.33255-1-twoerner@gmail.com>
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Content-Language: en-US
-Autocrypt: addr=krzk@kernel.org; keydata=
- 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 a/A=
-In-Reply-To: <20250828103828.33255-1-twoerner@gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+References: <8b73e2071a1d87c8d09b8bb24fc35f371779c2f3.1757000061.git.geert+renesas@glider.be>
+In-Reply-To: <8b73e2071a1d87c8d09b8bb24fc35f371779c2f3.1757000061.git.geert+renesas@glider.be>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Fri, 12 Sep 2025 15:34:13 +0200
+X-Gm-Features: AS18NWC65p2KribxIbig11q4x3BqzMOY-lu0OzXE__g-0uWV0PjaqNrYbfkqnZg
+Message-ID: <CAPDyKFpRbeWWjba_uVQzjEARPvQUBpoqPiAnSz7b96S_ET_zgQ@mail.gmail.com>
+Subject: Re: [PATCH] mmc: sh_mmcif: Remove dummy PM resume callback
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>, linux-mmc@vger.kernel.org, 
+	linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On 28/08/2025 12:38, Trevor Woerner wrote:
-> In commit b52173065e0a ("sched/debug: Remove CONFIG_SCHED_DEBUG") this
-> Kconfig option was removed since CONFIG_SCHED_DEBUG was made unconditional
-> by patches preceding it.
-> 
-> Signed-off-by: Trevor Woerner <twoerner@gmail.com>
+On Thu, 4 Sept 2025 at 17:35, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+>
+> Unassigned system sleep callbacks were always treated the same as dummy
+> callbacks that just return zero.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-I doubt anyone will pick up such patch touching all possible
-architectures. I would suggest to split it per arch.
+Applied for next, thanks!
 
-If you want to keep it like that, there is a chance soc@ would pick it
-up if you send it to them.
+Kind regards
+Uffe
 
-Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 
-Best regards,
-Krzysztof
+> ---
+>  drivers/mmc/host/sh_mmcif.c | 7 +------
+>  1 file changed, 1 insertion(+), 6 deletions(-)
+>
+> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+> index 413c34585c90d57b..bf899c8e38f517d3 100644
+> --- a/drivers/mmc/host/sh_mmcif.c
+> +++ b/drivers/mmc/host/sh_mmcif.c
+> @@ -1579,12 +1579,7 @@ static int sh_mmcif_suspend(struct device *dev)
+>         return 0;
+>  }
+>
+> -static int sh_mmcif_resume(struct device *dev)
+> -{
+> -       return 0;
+> -}
+> -
+> -static DEFINE_SIMPLE_DEV_PM_OPS(sh_mmcif_dev_pm_ops, sh_mmcif_suspend, sh_mmcif_resume);
+> +static DEFINE_SIMPLE_DEV_PM_OPS(sh_mmcif_dev_pm_ops, sh_mmcif_suspend, NULL);
+>
+>  static struct platform_driver sh_mmcif_driver = {
+>         .probe          = sh_mmcif_probe,
+> --
+> 2.43.0
+>
