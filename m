@@ -1,63 +1,63 @@
-Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
+Received: from mail-ed1-f47.google.com (mail-ed1-f47.google.com [209.85.208.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 50D6574040
-	for <linux-sh@vger.kernel.org>; Sat, 13 Sep 2025 00:48:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 40F82634EC
+	for <linux-sh@vger.kernel.org>; Sat, 13 Sep 2025 00:49:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757724530; cv=none; b=V9TSZ2ZnjD/UbddTV7XEv/TmRPJ6lN6++5cmojAIfknkq5/1cZEcRBYh8lndhho9YSjT85XnKsV2bXFETcZ67pvf7T8uPhR6hhjJ+nDoXIfUrElvS05ux3huK7+S2Bw4GneTLrN3YV9FpPjDmKUDQoco35umBD3t5J/9sOE1ljU=
+	t=1757724595; cv=none; b=aO7oSig0ny9NoION4/afvcbXfBL4hma5230+C25sLm+MFfbpa7nQJMNmLN+o+I5d+fWLo6ZAxUcVMIsVo1+z7l5AWD83Z+RfTG4kUWFPJSO9LAgZK+UMiZ3K+v/rGy+BroOArooBuBbg19/uCf4rtV4eHuADM055DiSi2+hr26s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757724530; c=relaxed/simple;
-	bh=xKqULWXz/2FiENcJWmfzamYmMIE4imk3W/BtNdWBiQw=;
+	s=arc-20240116; t=1757724595; c=relaxed/simple;
+	bh=aIH0UEBp9jrH7zT+VD2BpCtGu5L0ukANS11y+zY/wiQ=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=VFDrDzYlwdth+zdiPTMnWzOsCH/DWwgDyBOJSfBiUaypAkvUgvP+mVFnLdfV+olHEKQ5SyEZL65F3hfTukyuYTur5Mm/o96pIOF3nNQSvTxSr7nN8ldU0pz2qQWv4+eEKKABnTe1OHZfWkR6Ut0X/Djz7KWEJXldM0hV1xNxFAk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=LXC5LHaV; arc=none smtp.client-ip=209.85.218.43
+	 MIME-Version; b=USr4RZMgx1BbSo9A07bOMP9052cyxSVd4mN3ATerTYjU1DSXo4xBL8U9xkLxNDJaAvRRsizOdQ3/iKOdsGjr7JazjpfVBeHZ24pah+nMKL2aa/niTqiIVQTIH0RBFYBT7AqpVyYUK+T+IsQb7R6IGWff/++gKGJHFAW1Y5ZBlp4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=bnalPX+q; arc=none smtp.client-ip=209.85.208.47
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LXC5LHaV"
-Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-b07c38680b3so226187966b.1
-        for <linux-sh@vger.kernel.org>; Fri, 12 Sep 2025 17:48:47 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bnalPX+q"
+Received: by mail-ed1-f47.google.com with SMTP id 4fb4d7f45d1cf-620724883e6so4839172a12.2
+        for <linux-sh@vger.kernel.org>; Fri, 12 Sep 2025 17:49:53 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1757724526; x=1758329326; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1757724592; x=1758329392; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=AaXPZ8GS+1OiGE0ZCje70+VbQ3y123W+k6t1ILETLlQ=;
-        b=LXC5LHaVko3hLgitulh2D+X+9QzDfKDNhew7kFXwh3JBpMXe8S8TiFwp92HLY5PnX/
-         nE0PBrgrSYYmvUr7nB60XBcUGWbD3ENdwZDdGEZEpmftZ+HtA+EeeF7PR1uT2dDM52dc
-         ZMVq+Hm8pSzt/CvRPR7Me2trqTMPiaCvHkP6+b+IEQvD5eF5k0u5n4FsZ31R41RDQcDQ
-         BrBCpUlXV52huKpy2TgomHW9QVs9Ykrr2tU/v4K4dgAQoo0ONvDQb+XsjiZSFbJ2IgvS
-         xrCTwIgGWYosdnf/NGyWsk7DdhjDkNLnA/ofhmUV8ldCxH2yGyu11Sj/DxoAM0vBqfC8
-         jM3Q==
+        bh=k6cH8q1TrVQNxjzjuQXybOp7uw+/s7mQTk4MQOvceKM=;
+        b=bnalPX+qyvgr51ymiDlUfPxoeZUYWgEFDy0cQeYqymsBCvCezOGrJ3U8Al89pGPiSi
+         SSyRFcIuh3aPN7d3nbj3vFvet/FtixGvtToqVpvbhZnl71bJcjH55pysGpeFLsxcJClr
+         Bt/m6pOWSQS3nswISqsPVyKXarq9cHQAiqrIJRpMDOcq4sXGJxOcdj37SQNsEzQrAS07
+         ojQ1n2EnI2YZzsJI23mG6otl+nP4GjF3XGApnMXBOQzVVuhDymKpXPgfAkD7IJvdXDnj
+         ysQ8Cd7j3XqEpnxg98FXaz0YvfYwLiaeShFJBYv68hPUadpXC9ulul209mPf00t/7nOW
+         Yx9g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1757724526; x=1758329326;
+        d=1e100.net; s=20230601; t=1757724592; x=1758329392;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=AaXPZ8GS+1OiGE0ZCje70+VbQ3y123W+k6t1ILETLlQ=;
-        b=rdB/PU3Up2X73CnJrn+nVjfBgujFlsgY4TJB9yQlYYmvauAabU+bwjekWvMV2WvNw0
-         rfS2QN3G5etQLTiRdXofEbdUmVIjhOzdw2yRZCN23G5anbfaGsVmrk1igwDQTPQ0wj61
-         m1iN52mKrMw/nvCKFoacK4lXtQ6meio2V1MPLTTMwGs6fgEC7SjwTbTqOxlY8W4l8dxU
-         yF4agH4ZQrqs3Y1nIzYXgx3pTK2f5HIaqfadmJceVhGzsSoJiJZWoHJ2UCOu5TgScS6c
-         ZXYqFKN7pA0K0gHMgyxuJd86ik/PUyDKRj+6PYhkqyj6wH7+SdZSL2uZnuKG1tXfy0xS
-         ckcw==
-X-Forwarded-Encrypted: i=1; AJvYcCUZ+ZeQfHPrFhACK1w29pBJsD+5CVFHU+qq0kEo2eeBLZ0oUcFYiGziTisQ4s1SctA8myXXAx6vug==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yzsg8Is53MpsaU+LXYDkO8YGXewW84oVNAeyd330wBznTfKRv3D
-	ADG6LD5JFNSThqrd0K1H2Wv1vz8whPdAW+fJexxNnXPOBsuw89GOlWnh
-X-Gm-Gg: ASbGnctFKQlhU6S+hetFpjW15hmGtQiBUuivEP2Fk/M88/rzKbO/MY4KQmXdPhyDVcB
-	lN0j9C5bSIcXsBwToo1GvqLFxaDngDIu0gHHTDv+9OQcY+TyiLYjVtZfTYE4Xb2w9QHPM8i3oAU
-	rVgxPntnLkxRQ8qxTnaHPkU7G0+Fqfz8IWDjDYXUiz7j1SAYOrk/4c45W2y5iaFQTn6YX6h0uML
-	NvAubX/Qjz0HbviA3J8gHDt/fVA1EjfOiUafs9plCbWQJtNQVNGU7YPpMwVCOl/Tx1f0tGSYq3S
-	ppNUyFxxBzK74bDsKdxdy9WQDk6QymTJeKBwESGaDf9D6fkuHzb6gDezfnyLqyZxQhfNcfSPnef
-	SrFbbw/teADLi87tTgGU=
-X-Google-Smtp-Source: AGHT+IG9OWg6vz1Y30fO80tUWulNMPWiUpAt7xVByuYcp52he6rblxs++6dTXTQkGfdvR2czpiOABA==
-X-Received: by 2002:a17:907:d88:b0:af9:add3:6bbb with SMTP id a640c23a62f3a-b07c35fb469mr433586666b.29.1757724525627;
-        Fri, 12 Sep 2025 17:48:45 -0700 (PDT)
+        bh=k6cH8q1TrVQNxjzjuQXybOp7uw+/s7mQTk4MQOvceKM=;
+        b=r9n6qvK1FtslSEURMksWTN3SOduJn5f3lDeYzle0jiOMGWfVUY3qRsaKapr7DkbvRG
+         uUsCVHc2Ckf/lZp5n/EtQsEpOCYMXK/sgJyElSADb8PjasWlLXo4uHTpNLadEyS8BCeT
+         tTO+Wf8fhWQ26ahFlAJsNIT+OA27wxE/LV7JRdqAzzaG1MiyR0cbHIW52l9/c+/IVIxG
+         ZZMhc6QQWB8PXFTZbKzGnYbYo/1DPo/PF4qP01lC1juQ+kqxHljShlIx5Pxeu0k2LWvY
+         ZLjQm3L+rbMcTwKVIH4+93bc7SIWFTPd9LRpQAi7cjrJ1IFiwIo+Uam5pc9T02DTiA4v
+         h6PQ==
+X-Forwarded-Encrypted: i=1; AJvYcCUZlfCInG4Igpk8MomUbzqWybAleFuaRJtEAWzrMQ1ATbkAw/uYBkc5RR2o9jRRjEIKNEokaBzpKg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxGxe/N7Ht+UduHWl/005VKJ95SeCsUjcWNqKxEePli/S9LQIgF
+	A4q93N3xlIVqWDoV/7DJy2vOOWP9i4DqSHfcay5zGXmPlQ7ESfsv5Jrl
+X-Gm-Gg: ASbGnct7iZ9950kQdlIjCJ6y+VccM2JNS1AVuM/dKqW0rW5rn9GcvTgm5w+hdlAeCMW
+	gNgqCN0Lf31WHzF7oWoiR65n6pUn8zK1FZZn48eHdXrvYsWkLl2u3WkUIxTdGF1hBm9yoXNQ/ZG
+	s9y7TnHJ90KjCzznZS4cOAWP2TcHpHMjkDpJKApRhPt493YKIw0sMx/TArhIdqnViRPppBvyv2g
+	cgEUDlqDEVIzXYzSt+95NetqO3GJsEAyuInz+9il5jot02kGjhgPr4Q5c6W9NpnUGwGM5o969LS
+	+QdXa4t+x6EwrzAQiqWBnRSqzyi2vozK1/IlfskaqjQ36E1NojMiV1Ur2vpGFaXNfQsogouiqDm
+	Z+1twfZcAWr6w11DgFX14vZF3xNFwRA==
+X-Google-Smtp-Source: AGHT+IFuaD6uE53o0kMUFqkBYFUIpIv4YZNYfnndGaXs7B0K4+B96SRU2dTVgEWhisS3xuLKgCtRtQ==
+X-Received: by 2002:a05:6402:4316:b0:62e:df3b:79a6 with SMTP id 4fb4d7f45d1cf-62edf3b81cemr3814693a12.1.1757724591635;
+        Fri, 12 Sep 2025 17:49:51 -0700 (PDT)
 Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id a640c23a62f3a-b07b32dd5bfsm461777466b.63.2025.09.12.17.48.41
+        by smtp.gmail.com with UTF8SMTPSA id 4fb4d7f45d1cf-62ec33f3b6csm4149162a12.32.2025.09.12.17.49.46
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 12 Sep 2025 17:48:45 -0700 (PDT)
+        Fri, 12 Sep 2025 17:49:51 -0700 (PDT)
 From: Askar Safin <safinaskar@gmail.com>
 To: linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org
@@ -113,9 +113,9 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Thorsten Blum <thorsten.blum@linux.dev>,
 	Heiko Carstens <hca@linux.ibm.com>,
 	patches@lists.linux.dev
-Subject: [PATCH RESEND 08/62] arm: init: remove FLAG_RDLOAD and FLAG_RDPROMPT
-Date: Sat, 13 Sep 2025 00:37:47 +0000
-Message-ID: <20250913003842.41944-9-safinaskar@gmail.com>
+Subject: [PATCH RESEND 09/62] arm: init: document rd_start (in param_struct) as obsolete
+Date: Sat, 13 Sep 2025 00:37:48 +0000
+Message-ID: <20250913003842.41944-10-safinaskar@gmail.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <20250913003842.41944-1-safinaskar@gmail.com>
 References: <20250913003842.41944-1-safinaskar@gmail.com>
@@ -127,42 +127,26 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-They are unused since previous commit
+It is unused now
 
 Signed-off-by: Askar Safin <safinaskar@gmail.com>
 ---
- Documentation/arch/arm/setup.rst | 4 ++--
- arch/arm/kernel/atags_compat.c   | 2 --
- 2 files changed, 2 insertions(+), 4 deletions(-)
+ Documentation/arch/arm/setup.rst | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Documentation/arch/arm/setup.rst b/Documentation/arch/arm/setup.rst
-index 8e12ef3fb9a7..be77d4b2aac1 100644
+index be77d4b2aac1..01257f30d489 100644
 --- a/Documentation/arch/arm/setup.rst
 +++ b/Documentation/arch/arm/setup.rst
-@@ -35,8 +35,8 @@ below:
-     =====   ========================
-     bit 0   1 = mount root read only
-     bit 1   unused
--    bit 2   0 = load ramdisk
--    bit 3   0 = prompt for ramdisk
-+    bit 2   unused
-+    bit 3   unused
-     =====   ========================
+@@ -86,7 +86,7 @@ below:
+    initial ramdisk.
  
-  rootdev
-diff --git a/arch/arm/kernel/atags_compat.c b/arch/arm/kernel/atags_compat.c
-index b9747061fa97..8d04edee3066 100644
---- a/arch/arm/kernel/atags_compat.c
-+++ b/arch/arm/kernel/atags_compat.c
-@@ -44,8 +44,6 @@ struct param_struct {
- 	    unsigned long ramdisk_size;		/*  8 */
- 	    unsigned long flags;		/* 12 */
- #define FLAG_READONLY	1
--#define FLAG_RDLOAD	4
--#define FLAG_RDPROMPT	8
- 	    unsigned long rootdev;		/* 16 */
- 	    unsigned long video_num_cols;	/* 20 */
- 	    unsigned long video_num_rows;	/* 24 */
+  rd_start
+-   Start address in sectors of the ramdisk image on a floppy disk.
++   This is now obsolete, and should not be used.
+ 
+  system_rev
+    system revision number.
 -- 
 2.47.2
 
