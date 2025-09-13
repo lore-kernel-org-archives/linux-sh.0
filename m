@@ -1,63 +1,63 @@
-Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
+Received: from mail-ej1-f51.google.com (mail-ej1-f51.google.com [209.85.218.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8F6C615B971
-	for <linux-sh@vger.kernel.org>; Sat, 13 Sep 2025 01:00:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2581915E5DC
+	for <linux-sh@vger.kernel.org>; Sat, 13 Sep 2025 01:01:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1757725251; cv=none; b=GzS3zPVswjB0ysl5KCHuRomTTY7929d8pMjx4O2SLZzG79G9uM/N2ZDgZNbwFobSVmE2TnYXh88qLuvOMO+YQ8iwaLGhB/nxzns2SK9qgXJ0pg59ysFHPqH9jqOvCckonJnUVeKWjRfr1xEXv2EU6g6a58uKSszIYLQ8ARw8Pgk=
+	t=1757725318; cv=none; b=WPh29Ye4bI+Dlw0QdhKC3UdhYH2k1ihPwavt8YAr0wmsa114PohmkDYfSXFZMhgrVlo16wiIIrk/zdfp3rPiUc0ENXMBxN1NAkPhpxASXODXg2DjBu1eo1jcJeZmImztcta4grt/OPRlsNG+VbzI+I1N938XiFwXU9yfQ0kBR64=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1757725251; c=relaxed/simple;
-	bh=WmrSleO2XCNYN8uS+EKoWQ5+E5KvuC+dDdzgWUmiL7o=;
+	s=arc-20240116; t=1757725318; c=relaxed/simple;
+	bh=ZZkhjwhbE6/y3ircTGqTXeD3vHrC5P1n1IkbBCMXiHo=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=WGkPiLmzqOTeI6L0L9CmvAEykYZT/IFnyA8NnH7rNPhzH7zSg7dLum4LC+1r2X9h5DNwHbAEyLvlG8U8rD38WflzOiDfUS5WT88Yj1HPnOHyEoKuecGtQ2iv9zKB4m2UY+Oy8hKmVFSBD4QEcyavkQmceFrqbrETSjIoYVKUMOs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MJWWdfHX; arc=none smtp.client-ip=209.85.218.43
+	 MIME-Version; b=hu9ZLEAKjxzSvxuEDtFIoaDJv90P6Q1u4ljSW2BggUyronAkrwJkM3A3fNoa2Ea2clOE6E1fd08v8WpleoxiJgX8mErfN6jcy2GraPeBR5U6nvQ6TuWcCv9gVUPJ7SquNHDM7qAfq4Lie9Hs8gphZqvDZ+uqgna4J9oDrbOP+Jg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Q8rWdZ3v; arc=none smtp.client-ip=209.85.218.51
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MJWWdfHX"
-Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-b02c719a117so429256866b.1
-        for <linux-sh@vger.kernel.org>; Fri, 12 Sep 2025 18:00:47 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Q8rWdZ3v"
+Received: by mail-ej1-f51.google.com with SMTP id a640c23a62f3a-b0415e03e25so324647866b.0
+        for <linux-sh@vger.kernel.org>; Fri, 12 Sep 2025 18:01:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1757725246; x=1758330046; darn=vger.kernel.org;
+        d=gmail.com; s=20230601; t=1757725311; x=1758330111; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=XoEWD/ShpnwzaQ8ORuPz9c0ALO6Ls67XcNa7R8iqlGI=;
-        b=MJWWdfHXdyyxn+qZxVH4DHxwMcIT4qAafC00rGnqPEIXIU4kCt7lhJt7wWfYB4mV2/
-         b+nlHZOUEAEpw32mNdqPDuX6WDTqq/uIRW7bD1vUv96nBtUPlucQkJRTPnNJk+5noDnW
-         mKp4cAm4cmigaIxf0/9ZxG+YfkVzzcH8tVOxcUR0alnYeP6aBT+N5ORVCIcW2NRKeJKq
-         GNHfkNo4L71eYJeK8rNpATt14Lc0+jxJqU9wUlpWjBHQnxAWeCAUXmsKwoFmWjNfjnfq
-         XdF6VYrC81c7Xd4xquqLcjzB7zOhccL0yoqx7FTh5WW+sQ2vY82qrfFsQaZm/l7WuqSY
-         oWeg==
+        bh=XZEc0E3RkrtT53PvUmeExPdZ+yV/ZVWq9ufU5BOWTEg=;
+        b=Q8rWdZ3vPQO1IDpapVGlhe3nSOw6j7XOwKTltsOQUoqihFACKG7eINVSNY+6Egf1rz
+         90lgEMndfc+LJNqp6Bw9t8ThVQ9YcGTLnXt4oOQQjnIiW539pIwvpIKLF2/M1970rnmG
+         pF64Klv2fcCQ12ZentyM3dPxge5HtBxxT1o0lSI5zeEIQ6oEBFm+nmc0OIU8DRXsa8AF
+         PHG5ixPgYhjikb9K0Kk7wBIAta4uu/bmCq+LgT6KPw9CuIbMv9L+7pWh69ssFc/sVlxg
+         2+UB7ZZgZABxPVpf6CdhmNDZ+v4yJor6u01ZLFjrHuprYzxjaWXtkZ0Xqy+GHquIIOw7
+         6Lfg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1757725246; x=1758330046;
+        d=1e100.net; s=20230601; t=1757725311; x=1758330111;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=XoEWD/ShpnwzaQ8ORuPz9c0ALO6Ls67XcNa7R8iqlGI=;
-        b=Q+wKERfAMHxdUofiGL4SzqqS7jqivhkIFdXI6GWzan0tlZO/YuGFShnfOtYP2DBfuW
-         f3pGypCZHH/y7My1YXxTJosYwinhu2kTVr8RK0bKLqFKzmdbdZ9c1yGJb82bUDgaQaGE
-         9f7nH92a0I8stZzBNYEM5qJDHwNrZUfzo65VNTjG+WVPa/zheT3NWAeJtRJcicErR+eH
-         e7SX1IJ8SHvDRlqtlQuR11KWJHuaN7glAylnKbkkqym690eo2lZDU8ZbPVWFNoexbFYC
-         MWdBzDx38ng1U5gmzhhNfJNc/VNkDReWM+jmo26l8wXVMXN3K3hQEOBIZEU/zLWWpPPG
-         Xg2Q==
-X-Forwarded-Encrypted: i=1; AJvYcCUQDPBBkPcjudjdCu+sLDOZEGrDgiwkU17cnht4By92BuI1iCYKcOFb/tRRBodqjWDphDVQH2/AzQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwHWEUllhSHvYPfaq+o2jBbXL25n0TmLUg5tEwcJ9HfGQGahnxj
-	8rFexwFb1ckSaIljhpZJG+2FezqkZM9SE9jb4aQSi83NcM4HbSPjxv8V
-X-Gm-Gg: ASbGncuVWUgcALekMPLOEP0T+upTVnzuqpQupC3LZubeKQgI6TB9V96CXhLrKaKsK1O
-	8B39hswZrvrDQiloyk9qTFf5ngGpwqT5BWOPz/yoxxERX1wYnFOzxjpoCB/6DUlizjQjwNBHyLT
-	qjqx6Bnh1PIII+dT9VVFcUhEK4py8n/CRVv1nI/imJCtISzC7zQjDBnv1YB/beTFNWYZLt26baB
-	gcEZIKA/pBOVj8mdx1AGEh7kQNpcvFMgFFDq9ulHNINpsgSY6odkYDjwvu4bA8h6q2rxf9DmsRs
-	LSGzhttgI+DFTa5pujQONwmBzWuJD/cqEx2cZUWQCWjaa15Lpu8QqZpyWkzCPrAp8C+gySqzx9u
-	+8fNk2LmUWrb740uUu2ui/MVO/a6vSQ==
-X-Google-Smtp-Source: AGHT+IFN5sGx8Mx9m2aD2jbl3cQxyHXmx0LPyYapXdwnUwhP9+XvMT+8Mvs3QRhc/UxXrnFX4WIsYg==
-X-Received: by 2002:a17:907:daa:b0:b04:7232:3e97 with SMTP id a640c23a62f3a-b07c357507cmr467580066b.21.1757725245716;
-        Fri, 12 Sep 2025 18:00:45 -0700 (PDT)
+        bh=XZEc0E3RkrtT53PvUmeExPdZ+yV/ZVWq9ufU5BOWTEg=;
+        b=QxSnKhVOssy6NpCczrGqNlZGH1DGNGBkzDfVODQYxoGGfMFvpNWZdlHupazXPOloqB
+         9o0V2NPOasfQbTNR5ofcL/IVVM5y2Mdv9G3OfSYwBDxxLw8yby4jbNgokeat9V43lRBu
+         +A/IXlfOMnXSh2uKKWeL2T1ic9mn33AnzIlIIifRiDv6UKHqom6mbHXI+wwsYtzmNip3
+         /lp/sFt6UY7+DI6PD6v9qr+NF4aTWMeeTKk6MGv9rNbkjkBDUr2NV0WqhIT1q+c8+4LO
+         a3CIrG6s4DfdTHcGJD7PoTRrPFYYaNGZRAXH5GXjsdvUpvsc61pz8s/9iWwL1kfXjzax
+         L+uw==
+X-Forwarded-Encrypted: i=1; AJvYcCWYLSn6eRGTnXfx9k6uhjdreaImKZeaUMdjRYGaBShROufqZxDhTDXEFNnZzRLLrujKaA1ISJDvbg==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yzy8ias3Sd55Z56IOz9EIeVfSfJ8rfDmyLn6vi9kcM84CvQZZuK
+	z/8apYWbReoLF+26KMPpjZD6UFVFP9qlLI28uWczn6uetKRlmmBzYMTN
+X-Gm-Gg: ASbGncsXUbiK05T3bMPm0FIP32EAEONo7L0kxEbQdo8GKnyXpjaYKP5/mlpARoMqzp1
+	Qq1swvZKu8Cpn4W7+htuiqPueCHApPsqCi9imObYVqi+dEhUEa4sEgNRmzRTtriOWdNWT9WbfCw
+	Jx90h/ZPR5DpP4JD23cCIyWwRc5EQEQ2cbSV4fRGdiYfSbPeZstqgBMQSJovGXKL7xMEvxRU3hV
+	F4ERkh6ZtJdUvsIwwuzavXhPYWRLROdq3O5OborZJSzftyWjfO2O+YLzCpwUuSu7Wm7fSZ+/UsG
+	go4XfUnUrJLAWmD+ay2ODYDIeKw8pOz11h73Y0oU8o0J1bYcT0tH6rcIEeL2tetMMxyOy8yZLhD
+	c2+YlDbdMFYOk8uZagIWLGQV5ZCNiPg==
+X-Google-Smtp-Source: AGHT+IEAi4xtonmhCaT33K2Hzh7yyRfMcFV0HvMSUAxXUtkPqhwfRFML0tJIQIoV7OGJ/h1kr7fV7w==
+X-Received: by 2002:a17:907:3d0c:b0:b04:7880:3e8c with SMTP id a640c23a62f3a-b07c3820252mr475574166b.38.1757725311044;
+        Fri, 12 Sep 2025 18:01:51 -0700 (PDT)
 Received: from localhost ([212.73.77.104])
-        by smtp.gmail.com with UTF8SMTPSA id a640c23a62f3a-b07b32dcf77sm470822766b.64.2025.09.12.18.00.41
+        by smtp.gmail.com with UTF8SMTPSA id a640c23a62f3a-b07b317124esm476784166b.46.2025.09.12.18.01.46
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 12 Sep 2025 18:00:45 -0700 (PDT)
+        Fri, 12 Sep 2025 18:01:50 -0700 (PDT)
 From: Askar Safin <safinaskar@gmail.com>
 To: linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org
@@ -113,9 +113,9 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>,
 	Thorsten Blum <thorsten.blum@linux.dev>,
 	Heiko Carstens <hca@linux.ibm.com>,
 	patches@lists.linux.dev
-Subject: [PATCH RESEND 19/62] init: remove mentions of "ramdisk=" command line parameter
-Date: Sat, 13 Sep 2025 00:37:58 +0000
-Message-ID: <20250913003842.41944-20-safinaskar@gmail.com>
+Subject: [PATCH RESEND 20/62] doc: remove Documentation/power/swsusp-dmcrypt.rst
+Date: Sat, 13 Sep 2025 00:37:59 +0000
+Message-ID: <20250913003842.41944-21-safinaskar@gmail.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <20250913003842.41944-1-safinaskar@gmail.com>
 References: <20250913003842.41944-1-safinaskar@gmail.com>
@@ -127,109 +127,186 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-It is already removed
+It contains obsolete initrd and lilo based instructions
 
 Signed-off-by: Askar Safin <safinaskar@gmail.com>
 ---
- arch/arm/boot/dts/samsung/exynos4210-origen.dts   | 2 +-
- arch/arm/boot/dts/samsung/exynos4210-smdkv310.dts | 2 +-
- arch/arm/boot/dts/samsung/exynos4412-smdk4412.dts | 2 +-
- arch/arm/boot/dts/samsung/exynos5250-smdk5250.dts | 2 +-
- arch/arm/configs/exynos_defconfig                 | 2 +-
- arch/arm/configs/s5pv210_defconfig                | 2 +-
- drivers/block/Kconfig                             | 1 -
- 7 files changed, 6 insertions(+), 7 deletions(-)
+ Documentation/power/index.rst                 |   1 -
+ Documentation/power/swsusp-dmcrypt.rst        | 140 ------------------
+ .../translations/zh_CN/power/index.rst        |   1 -
+ 3 files changed, 142 deletions(-)
+ delete mode 100644 Documentation/power/swsusp-dmcrypt.rst
 
-diff --git a/arch/arm/boot/dts/samsung/exynos4210-origen.dts b/arch/arm/boot/dts/samsung/exynos4210-origen.dts
-index f1927ca15e08..4dcf794bd18b 100644
---- a/arch/arm/boot/dts/samsung/exynos4210-origen.dts
-+++ b/arch/arm/boot/dts/samsung/exynos4210-origen.dts
-@@ -36,7 +36,7 @@ aliases {
- 	};
- 
- 	chosen {
--		bootargs = "root=/dev/ram0 rw ramdisk=8192 initrd=0x41000000,8M init=/linuxrc";
-+		bootargs = "root=/dev/ram0 rw initrd=0x41000000,8M init=/linuxrc";
- 		stdout-path = "serial2:115200n8";
- 	};
- 
-diff --git a/arch/arm/boot/dts/samsung/exynos4210-smdkv310.dts b/arch/arm/boot/dts/samsung/exynos4210-smdkv310.dts
-index 18f4f494093b..4cdeddeff3fc 100644
---- a/arch/arm/boot/dts/samsung/exynos4210-smdkv310.dts
-+++ b/arch/arm/boot/dts/samsung/exynos4210-smdkv310.dts
-@@ -30,7 +30,7 @@ aliases {
- 	};
- 
- 	chosen {
--		bootargs = "root=/dev/ram0 rw ramdisk=8192 initrd=0x41000000,8M init=/linuxrc";
-+		bootargs = "root=/dev/ram0 rw initrd=0x41000000,8M init=/linuxrc";
- 		stdout-path = "serial1:115200n8";
- 	};
- 
-diff --git a/arch/arm/boot/dts/samsung/exynos4412-smdk4412.dts b/arch/arm/boot/dts/samsung/exynos4412-smdk4412.dts
-index c83fb250e664..4b18cc55d6ca 100644
---- a/arch/arm/boot/dts/samsung/exynos4412-smdk4412.dts
-+++ b/arch/arm/boot/dts/samsung/exynos4412-smdk4412.dts
-@@ -27,7 +27,7 @@ aliases {
- 	};
- 
- 	chosen {
--		bootargs = "root=/dev/ram0 rw ramdisk=8192 initrd=0x41000000,8M init=/linuxrc";
-+		bootargs = "root=/dev/ram0 rw initrd=0x41000000,8M init=/linuxrc";
- 		stdout-path = "serial1:115200n8";
- 	};
- 
-diff --git a/arch/arm/boot/dts/samsung/exynos5250-smdk5250.dts b/arch/arm/boot/dts/samsung/exynos5250-smdk5250.dts
-index bb623726ef1e..4164c7c2a3eb 100644
---- a/arch/arm/boot/dts/samsung/exynos5250-smdk5250.dts
-+++ b/arch/arm/boot/dts/samsung/exynos5250-smdk5250.dts
-@@ -27,7 +27,7 @@ memory@40000000 {
- 	};
- 
- 	chosen {
--		bootargs = "root=/dev/ram0 rw ramdisk=8192 initrd=0x41000000,8M init=/linuxrc";
-+		bootargs = "root=/dev/ram0 rw initrd=0x41000000,8M init=/linuxrc";
- 		stdout-path = "serial2:115200n8";
- 	};
- 
-diff --git a/arch/arm/configs/exynos_defconfig b/arch/arm/configs/exynos_defconfig
-index 6915c766923a..77d3521f55d4 100644
---- a/arch/arm/configs/exynos_defconfig
-+++ b/arch/arm/configs/exynos_defconfig
-@@ -15,7 +15,7 @@ CONFIG_HIGHMEM=y
- CONFIG_SECCOMP=y
- CONFIG_ARM_APPENDED_DTB=y
- CONFIG_ARM_ATAG_DTB_COMPAT=y
--CONFIG_CMDLINE="root=/dev/ram0 rw ramdisk=8192 initrd=0x41000000,8M console=ttySAC1,115200 init=/linuxrc mem=256M"
-+CONFIG_CMDLINE="root=/dev/ram0 rw initrd=0x41000000,8M console=ttySAC1,115200 init=/linuxrc mem=256M"
- CONFIG_CPU_FREQ=y
- CONFIG_CPU_FREQ_STAT=y
- CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
-diff --git a/arch/arm/configs/s5pv210_defconfig b/arch/arm/configs/s5pv210_defconfig
-index 02121eec3658..8ec82d9b51e4 100644
---- a/arch/arm/configs/s5pv210_defconfig
-+++ b/arch/arm/configs/s5pv210_defconfig
-@@ -8,7 +8,7 @@ CONFIG_KALLSYMS_ALL=y
- CONFIG_ARCH_S5PV210=y
- CONFIG_VMSPLIT_2G=y
- CONFIG_ARM_APPENDED_DTB=y
--CONFIG_CMDLINE="root=/dev/ram0 rw ramdisk=8192 initrd=0x20800000,8M console=ttySAC1,115200 init=/linuxrc"
-+CONFIG_CMDLINE="root=/dev/ram0 rw initrd=0x20800000,8M console=ttySAC1,115200 init=/linuxrc"
- CONFIG_CPU_FREQ=y
- CONFIG_CPU_FREQ_STAT=y
- CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
-diff --git a/drivers/block/Kconfig b/drivers/block/Kconfig
-index df38fb364904..8cf06e40f61c 100644
---- a/drivers/block/Kconfig
-+++ b/drivers/block/Kconfig
-@@ -229,7 +229,6 @@ config BLK_DEV_RAM
- 	  store a copy of a minimal root file system off of a floppy into RAM
- 	  during the initial install of Linux.
- 
--	  Note that the kernel command line option "ramdisk=XX" is now obsolete.
- 	  For details, read <file:Documentation/admin-guide/blockdev/ramdisk.rst>.
- 
- 	  To compile this driver as a module, choose M here: the
+diff --git a/Documentation/power/index.rst b/Documentation/power/index.rst
+index a0f5244fb427..9f1758c92e48 100644
+--- a/Documentation/power/index.rst
++++ b/Documentation/power/index.rst
+@@ -22,7 +22,6 @@ Power Management
+     suspend-and-cpuhotplug
+     suspend-and-interrupts
+     swsusp-and-swap-files
+-    swsusp-dmcrypt
+     swsusp
+     video
+     tricks
+diff --git a/Documentation/power/swsusp-dmcrypt.rst b/Documentation/power/swsusp-dmcrypt.rst
+deleted file mode 100644
+index afb29a58fdf8..000000000000
+--- a/Documentation/power/swsusp-dmcrypt.rst
++++ /dev/null
+@@ -1,140 +0,0 @@
+-=======================================
+-How to use dm-crypt and swsusp together
+-=======================================
+-
+-Author: Andreas Steinmetz <ast@domdv.de>
+-
+-
+-
+-Some prerequisites:
+-You know how dm-crypt works. If not, visit the following web page:
+-http://www.saout.de/misc/dm-crypt/
+-You have read Documentation/power/swsusp.rst and understand it.
+-You did read Documentation/filesystems/ramfs-rootfs-initramfs.rst and know how an initrd works.
+-You know how to create or how to modify an initrd.
+-
+-Now your system is properly set up, your disk is encrypted except for
+-the swap device(s) and the boot partition which may contain a mini
+-system for crypto setup and/or rescue purposes. You may even have
+-an initrd that does your current crypto setup already.
+-
+-At this point you want to encrypt your swap, too. Still you want to
+-be able to suspend using swsusp. This, however, means that you
+-have to be able to either enter a passphrase or that you read
+-the key(s) from an external device like a pcmcia flash disk
+-or an usb stick prior to resume. So you need an initrd, that sets
+-up dm-crypt and then asks swsusp to resume from the encrypted
+-swap device.
+-
+-The most important thing is that you set up dm-crypt in such
+-a way that the swap device you suspend to/resume from has
+-always the same major/minor within the initrd as well as
+-within your running system. The easiest way to achieve this is
+-to always set up this swap device first with dmsetup, so that
+-it will always look like the following::
+-
+-  brw-------  1 root root 254, 0 Jul 28 13:37 /dev/mapper/swap0
+-
+-Now set up your kernel to use /dev/mapper/swap0 as the default
+-resume partition, so your kernel .config contains::
+-
+-  CONFIG_PM_STD_PARTITION="/dev/mapper/swap0"
+-
+-Prepare your boot loader to use the initrd you will create or
+-modify. For lilo the simplest setup looks like the following
+-lines::
+-
+-  image=/boot/vmlinuz
+-  initrd=/boot/initrd.gz
+-  label=linux
+-  append="root=/dev/ram0 init=/linuxrc rw"
+-
+-Finally you need to create or modify your initrd. Lets assume
+-you create an initrd that reads the required dm-crypt setup
+-from a pcmcia flash disk card. The card is formatted with an ext2
+-fs which resides on /dev/hde1 when the card is inserted. The
+-card contains at least the encrypted swap setup in a file
+-named "swapkey". /etc/fstab of your initrd contains something
+-like the following::
+-
+-  /dev/hda1   /mnt    ext3      ro                            0 0
+-  none        /proc   proc      defaults,noatime,nodiratime   0 0
+-  none        /sys    sysfs     defaults,noatime,nodiratime   0 0
+-
+-/dev/hda1 contains an unencrypted mini system that sets up all
+-of your crypto devices, again by reading the setup from the
+-pcmcia flash disk. What follows now is a /linuxrc for your
+-initrd that allows you to resume from encrypted swap and that
+-continues boot with your mini system on /dev/hda1 if resume
+-does not happen::
+-
+-  #!/bin/sh
+-  PATH=/sbin:/bin:/usr/sbin:/usr/bin
+-  mount /proc
+-  mount /sys
+-  mapped=0
+-  noresume=`grep -c noresume /proc/cmdline`
+-  if [ "$*" != "" ]
+-  then
+-    noresume=1
+-  fi
+-  dmesg -n 1
+-  /sbin/cardmgr -q
+-  for i in 1 2 3 4 5 6 7 8 9 0
+-  do
+-    if [ -f /proc/ide/hde/media ]
+-    then
+-      usleep 500000
+-      mount -t ext2 -o ro /dev/hde1 /mnt
+-      if [ -f /mnt/swapkey ]
+-      then
+-        dmsetup create swap0 /mnt/swapkey > /dev/null 2>&1 && mapped=1
+-      fi
+-      umount /mnt
+-      break
+-    fi
+-    usleep 500000
+-  done
+-  killproc /sbin/cardmgr
+-  dmesg -n 6
+-  if [ $mapped = 1 ]
+-  then
+-    if [ $noresume != 0 ]
+-    then
+-      mkswap /dev/mapper/swap0 > /dev/null 2>&1
+-    fi
+-    echo 254:0 > /sys/power/resume
+-    dmsetup remove swap0
+-  fi
+-  umount /sys
+-  mount /mnt
+-  umount /proc
+-  cd /mnt
+-  pivot_root . mnt
+-  mount /proc
+-  umount -l /mnt
+-  umount /proc
+-  exec chroot . /sbin/init $* < dev/console > dev/console 2>&1
+-
+-Please don't mind the weird loop above, busybox's msh doesn't know
+-the let statement. Now, what is happening in the script?
+-First we have to decide if we want to try to resume, or not.
+-We will not resume if booting with "noresume" or any parameters
+-for init like "single" or "emergency" as boot parameters.
+-
+-Then we need to set up dmcrypt with the setup data from the
+-pcmcia flash disk. If this succeeds we need to reset the swap
+-device if we don't want to resume. The line "echo 254:0 > /sys/power/resume"
+-then attempts to resume from the first device mapper device.
+-Note that it is important to set the device in /sys/power/resume,
+-regardless if resuming or not, otherwise later suspend will fail.
+-If resume starts, script execution terminates here.
+-
+-Otherwise we just remove the encrypted swap device and leave it to the
+-mini system on /dev/hda1 to set the whole crypto up (it is up to
+-you to modify this to your taste).
+-
+-What then follows is the well known process to change the root
+-file system and continue booting from there. I prefer to unmount
+-the initrd prior to continue booting but it is up to you to modify
+-this.
+diff --git a/Documentation/translations/zh_CN/power/index.rst b/Documentation/translations/zh_CN/power/index.rst
+index bc54983ba515..4ee880e65107 100644
+--- a/Documentation/translations/zh_CN/power/index.rst
++++ b/Documentation/translations/zh_CN/power/index.rst
+@@ -32,7 +32,6 @@ TODOList:
+     * suspend-and-cpuhotplug
+     * suspend-and-interrupts
+     * swsusp-and-swap-files
+-    * swsusp-dmcrypt
+     * swsusp
+     * video
+     * tricks
 -- 
 2.47.2
 
