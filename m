@@ -1,194 +1,268 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4BF082DF149;
-	Tue, 28 Oct 2025 21:17:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 064B52F5307
+	for <linux-sh@vger.kernel.org>; Wed, 29 Oct 2025 16:33:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761686224; cv=none; b=PwQzo4Zp3aYwHMPrfkTFRmp5koyrOT/z6jOU7uzKwcoVTQkKFgZrLu6Fqeint078O20mjIAXwn9OsrsA8d7JXVzuw3wRLOyXA0SAVhcMzHiQvJYvWHu5BB0ingqh/VQk/TSdiSUgoxAxEv1F4L7XKs58rBLCvViM0wyA03HKCQ0=
+	t=1761755627; cv=none; b=DnP0Qnj1ZJpRwxVmi6D2ckoW/P9iM9HzqyN+Fke++5JbhQpnOHxwEfV1KZ3TQIRY0u+ZmzrPZEzzl0TTNrY5fnpCjSVeg4bWcTfwPPjt5u3dLhhE04cWVapfMgyZvSIbHGDljHgww0fhk6IlRK9/jiT7zayaVlezZ42WDyN39h8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761686224; c=relaxed/simple;
-	bh=5GhD8nOxOMMbxz7FpBxfrkh9eIh09AUdGNH1xh+tUDs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=GfR9GKJhgzOBjiugdgaa+2W7xCo9Q+HvEl4XXf1TrJA3cFVij6n+5eH5zLBqh5SuQK/qVG8EST+PRSU6AObASxITisOrz/wYP0g4GoRx7oXm+fkjUPVXyCzKzovhbRxFS1JHUdVWRMrdTC+998zEaNA6r8xx7ALcZWf8hXtDn6k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de; spf=pass smtp.mailfrom=gmx.de; dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b=comSEmJB; arc=none smtp.client-ip=212.227.17.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.de
+	s=arc-20240116; t=1761755627; c=relaxed/simple;
+	bh=VSWqE9UpOBc+UzSqvFu6yaqBRnD97EehWNgVqMvq8m8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=kP0LUIeAsYMJeBF0a2I/cNEiyOL25NsCb8yKHphfj+kOD9D5kswlG2YpKs3Ds2zdxU/LGoymhJCy5i2lBH6JF6DbMZ3sHBCSYvI3U28xWu3SRzQb2RhqjU3bVrXSd6uEWkUzRzp6MKLFuXNL5VeOsSm2P2d2vnHe1zqr+1dMoGQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=GAX1bq4d; arc=none smtp.client-ip=209.85.221.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b="comSEmJB"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.de;
-	s=s31663417; t=1761686217; x=1762291017; i=deller@gmx.de;
-	bh=agjwSDItBCjjVU39n6Gh/m5gcfolEP3e/OyEBDQSo24=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=comSEmJBwP3P1te7cHpEXEA/OE67HYn8HWfVCEWgrZgI+bIEurXRs8E9dj/0OI2w
-	 kvJfaeYI2p5+b441kb0AXen1HMBSVPy3a0s6X6Oey5ccsB74cNwVYx+mg2xnkkR/p
-	 up+ass2Wyq8bRb6NDUCSJ9+9V2BdThjnHuZveFYwJ5miCRgCSMecusoaBhCGlvhjC
-	 Cx5C2hnNS4Lh7HMGTT5OBWPcsXt1ZJRwvlZfho3rPsWVH7bYsg5lUEaO2IMIOcmkF
-	 JSepS9Y0w+zZ3YA7Kvi1E8RaOJd5aIedknalpcFT5C3DP1VJzvhg3iJwJ4tfGNZ/k
-	 QHRm0kDEE7+ey+2YAA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [192.168.20.55] ([109.250.50.74]) by mail.gmx.net (mrgmx105
- [212.227.17.168]) with ESMTPSA (Nemesis) id 1MStCY-1vi9EF2mVy-00TSbv; Tue, 28
- Oct 2025 22:16:57 +0100
-Message-ID: <62d108bd-21db-48d3-9ceb-79e533d94306@gmx.de>
-Date: Tue, 28 Oct 2025 22:16:56 +0100
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GAX1bq4d"
+Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-4298a028de6so845155f8f.0
+        for <linux-sh@vger.kernel.org>; Wed, 29 Oct 2025 09:33:44 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1761755623; x=1762360423; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=AAflKtaWcrVF6Nhfrfoz1N7w/0F8UwSgA56H4g4glHQ=;
+        b=GAX1bq4dj6jJVRSQm6jSXKZmSqRgwU87dqTgUmOQq6VRG73NQv9ndmUqp5OYx15oEx
+         3g1f4C8WxQQjrFA1gXw/darKeaRzgTHzF7xbEaU1koYOsa8PvidyiA5+RbtpoTvN44fY
+         Y0bfMqK6gk707vhmLJvmEZzz6E42ZVyRgXg1vt2VNsg6V2toOefxP0mMIYJpCdxETDqm
+         /Rb1UfXA3jTNlI7E718XG+k13ZnqmUQzAjxKoM1t1ros/IpMuvNJzEze7zQGEfGiocNy
+         1RobH/KL8Aq1QIMpEnZKKJEqbTO8ebew6uuWf1aMOFG07jHjm+2t8itoqO3l2icckgev
+         ez1A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1761755623; x=1762360423;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=AAflKtaWcrVF6Nhfrfoz1N7w/0F8UwSgA56H4g4glHQ=;
+        b=o5/tH3vdivQvOOkU/EmAI/aVrSTnGVZea5D9xOl1FrhtB+/d/xv5ecZTzULDkbwa42
+         NZni78cQdEgJgVDshVAa526aF1VUDGRnpqpjq391/izPnuK6vtt9+Xj1M3dDioku65kw
+         POuzhPVVnSfDH166vd5gdtwqmzaYQJgbqvJXNrDk8btbpU0ai+tP7XvyrY+3y2ASKgK6
+         LlyvcXaYKe51lDCXupQ8690muV7FJFdndfTuOqrCT/vS1eG49/R00D61oEK6exSS0X6Z
+         MnZJIHtSoPtwmM1v3ucq9cJVylatV8d3HQFNwIClLZKh5I9u/iIFn+xs5nKNvdeNuteD
+         YUvg==
+X-Forwarded-Encrypted: i=1; AJvYcCX1hX5w+qaO4RLyoMLyrWxvVpNuoqX1lMPYh4Prrej32KzNVpZbp5PdjA41lzg3lLQWB/Cjg5PwIw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx0dwQg5CX4qmRqOJfNHdlUCUHjkAK3tSB7iL53PHfMOE0JWi15
+	O4QH+VHB+YAM+RcDkOeCWBBaJaJvLVI+wSM5gOwPEFe+MaKiyfqvfQ9D
+X-Gm-Gg: ASbGncuTCnMBotrIR54mk8tz7ZDqg0PoHV97KgGxM4j+rLDCYLcK9nYJBhihOxwQ1PP
+	9et7xUE/c0RrVtRYZGGpkdlzN1cW7Vg3zyQRifK1l70OOMCvRgq1hPonLWe9OJi0RcawpPgOfhP
+	kDg1Hif1UmDpEGkxYGpo/zCkAucZjX8GJp75JF8xun6G7LjH0+BYkFr8mOdCOeXSCwcy1VOYCz2
+	o3RPiQAERxU9G4jqRnGcUUZ75ZjT5UeAW/vypr48XBc7kmHL5tRQ+hdn13GXnhTWefmbgBa5hIv
+	CWOSWVl345th9bxP38RUSmjj40QCJ30UlWoeWtFKg7IsA/pxzq2NMvQ4fBs7WvN8tLnA50CncNh
+	DlzaxxkSG29ymA3cse6RkZKfLFR/nTvPaZf+R/QYrnjpAhm6CZ0PzxZzrr3nkuaudwBrKrR7YN3
+	ftpmhVIRW+JsrXxdeXazxkwT/wgp9XIJj4t0z3IizsQxj1bcYsZmeArOu9bTsAScDczPqG
+X-Google-Smtp-Source: AGHT+IHTmDPmMpNCDFFQsAevLNP6qOs7nF+wicDIMZb/6KQd4rRWs7Qottj+hraNqh61j+yol+JE4g==
+X-Received: by 2002:a05:6000:430c:b0:425:86da:325f with SMTP id ffacd0b85a97d-429b4c5303emr258811f8f.27.1761755622916;
+        Wed, 29 Oct 2025 09:33:42 -0700 (PDT)
+Received: from localhost (p200300e41f274600f22f74fffe1f3a53.dip0.t-ipconnect.de. [2003:e4:1f27:4600:f22f:74ff:fe1f:3a53])
+        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-429952da12dsm27463002f8f.29.2025.10.29.09.33.41
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 29 Oct 2025 09:33:41 -0700 (PDT)
+From: Thierry Reding <thierry.reding@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	"Rafael J. Wysocki" <rafael@kernel.org>
+Cc: x86@kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-riscv@lists.infradead.org,
+	linux-mips@vger.kernel.org,
+	loongarch@lists.linux.dev,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-sh@vger.kernel.org,
+	linux-pci@vger.kernel.org,
+	linux-acpi@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH v3 0/7] syscore: Pass context data to callbacks
+Date: Wed, 29 Oct 2025 17:33:29 +0100
+Message-ID: <20251029163336.2785270-1-thierry.reding@gmail.com>
+X-Mailer: git-send-email 2.51.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] fbdev/pvr2fb: Fix leftover reference to
- ONCHIP_NR_DMA_CHANNELS
-To: Florian Fuchs <fuchsfl@gmail.com>, linux-fbdev@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
- dri-devel@lists.freedesktop.org
-References: <20251025223850.1056175-1-fuchsfl@gmail.com>
-Content-Language: en-US
-From: Helge Deller <deller@gmx.de>
-Autocrypt: addr=deller@gmx.de; keydata=
- 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
-In-Reply-To: <20251025223850.1056175-1-fuchsfl@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:UdZlOokfHKGDpX8dXOUirwmPPyISseLEpiyhqQjxg9vXPdZ7Y7b
- AepB7Rf/UEeLr8l2q3nIdhd797LrIggBcLeIrv8qrP/H/FvIQ0vq7X7s6NDBH2n8ZwtsYFb
- Bm3+1AoRaB/59Lns80wNMZDVOb7186uVV8LCvuO+LAeaE0rJXZiz3CINgRREs/AiSXHx2Mw
- TdgWtWCzl5pFuafYEADfQ==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:T4RVxgMdMzE=;DlCtkFcG3X6C0CNhu1X/FvARNvS
- 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
+Content-Transfer-Encoding: 8bit
 
-On 10/26/25 00:38, Florian Fuchs wrote:
-> Commit e24cca19babe ("sh: Kill off MAX_DMA_ADDRESS leftovers.") removed
-> the define ONCHIP_NR_DMA_CHANNELS. So that the leftover reference needs
-> to be replaced by CONFIG_NR_ONCHIP_DMA_CHANNELS to compile successfully
-> with CONFIG_PVR2_DMA enabled.
->=20
-> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
-> ---
-> Note: The fix has been compiled, and tested on real Dreamcast hardware,
-> with CONFIG_PVR2_DMA=3Dy.
->=20
->   drivers/video/fbdev/pvr2fb.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
+From: Thierry Reding <treding@nvidia.com>
 
-applied.
+Hi Greg, Rafael,
 
-Thanks!
-Helge
+sorry, this took a while to rework because I had to find a large enough
+block of free time to push through. I played around a bit with different
+ideas based on our discussion and ended up with a mix between Rafael's
+and my proposal. struct syscore_ops is now split out and can be made
+const. struct syscore is introduced to contain the variable data such
+as the list head and the driver data. It also has a pointer to the ops
+structure. Registration APIs are changed accordingly. I initially wanted
+to avoid this churn, but then realized I was already touching all of the
+files anyway, so might as well make it all consistent. As a result the
+series is about twice as large in terms of LOC, but that's mostly due to
+the structure split.
+
+For anyone who hasn't seen this yet, here's the full cover letter:
+
+Hi,
+
+Something that's been bugging me over the years is how some drivers have
+had to adopt file-scoped variables to pass data into something like the
+syscore operations. This is often harmless, but usually leads to drivers
+not being able to deal with multiple instances, or additional frameworks
+or data structures needing to be created to handle multiple instances.
+
+This series proposes to "objectify" struct syscore_ops by passing driver
+specific data to the syscore callbacks. The contextual data is stored in
+a new struct syscore before registering the structure with the framework
+and the structure can be embedded in driver-specific data to make it per
+instance.
+
+Patch 1 contains the bulk of these changes. It's fairly intrusive
+because it does the conversion of the function signature all in one
+patch. An alternative would've been to introduce new callbacks such that
+these changes could be staged in. However, the amount of changes here
+are not quite numerous enough to justify that, in my opinion, and
+syscore isn't very frequently used, so the risk of another user getting
+added while this is merged is rather small. All in all I think merging
+this in one go is the simplest way.
+
+Patches 2-7 are conversions of some existing drivers to take advantage
+of this new parameter and tie the code to per-instance data.
+
+Given that the recipient list for this is huge, I'm limiting this to
+Greg (because it's at the core a... core change) and a set of larger
+lists for architectures and subsystems that are impacted.
+
+Changes in v3:
+- add separate syscore structure containing the modifiable fields,
+  including driver-specific data, as well as a pointer to the constified
+  syscore_ops structure
+- change registration/unregistration API to make these changes more
+  obvious
+
+Changes in v2:
+- kerneldoc fixes
+
+Thanks,
+Thierry
+
+Thierry Reding (7):
+  syscore: Pass context data to callbacks
+  MIPS: PCI: Use contextual data instead of global variable
+  bus: mvebu-mbus: Use contextual data instead of global variable
+  clk: ingenic: tcu: Use contextual data instead of global variable
+  clk: mvebu: Use contextual data instead of global variable
+  irqchip/irq-imx-gpcv2: Use contextual data instead of global variable
+  soc/tegra: pmc: Use contextual data instead of global variable
+
+ arch/arm/mach-exynos/mcpm-exynos.c        | 12 ++--
+ arch/arm/mach-exynos/suspend.c            | 48 +++++++------
+ arch/arm/mach-pxa/generic.h               |  6 +-
+ arch/arm/mach-pxa/irq.c                   | 10 ++-
+ arch/arm/mach-pxa/mfp-pxa2xx.c            | 10 ++-
+ arch/arm/mach-pxa/mfp-pxa3xx.c            | 10 ++-
+ arch/arm/mach-pxa/pxa25x.c                |  4 +-
+ arch/arm/mach-pxa/pxa27x.c                |  4 +-
+ arch/arm/mach-pxa/pxa3xx.c                |  4 +-
+ arch/arm/mach-pxa/smemc.c                 | 12 ++--
+ arch/arm/mach-s3c/irq-pm-s3c64xx.c        | 12 ++--
+ arch/arm/mach-s5pv210/pm.c                | 10 ++-
+ arch/arm/mach-versatile/integrator_ap.c   | 12 ++--
+ arch/arm/mm/cache-b15-rac.c               | 12 ++--
+ arch/loongarch/kernel/smp.c               | 12 ++--
+ arch/mips/alchemy/common/dbdma.c          | 12 ++--
+ arch/mips/alchemy/common/irq.c            | 24 ++++---
+ arch/mips/alchemy/common/usb.c            | 12 ++--
+ arch/mips/pci/pci-alchemy.c               | 30 +++------
+ arch/powerpc/platforms/cell/spu_base.c    | 10 ++-
+ arch/powerpc/platforms/powermac/pic.c     | 12 ++--
+ arch/powerpc/sysdev/fsl_lbc.c             | 12 ++--
+ arch/powerpc/sysdev/fsl_pci.c             | 12 ++--
+ arch/powerpc/sysdev/ipic.c                | 12 ++--
+ arch/powerpc/sysdev/mpic.c                | 14 ++--
+ arch/powerpc/sysdev/mpic_timer.c          | 10 ++-
+ arch/sh/mm/pmb.c                          | 10 ++-
+ arch/x86/events/amd/ibs.c                 | 12 ++--
+ arch/x86/hyperv/hv_init.c                 | 12 ++--
+ arch/x86/kernel/amd_gart_64.c             | 10 ++-
+ arch/x86/kernel/apic/apic.c               | 12 ++--
+ arch/x86/kernel/apic/io_apic.c            | 17 +++--
+ arch/x86/kernel/cpu/aperfmperf.c          | 20 +++---
+ arch/x86/kernel/cpu/intel_epb.c           | 16 +++--
+ arch/x86/kernel/cpu/mce/core.c            | 14 ++--
+ arch/x86/kernel/cpu/microcode/core.c      | 15 ++++-
+ arch/x86/kernel/cpu/mtrr/legacy.c         | 12 ++--
+ arch/x86/kernel/cpu/umwait.c              | 10 ++-
+ arch/x86/kernel/i8237.c                   | 10 ++-
+ arch/x86/kernel/i8259.c                   | 14 ++--
+ arch/x86/kernel/kvm.c                     | 12 ++--
+ drivers/acpi/pci_link.c                   | 10 ++-
+ drivers/acpi/sleep.c                      | 12 ++--
+ drivers/base/firmware_loader/main.c       | 12 ++--
+ drivers/base/syscore.c                    | 82 ++++++++++++-----------
+ drivers/bus/mvebu-mbus.c                  | 19 +++---
+ drivers/clk/at91/pmc.c                    | 12 ++--
+ drivers/clk/imx/clk-vf610.c               | 12 ++--
+ drivers/clk/ingenic/jz4725b-cgu.c         |  2 +-
+ drivers/clk/ingenic/jz4740-cgu.c          |  2 +-
+ drivers/clk/ingenic/jz4755-cgu.c          |  2 +-
+ drivers/clk/ingenic/jz4760-cgu.c          |  2 +-
+ drivers/clk/ingenic/jz4770-cgu.c          |  2 +-
+ drivers/clk/ingenic/jz4780-cgu.c          |  2 +-
+ drivers/clk/ingenic/pm.c                  | 14 ++--
+ drivers/clk/ingenic/pm.h                  |  2 +-
+ drivers/clk/ingenic/tcu.c                 | 59 ++++++++--------
+ drivers/clk/ingenic/x1000-cgu.c           |  2 +-
+ drivers/clk/ingenic/x1830-cgu.c           |  2 +-
+ drivers/clk/mvebu/common.c                | 19 ++++--
+ drivers/clk/rockchip/clk-rk3288.c         | 12 ++--
+ drivers/clk/samsung/clk-s5pv210-audss.c   | 12 ++--
+ drivers/clk/samsung/clk.c                 | 12 ++--
+ drivers/clk/tegra/clk-tegra210.c          | 12 ++--
+ drivers/clocksource/timer-armada-370-xp.c | 12 ++--
+ drivers/cpuidle/cpuidle-psci.c            | 12 ++--
+ drivers/gpio/gpio-mxc.c                   | 12 ++--
+ drivers/gpio/gpio-pxa.c                   | 12 ++--
+ drivers/gpio/gpio-sa1100.c                | 12 ++--
+ drivers/hv/vmbus_drv.c                    | 14 ++--
+ drivers/iommu/amd/init.c                  | 12 ++--
+ drivers/iommu/intel/iommu.c               | 12 ++--
+ drivers/irqchip/exynos-combiner.c         | 14 ++--
+ drivers/irqchip/irq-armada-370-xp.c       | 12 ++--
+ drivers/irqchip/irq-bcm7038-l1.c          | 12 ++--
+ drivers/irqchip/irq-gic-v3-its.c          | 12 ++--
+ drivers/irqchip/irq-i8259.c               | 12 ++--
+ drivers/irqchip/irq-imx-gpcv2.c           | 30 +++------
+ drivers/irqchip/irq-loongson-eiointc.c    | 12 ++--
+ drivers/irqchip/irq-loongson-htpic.c      | 10 ++-
+ drivers/irqchip/irq-loongson-htvec.c      | 12 ++--
+ drivers/irqchip/irq-loongson-pch-lpc.c    | 12 ++--
+ drivers/irqchip/irq-loongson-pch-pic.c    | 12 ++--
+ drivers/irqchip/irq-mchp-eic.c            | 12 ++--
+ drivers/irqchip/irq-mst-intc.c            | 12 ++--
+ drivers/irqchip/irq-mtk-cirq.c            | 12 ++--
+ drivers/irqchip/irq-renesas-rzg2l.c       | 12 ++--
+ drivers/irqchip/irq-sa11x0.c              | 12 ++--
+ drivers/irqchip/irq-sifive-plic.c         | 12 ++--
+ drivers/irqchip/irq-sun6i-r.c             | 18 +++--
+ drivers/irqchip/irq-tegra.c               | 12 ++--
+ drivers/irqchip/irq-vic.c                 | 12 ++--
+ drivers/leds/trigger/ledtrig-cpu.c        | 14 ++--
+ drivers/macintosh/via-pmu.c               | 12 ++--
+ drivers/power/reset/sc27xx-poweroff.c     | 10 ++-
+ drivers/sh/clk/core.c                     | 10 ++-
+ drivers/sh/intc/core.c                    | 12 ++--
+ drivers/soc/bcm/brcmstb/biuctrl.c         | 12 ++--
+ drivers/soc/tegra/pmc.c                   | 21 ++++--
+ drivers/thermal/intel/intel_hfi.c         | 12 ++--
+ drivers/xen/xen-acpi-processor.c          | 12 ++--
+ include/linux/syscore_ops.h               | 15 +++--
+ kernel/cpu_pm.c                           | 12 ++--
+ kernel/irq/generic-chip.c                 | 14 ++--
+ kernel/irq/pm.c                           | 11 ++-
+ kernel/printk/printk.c                    | 11 ++-
+ kernel/time/sched_clock.c                 | 22 ++++--
+ kernel/time/timekeeping.c                 | 22 ++++--
+ virt/kvm/kvm_main.c                       | 18 +++--
+ 109 files changed, 930 insertions(+), 523 deletions(-)
+
+-- 
+2.51.0
+
