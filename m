@@ -1,44 +1,42 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8765F354AE2;
-	Wed, 29 Oct 2025 17:56:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9EAF42E7BB4
+	for <linux-sh@vger.kernel.org>; Thu, 30 Oct 2025 11:19:01 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1761760609; cv=none; b=iIpP5QTg4/47geivGUqYvUyBmDu40lmc77F+B0pSZzmMvJyf3/xKlUhbuqG7P0Y2QAI8i5XxcaOOw7N8pG+TdcWl5t6gxQlnNbhmLpwRB7CN/ar9vbhDYGhBwaWfcXWjA907aXgitqQvH97j63nRlOlXDJNHOHVl4W+TRtl1H0k=
+	t=1761823142; cv=none; b=u+NQdt6rZI3GP1NuxuLLmULZ7Cj+4geiSqDOVqZyjbE7mIaWnHmo3UJU+2ieuVY10M6qLhhprSEJ1499wK9/7tWiIW1wL1oq4irVW4U/xWc31sV59udUoMRRmtuVSyBZ50dH+ex1ka0UX1MXaalQkCSkVJf75xfH4jzg3/kmjtY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1761760609; c=relaxed/simple;
-	bh=VzK5oAorESm47QWMsddWXTePfWCCmkkIk79NLObV5bc=;
-	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To; b=DQOLV2l9Xo05FROP7Qwq5xZozdGExnglxWyZmyxF4T1Qp76c2vmyaQLd0thKtkOXMUqEI1CwOhB4iblAWQyVgs3ZEyl0Aezq8SzSbcOE9pikqivpmUsUueMPdx8xqfJKUT9IJSgDyASpT6mLhljbEvKxTU2xOl0KiVdUYs8U2xY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WefDjtFQ; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1761823142; c=relaxed/simple;
+	bh=dMWeVsXlPYq+6w66BT5t7sFQftyp1w+uf3dD7WEW+Wc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=UNpXMfbtEBVShe7vemEt6FIKpbPNYgCcJCMWDp7e0taU043k9QyENXaGHXtmRwfZI/XflR2l8SvNlhq+7tj3TxgkbaZ5pCINj2AR0KxjKErcAfmr2cXC2gMS/hOZkH85Wjgkks/rsjuu0Tv65VviwFmqn5v3qfI92ekS8MGFXv0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TUMpsPNY; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WefDjtFQ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DA482C4CEF7;
-	Wed, 29 Oct 2025 17:56:48 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TUMpsPNY"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 087A0C4CEF8;
+	Thu, 30 Oct 2025 11:18:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1761760609;
-	bh=VzK5oAorESm47QWMsddWXTePfWCCmkkIk79NLObV5bc=;
-	h=Date:From:To:Cc:Subject:In-Reply-To:From;
-	b=WefDjtFQxaqNITeCzyBwduPSq6eq7KGJtsT2AF0tpE+HPH+tjK4IzpZavlRn/5XsQ
-	 bAqy+ezFjPZQf9TOZPQl6LXTvXW9IfgUJjbAoy5vs36s3bfKfYzKQg/z1bubPH73jh
-	 1ItJud1AeLXZlnq4bcVqu3rpaUAMlJkdHmPuONikaXEvzkph5eumYyBiA1nwLpgQr4
-	 QSEpHgWx8G4kOS7ej8Kp+v5EZVkYD3yl7v3+XLUa3lNShkcaOmr1AUVB0MzBpFpGOj
-	 pC344FC62eHwyUuXg2zk98jn071eznE2X1eDI8XnNdAIINuY4R7ZrZ6Wl5YCNKdj1p
-	 /8lus9PKvBXYA==
-Date: Wed, 29 Oct 2025 12:56:47 -0500
-From: Bjorn Helgaas <helgaas@kernel.org>
-To: Thierry Reding <thierry.reding@gmail.com>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	"Rafael J. Wysocki" <rafael@kernel.org>, x86@kernel.org,
-	linux-arm-kernel@lists.infradead.org,
-	linux-riscv@lists.infradead.org, linux-mips@vger.kernel.org,
-	loongarch@lists.linux.dev, linuxppc-dev@lists.ozlabs.org,
-	linux-sh@vger.kernel.org, linux-pci@vger.kernel.org,
-	linux-acpi@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v3 4/7] clk: ingenic: tcu: Use contextual data instead of
- global variable
-Message-ID: <20251029175647.GA1572736@bhelgaas>
+	s=k20201202; t=1761823141;
+	bh=dMWeVsXlPYq+6w66BT5t7sFQftyp1w+uf3dD7WEW+Wc=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=TUMpsPNY2Avx+CEsJhbuUOTzE6D0vmcukFqQ3brKymX1bSoe2y/32milLkW7nFxpj
+	 q5Z82zTpvPttyrM//kUS6S6vjBoeO7qhSCBvRpaDTGwXBe6m8+jNpQb/Q/W2YlpOVz
+	 /w0tRON0ru5SGJ2mlOObIDUiYoPmhgkdDduQSbfLSnAx816lOpXXVtOgolbrCE46n7
+	 KLpQzkf51qrGwsY8YJMOgs5mh0TM41wmZw87u3fLw8XoW5qoMngAQ5hhC0Uj5xWP6+
+	 W3eBFNiRQMH6zm8tGxiAmVpFb8hXfeqzDdNFQxSunEXwFx52w9EEoBJFLEHvOL8B9P
+	 UoB0Xs/gV1EEw==
+Date: Thu, 30 Oct 2025 11:20:03 +0000
+From: Daniel Thompson <danielt@kernel.org>
+To: Thomas Zimmermann <tzimmermann@suse.de>
+Cc: ysato@users.sourceforge.jp, dalias@libc.org,
+	glaubitz@physik.fu-berlin.de, lee@kernel.org,
+	simona.vetter@ffwll.ch, linux-sh@vger.kernel.org,
+	dri-devel@lists.freedesktop.org, kernel test robot <lkp@intel.com>,
+	Jingoo Han <jingoohan1@gmail.com>
+Subject: Re: [PATCH] arch: sh: Include <linux/io.h> in dac.h
+Message-ID: <aQNJ4xZzMps_OLD8@aspen.lan>
+References: <20251028170913.16711-1-tzimmermann@suse.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -47,133 +45,25 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20251029163336.2785270-5-thierry.reding@gmail.com>
+In-Reply-To: <20251028170913.16711-1-tzimmermann@suse.de>
 
-On Wed, Oct 29, 2025 at 05:33:33PM +0100, Thierry Reding wrote:
-> From: Thierry Reding <treding@nvidia.com>
-> 
-> Pass the driver-specific data via the syscore struct and use it in the
-> syscore ops.
+On Tue, Oct 28, 2025 at 06:07:55PM +0100, Thomas Zimmermann wrote:
+> Include <linux/io.h> to avoid depending on <linux/backlight.h> for
+> including it. Declares __raw_readb() and __raw_writeb().
+>
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Reported-by: kernel test robot <lkp@intel.com>
+> Closes: https://lore.kernel.org/oe-kbuild-all/202510282206.wI0HrqcK-lkp@intel.com/
+> Fixes: 243ce64b2b37 ("backlight: Do not include <linux/fb.h> in header file")
+> Cc: Thomas Zimmermann <tzimmermann@suse.de>
+> Cc: Daniel Thompson (RISCstar) <danielt@kernel.org>
+> Cc: Simona Vetter <simona.vetter@ffwll.ch>
+> Cc: Lee Jones <lee@kernel.org>
+> Cc: Daniel Thompson <danielt@kernel.org>
+> Cc: Jingoo Han <jingoohan1@gmail.com>
+> Cc: dri-devel@lists.freedesktop.org
 
-Some of these things in drivers/clk/ are also platform_device drivers
-(though not this one) and use generic power management, e.g.,
+Reviewed-by: Daniel Thompson (RISCstar) <danielt@kernel.org>
 
-  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/clk/qcom/q6sstop-qcs404.c?id=v6.17#n209
 
-I have no idea if that's desirable or practical here, but using the
-platform_device model instead of syscore could have advantages in
-terms of modeling device dependencies and ordering.
-
-> Signed-off-by: Thierry Reding <treding@nvidia.com>
-> ---
-> Changes in v3:
-> - adjust for API changes and update commit message
-> 
->  drivers/clk/ingenic/tcu.c | 63 +++++++++++++++++++--------------------
->  1 file changed, 30 insertions(+), 33 deletions(-)
-> 
-> diff --git a/drivers/clk/ingenic/tcu.c b/drivers/clk/ingenic/tcu.c
-> index bc6a51da2072..8c6337d8e831 100644
-> --- a/drivers/clk/ingenic/tcu.c
-> +++ b/drivers/clk/ingenic/tcu.c
-> @@ -53,9 +53,9 @@ struct ingenic_tcu {
->  	struct clk *clk;
->  
->  	struct clk_hw_onecell_data *clocks;
-> -};
->  
-> -static struct ingenic_tcu *ingenic_tcu;
-> +	struct syscore syscore;
-> +};
->  
->  static inline struct ingenic_tcu_clk *to_tcu_clk(struct clk_hw *hw)
->  {
-> @@ -332,6 +332,29 @@ static const struct of_device_id __maybe_unused ingenic_tcu_of_match[] __initcon
->  	{ /* sentinel */ }
->  };
->  
-> +static int __maybe_unused tcu_pm_suspend(void *data)
-> +{
-> +	struct ingenic_tcu *tcu = data;
-> +
-> +	if (tcu->clk)
-> +		clk_disable(tcu->clk);
-> +
-> +	return 0;
-> +}
-> +
-> +static void __maybe_unused tcu_pm_resume(void *data)
-> +{
-> +	struct ingenic_tcu *tcu = data;
-> +
-> +	if (tcu->clk)
-> +		clk_enable(tcu->clk);
-> +}
-> +
-> +static const struct syscore_ops tcu_pm_ops __maybe_unused = {
-> +	.suspend = tcu_pm_suspend,
-> +	.resume = tcu_pm_resume,
-> +};
-> +
->  static int __init ingenic_tcu_probe(struct device_node *np)
->  {
->  	const struct of_device_id *id = of_match_node(ingenic_tcu_of_match, np);
-> @@ -430,7 +453,11 @@ static int __init ingenic_tcu_probe(struct device_node *np)
->  		goto err_unregister_ost_clock;
->  	}
->  
-> -	ingenic_tcu = tcu;
-> +	if (IS_ENABLED(CONFIG_PM_SLEEP)) {
-> +		tcu->syscore.ops = &tcu_pm_ops;
-> +		tcu->syscore.data = tcu;
-> +		register_syscore(&tcu->syscore);
-> +	}
->  
->  	return 0;
->  
-> @@ -455,42 +482,12 @@ static int __init ingenic_tcu_probe(struct device_node *np)
->  	return ret;
->  }
->  
-> -static int __maybe_unused tcu_pm_suspend(void *data)
-> -{
-> -	struct ingenic_tcu *tcu = ingenic_tcu;
-> -
-> -	if (tcu->clk)
-> -		clk_disable(tcu->clk);
-> -
-> -	return 0;
-> -}
-> -
-> -static void __maybe_unused tcu_pm_resume(void *data)
-> -{
-> -	struct ingenic_tcu *tcu = ingenic_tcu;
-> -
-> -	if (tcu->clk)
-> -		clk_enable(tcu->clk);
-> -}
-> -
-> -static const struct syscore_ops __maybe_unused tcu_pm_ops = {
-> -	.suspend = tcu_pm_suspend,
-> -	.resume = tcu_pm_resume,
-> -};
-> -
-> -static struct syscore __maybe_unused tcu_pm = {
-> -	.ops = &tcu_pm_ops,
-> -};
-> -
->  static void __init ingenic_tcu_init(struct device_node *np)
->  {
->  	int ret = ingenic_tcu_probe(np);
->  
->  	if (ret)
->  		pr_crit("Failed to initialize TCU clocks: %d\n", ret);
-> -
-> -	if (IS_ENABLED(CONFIG_PM_SLEEP))
-> -		register_syscore(&tcu_pm);
->  }
->  
->  CLK_OF_DECLARE_DRIVER(jz4740_cgu, "ingenic,jz4740-tcu", ingenic_tcu_init);
-> -- 
-> 2.51.0
-> 
+Daniel.
