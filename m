@@ -1,143 +1,135 @@
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
+Received: from mail-ej1-f49.google.com (mail-ej1-f49.google.com [209.85.218.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7104338597
-	for <linux-sh@vger.kernel.org>; Wed,  5 Nov 2025 16:52:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A071C34C808
+	for <linux-sh@vger.kernel.org>; Wed, 12 Nov 2025 19:09:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762361527; cv=none; b=YybBQ4tTVK/hZ58zmjW4PfX8ptBNPD2AaibBYSMoUMdFL9aVXgyYnjqN0SyVoEKaKuUz9QRbfI4peL4xk+in0jzDnKiGm6LQjhfh2pMftR/jpH9ABfE4Dp4zS3T7Q9DclKQQgV0GD0S4wHhxOc5Y970k8EhwmiyM9eBjKaMeURI=
+	t=1762974554; cv=none; b=G0l0/vob77cf5nvkjSwqqP13/WfEFHXyH71JEg85n7X4A50S/3NezMUOQ7X40CGXxOAxu3eLbeX7NKUP2B6xO0tBafLHa152Kz8znlmoK8FTmp0iKKCJsl/Jht2TnVqabomW4Ay0SSPO0j/qizhkpXG/bmL/10nBvFXb0OZEdLg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762361527; c=relaxed/simple;
-	bh=esO8jRq9uTUw55PJsW3htw0zar+bIhexF73TArzHxxk=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=lxgf9f0zPxVxTOXWrNdexrOasw5SrknBSBxc+49hp8tIGcEj1tZH34K2Fq4QaEugsqosda02aJMsB1WMMfzMheb/l+thJonIBjKUpd9PunMs+2DVkwDHkud3EqgEu0RImf4fV8tICOVANUU2zRW3XkMEM9+jc4VEn1oNJmEPosI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=AVpbhQKs; arc=none smtp.client-ip=209.85.128.48
+	s=arc-20240116; t=1762974554; c=relaxed/simple;
+	bh=vCZSV1WWxWmjtBXURpOwW4cZm8n5J6wXTTO5rnBlH+I=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ayiuLSz+ECXm+phnY6k427ED9omJfJh9nZQlRNZYRgzYGJTpzUMjL8Tfn6WTNfdVzGf+o8i7Rx1v1GANaKy8y/4NmyNSVfl2uJvLXKFSR6wIzBO9N+63qCE62GvDtKlU98W8hNN3Mmaohm4pPJM/PA0YPvOZfe0UwUAsJ6oUy/4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=a59aUyku; arc=none smtp.client-ip=209.85.218.49
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AVpbhQKs"
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-477563bcaacso75245e9.1
-        for <linux-sh@vger.kernel.org>; Wed, 05 Nov 2025 08:52:05 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="a59aUyku"
+Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-b403bb7843eso27980866b.3
+        for <linux-sh@vger.kernel.org>; Wed, 12 Nov 2025 11:09:12 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1762361524; x=1762966324; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=esO8jRq9uTUw55PJsW3htw0zar+bIhexF73TArzHxxk=;
-        b=AVpbhQKsWHsJPurkBtpFjS569EuYKUxy0Ewl5KvxLz11TynIudTMz6x27b6A6doKWz
-         ip2xD5KKY1oMJCK0Dweum3CzpsfSfe5Azmrly9qy+6lx5DTGxHpK2A+42y5Z3pqNqWXK
-         5oMVmrIxCr+TXfau1fOpH55Ds8Gfkw+SKMup3+25IM0tOOtYD8mCPcmX3YHevXG3I9fS
-         voKjd3O+6JkWCl7xwg0Uy4qskOwo95lmPAQUzNV1zgopuIouOGjmjNsUQ0iiplG4NNw3
-         pJwe6bLtD5Fb+hz4cFTbQ+dE2Dx8twHim57o5xVAlYBYEkIZ+8VVi9pnTa3HqwZj4o61
-         JDfw==
+        d=gmail.com; s=20230601; t=1762974551; x=1763579351; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=i4HxarC/0cHfwsXI7e4vj+A1IpTTWGHNmxw+3uenBi0=;
+        b=a59aUykuNRw4+z3fOG8ikc96jaHow3Q0L4qu/mex+YNiU8CneTyklFguK6oco36jOD
+         c3Iegn8U4IlzPlqkVp0htrKXaUx0HifdOur9VKnTXTiOl+N7U4NCtS06bwKZKYYzyEj2
+         h8jD0faL2eGyjnY/xwb7OO736aT5zxLBgluctFZbU/2jcVFTPaVn0rM36cjsqL1Zhhni
+         ZtYgHL6ODzjmifxrd9Eyi9t417FjvxIGQa1X7qDkLyEvq2lA/UH2UnMTS2MUb14BwVOo
+         yP2u23I1J0h4JCgjFnch6NNmAwAdGmPx1yQfxOtEGUfa3gFCsy1zHvVA+5wUSreDUP20
+         0ArQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1762361524; x=1762966324;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20230601; t=1762974551; x=1763579351;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=esO8jRq9uTUw55PJsW3htw0zar+bIhexF73TArzHxxk=;
-        b=uVMx/wHefNsmyZJnEMWvIAwQuxH/P2xgNapTt1853i0DLhACE6CAZf57/eGBHeRTlG
-         IwBmLnD2QFFtUOBwVgOTP4b3qnlnRf3H4JoiCopKKB8KW8VKsIg1z4Fj/V/vKAOcB8qy
-         U9xVrP4cC5UiS3QhZ8cSp2iOhENLbx46XCekQpZyIUAWS+CdXV9WSbTOqAhqp0hgPfTe
-         x5AaKQEb1/e26qEylw1GCZJw/LXx8xvIDtdiT3bidgM/Vdy8wPyU84kCfpg9azaAKG32
-         SrD8TLIHWn4WPeNMjnk0YkBPWe7cJU40WhBIbQt25FYmFDCoqSupeHwgdwK6O/FBXyED
-         u5Fg==
-X-Forwarded-Encrypted: i=1; AJvYcCUsy7OI+o4MQfNQDxQb/tIiQX655MYrHClYesjCzkZfrANDFUd+LwAY+l4xIa9mvMxgVg4t5i+l1Q==@vger.kernel.org
-X-Gm-Message-State: AOJu0YweTL5d/MnCeJrgZcouPBnli5u6+lkGmJ09LTQwY7UOjt/fP8R9
-	6mzyaQxnvRBDPzjGdIYS7NeZpK6evoUl4YePS8RNcz1rkQS19+Su7vutnt1JQQ==
-X-Gm-Gg: ASbGncupH7REQatcqyxx8BVJtUCO5zUexF4cbbLWau/yiaPffbE3I7Ir+w1steZjign
-	rTcqqNL1gNj1RFoxcjndpGUE2XqSa6W0lwvLNrLGDL3oF7Hmu+uheIcwiz8cVfhMhUvyxFMAI5z
-	hQ0Oci1l3yFQ6/Oa8kBTcVLn9HVSVzZmUVFROLIU7nvNb906J5/SFm+7cYqHWmZuwyX8hr1f8Rx
-	9NOh3s6ExKnuaRt1VWnOYqXXGBYtvyYZj5xrdVQYc37csZ4RTYp9aWdG6Nj6Q7oPGjaa6MvAdUb
-	MA24V9HqxJHVEK0m5mMyB01Pqs7PDqWUPZWFsj1Xh5svLg6B2bQi4qAHJy/1/vhPcOmNhSIkJUV
-	hH0UMpI+Mw3nSn8W9viwsanmJytVo1KgDKwndvHwQt3w0zXMALKWO8HZLwNRkWBDpmIrNLww9t+
-	yhBAtKopblJGqZlt9Wrp1AYYxGRdu1y73dEb5lonB8AqW2BdmspyhhgaM34lnl8gQ=
-X-Google-Smtp-Source: AGHT+IF1eT04urNHEfsD9kdCj32CNL1YcHJ6oGuMVK3cU2BLT/aQRFRmm7ox5OYZe77ML31HK9v5ow==
-X-Received: by 2002:a05:600c:1c94:b0:477:fcb:2256 with SMTP id 5b1f17b1804b1-4775ce23efemr42468465e9.17.1762361524090;
-        Wed, 05 Nov 2025 08:52:04 -0800 (PST)
-Received: from orome (p200300e41f274600f22f74fffe1f3a53.dip0.t-ipconnect.de. [2003:e4:1f27:4600:f22f:74ff:fe1f:3a53])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4775ce210a7sm59725725e9.12.2025.11.05.08.52.02
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 05 Nov 2025 08:52:02 -0800 (PST)
-Date: Wed, 5 Nov 2025 17:52:01 +0100
-From: Thierry Reding <thierry.reding@gmail.com>
-To: "Rafael J. Wysocki" <rafael@kernel.org>, 
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-riscv@lists.infradead.org, linux-mips@vger.kernel.org, loongarch@lists.linux.dev, 
-	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, 
-	linux-acpi@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v3 1/7] syscore: Pass context data to callbacks
-Message-ID: <3dzha4qyqdrbutxby3n5nkvihnxrhniqr6w726eumhzgln2w5l@fbu72mzmjz4m>
-References: <20251029163336.2785270-1-thierry.reding@gmail.com>
- <20251029163336.2785270-2-thierry.reding@gmail.com>
- <CAJZ5v0igMJ12KoYCmrWauvOfdxaNP5-XVKoSxUroaKFN7S-rTQ@mail.gmail.com>
+        bh=i4HxarC/0cHfwsXI7e4vj+A1IpTTWGHNmxw+3uenBi0=;
+        b=VByKNch3OKjCagZA2r39SAwN8yqgS6T/q50x/edQKV+6UDzraU8SH1e/tUSSDUZ32K
+         dhFBf+Z6VTzvOmIFIyllQa6Sgqzz2RQWPuANe/b4pjE5akFgMq1CPIbK/KdKEBQBGAyB
+         0a2iiBFKRNa9cicT+V500bWu/pcWVRSVK24VbnNg5HsynZ7Gq9vJzq1Cwg0QMWCqjhz0
+         2yHt4eDdEpjlEhzCg3znnCTfyzjpitWnLTT3Of22r8c/lXiENgeQYrIwgi8pG4Jv9hHM
+         aV3popc7WBDXxMAMOwhgFOQO+tDEKjCCMbF/dMjCXH23/K4H05ooOwM/oivw0nlreom+
+         ayfg==
+X-Forwarded-Encrypted: i=1; AJvYcCUkhH01fZH5nrbte6GZ9LFdvAgxoWnth1euv8/f88leWjL80YnZUBUNEMt1QkRt8hZZPaIIZ+jbKg==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy7POCHRc9m6TnuOfYPL3qLxExjPUTkLNsAQbA/poOY4nmNv4Rw
+	KyS4cFj51b5S7hdd+42bBc5wTF0x000IyE6yl/NKnnk0DIpNv0Iwu0eAcWLioH4=
+X-Gm-Gg: ASbGnct3BHOwPuU0SoJkiTwI1X/I5Y2R+rgFSVN+Vx4BuwqI2j8VPaU7zBWRyqFwWDW
+	N/v3qcHm01AIuiOIVA9D9TaHbGLQ53fE/Rebsl8bM7lqfzzaiiCiL5I4HaBvJ6mAZrBu4Iyfscw
+	10Of+IhIeHYu7vx8CYZ6/wQ14ykc9XBNPWr+0/lxdIHB1uEn1KkX788s6+zRaWwMC7vQwN866eH
+	HKyv0FzFCiCQWkQ8RMAV0UZvtETvjrOspdtRq4bu1qTuxv57Xpy/S0MFO5ucSH0FHTxRj+EpLVe
+	jaMAqrCctuoPrkAyZWwNVaUzv8kanKYzXfKDAEoN9Y8htyHU1RjFe+6q/NIealafDifAaQjegej
+	hOiUAqVmM/hbQRnJuxZooocoMLIa1PUtSDTZxUwi0MXucLIrF1gD1neAlj3stD0Y7+4ZKeTtcNQ
+	Bmtg3rgd4m+XwI7ufDMc5PIjJ8vbCJk2Au6HpseJUcLBaJ+rz8WTLdures5xcgJN0v73g=
+X-Google-Smtp-Source: AGHT+IHxy8pjSz5ZXQAhsov6reJ0AmK0QM7dpISGdovz9adYZVIS0mObDjcrOiPl+EMnu74xwF1Gww==
+X-Received: by 2002:a17:907:e895:b0:b5f:c2f6:a172 with SMTP id a640c23a62f3a-b7331a70378mr423238766b.30.1762974550736;
+        Wed, 12 Nov 2025 11:09:10 -0800 (PST)
+Received: from localhost ([2a02:810d:4a94:b300:ec52:7cf5:e31:cdb7])
+        by smtp.gmail.com with UTF8SMTPSA id a640c23a62f3a-b72bfa24d14sm1659239866b.74.2025.11.12.11.09.10
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 12 Nov 2025 11:09:10 -0800 (PST)
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Florian Fuchs <fuchsfl@gmail.com>
+Subject: [PATCH] sh: maple: fix empty port handling
+Date: Wed, 12 Nov 2025 20:04:44 +0100
+Message-ID: <20251112190444.3631533-1-fuchsfl@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="ykyajizgfjgayrmb"
-Content-Disposition: inline
-In-Reply-To: <CAJZ5v0igMJ12KoYCmrWauvOfdxaNP5-XVKoSxUroaKFN7S-rTQ@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
 
+Handle timeout response from empty ports of the maple bus to prevent a
+stuck maple_sentq and a blocked maple bus.
 
---ykyajizgfjgayrmb
-Content-Type: text/plain; protected-headers=v1; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-Subject: Re: [PATCH v3 1/7] syscore: Pass context data to callbacks
-MIME-Version: 1.0
+When only some ports are used, e.g. if only keyboard is connected and the
+other ports are empty, the device tends to timeout and return 0xff for
+the empty port. This needs to be handled, just like the
+MAPLE_RESPONSE_NONE response, to detect empty ports and to have usable
+peripherals, if not all of the ports are utilized. Previously, an empty
+port resulted in a never cleared maple_sentq which totally blocked the
+maple bus to be used.
 
-On Mon, Nov 03, 2025 at 05:18:08PM +0100, Rafael J. Wysocki wrote:
-> On Wed, Oct 29, 2025 at 5:33=E2=80=AFPM Thierry Reding <thierry.reding@gm=
-ail.com> wrote:
-> >
-> > From: Thierry Reding <treding@nvidia.com>
-> >
-> > Several drivers can benefit from registering per-instance data along
-> > with the syscore operations. To achieve this, move the modifiable fields
-> > out of the syscore_ops structure and into a separate struct syscore that
-> > can be registered with the framework. Add a void * driver data field for
-> > drivers to store contextual data that will be passed to the syscore ops.
-> >
-> > Signed-off-by: Thierry Reding <treding@nvidia.com>
->=20
-> This change is fine with me, so I can apply it unless somebody has any
-> specific heartburn related to it (Greg?), but in case you want to
-> route it differently
->=20
-> Acked-by: Rafael J. Wysocki (Intel) <rafael@kernel.org>
+Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+---
+Note: This patch was tested on real Sega Dreamcast hardware and resulted
+in a usable keyboard, even when only 1 or 2 ports where populated. The
+hot-plugging of the keyboard does also work fine.
 
-I have a few follow-up patches for the Tegra PMC driver that depend on
-this. 6.19 is what I was targetting, so if we could put this into a
-stable branch that'd be the best solution. I can set that up via the
-Tegra tree if you and Greg are okay with it.
+The description of the timeout response can be obtained on the bottom of
+of the page: https://mc.pp.se/dc/maplebus.html: "If no response is
+received before the timeout, a word with all bits set (FFFFFFFF) is
+written at the Result address."
 
-If that's all too complicated, I can probably wait until the next cycle
-to merge the PMC changes.
+ drivers/sh/maple/maple.c | 1 +
+ include/linux/maple.h    | 3 ++-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
-Thierry
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 6dc0549f7900..3d6c716cfc98 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -649,6 +649,7 @@ static void maple_dma_handler(struct work_struct *work)
+ 			list_del_init(&mq->list);
+ 			switch (code) {
+ 			case MAPLE_RESPONSE_NONE:
++			case MAPLE_RESPONSE_TIMEOUT:
+ 				maple_response_none(mdev);
+ 				break;
+ 
+diff --git a/include/linux/maple.h b/include/linux/maple.h
+index 3be4e567473c..4ae3cc6678a8 100644
+--- a/include/linux/maple.h
++++ b/include/linux/maple.h
+@@ -27,7 +27,8 @@ enum maple_code {
+ 	MAPLE_COMMAND_BWRITE,
+ 	MAPLE_COMMAND_BSYNC,
+ 	MAPLE_COMMAND_SETCOND,
+-	MAPLE_COMMAND_MICCONTROL
++	MAPLE_COMMAND_MICCONTROL,
++	MAPLE_RESPONSE_TIMEOUT = 255
+ };
+ 
+ enum maple_file_errors {
 
---ykyajizgfjgayrmb
-Content-Type: application/pgp-signature; name="signature.asc"
+base-commit: 24172e0d79900908cf5ebf366600616d29c9b417
+-- 
+2.43.0
 
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEEiOrDCAFJzPfAjcif3SOs138+s6EFAmkLgLAACgkQ3SOs138+
-s6F0Lg//dTn1/PUCYHRhF8cm1xB6JKggiLC40TRct49fcf9eF5gAdCqXm44qKoaF
-67aqiXAiwzovTctJIu3rz8p71/FeXp/qGWDdPm/+wI7yD+BoCcVO0nmvXuPwCzhd
-ZMwqeaRVm57JX4M9S5BdkOGtDLgAjyZ/6Qq/2isiQSPiWWl/IT3YiLyzw8vq8mcY
-VoepQGK5hm7CHFf8FOBs+sMt6q5JJDm0VjNi+seVcCNg9U25GaXCRc2D9ztAqRib
-3768/KMhlftnoJKsizCwWq2Gyw0Se7ifz66djjf51sHd064LLDv7OZpfeGyiFK01
-MvVGXoPFuIJB0yqIoMRBbeRULm4kq+dkUkt1JWwYAMw9ZJnhXPJJI8bal2IASj8/
-E6NADiYd9HS8kAXWYvLkm0xHv4FN5WXWG2a+Gf6K2vpBm07zG2xnI+eVjYQSnb9W
-O9TcZf3jDWvgEQ31plH5JFY32sI4vjLAdcKS2oRfkbxFDJvTS+RRjj3EPqFshNXf
-B5E6pXTCltOkUepuhbGDzIifVWzYgg/GyXNfwzdnJUXcAz7QPPJySfMraf/dn+8S
-hggVgAivRFDEtaNEqKU6iqoePR3HIUJe/Ebjrb199RV9t4FcnVYOpviJRf5EWpsF
-2YEUJPiA7neiac9fPLwCoRh33bJTIzanmWVxmFF1nQ2vozIt68U=
-=3Mmd
------END PGP SIGNATURE-----
-
---ykyajizgfjgayrmb--
