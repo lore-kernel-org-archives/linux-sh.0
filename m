@@ -1,163 +1,159 @@
-Received: from mail-ua1-f52.google.com (mail-ua1-f52.google.com [209.85.222.52])
+Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B1A64350D7C
-	for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 18:23:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B3AE13081BF
+	for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 18:32:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763058225; cv=none; b=uHh8oIIPXrwyjpZPFrseFlY83HnzbOXFXnoAkwtlYbpuzFI49DtXKxCmCvFK/MMSbQ3oAUXtjbjGf550EmigukqTaIWnZhnmQyFwZaDRDM4scKDkWzQVu1iDLdpsk96mftR55SZoABkvvtOkFKjopyP8SjwVsmragWBTXYMVzRE=
+	t=1763058766; cv=none; b=u3F+aOWM8QQoJAkEI29sxyka/fEtMT6T6W80FG0BrLd0ve+wSApf1/29YTcu7r935xPYtL2q1E2krNx/YZCkaftTR8HA2PMUmTPqCH13uz3JYUtFr0QEPK4zwjBa29Jhv9IU1jqtcXQuqO+SKRxTjTRv1PIi9una0LG9j04kVUQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763058225; c=relaxed/simple;
-	bh=9wONgpFeFR+zvWoiyd3AGKx1BaiS71elSI9ojmPhoaA=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=qMQFXF5y0NpJb5VUhXao0xhEPz7zkrSvQ4OT22TyD8/DJT/fF/SlPnni9eBK0p4B/Wqd85eNOisdSmgG0tj3WrNlgME/KtAHMbS2IYppIpPTMB3ug75s6L6gohEt66RoNaombSSMCDPxpi9WcDkOpgesy5XXi7ddd/qb6Nn9iDM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+	s=arc-20240116; t=1763058766; c=relaxed/simple;
+	bh=lVK6LGrRGW3eaG+V9l1z4aQDY2CjycAA5y0HtlS4sFw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=FAOTZrY99zATu5g9+shSjY2Apeu7zItK2Q7AhvNm2afxC12oy1y5j13A5kR1lar2XJX10cFmb96nUNbUqSJU0O07z/EgXojZqcofp5ewOE8zvbupnIfvBQL7PIBZjUN9rPRLwfCu0HxXYL/ncAp7xV1gHwB1AeEhT12bUIuQDj4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=buoZPyVo; arc=none smtp.client-ip=209.85.128.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-ua1-f52.google.com with SMTP id a1e0cc1a2514c-93539c5e2b5so633436241.0
-        for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 10:23:43 -0800 (PST)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="buoZPyVo"
+Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-4777771ed1aso8786825e9.2
+        for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 10:32:44 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1763058763; x=1763663563; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=v9yZQXqBch1JSJzcaQQctkjx9YKy3u8FyEyL/vNPgfc=;
+        b=buoZPyVo7ZpxO7iHnKxBGL+Mddg0YRXQE95VObAX4idoXofJHPS7wtTeN1dfitRF2v
+         C3P8AadegOHoPG9KGBUkncQnmKw2oI00zot1SGTXuEWVzyAyhfuQDD7rvTmhd/ujDliq
+         DvQ4sbzWj8b/4JIfb1fflA2qsG7llFGKk4YPRD6KMgAqMjjH6kwEIuHNm7VWM3k8rmYq
+         Hru2Fqz92YWIqvxeavvM2p2gCflCx49M4wSrUTqo9bRb/854VOA17uXmUELQ8juuWUyD
+         K145cLRHUNwMMnduWR7cHY6SgPAs2gqSPaD1lbO3U8iSatx7FJcokQvOSl+qZe10R4ki
+         2/RQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1763058222; x=1763663022;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=pbr6KNR1bUXZYViotVbUoRUsmFwFNCwuoCWcfoEfOT8=;
-        b=VkZE+4hsRY1Cgr0bh+Rf4enXZLqeorWy5zmEZKC0G0iitscQ1mNNJ5mG0p8r0LaXnG
-         hISEurnecCX9z1p9j7RVUuUx61TqzoXKv6kGK/DBms0gYA7ajC2DXn8/QHf7zb2omlg5
-         2/NtekJ/jva9H+wak5k5atn0rS8edyKpdBByMotYkgv/Wp/fPQT/jsVgqrHLwKh4vNtC
-         +Qq9Fba4CFG27XrQV2820quDyt67Wxxo5fL3v9yeg3tIX45PAChxjUUwzQL3tOL2kkhE
-         3IuiwSMTEMlmTgDyJfmeudAbeVq+1ouQsg9f1keRPh8dA4eZHdZt9lc7wMP7+ZUzV/97
-         og7Q==
-X-Forwarded-Encrypted: i=1; AJvYcCUrJbIzG4IYXO+XAxW+hn7+Tz9hHUP4jDQq7r6OmhDWcL39zvZHFxGAz/lAmABEZ+4WdRrsXPJhRA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyoXX4meh8Dul/kTFAazo0rAmOd6xxFOmUAznI7PEkqg15XUon4
-	mPE6BnOtdLtLGWKNO+R5+fowPXs0UawNruGuHwOheEWphwWQVNahvv+zhuiFZxAtgtI=
-X-Gm-Gg: ASbGncspAEDMfzH4v8aVSFzXlQamH+iqLzU9nUwUOMCUcQJEa9j9SNM0N/E+ZMv01CY
-	NUqUgbF5IOPNiAZ9E4V64GC5Z0wLfQc+nUierxjbTj06cxegZMaLz0f6JWJhDIYxbzGA9U441Uf
-	KhPPk6pGJQa2AdTE/XtYGVhIjxBHp033DiA2qD31Y0UK2jXgcKlvzYJWSSU8TxhPyjZ5ejwvmbw
-	st6ZKFniI8U1oniKGORDfffV03/yEUBel3KmDWMXWqJstuRz5QePjCQ6dYTkOUxlN1LkygktQso
-	YkrR1fdrF9IA+62PXkF5+7M00nWrCEl4OIEjtntOlmrsmDWL9koPVqgAohdDRi9y1G7nNrIfzQ3
-	8psK4z2gypAyPM+IUJz0wKURPcen00ZJpJplyTZw47f8ddp665TRLKkiAfDaD1Rou3BVF/28FqS
-	iNhjGlXoyDl6eRiRVnvflSuftCKGyojMPZ70jepV28VygbdLJb
-X-Google-Smtp-Source: AGHT+IFk5ULkPfag1KY3bEI0XNupt7tSEMXSCKw2NhHUKuHwK1JqOY8Mkkch0ZfIHQ6dkcG4+iLckg==
-X-Received: by 2002:a05:6102:e08:b0:5db:e32d:a3fc with SMTP id ada2fe7eead31-5dfc5b70db2mr301077137.14.1763058222361;
-        Thu, 13 Nov 2025 10:23:42 -0800 (PST)
-Received: from mail-vs1-f44.google.com (mail-vs1-f44.google.com. [209.85.217.44])
-        by smtp.gmail.com with ESMTPSA id ada2fe7eead31-5dfb729fbb3sm929109137.15.2025.11.13.10.23.42
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 13 Nov 2025 10:23:42 -0800 (PST)
-Received: by mail-vs1-f44.google.com with SMTP id ada2fe7eead31-5dbd8bb36fcso826173137.1
-        for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 10:23:42 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCW2jgWN+9gFTCzploDk9GeO/wYJ0PInrhcfcmP8k0zc5R79N6iw+yqLwxLW9PqJA/q5DkfIVA9Whg==@vger.kernel.org
-X-Received: by 2002:a05:6102:3051:b0:5d4:1499:99a4 with SMTP id
- ada2fe7eead31-5dfb41e267fmr1793358137.13.1763058221928; Thu, 13 Nov 2025
- 10:23:41 -0800 (PST)
+        d=1e100.net; s=20230601; t=1763058763; x=1763663563;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=v9yZQXqBch1JSJzcaQQctkjx9YKy3u8FyEyL/vNPgfc=;
+        b=SxqYoIzvrDZB72gxk9NGewGnEbE6DR+iulepzM1j9d+QnUX01Bw0jb2AhWa7q67Mb6
+         XhSNN8WW2pQAgbsaazEDEnRAXrMOhBScHEndaB4N1kKzNn6cERtK/DZ9VblEQaNERWmL
+         MN7k788gStPUQiQJ6olPdw4MrpbGMIPZNiIumfj7shbeR0QsyFGOjbQGG692/AjTsYkf
+         Kfc0fDVHhIfCBEKm098hOJuCMvcs3tbFggkgMn+KqGwtnxtYuneG+XW7npPVIiUb0eWu
+         NGalcE4pkrr1/BkvykccjEHIf/WjRO0+6cGM6BcGCNAZqbLfdv9QzgE3dZ5uu5SnNnzy
+         ihsA==
+X-Forwarded-Encrypted: i=1; AJvYcCWfLLUAZAh/yZdLUOvVTJyVCqOblDXnGTGSnxubeqTOHQGD9v+1XpLEDdGQxkQXErzZ6OOAibPNtQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxwxUBdy7BWe5Uc+uV/eLJPAhp8JVZaZhVQNI39MSnmIB4LbKAY
+	ULi20XX79OUYDNuI2rnxsauBKFkbQLo6Gvb8RaEkXOfxmxrGNWdt4OcZ
+X-Gm-Gg: ASbGncvHLSxbpOTIeJUvVd51mUDzraAxKvUj5yQjM5PHYqHPB9PZ5eMyMA6HNFP1cwO
+	pVBTWP+l02q0RUVOO4/3StvQzct2stxJL77Wph2OZkROq9G8dwhqPoAHZnQQTvWTgVkaC8t6iOS
+	H6ykEVD7/v3BW76UzzVuPNizZfmgstepQFvUdpfR+/iVJD8q0O1vKmYej9OBcg2cZmM03QX61ar
+	OkrQuXfZBDjDptMb2D7bjG2hcYZ3YDVj9Utsgo1iKbLD4RkTZ3ZsXgLZ7FtKIOdwKstwI2N3hBU
+	9VgHN972mNWApvIiHehYI9spZ3chFsyhYJzZzsJ7J6fxkONZW3qqwwQbNlY6tckr6lWihGUj3JF
+	3Q+p5jNRw2ztzprXppd+cr1DBYFyrZInlKSnqHAg15/MVy6nTggzH7JN6Bo3pe+m2EVOf+6KveR
+	6cfdUVSNqyVGTSK0PolH4zXZYZ8rvWy6Q9J25rdui9YIdbHJhsHs1wIN6+VlQcCgF5BLG8HQKgh
+	A==
+X-Google-Smtp-Source: AGHT+IEUOfl9Mj/MhDnCs6vXeSUiBJWe5OA5hhf/B85epyvDSKEXz8FsTxq8lGXRcYwvA52KNvjEqA==
+X-Received: by 2002:a05:600c:3b12:b0:477:67ca:cdbb with SMTP id 5b1f17b1804b1-4778febd327mr4653575e9.36.1763058762895;
+        Thu, 13 Nov 2025 10:32:42 -0800 (PST)
+Received: from orome (p200300e41f274600f22f74fffe1f3a53.dip0.t-ipconnect.de. [2003:e4:1f27:4600:f22f:74ff:fe1f:3a53])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4778c88bee1sm63595835e9.11.2025.11.13.10.32.40
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 13 Nov 2025 10:32:40 -0800 (PST)
+Date: Thu, 13 Nov 2025 19:32:38 +0100
+From: Thierry Reding <thierry.reding@gmail.com>
+To: "Rafael J. Wysocki" <rafael@kernel.org>, 
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: x86@kernel.org, linux-arm-kernel@lists.infradead.org, 
+	linux-riscv@lists.infradead.org, linux-mips@vger.kernel.org, loongarch@lists.linux.dev, 
+	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, 
+	linux-acpi@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v3 1/7] syscore: Pass context data to callbacks
+Message-ID: <2tx3o5es77oa37zqvikcoo6n2ryxvepa54ezsaawcjdbf3g3wp@o2dbcbskjksk>
+References: <20251029163336.2785270-1-thierry.reding@gmail.com>
+ <20251029163336.2785270-2-thierry.reding@gmail.com>
+ <CAJZ5v0igMJ12KoYCmrWauvOfdxaNP5-XVKoSxUroaKFN7S-rTQ@mail.gmail.com>
+ <3dzha4qyqdrbutxby3n5nkvihnxrhniqr6w726eumhzgln2w5l@fbu72mzmjz4m>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <202511132024.tfRZgB5P-lkp@intel.com> <20251113100036.70130321f6629ce9cc8956cf@linux-foundation.org>
-In-Reply-To: <20251113100036.70130321f6629ce9cc8956cf@linux-foundation.org>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 13 Nov 2025 19:23:30 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXpUat2cTH_YBqQNUQY4=Y3em38GDY5vr+HYhd_qk3qcA@mail.gmail.com>
-X-Gm-Features: AWmQ_bnmukM8VT5G1Q69IqWca-tF6jQbLcv0pbKs9CiZ8jCmLwhTSfU1v9SpYUk
-Message-ID: <CAMuHMdXpUat2cTH_YBqQNUQY4=Y3em38GDY5vr+HYhd_qk3qcA@mail.gmail.com>
-Subject: Re: [akpm-mm:mm-unstable 36/283] include/uapi/linux/const.h:20:25:
- warning: conversion from 'long long unsigned int' to 'long unsigned int'
- changes value from '17179869184' to '0'
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: kernel test robot <lkp@intel.com>, "David Hildenbrand (Red Hat)" <david@kernel.org>, oe-kbuild-all@lists.linux.dev, 
-	Linux Memory Management List <linux-mm@kvack.org>, linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="7axrx4sqgqvkj2b7"
+Content-Disposition: inline
+In-Reply-To: <3dzha4qyqdrbutxby3n5nkvihnxrhniqr6w726eumhzgln2w5l@fbu72mzmjz4m>
 
-Hi Andrew,
 
-On Thu, 13 Nov 2025 at 19:08, Andrew Morton <akpm@linux-foundation.org> wrote:
-> On Thu, 13 Nov 2025 20:26:42 +0800 kernel test robot <lkp@intel.com> wrote:
-> > tree:   https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git mm-unstable
-> > head:   f58b4cb6b0c11172a25c2ade23477f55596d7138
-> > commit: 2f6ff71280ffddb27ad7174d24f573e2683870cd [36/283] mm: fix MAX_FOLIO_ORDER on powerpc configs with hugetlb
-> > config: sh-randconfig-002-20251113 (https://download.01.org/0day-ci/archive/20251113/202511132024.tfRZgB5P-lkp@intel.com/config)
-> > compiler: sh4-linux-gcc (GCC) 11.5.0
-> > reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20251113/202511132024.tfRZgB5P-lkp@intel.com/reproduce)
-> >
-> > If you fix the issue in a separate patch/commit (i.e. not just a new version of
-> > the same patch/commit), kindly add following tags
-> > | Reported-by: kernel test robot <lkp@intel.com>
-> > | Closes: https://lore.kernel.org/oe-kbuild-all/202511132024.tfRZgB5P-lkp@intel.com/
-> >
-> > All warnings (new ones prefixed by >>):
-> >
-> >    In file included from arch/sh/include/asm/bug.h:112,
-> >                     from include/linux/bug.h:5,
-> >                     from include/linux/mmdebug.h:5,
-> >                     from include/linux/mm.h:6,
-> >                     from include/linux/migrate.h:5,
-> >                     from mm/migrate.c:16:
-> >    mm/internal.h: In function 'folio_set_order':
-> > >> include/uapi/linux/const.h:20:25: warning: conversion from 'long long unsigned int' to 'long unsigned int' changes value from '17179869184' to '0' [-Woverflow]
-> >       20 | #define __AC(X,Y)       (X##Y)
-> >          |                         ^~~~~~
-> >    include/asm-generic/bug.h:111:32: note: in definition of macro 'WARN_ON_ONCE'
-> >      111 |         int __ret_warn_on = !!(condition);                      \
-> >          |                                ^~~~~~~~~
-> >    mm/internal.h:758:9: note: in expansion of macro 'VM_WARN_ON_ONCE'
-> >      758 |         VM_WARN_ON_ONCE(order > MAX_FOLIO_ORDER);
-> >          |         ^~~~~~~~~~~~~~~
-> >    include/uapi/linux/const.h:21:25: note: in expansion of macro '__AC'
-> >       21 | #define _AC(X,Y)        __AC(X,Y)
-> >          |                         ^~~~
-> >    include/linux/sizes.h:56:41: note: in expansion of macro '_AC'
-> >       56 | #define SZ_16G                          _AC(0x400000000, ULL)
-> >          |                                         ^~~
-> >    include/linux/mm.h:2095:43: note: in expansion of macro 'SZ_16G'
-> >     2095 | #define MAX_FOLIO_ORDER         get_order(SZ_16G)
-> >          |                                           ^~~~~~
-> >    mm/internal.h:758:33: note: in expansion of macro 'MAX_FOLIO_ORDER'
-> >      758 |         VM_WARN_ON_ONCE(order > MAX_FOLIO_ORDER);
-> >          |                                 ^~~~~~~~~~~~~~~
->
-> Oh gee.
->
-> Here's the patch: https://lkml.kernel.org/r/20251112145632.508687-1-david@kernel.org
->
-> I'll append a copy below.
->
-> For a start, you have found an sh config which sets neither
-> CONFIG_32BIT not CONFIG_64BIT.  Should that even be possible?
+--7axrx4sqgqvkj2b7
+Content-Type: text/plain; protected-headers=v1; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+Subject: Re: [PATCH v3 1/7] syscore: Pass context data to callbacks
+MIME-Version: 1.0
 
-Apparently yes...
+On Wed, Nov 05, 2025 at 05:52:01PM +0100, Thierry Reding wrote:
+> On Mon, Nov 03, 2025 at 05:18:08PM +0100, Rafael J. Wysocki wrote:
+> > On Wed, Oct 29, 2025 at 5:33=E2=80=AFPM Thierry Reding <thierry.reding@=
+gmail.com> wrote:
+> > >
+> > > From: Thierry Reding <treding@nvidia.com>
+> > >
+> > > Several drivers can benefit from registering per-instance data along
+> > > with the syscore operations. To achieve this, move the modifiable fie=
+lds
+> > > out of the syscore_ops structure and into a separate struct syscore t=
+hat
+> > > can be registered with the framework. Add a void * driver data field =
+for
+> > > drivers to store contextual data that will be passed to the syscore o=
+ps.
+> > >
+> > > Signed-off-by: Thierry Reding <treding@nvidia.com>
+> >=20
+> > This change is fine with me, so I can apply it unless somebody has any
+> > specific heartburn related to it (Greg?), but in case you want to
+> > route it differently
+> >=20
+> > Acked-by: Rafael J. Wysocki (Intel) <rafael@kernel.org>
+>=20
+> I have a few follow-up patches for the Tegra PMC driver that depend on
+> this. 6.19 is what I was targetting, so if we could put this into a
+> stable branch that'd be the best solution. I can set that up via the
+> Tegra tree if you and Greg are okay with it.
+>=20
+> If that's all too complicated, I can probably wait until the next cycle
+> to merge the PMC changes.
 
-arch/sh/mm/Kconfig:
+I've added this single patch to a branch based off of v6.18-rc1 that I
+plan to feed into linux-next so it can get some broader exposure.
 
-    config 29BIT
-            def_bool !32BIT
-            select UNCACHED_MAPPING
+I can keep that branch stable so it can go through multiple trees if
+needed. If anyone's interested, the branch is here:
 
-    config 32BIT
-            bool
-            default !MMU
+	https://git.kernel.org/pub/scm/linux/kernel/git/tegra/linux.git/log/?h=3Df=
+or-6.19/syscore
 
-    config PMB
-            bool "Support 32-bit physical addressing through PMB"
-            depends on MMU && CPU_SH4A && !CPU_SH4AL_DSP
-            select 32BIT
-            select UNCACHED_MAPPING
-            help
-              If you say Y here, physical addressing will be extended to
-              32-bits through the SH-4A PMB. If this is not set, legacy
-              29-bit physical addressing will be used.
+Thierry
 
-Gr{oetje,eeting}s,
+--7axrx4sqgqvkj2b7
+Content-Type: application/pgp-signature; name="signature.asc"
 
-                        Geert
+-----BEGIN PGP SIGNATURE-----
 
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+iQIzBAABCgAdFiEEiOrDCAFJzPfAjcif3SOs138+s6EFAmkWJEYACgkQ3SOs138+
+s6GbLQ/+LcY0n50MLCzG6P3cLlbnizYWB4fd77qBH6YbB2iRPf1TPkFtC1s24QiA
+KgZqLzCkJ5rw0Xtvmtzci4gr3GeqsMf/4DM0k3X5WdN/DMat0RTe1rhVuxq0MmGV
+7kmy+iB9FW6MgVt4kjeYdEL94ohEKXEUKTS6HTGfPFsonbJjnZdIsv4GVThClyxW
+Y3vE0mnoAvxjqtVu57jc/Ihryv5Zz6pYiX9AWhT1ryTG7tmgKuFWW0YgqkFy/Y9O
+rneSUrPJCeOBzjgL5oY6mPqTCl5f0VdGMb9S18RK+DKXSCLW7b0nGt4CCN7sEuOo
+7Dy1UuUjok1XLs8NYPQ7oDD29Q536WmrUmQMjMm0R3HuqmmD+PDO0/I9QA2cuOvw
+V1zUm+XqIlAyZs4lZkJXotqlCEBkPNCv0iIqEraETrCS1RYi/k0eqPF3Yu3oQc5p
+58cnaEW28DaJ9+Cy7T4NCu7lsDzDyyL+5n4HQyWGaFkVYU+Wkfh0H1ezo8bP9txU
+/Yan3s21OGdjzLMcCT0abiDrFOdN9N6HGOI2/UHnz87jxubwy7HjZ52Fkz3iGATD
+uz1HyHzrIav2FWTN0PkENUQpiTQIHTs0znDBKPpTvDkeVbTF5nQuP2S0+bUGxvLR
+BBevVnm7dT2dD5WqJbGfhem+DFPn66JVA5SFq9+/bvG0KsOpwpA=
+=Jfb5
+-----END PGP SIGNATURE-----
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--7axrx4sqgqvkj2b7--
