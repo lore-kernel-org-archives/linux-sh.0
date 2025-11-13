@@ -1,139 +1,246 @@
-Received: from mail-ed1-f52.google.com (mail-ed1-f52.google.com [209.85.208.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B8A3435CBA9
-	for <linux-sh@vger.kernel.org>; Wed, 12 Nov 2025 22:46:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 05525340285;
+	Thu, 13 Nov 2025 18:00:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1762987607; cv=none; b=e7mX0xzod1r4KLV9hU9fCCmdwFMxy29tEah6BCx8zcoS+8yUodgm9OOUZ6hRNhLT6A69/gpg4JpWeiINuH5XsvsdZIfVRd6o2/e6oDeIktSiWcyi5VwxtopvtAoDlWuZ2aG21r8UlAZk3gZ2FXccO5pykmfDN5V+mn9KXHqZAnE=
+	t=1763056839; cv=none; b=Tq+68oT3i2vHfW4AMV5kMS9Qs3tADL9pN32RVVpkRekGT5fLAcOJpMqWA7T4BVv0nhF8GRVYkBsYx1/Q3lt1ZIa0g+qFsIPdmpw4GQlsAxyOdg540KIuWluk1ckmYKqLyQE5r6E9veGQ4hOlnizJkKyK5XZW9ZfkZVvmId+yA0w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1762987607; c=relaxed/simple;
-	bh=BhI42m5/V/YPwRzNwHA5N3q5IkiYtrcBIaW/cRAyGnU=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=pbSGTyiFjWH0rAS8KAGy+Jv2UzzZj3ecROR0ERQRJ4wLa4OIZZKYWPleEmgpx8SRuZAXLU3TbIFBLccBE5TiFZXSM7a9p5S3fSx4lWD5kVG6vzwFf/0Lz7Y9rMdpuCFBQerAj9hBnm3ksLfKaCTCJGTF09BMmFvvxYz1JntmTL8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=NIR7J83W; arc=none smtp.client-ip=209.85.208.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1763056839; c=relaxed/simple;
+	bh=uQjFI98RyT8QKeb0A93WOgYdgAa+Yip/ms5kSgmOYHU=;
+	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
+	 Mime-Version:Content-Type; b=MOEA5vAc/jSCjkq1eZugJwbL5YD/3OPYec1m5AW3gXIegqWesuuGa/C5KDjbDJEc7MTAWCSuep5LT30vz6F7LMAhZT6C4HwFgyZjc8vcZhtom1NuIRjIV2P8SOJCTexr7wEpU5UTcNBZt7m3Brs98TMMnHWhYhaTg6rc9dHauTQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=uExCiw4Q; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NIR7J83W"
-Received: by mail-ed1-f52.google.com with SMTP id 4fb4d7f45d1cf-640a0812658so326062a12.0
-        for <linux-sh@vger.kernel.org>; Wed, 12 Nov 2025 14:46:45 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1762987604; x=1763592404; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=GUuBbxCl6I1CdWQKU2N/XRDL+CV1L2620AB2tNocDyk=;
-        b=NIR7J83WMo/S9HC3JWrx+YXrBgO52E+8AkjUuX/FwYrYZyr4r6DkvKgqBVG+YQYSAL
-         rjhcPbmYI26Ho+Iiw0tYNqdBGzifNBcBS/Va/DDdw9mR0ZV+JYdLU9ur/B2aBftQqlPq
-         ZewiR+epQ1+UC6C4eFpR1g8c+U4BBKTEUR6NrcNuzE7u5CM5HhYkViqvVpUBCm8wkm6s
-         hoO9jOBRMr4R9xWp/1XscAgA+fa5hSvnLw9/m3ujRLxVRETT3enkUzzZlZK88LY6R5XS
-         c1EL4Qqka9OKZ36z8C3ezpz40zIDxo472Z/IL0XYTYDSF4BlAwRfCruZzdDOGiifpJmG
-         OuTA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1762987604; x=1763592404;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=GUuBbxCl6I1CdWQKU2N/XRDL+CV1L2620AB2tNocDyk=;
-        b=iEJKJk5DoqfxIA5q54AKWPzncMT+WQs5RtGAMn1R1jQYKz/LxnJ1//PvGfcugcCmfF
-         fVmsy9/8/XuqQN1OM5RtUA+TDDnDwBykDRRU4LLO4YShmkvgKucvkbs1xVl9s5RXqKbI
-         yWaDVGlWyWvD6A9lJ5OMAjsBiJzqNqbfCRxGeH5bWpVPykvT6gFAyzdZoRKL/AMPt0GE
-         C3BsLehwoH2MyCS7297lCqrMNDBXuE2f5C1qsgfGxIIqKB3MURuwszilQmOBiubErPCz
-         uF2VlN/k2GPI7mcBccfgWgnvTuBlelZ6J7rzoSNaRHR4Nd8ANquuTWflcBM0FE+JRsnU
-         /JHA==
-X-Forwarded-Encrypted: i=1; AJvYcCUmkwd9o5ChYSBJ3WGFQ1S8bmQuqzFVYr5wLgG5nC6vJVtJDCxeAcji7jPcSvTUenoKdQQQfRU3RA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzAKgU33F8GyyFB8Jy5jIQ8r5QLwRmWjJNjrPnboaR3uF8J7YtV
-	zOJ7N1SEMCXLbTFAnfhTqgUHvRgpNjF6pZMyowlVndCQJ6VCvKjeK2q9lXifDTk=
-X-Gm-Gg: ASbGncvnxAOsySpOge8vPdo8SsbGYvT/f5470sMnp+81jGwtR1we2m4yNVrbQuve3Dj
-	rpbtidrMHnQ2To/pP8M3nWkybpdFdFreNac3FwDOHzyRU4PIo9zrB3xL/rxw07D1eQB0aX45We8
-	5k9HGlBtCi2Jwy/VsUg58cBHp3pHCcO/gfs6Om0MBLSqMBQkFFyRA89jNp2pPy+Q70sep1g5ng+
-	6xw/ggmCCAzH+ayEErivGDOYWtTSuoTCT2LyuRrvEJFd6+rk1frzYLVaD8iUkoNoz/3AnpSy9o1
-	gamnr3fLD34eee27RMQYsxKWKCy+9KN1hez3ddwJpwi+F5ytzoMkgPU2P0qG57Lc8V2q13L7d1F
-	FYmg+qxgI6mRo9Llm34PDAW2LOELMsMec6o7qQZDokDC2nYY3yVzku5B7vXtskJ9FoQRRYa3eHi
-	a1pVj2D3lzOVOj/fOebc63sHWp/XQxUKJivZLutY054PkCxRNDvFiR
-X-Google-Smtp-Source: AGHT+IHcrF95A8IttbQd220KZ+XN8Onx1zyj/j88oCP/XalZVeCxgeiqMBCbWsP6NPGRO0Eqy0luzg==
-X-Received: by 2002:a05:6402:50d4:b0:639:f7b5:9c2d with SMTP id 4fb4d7f45d1cf-6431a4dc7e5mr4148506a12.9.1762987603798;
-        Wed, 12 Nov 2025 14:46:43 -0800 (PST)
-Received: from lithos ([2a02:810d:4a94:b300:ec52:7cf5:e31:cdb7])
-        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-6433a3f96e2sm71050a12.16.2025.11.12.14.46.43
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 12 Nov 2025 14:46:43 -0800 (PST)
-Date: Wed, 12 Nov 2025 23:46:37 +0100
-From: Florian Fuchs <fuchsfl@gmail.com>
-To: Artur Rojek <contact@artur-rojek.eu>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] sh: maple: fix empty port handling
-Message-ID: <aRUOTfCJtqnNBjU3@lithos>
-References: <20251112190444.3631533-1-fuchsfl@gmail.com>
- <4f70a38490b12d13858f45f3e7a531bf5dc2162d.camel@physik.fu-berlin.de>
- <999e3970e1580def5ddbf1921a9ef4a4@artur-rojek.eu>
+	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="uExCiw4Q"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 35D9CC19424;
+	Thu, 13 Nov 2025 18:00:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+	s=korg; t=1763056838;
+	bh=uQjFI98RyT8QKeb0A93WOgYdgAa+Yip/ms5kSgmOYHU=;
+	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+	b=uExCiw4Q4BfDhC2P1Phi0ydeQQD/Z2M157wiQpSZqyEJAa50R2mYTfgO1od65uQFx
+	 90IICsDHeF4a8g+f4/UNr7G74HP/oHaUcaJdrex8aWcyV0oabXTb0Nj2LrZQydu2qo
+	 woeQYnlt8jT6xu8Z6wznHkCxbenoV9bpfXodR83o=
+Date: Thu, 13 Nov 2025 10:00:36 -0800
+From: Andrew Morton <akpm@linux-foundation.org>
+To: kernel test robot <lkp@intel.com>
+Cc: "David Hildenbrand (Red Hat)" <david@kernel.org>,
+ oe-kbuild-all@lists.linux.dev, Linux Memory Management List
+ <linux-mm@kvack.org>, linux-sh@vger.kernel.org
+Subject: Re: [akpm-mm:mm-unstable 36/283] include/uapi/linux/const.h:20:25:
+ warning: conversion from 'long long unsigned int' to 'long unsigned int'
+ changes value from '17179869184' to '0'
+Message-Id: <20251113100036.70130321f6629ce9cc8956cf@linux-foundation.org>
+In-Reply-To: <202511132024.tfRZgB5P-lkp@intel.com>
+References: <202511132024.tfRZgB5P-lkp@intel.com>
+X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <999e3970e1580def5ddbf1921a9ef4a4@artur-rojek.eu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-Hi Artur,
-thank you so much for fixing the DC boot on linux again!
-Adrian, thank you for looking at it!
+On Thu, 13 Nov 2025 20:26:42 +0800 kernel test robot <lkp@intel.com> wrote:
 
-On 12 Nov 22:46, Artur Rojek wrote:
-> thanks for the patch! Can this be tested with just regular controllers?
+> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git mm-unstable
+> head:   f58b4cb6b0c11172a25c2ade23477f55596d7138
+> commit: 2f6ff71280ffddb27ad7174d24f573e2683870cd [36/283] mm: fix MAX_FOLIO_ORDER on powerpc configs with hugetlb
+> config: sh-randconfig-002-20251113 (https://download.01.org/0day-ci/archive/20251113/202511132024.tfRZgB5P-lkp@intel.com/config)
+> compiler: sh4-linux-gcc (GCC) 11.5.0
+> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20251113/202511132024.tfRZgB5P-lkp@intel.com/reproduce)
+> 
+> If you fix the issue in a separate patch/commit (i.e. not just a new version of
+> the same patch/commit), kindly add following tags
+> | Reported-by: kernel test robot <lkp@intel.com>
+> | Closes: https://lore.kernel.org/oe-kbuild-all/202511132024.tfRZgB5P-lkp@intel.com/
+> 
+> All warnings (new ones prefixed by >>):
+> 
+>    In file included from arch/sh/include/asm/bug.h:112,
+>                     from include/linux/bug.h:5,
+>                     from include/linux/mmdebug.h:5,
+>                     from include/linux/mm.h:6,
+>                     from include/linux/migrate.h:5,
+>                     from mm/migrate.c:16:
+>    mm/internal.h: In function 'folio_set_order':
+> >> include/uapi/linux/const.h:20:25: warning: conversion from 'long long unsigned int' to 'long unsigned int' changes value from '17179869184' to '0' [-Woverflow]
+>       20 | #define __AC(X,Y)       (X##Y)
+>          |                         ^~~~~~
+>    include/asm-generic/bug.h:111:32: note: in definition of macro 'WARN_ON_ONCE'
+>      111 |         int __ret_warn_on = !!(condition);                      \
+>          |                                ^~~~~~~~~
+>    mm/internal.h:758:9: note: in expansion of macro 'VM_WARN_ON_ONCE'
+>      758 |         VM_WARN_ON_ONCE(order > MAX_FOLIO_ORDER);
+>          |         ^~~~~~~~~~~~~~~
+>    include/uapi/linux/const.h:21:25: note: in expansion of macro '__AC'
+>       21 | #define _AC(X,Y)        __AC(X,Y)
+>          |                         ^~~~
+>    include/linux/sizes.h:56:41: note: in expansion of macro '_AC'
+>       56 | #define SZ_16G                          _AC(0x400000000, ULL)
+>          |                                         ^~~
+>    include/linux/mm.h:2095:43: note: in expansion of macro 'SZ_16G'
+>     2095 | #define MAX_FOLIO_ORDER         get_order(SZ_16G)
+>          |                                           ^~~~~~
+>    mm/internal.h:758:33: note: in expansion of macro 'MAX_FOLIO_ORDER'
+>      758 |         VM_WARN_ON_ONCE(order > MAX_FOLIO_ORDER);
+>          |                                 ^~~~~~~~~~~~~~~
 
-Yes, indeed you can test it with the controller, when you compile with
-joystick support, like:
+Oh gee.
 
-	CONFIG_MAPLE=y
-	CONFIG_INPUT=y
-	CONFIG_INPUT_JOYDEV=y
-	CONFIG_INPUT_EVDEV=y
-	CONFIG_INPUT_JOYSTICK=y
-	CONFIG_JOYSTICK_MAPLE=y
+Here's the patch: https://lkml.kernel.org/r/20251112145632.508687-1-david@kernel.org
 
-You should not put a VMU in though, as thats currently broken (I have a
-patch ready).
+I'll append a copy below.
 
-Then you can directly read from the evdev and listen for the button
-presses:
-	bash-5.3# cat /dev/input/event2 | xxd
+For a start, you have found an sh config which sets neither
+CONFIG_32BIT not CONFIG_64BIT.  Should that even be possible?
 
-You need to press a button for 20-30 times, as it seems to buffer the
-events and outputs it in batches.
+sh defconfig compiles migrate.c OK.
 
-Then, you should see the following outputs for the buttons:
+I think I'll just pretend I didn't see this email.  Hopefully some sh
+person will hit this soon enough and will figure out how to fix it!
 
-Button A:
-	00000000: 7800 0000 94c3 0d00 0100 3001 0000 0000  x.........0.....
-Button B:
-	000001e0: 7800 0000 94c3 0d00 0100 3101 0100 0000  x.........1....
-Button X:
-	000003b0: 7800 0000 94c3 0d00 0100 3301 0100 0000  x.........3.....
-Button Y:
-	00000900: 7800 0000 94c3 0d00 0100 3401 0100 0000  x.........4.....
 
-The Joystick should be detected like this:
-	/ # dmesg|grep maple
-	maple: bus core now registered
-	maple (null): detected Dreamcast Controller: function 0x1: at (2, 0)
-	maple (null): no driver found
-	input: Dreamcast Controller as /devices/maple/2:00.1/input/input2
 
-Another indicator is the dmesg log for empty ports:
-	maple (null): no devices to port 3
 
-These messages were previously not there, as the empty ports were never
-detected.
+From: "David Hildenbrand (Red Hat)" <david@kernel.org>
+Subject: mm: fix MAX_FOLIO_ORDER on powerpc configs with hugetlb
+Date: Wed, 12 Nov 2025 15:56:32 +0100
 
-btw, I have also a cdi file, that boots for me, although I heard there
-were issues on the NTSC-U devices, if helpful:
-https://github.com/foxdrodd/dreamcast-linux/releases/download/6.17.7/linux6177-joystick.cdi
+In the past, CONFIG_ARCH_HAS_GIGANTIC_PAGE indicated that we support
+runtime allocation of gigantic hugetlb folios.  In the meantime it evolved
+into a generic way for the architecture to state that it supports gigantic
+hugetlb folios.
 
-Thank you for your efforts,
-Florian
+In commit fae7d834c43c ("mm: add __dump_folio()") we started using
+CONFIG_ARCH_HAS_GIGANTIC_PAGE to decide MAX_FOLIO_ORDER: whether we could
+have folios larger than what the buddy can handle.  In the context of that
+commit, we started using MAX_FOLIO_ORDER to detect page corruptions when
+dumping tail pages of folios.  Before that commit, we assumed that we
+cannot have folios larger than the highest buddy order, which was
+obviously wrong.
+
+In commit 7b4f21f5e038 ("mm/hugetlb: check for unreasonable folio sizes
+when registering hstate"), we used MAX_FOLIO_ORDER to detect
+inconsistencies, and in fact, we found some now.
+
+Powerpc allows for configs that can allocate gigantic folio during boot
+(not at runtime), that do not set CONFIG_ARCH_HAS_GIGANTIC_PAGE and can
+exceed PUD_ORDER.
+
+To fix it, let's make powerpc select CONFIG_ARCH_HAS_GIGANTIC_PAGE with
+hugetlb on powerpc, and increase the maximum folio size with hugetlb to 16
+GiB (possible on arm64 and powerpc).  Note that on some powerpc
+configurations, whether we actually have gigantic pages depends on the
+setting of CONFIG_ARCH_FORCE_MAX_ORDER, but there is nothing really
+problematic about setting it unconditionally: we just try to keep the
+value small so we can better detect problems in __dump_folio() and
+inconsistencies around the expected largest folio in the system.
+
+Ideally, we'd have a better way to obtain the maximum hugetlb folio size
+and detect ourselves whether we really end up with gigantic folios.  Let's
+defer bigger changes and fix the warnings first.
+
+While at it, handle gigantic DAX folios more clearly: DAX can only end up
+creating gigantic folios with HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD.
+
+Add a new Kconfig option HAVE_GIGANTIC_FOLIOS to make both cases clearer. 
+In particular, worry about ARCH_HAS_GIGANTIC_PAGE only with HUGETLB_PAGE.
+
+Note: with enabling CONFIG_ARCH_HAS_GIGANTIC_PAGE on powerpc, we will now
+also allow for runtime allocations of folios in some more powerpc configs.
+I don't think this is a problem, but if it is we could handle it through
+__HAVE_ARCH_GIGANTIC_PAGE_RUNTIME_SUPPORTED.
+
+While __dump_page()/__dump_folio was also problematic (not handling
+dumping of tail pages of such gigantic folios correctly), it doesn't
+relevant critical enough to mark it as a fix.
+
+Link: https://lkml.kernel.org/r/20251112145632.508687-1-david@kernel.org
+Fixes: 7b4f21f5e038 ("mm/hugetlb: check for unreasonable folio sizes when registering hstate")
+Signed-off-by: David Hildenbrand (Red Hat) <david@kernel.org>
+Reported-by: Christophe Leroy <christophe.leroy@csgroup.eu>
+Closes: https://lore.kernel.org/r/3e043453-3f27-48ad-b987-cc39f523060a@csgroup.eu/
+Reported-by: Sourabh Jain <sourabhjain@linux.ibm.com>
+Closes: https://lore.kernel.org/r/94377f5c-d4f0-4c0f-b0f6-5bf1cd7305b1@linux.ibm.com/
+Cc: Ritesh Harjani (IBM) <ritesh.list@gmail.com>
+Cc: Madhavan Srinivasan <maddy@linux.ibm.com>
+Cc: Donet Tom <donettom@linux.ibm.com>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Nicholas Piggin <npiggin@gmail.com>
+Cc: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+Cc: "Liam R. Howlett" <Liam.Howlett@oracle.com>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Mike Rapoport <rppt@kernel.org>
+Cc: Suren Baghdasaryan <surenb@google.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+---
+
+ arch/powerpc/Kconfig |    1 +
+ include/linux/mm.h   |   12 +++++++++---
+ mm/Kconfig           |    7 +++++++
+ 3 files changed, 17 insertions(+), 3 deletions(-)
+
+--- a/arch/powerpc/Kconfig~mm-fix-max_folio_order-on-powerpc-configs-with-hugetlb
++++ a/arch/powerpc/Kconfig
+@@ -137,6 +137,7 @@ config PPC
+ 	select ARCH_HAS_DMA_OPS			if PPC64
+ 	select ARCH_HAS_FORTIFY_SOURCE
+ 	select ARCH_HAS_GCOV_PROFILE_ALL
++	select ARCH_HAS_GIGANTIC_PAGE		if ARCH_SUPPORTS_HUGETLBFS
+ 	select ARCH_HAS_KCOV
+ 	select ARCH_HAS_KERNEL_FPU_SUPPORT	if PPC64 && PPC_FPU
+ 	select ARCH_HAS_MEMBARRIER_CALLBACKS
+--- a/include/linux/mm.h~mm-fix-max_folio_order-on-powerpc-configs-with-hugetlb
++++ a/include/linux/mm.h
+@@ -2074,7 +2074,7 @@ static inline unsigned long folio_nr_pag
+ 	return folio_large_nr_pages(folio);
+ }
+ 
+-#if !defined(CONFIG_ARCH_HAS_GIGANTIC_PAGE)
++#if !defined(CONFIG_HAVE_GIGANTIC_FOLIOS)
+ /*
+  * We don't expect any folios that exceed buddy sizes (and consequently
+  * memory sections).
+@@ -2087,10 +2087,16 @@ static inline unsigned long folio_nr_pag
+  * pages are guaranteed to be contiguous.
+  */
+ #define MAX_FOLIO_ORDER		PFN_SECTION_SHIFT
+-#else
++#elif defined(CONFIG_HUGETLB_PAGE)
+ /*
+  * There is no real limit on the folio size. We limit them to the maximum we
+- * currently expect (e.g., hugetlb, dax).
++ * currently expect: with hugetlb, we expect no folios larger than 16 GiB.
++ */
++#define MAX_FOLIO_ORDER		get_order(SZ_16G)
++#else
++/*
++ * Without hugetlb, gigantic folios that are bigger than a single PUD are
++ * currently impossible.
+  */
+ #define MAX_FOLIO_ORDER		PUD_ORDER
+ #endif
+--- a/mm/Kconfig~mm-fix-max_folio_order-on-powerpc-configs-with-hugetlb
++++ a/mm/Kconfig
+@@ -908,6 +908,13 @@ config PAGE_MAPCOUNT
+ config PGTABLE_HAS_HUGE_LEAVES
+ 	def_bool TRANSPARENT_HUGEPAGE || HUGETLB_PAGE
+ 
++#
++# We can end up creating gigantic folio.
++#
++config HAVE_GIGANTIC_FOLIOS
++	def_bool (HUGETLB_PAGE && ARCH_HAS_GIGANTIC_PAGE) || \
++		 (ZONE_DEVICE && HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
++
+ # TODO: Allow to be enabled without THP
+ config ARCH_SUPPORTS_HUGE_PFNMAP
+ 	def_bool n
+_
+
