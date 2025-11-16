@@ -1,112 +1,161 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f49.google.com (mail-ed1-f49.google.com [209.85.208.49])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5099231A051
-	for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 19:18:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D009430DD03
+	for <linux-sh@vger.kernel.org>; Sun, 16 Nov 2025 17:53:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763061502; cv=none; b=lj1scXqikril4yqUDYweGbb+unttAdOK8GCfyXrlw949xBTXZg00yGD70YUmAjR7kNOg7FnVn8HuEbjuD5rN+yv2u+ajW/fSAj20PPTIWOXVbEVVCGWP4d0Jg5ugXz9LGwZHxqDUa2KTO82FS3+Y+JD9G7BdXVWZT9qI54DcBm8=
+	t=1763315582; cv=none; b=Y5RW5g5iv3ZPO+wCegG30SCq3Fq6irFSP+C2gEGwcINvGjHc237uQFDCMu9auNRIiNJnD/cAMGLDEsZyKIGWFY2cthyy7ngce9rB177k5Yxt4JvOCapmI9sUzieziuHv7enokGusJsaQO3M7fVIHenUjYRsUGYhFSqI9moOAhVQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763061502; c=relaxed/simple;
-	bh=6UprQ8VPFTOJEJnrAk3c1+70Nbd/u85upyCo1jyU1qk=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=e/vDxUZd7kXG6zusXj0W5PWu+nT49YaErj73TAFvhrhZWqj4N/mvQoMOCDWxRQPn2HIXBgs1uHQ9kclOOMr7JYtfIwUl41Jikypcv0TQk9MrXVP5QQHZk4SaoaNsRZIss7hSiA+e0lWDtf2j3JKopII6HEpLlwV+KDLw+VQhoPw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=W0X7qiri; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1763315582; c=relaxed/simple;
+	bh=wqamGJINaNN8u93l6hZi8rnYx9ok2CVYNBMYv/PtLv8=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Fn5im5DChicpRhln/YvuXRPnx8o0XyYuOML6iZDNCy7QsZKoJWU0aGi+jeZvoQ9qxb5H+Px80vQQSrCBaiuOmE91y+WG3qiSpFWX7Vqigr54cEf50+vad43bW7sT3RqrY61ibdAd/50qOSdD5WOEvO6ylCj5Q5T/7SEZz9Hj2ak=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ImWa13m8; arc=none smtp.client-ip=209.85.208.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="W0X7qiri"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 00024C4CEFB
-	for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 19:18:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1763061502;
-	bh=6UprQ8VPFTOJEJnrAk3c1+70Nbd/u85upyCo1jyU1qk=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=W0X7qiriJx8qwv9BbYquHPo7dcdlB2adgQNwN+FfcpIdmW/AITZJ5Zpqm03CC/Dxr
-	 6GnRSXQmfJ+W2vthEpzKITubGF74mnCc6WUcvin3uowyc8BT86f+//ZfLYv29g+BBF
-	 lF+wiMxVq3NM9L1tiAzuG5XwvTH/cQqPOIPuH8Swojls+LSeWQiKJpBdWwsNkrHfoc
-	 ViJlr54gGxXeICJKCHSvemTDsL0eAAUa1Kuky49BxecjyBAtJpJBy74zC1sU1paLFh
-	 iEnE0JiwwGU2Q+ypXPimklXXrXm0/+3QIl6jESwwRiu7KL4wKdlkBy+NprPJA+WbMw
-	 +qgnAYGxQ0H4g==
-Received: by mail-oo1-f49.google.com with SMTP id 006d021491bc7-656cb7b20ccso514226eaf.1
-        for <linux-sh@vger.kernel.org>; Thu, 13 Nov 2025 11:18:21 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCUAUA3YWpkXm2/zFdCinI+MV/VoGojEPUJoVj3Du5wKkuNqsm+I7SOh27qjksA1kDB6pbDjVPKLGA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy+Mz5qLW2Xac0zg5uowYPMV2j/zCtHi2Czh79Lbx0B+6x1XSsT
-	+CdXQ08xT+ExN/hNMBgyvvZdjnV0KpslmWGlar8coV84B7L9fjOJTeimGdQojpawQPvBKf9Ucm5
-	b+jOJMl4H1IKKAMlFyIlT89HfwK3KWGk=
-X-Google-Smtp-Source: AGHT+IEEkDRYf3o6eWh7An4Eb7oaPpWELLivUE1adLZQeit4rdCPvsjZcC3pPuLNVua35azYMW1z4kNGcBFvSY5y77M=
-X-Received: by 2002:a05:6871:e324:b0:3d4:b889:7d65 with SMTP id
- 586e51a60fabf-3e8674043b0mr485629fac.19.1763061501288; Thu, 13 Nov 2025
- 11:18:21 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ImWa13m8"
+Received: by mail-ed1-f49.google.com with SMTP id 4fb4d7f45d1cf-6419b7b4b80so5122956a12.2
+        for <linux-sh@vger.kernel.org>; Sun, 16 Nov 2025 09:53:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1763315579; x=1763920379; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=NwlGwBbpq+uR79Q1dMxLeECsHAi7S2zrYgtJqd6kiGA=;
+        b=ImWa13m8t5/Ns71DIG0hfyO95AmZeIMPMNW6WyuxrOKQP7iZUFGoGSjGGp5K1BlkPH
+         7GdG8zRnLrNCk5MxaVjUmGDTfJjz9/Ig5jWqzHxzG1WgZgMtgTLkaHXJodcvhQ5Zt40t
+         MPu4oesQBhOrjuyd3wQ8kc5E7j/2+dX6APjC0ZqMFbDmrNeIkpgv0IYKR82jKBolEn1F
+         ktMe+sqUFp1IqFH3BErsuwcqNv5Vn24wxiFTgvMIHQm/rFlUsN6DBMnteV2Fdf/EXdoZ
+         0RJ7flUysSrSM4XiIsjdux8WB7Xp/T+/5QD5FTFYEUfDDY9TL8ALL/XIu2hZlXqOLXOb
+         2E3g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1763315579; x=1763920379;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=NwlGwBbpq+uR79Q1dMxLeECsHAi7S2zrYgtJqd6kiGA=;
+        b=YcEyNaMCp1OnMVPDmhzuy+PDnEEay45K/zTkHmsY9JRtj452TzU87mCalbUNAchpfH
+         5kR4eHLuB3Biw2zrQNIPkmYb35gV3QS0BbWXBVKCWeNdNPg3OPn5cl4iubH99OCgOAZ0
+         2hitsfvkSHbegJCv9hDOCxd4Y9cF1g4BWQcg6MPhQXyH2A3lMnWq0un+Xgu/kLtqxOVb
+         6aZMQvMxXk8fU3AiEfTjWmXv0BL8vq5sldfK91+FxMtQV7kdLaVFtTDj+CFxLcSaA59R
+         Hf4V28uxTJz3TYofNOT2bnwz87VMQ7GK1r7GXdrgn6TRJ3s/iYlGEOarnOW01yx8iS+X
+         J9mw==
+X-Forwarded-Encrypted: i=1; AJvYcCV4lW3SH4ijJ3Ar5BALzDvC57VD0PgwzQDxumyl0wtSuBtgt0Hqs9VeCMmGC6WB+FN2QaWQb7LjIg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzjpfH3EAlCoHbvv1CksEaZtdJzNuKyIjWSogIeqho6hvglUKsq
+	Z9DohNEyhd8NJ/qzHNOBUuuFkCpNlMrxDz23W8yU4ZETByoOSRuOZOGc1968iCA=
+X-Gm-Gg: ASbGnctoFLj6nE2LLeEHIgJc8qP7GScCQ7kEpS0KekZV7uJoPEiEWG+/Jo1FtYee+oa
+	Hm4/XnaTdTEx6EImGQaErI54NImOg54xwHSXxk19QCRxmbqPbKEei+KUYNmR6qLgEZa2S4U7n5B
+	l/J8TtCVMDa5BgA6NJPp/bbDrfkV2DWpuqj2qMHAi+iZ/k223AX2Djx7+ynFDYp+wKzVzAoK3ZM
+	C08yvXoFI0OCIghHBevk9BcnVn2HY3WFEdcGbsv41RZFFHnb1ACBgdPJJJOBPCzrOUOswX1aKi0
+	CId46LGzIwm6/s8IGtth34MYI/7h8XqoaaxtV59Tv3cU24/Vc9ObWTKxpRCsYg6zQf+HfvMqPXx
+	0k5CzUFd89fqYTimbWzjazGhwjDjkzV8mA7Bo3DOVPqI2EQytV3JGScJUHEk+Ft8jSUkjlGlusd
+	fzjQf2RgAkj8qwC2Sh69/IAsMeWoVnmCacVmj01KNzQNK5JV7+APAn4ZoQ9ukHKQd9
+X-Google-Smtp-Source: AGHT+IGGKgYhMd0svVSFAfxWolFuLgdDkC11kJzhIf0QE+33E0NawE2RHkSBmBG+Fqlx4fZkYELcEw==
+X-Received: by 2002:a05:6402:270e:b0:640:b978:efdb with SMTP id 4fb4d7f45d1cf-64350eab173mr9437892a12.25.1763315578802;
+        Sun, 16 Nov 2025 09:52:58 -0800 (PST)
+Received: from lithos ([2a02:810d:4a94:b300:b0de:db6e:6107:3313])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-6433a3f880fsm8194796a12.11.2025.11.16.09.52.57
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 16 Nov 2025 09:52:58 -0800 (PST)
+Date: Sun, 16 Nov 2025 18:52:56 +0100
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: Artur Rojek <contact@artur-rojek.eu>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org, Paul Cercueil <paul@crapouillou.net>
+Subject: Re: [PATCH] sh: maple: fix empty port handling
+Message-ID: <aRoPeNu7UZog0srr@lithos>
+References: <20251112190444.3631533-1-fuchsfl@gmail.com>
+ <4f70a38490b12d13858f45f3e7a531bf5dc2162d.camel@physik.fu-berlin.de>
+ <999e3970e1580def5ddbf1921a9ef4a4@artur-rojek.eu>
+ <aRUOTfCJtqnNBjU3@lithos>
+ <d25d9c581f5b4f22c9b94761972aa0fe@artur-rojek.eu>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20251029163336.2785270-1-thierry.reding@gmail.com>
- <20251029163336.2785270-2-thierry.reding@gmail.com> <CAJZ5v0igMJ12KoYCmrWauvOfdxaNP5-XVKoSxUroaKFN7S-rTQ@mail.gmail.com>
- <3dzha4qyqdrbutxby3n5nkvihnxrhniqr6w726eumhzgln2w5l@fbu72mzmjz4m> <2tx3o5es77oa37zqvikcoo6n2ryxvepa54ezsaawcjdbf3g3wp@o2dbcbskjksk>
-In-Reply-To: <2tx3o5es77oa37zqvikcoo6n2ryxvepa54ezsaawcjdbf3g3wp@o2dbcbskjksk>
-From: "Rafael J. Wysocki" <rafael@kernel.org>
-Date: Thu, 13 Nov 2025 20:18:10 +0100
-X-Gmail-Original-Message-ID: <CAJZ5v0gupHEg8ip+2R1wYAQ=BQn4Mk5EMMu==StRxwvXA0WwsA@mail.gmail.com>
-X-Gm-Features: AWmQ_bka8IUODzeQR5ggeX8uZbZXXCIST1G0sD3k8DJ8TOKe2Mgor6ApCD0oVpM
-Message-ID: <CAJZ5v0gupHEg8ip+2R1wYAQ=BQn4Mk5EMMu==StRxwvXA0WwsA@mail.gmail.com>
-Subject: Re: [PATCH v3 1/7] syscore: Pass context data to callbacks
-To: Thierry Reding <thierry.reding@gmail.com>
-Cc: "Rafael J. Wysocki" <rafael@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, x86@kernel.org, 
-	linux-arm-kernel@lists.infradead.org, linux-riscv@lists.infradead.org, 
-	linux-mips@vger.kernel.org, loongarch@lists.linux.dev, 
-	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, 
-	linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <d25d9c581f5b4f22c9b94761972aa0fe@artur-rojek.eu>
 
-On Thu, Nov 13, 2025 at 7:32=E2=80=AFPM Thierry Reding <thierry.reding@gmai=
-l.com> wrote:
->
-> On Wed, Nov 05, 2025 at 05:52:01PM +0100, Thierry Reding wrote:
-> > On Mon, Nov 03, 2025 at 05:18:08PM +0100, Rafael J. Wysocki wrote:
-> > > On Wed, Oct 29, 2025 at 5:33=E2=80=AFPM Thierry Reding <thierry.redin=
-g@gmail.com> wrote:
-> > > >
-> > > > From: Thierry Reding <treding@nvidia.com>
-> > > >
-> > > > Several drivers can benefit from registering per-instance data alon=
-g
-> > > > with the syscore operations. To achieve this, move the modifiable f=
-ields
-> > > > out of the syscore_ops structure and into a separate struct syscore=
- that
-> > > > can be registered with the framework. Add a void * driver data fiel=
-d for
-> > > > drivers to store contextual data that will be passed to the syscore=
- ops.
-> > > >
-> > > > Signed-off-by: Thierry Reding <treding@nvidia.com>
-> > >
-> > > This change is fine with me, so I can apply it unless somebody has an=
-y
-> > > specific heartburn related to it (Greg?), but in case you want to
-> > > route it differently
-> > >
-> > > Acked-by: Rafael J. Wysocki (Intel) <rafael@kernel.org>
-> >
-> > I have a few follow-up patches for the Tegra PMC driver that depend on
-> > this. 6.19 is what I was targetting, so if we could put this into a
-> > stable branch that'd be the best solution. I can set that up via the
-> > Tegra tree if you and Greg are okay with it.
-> >
-> > If that's all too complicated, I can probably wait until the next cycle
-> > to merge the PMC changes.
->
-> I've added this single patch to a branch based off of v6.18-rc1 that I
-> plan to feed into linux-next so it can get some broader exposure.
->
-> I can keep that branch stable so it can go through multiple trees if
-> needed. If anyone's interested, the branch is here:
->
->         https://git.kernel.org/pub/scm/linux/kernel/git/tegra/linux.git/l=
-og/?h=3Dfor-6.19/syscore
+On 16 Nov 13:34, Artur Rojek wrote:
+> On 2025-11-12 23:46, Florian Fuchs wrote:
+> > Hi Artur,
+> > thank you so much for fixing the DC boot on linux again!
+> > Adrian, thank you for looking at it!
+> > 
+> > On 12 Nov 22:46, Artur Rojek wrote:
+> > > thanks for the patch! Can this be tested with just regular
+> > > controllers?
+> > 
+> > Yes, indeed you can test it with the controller, when you compile with
+> > joystick support, like:
+> > 
+> > 	CONFIG_MAPLE=y
+> > 	CONFIG_INPUT=y
+> > 	CONFIG_INPUT_JOYDEV=y
+> > 	CONFIG_INPUT_EVDEV=y
+> > 	CONFIG_INPUT_JOYSTICK=y
+> > 	CONFIG_JOYSTICK_MAPLE=y
+> > 
+> > You should not put a VMU in though, as thats currently broken (I have a
+> > patch ready).
+> > 
+> > Then you can directly read from the evdev and listen for the button
+> > presses:
+> > 	bash-5.3# cat /dev/input/event2 | xxd
+> > 
+> > You need to press a button for 20-30 times, as it seems to buffer the
+> > events and outputs it in batches.
+> > 
+> > Then, you should see the following outputs for the buttons:
+> > 
+> > Button A:
+> > 	00000000: 7800 0000 94c3 0d00 0100 3001 0000 0000  x.........0.....
+> > Button B:
+> > 	000001e0: 7800 0000 94c3 0d00 0100 3101 0100 0000  x.........1....
+> > Button X:
+> > 	000003b0: 7800 0000 94c3 0d00 0100 3301 0100 0000  x.........3.....
+> > Button Y:
+> > 	00000900: 7800 0000 94c3 0d00 0100 3401 0100 0000  x.........4.....
+> > 
+> > The Joystick should be detected like this:
+> > 	/ # dmesg|grep maple
+> > 	maple: bus core now registered
+> > 	maple (null): detected Dreamcast Controller: function 0x1: at (2, 0)
+> > 	maple (null): no driver found
+> > 	input: Dreamcast Controller as /devices/maple/2:00.1/input/input2
+> > 
+> > Another indicator is the dmesg log for empty ports:
+> > 	maple (null): no devices to port 3
+> > 
+> > These messages were previously not there, as the empty ports were never
+> > detected.
+> 
+> Hey Florian,
+> 
+> Before applying this patch, no input on a maple port is being registered
+> until all 4 maple ports are populated (in my case by four controllers).
+> Once all 4 are plugged in, I can register input on either of them by
+> cat-ing their respective char devs.
+> 
+> After applying the patch, I confirm that input can be read immediately
+> for the present devices, even if the other ports are unpopulated.
+> 
+> However, this patch also breaks hotplug on maple ports - I can no longer
+> plug in additional controllers at runtime and have them show up.
+> 
+> I think we need to hold off on this patch until the hotplug issue is
+> addressed.
+> 
 
-You beat me to this, sorry about the delay.
+Thank you for taking the time to test it! And sorry for the obvious issue,
+I think my testing was wrong as I just removed and plugged in an already
+registered device, and missed it with a new one.
+
+Regards,
+Florian
