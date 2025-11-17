@@ -1,134 +1,119 @@
-Received: from mslow3.mail.gandi.net (mslow3.mail.gandi.net [217.70.178.249])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f53.google.com (mail-ed1-f53.google.com [209.85.208.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA92E28E5;
-	Mon, 17 Nov 2025 00:44:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.178.249
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB38B322DA8
+	for <linux-sh@vger.kernel.org>; Mon, 17 Nov 2025 22:46:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763340286; cv=none; b=AFGB5ylcYeJ6+NwMpY4fu7XSN/P8fGyaF2rmqDYeAVdIEl4+x8688PAT9fuObw0MqwVJT2RBiZzaJZHw+kIYId77rIpemtFh/OQmvJJMyK1QGUEMswLCtD5xcNwnhXcQ01TweOJWuvAD5U+4e71z9RPcRjgunOfy2dzT62lo1bE=
+	t=1763419614; cv=none; b=rv662Gk0QlcqEKU9dt7DWlBllWK9F1q+AOlzj2zl8tmareR7zzRwJsVvGBHvHTbiIIMEgZ9fvNv7N0YyhmIGgNYpwf0eKxx2yEkFyu5WFklarEXXQsj0ETkf9sNWq4j2a4LErlbylIbcdTRzRjcd77QJONw8cRyUy8U5PFtIas4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763340286; c=relaxed/simple;
-	bh=6eNRoSNpp5jhrvsXL8YroEIrhcobH2ELzWRx5T9FO1w=;
-	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
-	 Message-ID:Content-Type; b=UQkjsb25HMRpDtfyKtBRp8kMRL8dPf1qzJ9SmEJ0Hn0SF7ZEQ/CWNC6oI42zZg7EOkvx0x1gNmKTEtbAUfU9huN3CMz27Adki1obddsjtamdWg98sD/NySuY4Z2+CDUYQ31nPgb0sziIk8Pxvoj/qSlnJiRhIleJXmtDecxz5vQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.178.249
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
-Received: from relay1-d.mail.gandi.net (relay1-d.mail.gandi.net [IPv6:2001:4b98:dc4:8::221])
-	by mslow3.mail.gandi.net (Postfix) with ESMTP id 22BAF58C80B;
-	Sun, 16 Nov 2025 12:34:55 +0000 (UTC)
-Received: by mail.gandi.net (Postfix) with ESMTPSA id 3E85343EDD;
-	Sun, 16 Nov 2025 12:34:47 +0000 (UTC)
+	s=arc-20240116; t=1763419614; c=relaxed/simple;
+	bh=waB+Bl+gqyfn68lDq5DMzr9orLK8RdiDWJj9QfePFn0=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=OIYpN36UCQI56++VD0xmHIh0gSLpoNjM/ki6JSBnMaI5zBoG8nam+HBbuAxVip3LSiYbWSdRTjmXNGrXMSvwMRyl/qYK7g5MZzC9j1xI4LjNpI/vDeYRY+7hMXdJbyOjX6PirzK6ffDjxVoCr+KHjdOZFS4c2/M9xrBKQiK0miA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MMX4y87j; arc=none smtp.client-ip=209.85.208.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MMX4y87j"
+Received: by mail-ed1-f53.google.com with SMTP id 4fb4d7f45d1cf-640c6577120so8265817a12.1
+        for <linux-sh@vger.kernel.org>; Mon, 17 Nov 2025 14:46:52 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1763419611; x=1764024411; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=vQx5Zus/kcblPuTEEWB+BahVU8fEHd8HqEQoD7L2fXk=;
+        b=MMX4y87jiYXbx1g6SuiGnuHmKGd2Q0i7OxGJhViltZn20xrcUKfh19tf7aBWPKgOon
+         YMrlANpoiCFu5eawkVft8BlnS89bbMHNRwsP7EOlu6d/u87oxQ4qQzCZsrQSbOnpV4zg
+         bKl+knfsfLHu4MmWds4RoHU+E8ofeyfqKICqpaG3dmvrokWfAOx3gbpNy7lw/CdheSjJ
+         uxwYC6nPlb6nr21jOF/YGou6ZIgo42/UgLJK5iptOZ09cV48upfMSlF/v9HvA2Ib6ATz
+         x2xvhsLcF9aOA410d1c7Xt7MIsAWUTXXVm0Rpsozry4vUgGNMKmXqnbqLDiZyLfiVsWe
+         tLKg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1763419611; x=1764024411;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=vQx5Zus/kcblPuTEEWB+BahVU8fEHd8HqEQoD7L2fXk=;
+        b=dN9wZeaAPUOgR76Jr6FWiVkfMOrb7mRo/uEePFXZ+Ozk9YTrXvEa1PdOM55uHVfZs/
+         gDlCa7ZNVbj0rUb/8/Z4cyUoXad/8VNEjDXJJVhHv65HggRobgFSqCbRHWmJsWAceWSY
+         hKTGI6alPcf1d/psrTplmG3E1mvAA7M5DTgh+UpDprsYyFUihi9kZf/nxqn2C+Q13toh
+         g/d6fuyRS2kjDE71oCOU+0/qZLPn3/AvkVDCFJiur41WNkIAjqRNagJJ9z8DXiq9GVx/
+         tYXa++h20PykOpaqcrfX3TUig+VcUSCf+JlgVbCW+Mv1zET1zlB+d0xQ3GUZ1/4hpHaz
+         seEQ==
+X-Gm-Message-State: AOJu0YxgusBfiV6TsQ3WrKDuCXqH36ctUs7dPGRBzsWWmCa6hTvit5GY
+	Y+F8c6BiUcU3yKx95I1CuJyeHTqOEPWfZpmpqWOLHLUMQslGWku1AIuLKzN87LQ=
+X-Gm-Gg: ASbGnctWbsE/25bLd06rAlI5coKL6tbLAquXPHmNT/RA1+ndeB5t9rfWpSJqamdeu7R
+	3neG8kvXD5/YRTRp4p9ZgM/K2mcP9Vp6BQus8pFjW75g1g3AFNbqQ9iliWcRtFUvnVPjxaRZau+
+	Mjy6D0CASR7ZvJnBOrKq702k88Uq4Cp46NTn0Zt/4DyCyhTjqWqyLO0Nv/+HUZJadmp2dCjQw07
+	n3on68l50rkrNCBNaHakdSm+PZynjHndBEOlAoUm49yA5q6zaW4f3RTocVtowK280sRzrPrtGF6
+	cpuRWgzv5oFZauMJUON7urBLNrHbLqUlPPAmOoLTFSW90Nv6/nUVWSjLMuzYaIsDOo1ncfnx6tG
+	WPSTJuv6bBLB612A7SUcqiDxuknUaU6TQNJaJfXxmup5MelCkoQFfSANLFUsYa0VQSYMTk2RDhb
+	Ty8glx+GkPK//kToxkF+j1U+dYictndZGkPla0C3ZqMyzeKtb2kqELlx8muGy/XVMxBGvhpTXkj
+	c4/7+ExwQIAe/TiSP1oCKw9
+X-Google-Smtp-Source: AGHT+IE7k66LCLymhdfQOLn0JxvzsVErM9Ncx8SurVFaS1hwSAHD12i4vAoErL5LnOE7oFHNVJw/uw==
+X-Received: by 2002:a05:6402:90b:b0:643:8301:d10f with SMTP id 4fb4d7f45d1cf-6438301d619mr6480812a12.31.1763419610795;
+        Mon, 17 Nov 2025 14:46:50 -0800 (PST)
+Received: from localhost (ip5f5be9e8.dynamic.kabel-deutschland.de. [95.91.233.232])
+        by smtp.gmail.com with UTF8SMTPSA id 4fb4d7f45d1cf-6433a3f94f8sm11266265a12.13.2025.11.17.14.46.50
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 17 Nov 2025 14:46:50 -0800 (PST)
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: Miquel Raynal <miquel.raynal@bootlin.com>,
+	Richard Weinberger <richard@nod.at>,
+	Vignesh Raghavendra <vigneshr@ti.com>,
+	linux-mtd@lists.infradead.org
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Florian Fuchs <fuchsfl@gmail.com>
+Subject: [PATCH 0/3] mtd: maps: vmu-flash: Fix build and runtime errors 
+Date: Mon, 17 Nov 2025 23:44:05 +0100
+Message-ID: <20251117224408.498449-1-fuchsfl@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Sun, 16 Nov 2025 13:34:46 +0100
-From: Artur Rojek <contact@artur-rojek.eu>
-To: Florian Fuchs <fuchsfl@gmail.com>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Cercueil
- <paul@crapouillou.net>
-Subject: Re: [PATCH] sh: maple: fix empty port handling
-In-Reply-To: <aRUOTfCJtqnNBjU3@lithos>
-References: <20251112190444.3631533-1-fuchsfl@gmail.com>
- <4f70a38490b12d13858f45f3e7a531bf5dc2162d.camel@physik.fu-berlin.de>
- <999e3970e1580def5ddbf1921a9ef4a4@artur-rojek.eu> <aRUOTfCJtqnNBjU3@lithos>
-Message-ID: <d25d9c581f5b4f22c9b94761972aa0fe@artur-rojek.eu>
-X-Sender: contact@artur-rojek.eu
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Content-Transfer-Encoding: 7bit
-X-GND-State: clean
-X-GND-Score: -100
-X-GND-Cause: gggruggvucftvghtrhhoucdtuddrgeeffedrtdeggddvudehheelucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuifetpfffkfdpucggtfgfnhhsuhgsshgtrhhisggvnecuuegrihhlohhuthemuceftddunecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjughrpeggfffhvfevufgjfhfkgigtgfesthejjhdttddtvdenucfhrhhomheptehrthhurhcutfhojhgvkhcuoegtohhnthgrtghtsegrrhhtuhhrqdhrohhjvghkrdgvuheqnecuggftrfgrthhtvghrnhepheejgfefiedtjeeiieevleeugfeghfelheekteehvdegieeihfetvdegieeihfeinecuffhomhgrihhnpehgihhthhhusgdrtghomhenucfkphepuddtrddvtddtrddvtddurdduleenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepihhnvghtpedutddrvddttddrvddtuddrudelpdhhvghlohepfigvsghmrghilhdrghgrnhguihdrnhgvthdpmhgrihhlfhhrohhmpegtohhnthgrtghtsegrrhhtuhhrqdhrohhjvghkrdgvuhdpnhgspghrtghpthhtohepjedprhgtphhtthhopehfuhgthhhsfhhlsehgmhgrihhlrdgtohhmpdhrtghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinhdruggvpdhrtghpthhtohephihsrghtohesuhhsvghrshdrshhouhhrtggvfhhorhhgvgdrjhhppdhrtghpthhtohepuggrlhhirghssehlihgstgdrohhrghdprhgtphhtthhopehlihhnuhigq
- dhshhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdhkvghrnhgvlhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehprghulhestghrrghpohhuihhllhhouhdrnhgvth
-X-GND-Sasl: contact@artur-rojek.eu
+Content-Transfer-Encoding: 8bit
 
-On 2025-11-12 23:46, Florian Fuchs wrote:
-> Hi Artur,
-> thank you so much for fixing the DC boot on linux again!
-> Adrian, thank you for looking at it!
-> 
-> On 12 Nov 22:46, Artur Rojek wrote:
->> thanks for the patch! Can this be tested with just regular 
->> controllers?
-> 
-> Yes, indeed you can test it with the controller, when you compile with
-> joystick support, like:
-> 
-> 	CONFIG_MAPLE=y
-> 	CONFIG_INPUT=y
-> 	CONFIG_INPUT_JOYDEV=y
-> 	CONFIG_INPUT_EVDEV=y
-> 	CONFIG_INPUT_JOYSTICK=y
-> 	CONFIG_JOYSTICK_MAPLE=y
-> 
-> You should not put a VMU in though, as thats currently broken (I have a
-> patch ready).
-> 
-> Then you can directly read from the evdev and listen for the button
-> presses:
-> 	bash-5.3# cat /dev/input/event2 | xxd
-> 
-> You need to press a button for 20-30 times, as it seems to buffer the
-> events and outputs it in batches.
-> 
-> Then, you should see the following outputs for the buttons:
-> 
-> Button A:
-> 	00000000: 7800 0000 94c3 0d00 0100 3001 0000 0000  x.........0.....
-> Button B:
-> 	000001e0: 7800 0000 94c3 0d00 0100 3101 0100 0000  x.........1....
-> Button X:
-> 	000003b0: 7800 0000 94c3 0d00 0100 3301 0100 0000  x.........3.....
-> Button Y:
-> 	00000900: 7800 0000 94c3 0d00 0100 3401 0100 0000  x.........4.....
-> 
-> The Joystick should be detected like this:
-> 	/ # dmesg|grep maple
-> 	maple: bus core now registered
-> 	maple (null): detected Dreamcast Controller: function 0x1: at (2, 0)
-> 	maple (null): no driver found
-> 	input: Dreamcast Controller as /devices/maple/2:00.1/input/input2
-> 
-> Another indicator is the dmesg log for empty ports:
-> 	maple (null): no devices to port 3
-> 
-> These messages were previously not there, as the empty ports were never
-> detected.
+Hi all,
 
-Hey Florian,
+This small series fixes build and runtime errors in the vmu-flash driver
+(enabled by CONFIG_MTD_VMU) and the included maple.h. These changes were
+verified on real Dreamcast hardware with a physical VMU. The VMU can now
+be successfully probed, read and written with MTD tools like mtd_info and
+mtd_debug. Previously, the driver failed to build or crashed during
+probing.
 
-Before applying this patch, no input on a maple port is being registered
-until all 4 maple ports are populated (in my case by four controllers).
-Once all 4 are plugged in, I can register input on either of them by
-cat-ing their respective char devs.
+	bash-5.3# mtdinfo /dev/mtd0
+	mtd0
+	Name:                           vmu2.1.0
+	Type:                           mlc-nand
+	Eraseblock size:                512 bytes
+	Amount of eraseblocks:          256 (131072 bytes, 128.0 KiB)
+	Minimum input/output unit size: 512 bytes
+	Sub-page size:                  512 bytes
+	Character device major/minor:   90:0
+	Bad blocks are allowed:         true
+	Device is writable:             true
 
-After applying the patch, I confirm that input can be read immediately
-for the present devices, even if the other ports are unpopulated.
+Thanks,
+Florian
 
-However, this patch also breaks hotplug on maple ports - I can no longer
-plug in additional controllers at runtime and have them show up.
+Florian Fuchs (3):
+  sh: maple: Fix build error due to missing include of linux/device.h
+  mtd: maps: vmu-flash: Fix fault in unaligned fixup
+  mtd: maps: vmu-flash: Fix NULL pointer dereference in initialization
 
-I think we need to hold off on this patch until the hotplug issue is
-addressed.
+ drivers/mtd/maps/vmu-flash.c | 8 +++++---
+ include/linux/maple.h        | 2 --
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-> 
-> btw, I have also a cdi file, that boots for me, although I heard there
-> were issues on the NTSC-U devices, if helpful:
-> https://github.com/foxdrodd/dreamcast-linux/releases/download/6.17.7/linux6177-joystick.cdi
 
-Thanks for the cdi. I have no means to burn CDs anymore, so instead
-I quickly built a small buildroot based rootfs, and booted it as
-initramfs over serial line :-)
+base-commit: 97315e7c901a1de60e8ca9b11e0e96d0f9253e18
+-- 
+2.43.0
 
-Cheers,
-Artur
-
-> 
-> Thank you for your efforts,
-> Florian
