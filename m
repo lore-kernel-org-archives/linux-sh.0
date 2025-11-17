@@ -1,62 +1,63 @@
-Received: from mail-ed1-f53.google.com (mail-ed1-f53.google.com [209.85.208.53])
+Received: from mail-ed1-f51.google.com (mail-ed1-f51.google.com [209.85.208.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB38B322DA8
-	for <linux-sh@vger.kernel.org>; Mon, 17 Nov 2025 22:46:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76C1C329E54
+	for <linux-sh@vger.kernel.org>; Mon, 17 Nov 2025 22:46:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763419614; cv=none; b=rv662Gk0QlcqEKU9dt7DWlBllWK9F1q+AOlzj2zl8tmareR7zzRwJsVvGBHvHTbiIIMEgZ9fvNv7N0YyhmIGgNYpwf0eKxx2yEkFyu5WFklarEXXQsj0ETkf9sNWq4j2a4LErlbylIbcdTRzRjcd77QJONw8cRyUy8U5PFtIas4=
+	t=1763419618; cv=none; b=sQVgx4r+N9a+4n2Kh3arl1eRCEzHrlT4VoGiTXPCLJfjpqYgAPZ9tQaoXvKb4JL+Uki+xibxswHJsN2WcicATqFy82FFhLG9nNyL9a1TqIS0lDVur78da1vRILgvI/gCO1U394usmDiMMEd2GqmMjrqz4foklCSUz85NShGhzNw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763419614; c=relaxed/simple;
-	bh=waB+Bl+gqyfn68lDq5DMzr9orLK8RdiDWJj9QfePFn0=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=OIYpN36UCQI56++VD0xmHIh0gSLpoNjM/ki6JSBnMaI5zBoG8nam+HBbuAxVip3LSiYbWSdRTjmXNGrXMSvwMRyl/qYK7g5MZzC9j1xI4LjNpI/vDeYRY+7hMXdJbyOjX6PirzK6ffDjxVoCr+KHjdOZFS4c2/M9xrBKQiK0miA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MMX4y87j; arc=none smtp.client-ip=209.85.208.53
+	s=arc-20240116; t=1763419618; c=relaxed/simple;
+	bh=U80ZMZgaS9Ii1A+REvrTDtWQulgxMTiROYJNr9LAoYM=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=E5rPdM4XlOU51K6HoH8nrEUsgr/5Wd1T+3hyv2quWis87fZOckUoUOnsrn5CbXmzon/M379Xd7CV8o/OIzuxIG8RQvz4JsawbQeXVJ7Ccq1zWQDpSvoaLNhGp1who7l2ME5j5I+6wNprh76yaWLbsZaaTMbrU4zXVxUesnBtwKE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=nECZm54M; arc=none smtp.client-ip=209.85.208.51
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MMX4y87j"
-Received: by mail-ed1-f53.google.com with SMTP id 4fb4d7f45d1cf-640c6577120so8265817a12.1
-        for <linux-sh@vger.kernel.org>; Mon, 17 Nov 2025 14:46:52 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nECZm54M"
+Received: by mail-ed1-f51.google.com with SMTP id 4fb4d7f45d1cf-64162c04f90so7856528a12.0
+        for <linux-sh@vger.kernel.org>; Mon, 17 Nov 2025 14:46:55 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1763419611; x=1764024411; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=vQx5Zus/kcblPuTEEWB+BahVU8fEHd8HqEQoD7L2fXk=;
-        b=MMX4y87jiYXbx1g6SuiGnuHmKGd2Q0i7OxGJhViltZn20xrcUKfh19tf7aBWPKgOon
-         YMrlANpoiCFu5eawkVft8BlnS89bbMHNRwsP7EOlu6d/u87oxQ4qQzCZsrQSbOnpV4zg
-         bKl+knfsfLHu4MmWds4RoHU+E8ofeyfqKICqpaG3dmvrokWfAOx3gbpNy7lw/CdheSjJ
-         uxwYC6nPlb6nr21jOF/YGou6ZIgo42/UgLJK5iptOZ09cV48upfMSlF/v9HvA2Ib6ATz
-         x2xvhsLcF9aOA410d1c7Xt7MIsAWUTXXVm0Rpsozry4vUgGNMKmXqnbqLDiZyLfiVsWe
-         tLKg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1763419611; x=1764024411;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20230601; t=1763419613; x=1764024413; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=vQx5Zus/kcblPuTEEWB+BahVU8fEHd8HqEQoD7L2fXk=;
-        b=dN9wZeaAPUOgR76Jr6FWiVkfMOrb7mRo/uEePFXZ+Ozk9YTrXvEa1PdOM55uHVfZs/
-         gDlCa7ZNVbj0rUb/8/Z4cyUoXad/8VNEjDXJJVhHv65HggRobgFSqCbRHWmJsWAceWSY
-         hKTGI6alPcf1d/psrTplmG3E1mvAA7M5DTgh+UpDprsYyFUihi9kZf/nxqn2C+Q13toh
-         g/d6fuyRS2kjDE71oCOU+0/qZLPn3/AvkVDCFJiur41WNkIAjqRNagJJ9z8DXiq9GVx/
-         tYXa++h20PykOpaqcrfX3TUig+VcUSCf+JlgVbCW+Mv1zET1zlB+d0xQ3GUZ1/4hpHaz
-         seEQ==
-X-Gm-Message-State: AOJu0YxgusBfiV6TsQ3WrKDuCXqH36ctUs7dPGRBzsWWmCa6hTvit5GY
-	Y+F8c6BiUcU3yKx95I1CuJyeHTqOEPWfZpmpqWOLHLUMQslGWku1AIuLKzN87LQ=
-X-Gm-Gg: ASbGnctWbsE/25bLd06rAlI5coKL6tbLAquXPHmNT/RA1+ndeB5t9rfWpSJqamdeu7R
-	3neG8kvXD5/YRTRp4p9ZgM/K2mcP9Vp6BQus8pFjW75g1g3AFNbqQ9iliWcRtFUvnVPjxaRZau+
-	Mjy6D0CASR7ZvJnBOrKq702k88Uq4Cp46NTn0Zt/4DyCyhTjqWqyLO0Nv/+HUZJadmp2dCjQw07
-	n3on68l50rkrNCBNaHakdSm+PZynjHndBEOlAoUm49yA5q6zaW4f3RTocVtowK280sRzrPrtGF6
-	cpuRWgzv5oFZauMJUON7urBLNrHbLqUlPPAmOoLTFSW90Nv6/nUVWSjLMuzYaIsDOo1ncfnx6tG
-	WPSTJuv6bBLB612A7SUcqiDxuknUaU6TQNJaJfXxmup5MelCkoQFfSANLFUsYa0VQSYMTk2RDhb
-	Ty8glx+GkPK//kToxkF+j1U+dYictndZGkPla0C3ZqMyzeKtb2kqELlx8muGy/XVMxBGvhpTXkj
-	c4/7+ExwQIAe/TiSP1oCKw9
-X-Google-Smtp-Source: AGHT+IE7k66LCLymhdfQOLn0JxvzsVErM9Ncx8SurVFaS1hwSAHD12i4vAoErL5LnOE7oFHNVJw/uw==
-X-Received: by 2002:a05:6402:90b:b0:643:8301:d10f with SMTP id 4fb4d7f45d1cf-6438301d619mr6480812a12.31.1763419610795;
-        Mon, 17 Nov 2025 14:46:50 -0800 (PST)
-Received: from localhost (ip5f5be9e8.dynamic.kabel-deutschland.de. [95.91.233.232])
-        by smtp.gmail.com with UTF8SMTPSA id 4fb4d7f45d1cf-6433a3f94f8sm11266265a12.13.2025.11.17.14.46.50
+        bh=TqjVzwOXi9ucrAfreZQkaGIBXDLGjw4pTmj1sbX0vDU=;
+        b=nECZm54MlCvpeA8UEE4gHy/BAz5opc6zGEBizWJ/K6b5UrRW50cEXOSPUqJXjybxAu
+         MGrsNEk4B++QLgVSVjL8Yu9izgG8Kd+/yxrOuisSaG45WFJ93X8PCBWlgpfssO2pUNJI
+         KOVWfxgf07d7P6YMqPFYJXrekZiROuDwhIFGoNZQ00GFZGb1/cvW4h1ytHTjXP5em0k/
+         8F7418NcIHUSWghAA0yKqwsibuZnUn9pooWl2KJvhFgDbONKwWO9EBOzOywFyzFm2jRM
+         M+PYeRQz8T520XxQ73NKWfsCshWPsNh2md22RajjBTIvFJUhwcICU+2v9tanKRMmopcu
+         joLQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1763419613; x=1764024413;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=TqjVzwOXi9ucrAfreZQkaGIBXDLGjw4pTmj1sbX0vDU=;
+        b=JNseDP80ERYqRvfMEcrXVksxuEddD5IQQfXu+LzvT+UwkNND99tmgolJypzwEHhoM5
+         2ca26K7jhS60LXFbZ9DzTP4JkhGAYNEzpj27RN61PDfaXd4scAumxDUMeaFvr64VCEwb
+         6bdxIlmPlUfl/MqSCUBjYFzg7p6TYvgDXkBUlpPgqY9HbMB77cfHOOVbWgnylGTnY2CJ
+         7RUMFZanDtw+G3SUTylWmwlFr1YT3m6UePoEonhd1NEKLtphG8krhL1lf9l5HFnm4ZEb
+         TG96dgqpWz+BBN9q/QR4Kz7LntjjTSJMf/G2ofqJKvU/vGD7+7kbvH1nJpFZ+ZRTedVR
+         rDdg==
+X-Gm-Message-State: AOJu0Yz72MvCmGu/J4EnioCsBiV5tVmQxU2jmYBdtMtIIKLcqPjbrdYW
+	Ym5zsCKfUU3ZZyMgcrRfynnAmSrVpHy6Kx3pKPvrmIjAQoG5O7Riek4=
+X-Gm-Gg: ASbGncs5vJxbTW3vmVDZgfynmiqZBwe+r2cvHkuZs1AmmEFLG0mukLhuVIBqzdNxHYH
+	AQwsCAoguihtmaZvOJxT1qYQhMygcNiQxvAFymxfphiGmZSB7Hh0LXjalA3xyCkF/EESOmp9D89
+	JguvpmPpLN13MDrbGmE3sAaTFYZeS1BC/WKQh1djuzMm2AxY9+DrqY9mKq9G6fkBH1jLlTB+tU7
+	/O/djAxx8qP3Yq4df5EBjoxS2p/RGMOFYeNZvZnxmbFv7sGUn53d4iuynKvWJaUOAwg89bHbl1n
+	KTO+Hgrjb/2mD2rWyLmcAVMNFoS828GZj1aT7BO1uQVRseOG1MQ7rpPF9Fg+M1lfHipSbK28oaC
+	3DIdTadvSiLPPylByYxGVN7xxJpszaWwDD6LB08tNzmHDBbwz7fXW4QgHTbf/kde5iIBZ3Be6fd
+	gHP8BC+JKZNmfbGfkACtMIFvV7Lu9e2hXmgnGCaawcYzWDePQ9jxojMfghVjlUifg6mr9n
+X-Google-Smtp-Source: AGHT+IFChHkH3iNr7D3j5wYleR6fkrjGzcNRvIh5kZKRQIF53XrPXDvKUvIepBMOQl9Opng3Ft+0MA==
+X-Received: by 2002:a05:6402:27d3:b0:640:fb13:6b8 with SMTP id 4fb4d7f45d1cf-64350e76054mr14056228a12.22.1763419613498;
+        Mon, 17 Nov 2025 14:46:53 -0800 (PST)
+Received: from localhost ([2a02:810d:4a94:b300:232f:6d66:f093:4e68])
+        by smtp.gmail.com with UTF8SMTPSA id 4fb4d7f45d1cf-6433a497fc5sm11215357a12.22.2025.11.17.14.46.52
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 17 Nov 2025 14:46:50 -0800 (PST)
+        Mon, 17 Nov 2025 14:46:53 -0800 (PST)
 From: Florian Fuchs <fuchsfl@gmail.com>
 To: Miquel Raynal <miquel.raynal@bootlin.com>,
 	Richard Weinberger <richard@nod.at>,
@@ -67,10 +68,12 @@ Cc: linux-sh@vger.kernel.org,
 	Rich Felker <dalias@libc.org>,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
 	Florian Fuchs <fuchsfl@gmail.com>
-Subject: [PATCH 0/3] mtd: maps: vmu-flash: Fix build and runtime errors 
-Date: Mon, 17 Nov 2025 23:44:05 +0100
-Message-ID: <20251117224408.498449-1-fuchsfl@gmail.com>
+Subject: [PATCH 1/3] sh: maple: Fix build error due to missing include of linux/device.h
+Date: Mon, 17 Nov 2025 23:44:06 +0100
+Message-ID: <20251117224408.498449-2-fuchsfl@gmail.com>
 X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20251117224408.498449-1-fuchsfl@gmail.com>
+References: <20251117224408.498449-1-fuchsfl@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -79,39 +82,34 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Hi all,
+Commit 313162d0b838 ("device.h: audit and cleanup users in main include
+dir") removed the include of linux/device.h. Revert this, as
+linux/maple.h embeds struct device via struct maple_device, which
+requires the definition. Otherwise results in build error: field 'dev'
+has incomplete type.
 
-This small series fixes build and runtime errors in the vmu-flash driver
-(enabled by CONFIG_MTD_VMU) and the included maple.h. These changes were
-verified on real Dreamcast hardware with a physical VMU. The VMU can now
-be successfully probed, read and written with MTD tools like mtd_info and
-mtd_debug. Previously, the driver failed to build or crashed during
-probing.
+Fixes: 313162d0b838 ("device.h: audit and cleanup users in main include dir")
+Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+---
+ include/linux/maple.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-	bash-5.3# mtdinfo /dev/mtd0
-	mtd0
-	Name:                           vmu2.1.0
-	Type:                           mlc-nand
-	Eraseblock size:                512 bytes
-	Amount of eraseblocks:          256 (131072 bytes, 128.0 KiB)
-	Minimum input/output unit size: 512 bytes
-	Sub-page size:                  512 bytes
-	Character device major/minor:   90:0
-	Bad blocks are allowed:         true
-	Device is writable:             true
-
-Thanks,
-Florian
-
-Florian Fuchs (3):
-  sh: maple: Fix build error due to missing include of linux/device.h
-  mtd: maps: vmu-flash: Fix fault in unaligned fixup
-  mtd: maps: vmu-flash: Fix NULL pointer dereference in initialization
-
- drivers/mtd/maps/vmu-flash.c | 8 +++++---
- include/linux/maple.h        | 2 --
- 2 files changed, 5 insertions(+), 5 deletions(-)
-
+diff --git a/include/linux/maple.h b/include/linux/maple.h
+index 3be4e567473c..22f2930251ed 100644
+--- a/include/linux/maple.h
++++ b/include/linux/maple.h
+@@ -2,10 +2,9 @@
+ #ifndef __LINUX_MAPLE_H
+ #define __LINUX_MAPLE_H
+ 
++#include <linux/device.h>
+ #include <mach/maple.h>
+ 
+-struct device;
+-
+ /* Maple Bus command and response codes */
+ enum maple_code {
+ 	MAPLE_RESPONSE_FILEERR =	-5,
 
 base-commit: 97315e7c901a1de60e8ca9b11e0e96d0f9253e18
 -- 
