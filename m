@@ -1,101 +1,59 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from mail.novencio.pl (mail.novencio.pl [162.19.155.164])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D07BE2FB0A1;
-	Tue, 18 Nov 2025 07:31:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1802F32E12C
+	for <linux-sh@vger.kernel.org>; Wed, 19 Nov 2025 08:56:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.19.155.164
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1763451100; cv=none; b=BypppRYmab1VFdXVR/hv3TUSffSk8w1FhH6DDcUSNJoZ1jMQbfXi6dUGWKwcmloPNuRilzSOzP4jd7ahFTPv5I10DGCcqKLW9MCt7FvvY9QVBJ/wV9xotLKI23bc75VxUiOZKcH40PwIVakVKRxpXCwawTd1H5SpexTWUuySUaA=
+	t=1763542599; cv=none; b=ppLok8JuKV9kpKXgcMb+LiEl8zrCIqPmPmTb6amxoua336QhI1quuaKp5ZPYWkMgR1yMDm0OePKIrz+HBy+2DltjAj5Noz6SVRumnO0F2pFsb8GMgGkRG4R2h2BGpDMUrqj/BrNW57pdUvvUa8TpUpZepyBkbdv6+M3e6svBZfY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1763451100; c=relaxed/simple;
-	bh=WJyHUSvyeIIZK7kY2jKhM2q3B5Komdy+g4lESDlVIGM=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=AeddBXcs7Q7fJaHXyP7bZlFq6Le2neL4Nf3vahfrlhdx777uqfhFFuWk6hH2g/i78x1Ef5cJs89rexTp/0TgTnRz5cYErlINMGyf+aAzO5mupsJjg3yqutp2L7aBIsGf4STQZb3ZXBhBw528GDzutbVxs/ciCrY0mrXCa8HCnYI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=JCIlYiuY; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1763542599; c=relaxed/simple;
+	bh=fIh67CnJs35z4uTVN1yEzBZIG1sWJSjOc8Phu/rB5ug=;
+	h=Message-ID:Date:From:To:Subject:MIME-Version:Content-Type; b=OKCUbkXh7pfVtBStkkJRw3T8Hddf/KvGjHr8IaGzUUvuHV0TycgR/+cyXVdyaa/Zk5N8ufrDtDyWEmcXHR46R7+0fV8zSTC1cclX2LiReVTr358l36eG0I51Riqp/FEpdYV/HdLWKRCbxA4ZNFIs9X25eAC0IQM+RzOfB32Rxeo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=novencio.pl; spf=pass smtp.mailfrom=novencio.pl; dkim=pass (2048-bit key) header.d=novencio.pl header.i=@novencio.pl header.b=Z099eKTW; arc=none smtp.client-ip=162.19.155.164
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=novencio.pl
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=novencio.pl
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="JCIlYiuY"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=gbR/pSrpPdQnCy3o6uUWzPGyYQA0J47Ic/sF8Ai7qyc=; t=1763451096;
-	x=1764055896; b=JCIlYiuYzA27Fjk1/Fl5tBKtNeoDeKxg7NtnC6Z1IEIvYq6+EyyW51gZddR88
-	Airj4WRZEr8dYUplnxOz1iplND3xh+Feo2ae5PWh0J0EKlZ8nRH6R2JGDPf3yumFJBXfj31kVnTrl
-	ZT97L7KJPXXZasmdZZhjw9jX1mXkSC2Odqk6woMJvrPqAXpIYxF8BDvc3cm+hAtxbPxNWaYeViId5
-	An5vu7xVGCmp87BEMoX2mHKeC3zfGLDmrQfKKhZNqu8HdvHNLpBWVo2hyOTStwNnIHx8F+odKJ3/C
-	ohXLudVrGs6yHCK7DqOpi6yguc9G7ARSnLY3N54jMD8jwjSasw==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1vLGBQ-00000001Qib-0YKK; Tue, 18 Nov 2025 08:31:24 +0100
-Received: from p5b13aa34.dip0.t-ipconnect.de ([91.19.170.52] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1vLGBP-00000002GbE-3d0W; Tue, 18 Nov 2025 08:31:24 +0100
-Message-ID: <6e2e9edcd9247c216bfe1ba637629a9a838f9fed.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 0/3] mtd: maps: vmu-flash: Fix build and runtime errors
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Florian Fuchs <fuchsfl@gmail.com>, Miquel Raynal
- <miquel.raynal@bootlin.com>,  Richard Weinberger	 <richard@nod.at>, Vignesh
- Raghavendra <vigneshr@ti.com>, 	linux-mtd@lists.infradead.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Rich Felker
-	 <dalias@libc.org>, Artur Rojek <contact@artur-rojek.eu>
-Date: Tue, 18 Nov 2025 08:31:22 +0100
-In-Reply-To: <20251117224408.498449-1-fuchsfl@gmail.com>
-References: <20251117224408.498449-1-fuchsfl@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.58.1 
+	dkim=pass (2048-bit key) header.d=novencio.pl header.i=@novencio.pl header.b="Z099eKTW"
+Received: by mail.novencio.pl (Postfix, from userid 1002)
+	id 5DFEC23441; Wed, 19 Nov 2025 08:56:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=novencio.pl; s=mail;
+	t=1763542595; bh=fIh67CnJs35z4uTVN1yEzBZIG1sWJSjOc8Phu/rB5ug=;
+	h=Date:From:To:Subject:From;
+	b=Z099eKTWZjO7YwXc5TioZHoJMYn4FLQM/yaLgjfwiMeI7Mw7UxJ/5VHH1+Kz5yUQ3
+	 1oyxaY9Tv5aptUVlGHr056yWXGWg12HP7Kl3RuZa2XE2xCFWO5HCYjswv2gAJyakss
+	 J9PNt1AUpiP1jLizs9Y4TILfcTo9ZZTGcmgiz3wbmAZc2BFbCmXYCP99aUMHSsncLu
+	 LXplEbN9ivTKtdXN1P9kQkto0eVMg629KxxRfBNtG0bmSKCO8K0IXwiXltCw5irddm
+	 QJPWVK16R1GYbewe+e6kq4R1sRSFwvGYiaXEzsK1Njh/k0tViH8gVVBOuFjFkiQBdK
+	 GRYd8nmztstNg==
+Received: by mail.novencio.pl for <linux-sh@vger.kernel.org>; Wed, 19 Nov 2025 08:55:55 GMT
+Message-ID: <20251119074742-0.1.5y.z3db.0.1im9or4rfm@novencio.pl>
+Date: Wed, 19 Nov 2025 08:55:55 GMT
+From: "Marek Poradecki" <marek.poradecki@novencio.pl>
+To: <linux-sh@vger.kernel.org>
+Subject: =?UTF-8?Q?Wiadomo=C5=9B=C4=87_z_ksi=C4=99gowo=C5=9Bci?=
+X-Mailer: mail.novencio.pl
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Hi Florian,
+Dzie=C5=84 dobry,
 
-On Mon, 2025-11-17 at 23:44 +0100, Florian Fuchs wrote:
-> This small series fixes build and runtime errors in the vmu-flash driver
-> (enabled by CONFIG_MTD_VMU) and the included maple.h. These changes were
-> verified on real Dreamcast hardware with a physical VMU. The VMU can now
-> be successfully probed, read and written with MTD tools like mtd_info and
-> mtd_debug. Previously, the driver failed to build or crashed during
-> probing.
->=20
-> 	bash-5.3# mtdinfo /dev/mtd0
-> 	mtd0
-> 	Name:                           vmu2.1.0
-> 	Type:                           mlc-nand
-> 	Eraseblock size:                512 bytes
-> 	Amount of eraseblocks:          256 (131072 bytes, 128.0 KiB)
-> 	Minimum input/output unit size: 512 bytes
-> 	Sub-page size:                  512 bytes
-> 	Character device major/minor:   90:0
-> 	Bad blocks are allowed:         true
-> 	Device is writable:             true
+pomagamy przedsi=C4=99biorcom wprowadzi=C4=87 model wymiany walut, kt=C3=B3=
+ry minimalizuje wahania koszt=C3=B3w przy rozliczeniach mi=C4=99dzynarodo=
+wych.
 
-Thanks again for this series. Before this can be picked up, I would like ag=
-ain
-Artur Rojek to test it on his Dreamcast, so let's loop him in.
+Kiedyv mo=C5=BCemy um=C3=B3wi=C4=87 si=C4=99 na 15-minutow=C4=85 rozmow=C4=
+=99, aby zaprezentowa=C4=87, jak taki model m=C3=B3g=C5=82by dzia=C5=82a=C4=
+=87 w Pa=C5=84stwa firmie - z gwarancj=C4=85 indywidualnych kurs=C3=B3w i=
+ pe=C5=82nym uproszczeniem p=C5=82atno=C5=9Bci? Prosz=C4=99 o propozycj=C4=
+=99 dogodnego terminu.
 
-If he confirms the functionality, I'll pick it up. I'll try to get it revie=
-wed
-later this week.
 
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Pozdrawiam
+Marek Poradecki
