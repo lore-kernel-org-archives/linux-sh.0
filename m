@@ -1,110 +1,156 @@
-Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85F7833E35C
-	for <linux-sh@vger.kernel.org>; Thu,  4 Dec 2025 16:39:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3914E281504
+	for <linux-sh@vger.kernel.org>; Sun,  7 Dec 2025 12:18:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1764866345; cv=none; b=X3SVYtCs+ttLnRq9H2ToUz/19EoZtGn8I4BFkr/BRIRyhDsGJrfaCLBksUB2lNJvPKKMpRNCOnOS429Bg9RLzxgwTUVxNfXB/dH93qFZUlUd9qqeSY+Qfw4A7rktbVQluI+OelwX3vyNxgpCqyBdNIPD4ZxaeURCWtDySFWMErI=
+	t=1765109883; cv=none; b=FJTy6AeEmkVnKRdKOLA3I/GJBqLv7GrjRO8n3/aPkC4r3UU+KQuRalaZcXlDkp6XxxYb7h3OJut8zq1k9mxOibaWdxrB3uJu8+Dt/BhQ9LIZbiPnp9LhSmA52IetsdgZXUS7QJQx2iZs4GH9NIV1HGtVdYTRq+AQD1eeyjbGTXY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1764866345; c=relaxed/simple;
-	bh=SvNHv0bTFKcXTillna3oIEsjHJ4k7Bj8G+9Wpk4xE2w=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=IruQO4gQ60KfLP4zqnhwirUsVjSA8g3XnbaSlWwYNFELSeWC3v1jATOCLDxJQozsNoYGmA2/8oHzyFqegTUuPB5OtgYbepZvV6szGotkDltxIz9UktHRA6PlfoVbVtXEkAONN1iZOdqwdUoHkRHW3ERMIzik65oHiLRCeD6o/9Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=m64GBbpb; arc=none smtp.client-ip=209.85.128.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1765109883; c=relaxed/simple;
+	bh=eHHuk8EuA0OkibycrFyOsApgYPoSZn1CWZpS/ijvq0Y=;
+	h=Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=o83gFyYju75kkWsQowBX2/YNtBQKdvMZ3XECS+hQd8L1E+hLbrmfDy01J7YMqlMcYJVfY6amlDO7MiuOY0xyfNNdLkw82s/GgRpt/bOOseWIYYtTlijmJnuRL80S0lNTHJOJWHOVLDOjZ5r7l7OxXU9Bkva0ZvHHcuVczlhxTZU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=ptJ+j6YP; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=VkgzOLXv; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=0YuJJ3XF; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=yM/pJrbc; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="m64GBbpb"
-Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-477632d9326so8160335e9.1
-        for <linux-sh@vger.kernel.org>; Thu, 04 Dec 2025 08:39:03 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1764866342; x=1765471142; darn=vger.kernel.org;
-        h=mime-version:references:in-reply-to:message-id:date:subject:cc:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=+3Ml0jWCuH/33LJ6xOAJUPn9vl8+nWQjtPcrbdX2QrE=;
-        b=m64GBbpbTRXk52FSBXkmPfAGhOTmKKMuu6mNFVbkF/MaRWchkX8OssZEefd1ehtaul
-         ccUA9fPPFAEmCkutKwMhNcP3ziuVb1lHMamsl47TYk7MoCSWCa3ox0ZI+s/7DA9Dwf5o
-         0XPFTR44WxiZCNKeDGmSGU2UW7PfB8Ek6DXmReNBC6vOhoOdv/gxp0DEAO41UcYOkXkV
-         Z8O5wAMyUWKqIukLfCea6jPu5lCJlKaXOuuSZFgPFQjLkZGgkUMrojkvicQR1bGabdvp
-         L0p9G2cBK2eMpyfhRiiT/DwxsrCDHHHk79j88aSpII0vZsIQ2ZhCCB0eqNwZBzqbyDxO
-         /sTg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1764866342; x=1765471142;
-        h=mime-version:references:in-reply-to:message-id:date:subject:cc:to
-         :from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=+3Ml0jWCuH/33LJ6xOAJUPn9vl8+nWQjtPcrbdX2QrE=;
-        b=sKUaTC+t8HPC9RFxAEg1WwGrNFsEihRzpDp2U46IUmbfpIhJrIpE4i/pWa9bK2YsVq
-         TF3qYgpIVMPKEOyoX483+t/icQeWmiKaEzEze7QnuN4IQmRl4eXxxT7Mvi6tu6Kws23V
-         bo63joCp5u7llW6aGoZjRxrczs4mD8yCw852cZA5Irq8/ovFZTLWGYUvFmx9ZSpW7AmG
-         lEt4yLdyhZnZYtIsgO2WXixuOaDqNyVIsCGqwLYL9fxnVp61wZxZgQBJRR0RJXPb6HE9
-         MeAAKctTCmqEQklCgPppSOaxK6855YyZyGhVi89JiKL7FQusmOi4h2j+XUWo2L72WTB4
-         AZyg==
-X-Forwarded-Encrypted: i=1; AJvYcCVrSUqOgzGU0O3tSB/BOpM7kqDoeFLXsf8Bn0hXlyEWU1uQwtkHlHxC/plZk+5+Bx0JwIPs+IoHmg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxQGWtxLLLGbBjJBaCezA7/2Sj8MScZ8Xre8zqGqPMYb2SOcGk0
-	7k1kNgxyd40SsDghgxNQCILYBV5TL7ZJztaADh/SNx30EQaJdwfAYA+K
-X-Gm-Gg: ASbGncvUVBmFdnw6d4vFBut47XCKiQ6nBHxVHJmomDpipfk2vD2in1dT9P0pWDKdsSr
-	OQcCMadwdWeVVnh5ayb17e9BjyS4FT9vhSIyqh7IdOrITibPw4wfjGeqtLe3bbaipvefrGZd+s2
-	Hkjb6czhhEc91xCGxKsEVA7phkiknuai+FnSL9rTMf3PHh0nPcD6b9zNy1DgoGEJGRQffGSKUVW
-	cVKKE6fwAbPkhEc7cuXURLR2D4y9q92AqUMof+Fy3bd8fW9I9pGXLv/2Um5+UC1z9XyyCwYB/cE
-	H3D2L0a2hgfyeqUB82nR5wKGsMNHQjXcuOOFHS9ZPi3+1T9aouICck10R4aSnYVfGUnrMs7UMO9
-	7fzZqGL07Jktyj/8X1LnBLg+JsqRHeWMRCSkLIkhuj5ERdwveWeiSJs48TFOpcEwY+eBNCB7mxd
-	urn4JEw+dX40xDmwY1ci/qDLa4x/NKKDpRr0Pa3hqfKYFUZ7i1JzbyYzpEoS3Z1hZ8jlg+Cd30K
-	zRiBg==
-X-Google-Smtp-Source: AGHT+IFsyy5YStgxmY5AXM0tdH84tJ569HxdiHRQT0I3Oz0EaQQxZDq00b76OtLTDgynIknFJ4swPA==
-X-Received: by 2002:a05:600c:4710:b0:46e:1fb7:a1b3 with SMTP id 5b1f17b1804b1-4792af3d16fmr63824975e9.23.1764866341710;
-        Thu, 04 Dec 2025 08:39:01 -0800 (PST)
-Received: from dell.localnet (2a01-114f-4013-18c0-0000-0000-0000-0540.ea.ipv6.supernova.orange.pl. [2a01:114f:4013:18c0::540])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4793092c039sm39198205e9.5.2025.12.04.08.38.59
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 04 Dec 2025 08:39:01 -0800 (PST)
-From: Janusz Krzysztofik <jmkrzyszt@gmail.com>
-To: Russell King <linux@armlinux.org.uk>, Vladimir Zapolskiy <vz@mleia.com>,
- Piotr Wojtaszczyk <piotr.wojtaszczyk@timesys.com>,
- Aaro Koskinen <aaro.koskinen@iki.fi>, Tony Lindgren <tony@atomide.com>,
- Thierry Reding <thierry.reding@gmail.com>,
- Jonathan Hunter <jonathanh@nvidia.com>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Keguang Zhang <keguang.zhang@gmail.com>,
- Madhavan Srinivasan <maddy@linux.ibm.com>,
- Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>,
- "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.com>,
- david@ixit.cz
-Cc: linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
- linux-omap@vger.kernel.org, linux-tegra@vger.kernel.org,
- linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-sh@vger.kernel.org, linux-sound@vger.kernel.org,
- David Heidelberg <david@ixit.cz>
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="ptJ+j6YP";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="VkgzOLXv";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="0YuJJ3XF";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="yM/pJrbc"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 16A455BCFD;
+	Sun,  7 Dec 2025 12:17:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1765109879; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=cBd0eFWa3WTOx819+QWxAtcmpEF3LgSjzGKmJhb1WOc=;
+	b=ptJ+j6YPX4g+bVfgoE8ZGTjROuh8vTpSPNCv/qp0Q1ZljH1k6a8NBRAl9PuRb/OAq+XIDy
+	Ms3IQNYL1UGQXarbvyUzIeXgSBkeivNsvAZU9knIC1uAehc4VZSgwD6WyKttisOejkucd4
+	wsZ8RlWhvRqiXF3CkmGsZ4ILGDkvVZo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1765109879;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=cBd0eFWa3WTOx819+QWxAtcmpEF3LgSjzGKmJhb1WOc=;
+	b=VkgzOLXvVzmsNyshw1DtVQoAoqZnxBQbXa/ajCsN5DdEWhfMRf3OddfIE276hMSQ5nWGvz
+	qgzw3pUkeCxWoFDw==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=0YuJJ3XF;
+	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b="yM/pJrbc"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1765109878; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=cBd0eFWa3WTOx819+QWxAtcmpEF3LgSjzGKmJhb1WOc=;
+	b=0YuJJ3XFWR17M6QyJQov2+FyIAhSdoGYPfrmbxb1xuXppPswhnxE1s6EE+4EqIbTRZu8Bp
+	8EX1Rjq6OSEDARqS9qICqkYEYcKjU0uA/07KnY5JMh6XQQnbIagxjjj5mgDtxZuknqyCQ7
+	S6z6B7TTfVPYuJuL+MrjDPCS+IZkj04=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1765109878;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=cBd0eFWa3WTOx819+QWxAtcmpEF3LgSjzGKmJhb1WOc=;
+	b=yM/pJrbcO/dEmDdgL7ZVTAFBtzM7UxjjJqeIgGuIINwlyBUV6fSD7Tb1eGcAL+4S1SR8dQ
+	ln3+ze8SfTkZ/GCA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 67A4E3EA63;
+	Sun,  7 Dec 2025 12:17:57 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id gID+FnVwNWl9JAAAD6G6ig
+	(envelope-from <tiwai@suse.de>); Sun, 07 Dec 2025 12:17:57 +0000
+Date: Sun, 07 Dec 2025 13:17:57 +0100
+Message-ID: <87pl8qv62y.wl-tiwai@suse.de>
+From: Takashi Iwai <tiwai@suse.de>
+To: david@ixit.cz,
+	David Heidelberg via B4 Relay <devnull+david.ixit.cz@kernel.org>
+Cc: Russell King <linux@armlinux.org.uk>,
+	Vladimir Zapolskiy <vz@mleia.com>,
+	Piotr Wojtaszczyk <piotr.wojtaszczyk@timesys.com>,
+	Aaro Koskinen <aaro.koskinen@iki.fi>,
+	Janusz Krzysztofik <jmkrzyszt@gmail.com>,
+	Tony Lindgren <tony@atomide.com>,
+	Thierry Reding <thierry.reding@gmail.com>,
+	Jonathan Hunter <jonathanh@nvidia.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Keguang Zhang <keguang.zhang@gmail.com>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Jaroslav Kysela <perex@perex.cz>,
+	Takashi Iwai <tiwai@suse.com>,
+	linux-arm-kernel@lists.infradead.org,
+	linux-kernel@vger.kernel.org,
+	linux-omap@vger.kernel.org,
+	linux-tegra@vger.kernel.org,
+	linux-mips@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-sh@vger.kernel.org,
+	linux-sound@vger.kernel.org
 Subject: Re: [PATCH] ALSA: Do not build obsolete API
-Date: Thu, 04 Dec 2025 17:38:59 +0100
-Message-ID: <1939135.tdWV9SEqCh@dell>
 In-Reply-To: <20251203-old-alsa-v1-1-ac80704f52c3@ixit.cz>
 References: <20251203-old-alsa-v1-1-ac80704f52c3@ixit.cz>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) Emacs/30.1 Mule/6.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2244374.irdbgypaU6";
- micalg="pgp-sha512"; protocol="application/pgp-signature"
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
+Content-Type: text/plain; charset=US-ASCII
+X-Spam-Flag: NO
+X-Spam-Score: -2.01
+X-Rspamd-Queue-Id: 16A455BCFD
+X-Spamd-Result: default: False [-2.01 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	SUSPICIOUS_RECIPS(1.50)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	RCPT_COUNT_TWELVE(0.00)[29];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	FREEMAIL_CC(0.00)[armlinux.org.uk,mleia.com,timesys.com,iki.fi,gmail.com,atomide.com,nvidia.com,alpha.franken.de,linux.ibm.com,ellerman.id.au,kernel.org,users.sourceforge.jp,libc.org,physik.fu-berlin.de,perex.cz,suse.com,lists.infradead.org,vger.kernel.org,lists.ozlabs.org];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	TAGGED_RCPT(0.00)[david.ixit.cz];
+	R_RATELIMIT(0.00)[to_ip_from(RLin1spj7ezzoz4e1zj94tyerm)];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.de:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.de:dkim,suse.de:mid]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Level: 
 
---nextPart2244374.irdbgypaU6
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="utf-8"; protected-headers="v1"
-From: Janusz Krzysztofik <jmkrzyszt@gmail.com>
-Subject: Re: [PATCH] ALSA: Do not build obsolete API
-Date: Thu, 04 Dec 2025 17:38:59 +0100
-Message-ID: <1939135.tdWV9SEqCh@dell>
-In-Reply-To: <20251203-old-alsa-v1-1-ac80704f52c3@ixit.cz>
-References: <20251203-old-alsa-v1-1-ac80704f52c3@ixit.cz>
-MIME-Version: 1.0
-
-On Wednesday, 3 December 2025 23:34:10 CET David Heidelberg via B4 Relay wrote:
+On Wed, 03 Dec 2025 23:34:10 +0100,
+David Heidelberg via B4 Relay wrote:
+> 
 > From: David Heidelberg <david@ixit.cz>
 > 
 > ALSA 0.9.0-rc3 is from 2002, 23 years old.
@@ -112,266 +158,11 @@ On Wednesday, 3 December 2025 23:34:10 CET David Heidelberg via B4 Relay wrote:
 > Signed-off-by: David Heidelberg <david@ixit.cz>
 > ---
 > Maybe I could drop also the code and Kconfig option?
-> 
-> David
-> ---
->  arch/arm/configs/am200epdkit_defconfig    | 1 -
->  arch/arm/configs/lpc32xx_defconfig        | 1 -
->  arch/arm/configs/omap1_defconfig          | 1 -
 
-For omap1:
+Thanks, applied now.
 
-Reviewed-by: Janusz Krzysztofik <jmkrzyszt@gmail.com>
+I believe it's safer to have this default only off for 6.19, then
+disable for 6.20, eventually drop the dead code later.
 
 
->  arch/arm/configs/tegra_defconfig          | 1 -
->  arch/mips/configs/gcw0_defconfig          | 1 -
->  arch/mips/configs/loongson1_defconfig     | 1 -
->  arch/mips/configs/qi_lb60_defconfig       | 1 -
->  arch/mips/configs/rbtx49xx_defconfig      | 1 -
->  arch/mips/configs/rs90_defconfig          | 1 -
->  arch/powerpc/configs/85xx-hw.config       | 1 -
->  arch/powerpc/configs/86xx-hw.config       | 1 -
->  arch/powerpc/configs/mpc5200_defconfig    | 1 -
->  arch/powerpc/configs/ppc6xx_defconfig     | 1 -
->  arch/sh/configs/edosk7760_defconfig       | 1 -
->  arch/sh/configs/se7724_defconfig          | 1 -
->  arch/sh/configs/sh7785lcr_32bit_defconfig | 1 -
->  sound/core/Kconfig                        | 2 +-
->  17 files changed, 1 insertion(+), 17 deletions(-)
-> 
-> diff --git a/arch/arm/configs/am200epdkit_defconfig b/arch/arm/configs/am200epdkit_defconfig
-> index 134a559aba3dd..2367b1685c1cf 100644
-> --- a/arch/arm/configs/am200epdkit_defconfig
-> +++ b/arch/arm/configs/am200epdkit_defconfig
-> @@ -68,7 +68,6 @@ CONFIG_SOUND=m
->  CONFIG_SND=m
->  CONFIG_SND_MIXER_OSS=m
->  CONFIG_SND_PCM_OSS=m
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_VERBOSE_PROCFS is not set
->  CONFIG_SND_PXA2XX_AC97=m
->  CONFIG_USB_GADGET=y
-> diff --git a/arch/arm/configs/lpc32xx_defconfig b/arch/arm/configs/lpc32xx_defconfig
-> index 2bddb0924a8c0..b9e2e603cd95e 100644
-> --- a/arch/arm/configs/lpc32xx_defconfig
-> +++ b/arch/arm/configs/lpc32xx_defconfig
-> @@ -113,7 +113,6 @@ CONFIG_LOGO=y
->  # CONFIG_LOGO_LINUX_VGA16 is not set
->  CONFIG_SOUND=y
->  CONFIG_SND=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_VERBOSE_PROCFS is not set
->  CONFIG_SND_DEBUG=y
->  CONFIG_SND_DEBUG_VERBOSE=y
-> diff --git a/arch/arm/configs/omap1_defconfig b/arch/arm/configs/omap1_defconfig
-> index dee820474f444..df88763fc7c3d 100644
-> --- a/arch/arm/configs/omap1_defconfig
-> +++ b/arch/arm/configs/omap1_defconfig
-> @@ -148,7 +148,6 @@ CONFIG_SOUND=y
->  CONFIG_SND=y
->  CONFIG_SND_MIXER_OSS=y
->  CONFIG_SND_PCM_OSS=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_VERBOSE_PROCFS is not set
->  CONFIG_SND_DUMMY=y
->  CONFIG_SND_USB_AUDIO=y
-> diff --git a/arch/arm/configs/tegra_defconfig b/arch/arm/configs/tegra_defconfig
-> index ce70ff07c978a..68aedaf92667a 100644
-> --- a/arch/arm/configs/tegra_defconfig
-> +++ b/arch/arm/configs/tegra_defconfig
-> @@ -219,7 +219,6 @@ CONFIG_FRAMEBUFFER_CONSOLE_ROTATION=y
->  CONFIG_LOGO=y
->  CONFIG_SOUND=y
->  CONFIG_SND=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_DRIVERS is not set
->  CONFIG_SND_HDA_TEGRA=y
->  CONFIG_SND_HDA_INPUT_BEEP=y
-> diff --git a/arch/mips/configs/gcw0_defconfig b/arch/mips/configs/gcw0_defconfig
-> index fda9971bdd8d9..adb9fd62ddb0d 100644
-> --- a/arch/mips/configs/gcw0_defconfig
-> +++ b/arch/mips/configs/gcw0_defconfig
-> @@ -79,7 +79,6 @@ CONFIG_LOGO=y
->  # CONFIG_LOGO_LINUX_VGA16 is not set
->  CONFIG_SOUND=y
->  CONFIG_SND=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_PROC_FS is not set
->  # CONFIG_SND_DRIVERS is not set
->  # CONFIG_SND_SPI is not set
-> diff --git a/arch/mips/configs/loongson1_defconfig b/arch/mips/configs/loongson1_defconfig
-> index 02d29110f7024..1d9781ff96986 100644
-> --- a/arch/mips/configs/loongson1_defconfig
-> +++ b/arch/mips/configs/loongson1_defconfig
-> @@ -119,7 +119,6 @@ CONFIG_WATCHDOG_SYSFS=y
->  CONFIG_LOONGSON1_WDT=y
->  CONFIG_SOUND=y
->  CONFIG_SND=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_DRIVERS is not set
->  # CONFIG_SND_MIPS is not set
->  # CONFIG_SND_USB is not set
-> diff --git a/arch/mips/configs/qi_lb60_defconfig b/arch/mips/configs/qi_lb60_defconfig
-> index 5f5b0254d75e7..a1bb0792f6eb1 100644
-> --- a/arch/mips/configs/qi_lb60_defconfig
-> +++ b/arch/mips/configs/qi_lb60_defconfig
-> @@ -81,7 +81,6 @@ CONFIG_LOGO=y
->  # CONFIG_LOGO_LINUX_CLUT224 is not set
->  CONFIG_SOUND=y
->  CONFIG_SND=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_VERBOSE_PROCFS is not set
->  # CONFIG_SND_DRIVERS is not set
->  # CONFIG_SND_SPI is not set
-> diff --git a/arch/mips/configs/rbtx49xx_defconfig b/arch/mips/configs/rbtx49xx_defconfig
-> index 03a7bbe28a532..49c709d663beb 100644
-> --- a/arch/mips/configs/rbtx49xx_defconfig
-> +++ b/arch/mips/configs/rbtx49xx_defconfig
-> @@ -53,7 +53,6 @@ CONFIG_TXX9_WDT=m
->  # CONFIG_VGA_ARB is not set
->  CONFIG_SOUND=m
->  CONFIG_SND=m
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_VERBOSE_PROCFS is not set
->  # CONFIG_SND_DRIVERS is not set
->  # CONFIG_SND_PCI is not set
-> diff --git a/arch/mips/configs/rs90_defconfig b/arch/mips/configs/rs90_defconfig
-> index a53dd66e9b864..8382d535e6dc1 100644
-> --- a/arch/mips/configs/rs90_defconfig
-> +++ b/arch/mips/configs/rs90_defconfig
-> @@ -105,7 +105,6 @@ CONFIG_LOGO=y
->  CONFIG_SOUND=y
->  CONFIG_SND=y
->  # CONFIG_SND_PCM_TIMER is not set
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_PROC_FS is not set
->  # CONFIG_SND_DRIVERS is not set
->  # CONFIG_SND_MIPS is not set
-> diff --git a/arch/powerpc/configs/85xx-hw.config b/arch/powerpc/configs/85xx-hw.config
-> index 8aff832173977..2b19c20a9a2c4 100644
-> --- a/arch/powerpc/configs/85xx-hw.config
-> +++ b/arch/powerpc/configs/85xx-hw.config
-> @@ -117,7 +117,6 @@ CONFIG_SND_INTEL8X0=y
->  CONFIG_SND_POWERPC_SOC=y
->  # CONFIG_SND_PPC is not set
->  CONFIG_SND_SOC=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_USB is not set
->  CONFIG_SND=y
->  CONFIG_SOUND=y
-> diff --git a/arch/powerpc/configs/86xx-hw.config b/arch/powerpc/configs/86xx-hw.config
-> index e7bd265fae5a4..07f30ab881e59 100644
-> --- a/arch/powerpc/configs/86xx-hw.config
-> +++ b/arch/powerpc/configs/86xx-hw.config
-> @@ -80,7 +80,6 @@ CONFIG_SERIO_LIBPS2=y
->  CONFIG_SND_INTEL8X0=y
->  CONFIG_SND_MIXER_OSS=y
->  CONFIG_SND_PCM_OSS=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  CONFIG_SND=y
->  CONFIG_SOUND=y
->  CONFIG_ULI526X=y
-> diff --git a/arch/powerpc/configs/mpc5200_defconfig b/arch/powerpc/configs/mpc5200_defconfig
-> index c0fe5e76604a0..617650cea56a9 100644
-> --- a/arch/powerpc/configs/mpc5200_defconfig
-> +++ b/arch/powerpc/configs/mpc5200_defconfig
-> @@ -75,7 +75,6 @@ CONFIG_FB_SM501=m
->  CONFIG_LOGO=y
->  CONFIG_SOUND=y
->  CONFIG_SND=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_DRIVERS is not set
->  # CONFIG_SND_PCI is not set
->  # CONFIG_SND_PPC is not set
-> diff --git a/arch/powerpc/configs/ppc6xx_defconfig b/arch/powerpc/configs/ppc6xx_defconfig
-> index b082c1fae13c9..787d707f64a42 100644
-> --- a/arch/powerpc/configs/ppc6xx_defconfig
-> +++ b/arch/powerpc/configs/ppc6xx_defconfig
-> @@ -726,7 +726,6 @@ CONFIG_SND_OSSEMUL=y
->  CONFIG_SND_MIXER_OSS=m
->  CONFIG_SND_PCM_OSS=m
->  CONFIG_SND_DYNAMIC_MINORS=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  CONFIG_SND_VERBOSE_PRINTK=y
->  CONFIG_SND_DEBUG=y
->  CONFIG_SND_DEBUG_VERBOSE=y
-> diff --git a/arch/sh/configs/edosk7760_defconfig b/arch/sh/configs/edosk7760_defconfig
-> index abeae220606a3..905fac1072845 100644
-> --- a/arch/sh/configs/edosk7760_defconfig
-> +++ b/arch/sh/configs/edosk7760_defconfig
-> @@ -79,7 +79,6 @@ CONFIG_FB_TILEBLITTING=y
->  CONFIG_FB_SH_MOBILE_LCDC=m
->  CONFIG_SOUND=y
->  CONFIG_SND=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_VERBOSE_PROCFS is not set
->  CONFIG_SND_VERBOSE_PRINTK=y
->  CONFIG_SND_SOC=y
-> diff --git a/arch/sh/configs/se7724_defconfig b/arch/sh/configs/se7724_defconfig
-> index 9e3a54936f76f..8ca46d704c8ba 100644
-> --- a/arch/sh/configs/se7724_defconfig
-> +++ b/arch/sh/configs/se7724_defconfig
-> @@ -83,7 +83,6 @@ CONFIG_LOGO=y
->  # CONFIG_LOGO_SUPERH_VGA16 is not set
->  CONFIG_SOUND=y
->  CONFIG_SND=m
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_DRIVERS is not set
->  # CONFIG_SND_SPI is not set
->  # CONFIG_SND_SUPERH is not set
-> diff --git a/arch/sh/configs/sh7785lcr_32bit_defconfig b/arch/sh/configs/sh7785lcr_32bit_defconfig
-> index eb63aa61b0465..5468cc53cddb4 100644
-> --- a/arch/sh/configs/sh7785lcr_32bit_defconfig
-> +++ b/arch/sh/configs/sh7785lcr_32bit_defconfig
-> @@ -93,7 +93,6 @@ CONFIG_SND_PCM_OSS=y
->  CONFIG_SND_SEQUENCER_OSS=y
->  CONFIG_SND_HRTIMER=y
->  CONFIG_SND_DYNAMIC_MINORS=y
-> -# CONFIG_SND_SUPPORT_OLD_API is not set
->  # CONFIG_SND_VERBOSE_PROCFS is not set
->  CONFIG_SND_VERBOSE_PRINTK=y
->  CONFIG_SND_DEBUG=y
-> diff --git a/sound/core/Kconfig b/sound/core/Kconfig
-> index 48db44fa56feb..4e7bc370ffd7f 100644
-> --- a/sound/core/Kconfig
-> +++ b/sound/core/Kconfig
-> @@ -155,7 +155,7 @@ config SND_MAX_CARDS
->  
->  config SND_SUPPORT_OLD_API
->  	bool "Support old ALSA API"
-> -	default y
-> +	default n
->  	help
->  	  Say Y here to support the obsolete ALSA PCM API (ver.0.9.0 rc3
->  	  or older).
-> 
-> ---
-> base-commit: b2c27842ba853508b0da00187a7508eb3a96c8f7
-> change-id: 20251203-old-alsa-fa2c2cb038e1
-> 
-> Best regards,
-> 
-
-
---nextPart2244374.irdbgypaU6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAABCgAdFiEEnyr6IsGnTYAeAkHJ2WqSnltsjBoFAmkxuSMACgkQ2WqSnlts
-jBoEqQf/Sjc0qt+Drex1cQ2k/z80kq9/GzHrmnzgVxa+5a/fQpOUSV9mjQ8dXZT1
-MWYxTSIbMYegarGZ7hbByLrhKbbV04MghXJ5m+sAhdDrN6QAJp5BaVu5Ols6Z5xH
-MOUch2VVP88w08L9IBrwqJNFyBNxM5O4hpgEWCoO0CccbgAmtg+M3yJfxLqpz//Y
-pBXwt0bdY/fKicChMpUmrsSFda0rnItv56Mp17YoibFbVxRCKSnfOLDiE4qaIAae
-L09ouH5JZ3U9AxOel2JETxGJiWxv5iDWTrsKFdKt6LCYQ/zOsCerakNM8PSxlsUo
-hOPg0Wrf2HhofRo0M2unRvM7bCbPpA==
-=HYXo
------END PGP SIGNATURE-----
-
---nextPart2244374.irdbgypaU6--
-
-
-
+Takashi
