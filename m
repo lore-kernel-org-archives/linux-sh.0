@@ -1,149 +1,124 @@
-Received: from flow-a6-smtp.messagingengine.com (flow-a6-smtp.messagingengine.com [103.168.172.141])
+Received: from insect.birch.relay.mailchannels.net (insect.birch.relay.mailchannels.net [23.83.209.93])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 10D461A9FA8;
-	Mon,  8 Dec 2025 20:06:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.141
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765224366; cv=none; b=eQmLTNVd//YxF6eO4bOE3Nu7foDN8UVZPDdRgkpPiAnbuCmmgO59tksH3TslcovX7f0snJiyWVmIYsQda8/BSCy4GPNkVJOiiK+Q1cw302Eqe4Qme4EIJXdFxGMX8l0stQgL6Zp7VkmIzzZqTM9fBkuheMYwkI9UVMdMGKK4nfY=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765224366; c=relaxed/simple;
-	bh=jr5/ZXHHETObVyfq2xnDJTDvOshfBwx+krGl3v0gYC4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=O3rj2taSf8oYlgAYyzL4Dd64gsp7B2PYtGzSz1SDmlUnRbTIgqYCYeDMp7+9YBLK4A6iz+hMxmoJq7HFgRz29c9wCujHcz9etE7EaDN3m7rLDJugm3sf7068piHEHzC0MhpSqM7XM7874XJGiKj7/OJB7fxuU4e0mkLF7ArEktQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=jannau.net; spf=pass smtp.mailfrom=jannau.net; dkim=pass (2048-bit key) header.d=jannau.net header.i=@jannau.net header.b=RCw4MYw+; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=voCV257E; arc=none smtp.client-ip=103.168.172.141
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=jannau.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=jannau.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37D0C298CB7;
+	Mon,  8 Dec 2025 22:21:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.209.93
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1765232471; cv=pass; b=DlZ33jTGV1/XK/ilj16PFPkibfyFn1IifDEUskxj0klHuBMzOPkuJfXX9m6sz1qy1RsqjjLIKbXVaCQpveMLkEusrP2kf3POXV51cH5Kvelk5IaLYRSUFbZTTtA817tW4T3IiGSWVAXFcadDXrjZUKiDS6L1Pmeml4uXGZYZEh8=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1765232471; c=relaxed/simple;
+	bh=KFi5Hx4685FsJdPvT54y8Jr07Z0DhyPEjBS5zty/cUo=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=U3az6jw/e0kjZlgMS9Lnv5oh6XuXSGGtTs5hn9WB3sBUYJcP170iLZq8QFwoQwyuxBXItaZNSJxdzFOPwLvXpBn+qQjffZFDC/kVYbZnVGWhwJgwi8DrQhPu06tISj196qqJa63D/M/UR8Mxbs05Ak2ftVUN3r8Zoc2lvb0m46I=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=eJb/RiLl; arc=pass smtp.client-ip=23.83.209.93
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=jannau.net header.i=@jannau.net header.b="RCw4MYw+";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="voCV257E"
-Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
-	by mailflow.phl.internal (Postfix) with ESMTP id 15BE51380418;
-	Mon,  8 Dec 2025 15:06:00 -0500 (EST)
-Received: from phl-mailfrontend-02 ([10.202.2.163])
-  by phl-compute-06.internal (MEProxy); Mon, 08 Dec 2025 15:06:00 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=jannau.net; h=cc
-	:cc:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1765224360; x=1765231560; bh=geGVe3G5SB
-	gEZ59+oVuK/Iwq85pb8lTkLlayLey8xSA=; b=RCw4MYw+7ZLDHkj305wxxjCRSX
-	rMrdbrBgi9f25g/3it320zvhMNV1ZQKoK4HMoVtdSMCSQxa3T1NtQGZK2ji7FaB+
-	4EAMXj2Z/18fg18HLzgIp1Xd2gaRaVf6aOd9tq+17uy6+b25gxNy3mnV9680Kb9/
-	5tqHVF1j8ty4YqRtlzJwDQD/AFabZMuWlqsu+ivO0qERdUZBTsbfvToLgDReiU2c
-	Lh/Eba71Uo99rQNJKXg+dWVZlsvVZ4EEWaxpUn0pfDgHeJqy1Ci7jT91cm3WjvPy
-	sTJxo0O0i2VTRszFsHu9XlHbQZYuMm/iGITipFRODxC1B8IcWm5/KrQbrMbg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1765224360; x=1765231560; bh=geGVe3G5SBgEZ59+oVuK/Iwq85pb8lTkLla
-	yLey8xSA=; b=voCV257E8ExI8LRf6UdVA7F02TYLxADA60npChdBR6Y21xs0tRA
-	C1uw+AV9CLSaNfK6RAUV6AE1RZBKQaSh2/pgZThaQt1P282do/o12nWenujxz3Pg
-	/tdhnCFD0X7RQQSdVppzFajbBlqF0NSSuk+kHONsZxH3CEBuJYx+4gBEMsH+gyIP
-	razXamAr0cLJLucn4Z8U6ZvWzmg4VLNRkI8fW7bkvNN/o41lmXQ/g0VAlsbl0p+c
-	9kOr6shetIpWgA2fAxvQUSRm6uEgMj9wjThm4m3EyfuK4xRaW/GPDonriBPihui9
-	NKID6dEU3zuG8C0j+xnEP0PQag6LUCS0h3A==
-X-ME-Sender: <xms:pi83aTQUBBxxcwI8Ju7BapuF7LwulYjYQpKe7sWAR0r_uWtzDdDwRg>
-    <xme:pi83aebVHsxrKMEuQywvzdXSDZHpM9MK2UiluZkdXAVmh0J0nNZu6U6gfkZg9j0Ga
-    Ut53OsW7mEjA55oME3b-thugVKSe0_5Tbewl2mI88XfPPTSUxekmw>
-X-ME-Received: <xmr:pi83acQeu23D1kI1rLhQ4wr0x5rXNlW92yKuzfJ9DXbmbyD1PnQo3LIx3zAyL52iJBsHs4oNCdPXZZnY0nx-sHu7J1Hs6kJCHtU>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgddujeehlecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
-    hrpeffhffvvefukfhfgggtuggjsehttdertddttdejnecuhfhrohhmpeflrghnnhgvucfi
-    rhhunhgruhcuoehjsehjrghnnhgruhdrnhgvtheqnecuggftrfgrthhtvghrnhepgfduue
-    ffleefkeegueektdehkeejtedtffdtudejhfdvheetgfeigfeltdeufeejnecuffhomhgr
-    ihhnpehkvghrnhgvlhdrohhrghenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmh
-    epmhgrihhlfhhrohhmpehjsehjrghnnhgruhdrnhgvthdpnhgspghrtghpthhtohepvdei
-    pdhmohguvgepshhmthhpohhuthdprhgtphhtthhopehprghulhhksehshihsqdgsrghsvg
-    drihhopdhrtghpthhtoheprhguuhhnlhgrphesihhnfhhrrgguvggrugdrohhrghdprhgt
-    phhtthhopehlihhnuhigqdhkvghrnhgvlhesvhhgvghrrdhkvghrnhgvlhdrohhrghdprh
-    gtphhtthhopegrnhguhidrshhhvghvtghhvghnkhhosehgmhgrihhlrdgtohhmpdhrtghp
-    thhtoheprghrnhgusegrrhhnuggsrdguvgdprhgtphhtthhopegrnhgurhgvfidrjhhonh
-    gvsheslhhinhhugidruggvvhdprhgtphhtthhopehlihhnuhigqdhomhgrphesvhhgvghr
-    rdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehophgvnhgsmhgtsehlihhsthhsrdhoii
-    hlrggsshdrohhrghdprhgtphhtthhopehlihhnuhigqdhsohhunhgusehvghgvrhdrkhgv
-    rhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:pi83aZ4RCJmeDa-VR1cQPG2ul73JR-gGDUFjKdpu-22mFdL9oWUOfw>
-    <xmx:pi83aXrSwaSszaHmCrk55lMdmsGtmyEQHQ1s-QpJy4Rt1_cXfEHipg>
-    <xmx:pi83aUR5DbLatVwQOF8-uRLn9TImi_QeLc8Ti5pE_VqfQwUHqh1VcA>
-    <xmx:pi83aTtoeQfXbJumEOlxloGR9zkRk3a07od05eZIJLIDpzutEw-WGg>
-    <xmx:qC83aQtVE-oT3QFyD3EhDToVHKkkvo2HfKm_z0WZaMfBkC3mxyGDZ6m_>
-Feedback-ID: i47b949f6:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 8 Dec 2025 15:05:57 -0500 (EST)
-Date: Mon, 8 Dec 2025 21:05:55 +0100
-From: Janne Grunau <j@jannau.net>
-To: Paul Kocialkowski <paulk@sys-base.io>
-Cc: Randy Dunlap <rdunlap@infradead.org>,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	Andy Shevchenko <andy.shevchenko@gmail.com>,
-	Arnd Bergmann <arnd@arndb.de>, andrew.jones@linux.dev,
-	linux-omap@vger.kernel.org, openbmc@lists.ozlabs.org,
-	linux-sound@vger.kernel.org,
-	Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-	linux-mips@vger.kernel.org, asahi@lists.linux.dev,
-	"dri-devel@lists.freedesktop.org" <dri-devel@lists.freedesktop.org>,
-	chrome-platform@lists.linux.dev,
-	Paul Cercueil <paul@crapouillou.net>,
-	linux-stm32@st-md-mailman.stormreply.com,
-	Linux ARM <linux-arm-kernel@lists.infradead.org>,
-	linux-gpio@vger.kernel.org, Srinivas Kandagatla <srini@kernel.org>,
-	Philipp Zabel <p.zabel@pengutronix.de>,
-	Matti Vaittinen <mazziesaccount@gmail.com>,
-	Jonathan Cameron <jic23@kernel.org>,
-	Vaibhav Hiremath <hvaibhav.linux@gmail.com>,
-	linux-sh@vger.kernel.org, x86@kernel.org,
-	Max Filippov <jcmvbkbc@gmail.com>
-Subject: Re: Kconfig dangling references (BZ 216748)
-Message-ID: <20251208200555.GA333481@robin.jannau.net>
-References: <22b92ddf-6321-41b5-8073-f9c7064d3432@infradead.org>
- <aTcVXrUXVsyjaT22@shepard>
+	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="eJb/RiLl"
+X-Sender-Id: dreamhost|x-authsender|rob@landley.net
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id F0E3B121E1D;
+	Mon, 08 Dec 2025 22:21:01 +0000 (UTC)
+Received: from pdx1-sub0-mail-a247.dreamhost.com (100-103-73-45.trex-nlb.outbound.svc.cluster.local [100.103.73.45])
+	(Authenticated sender: dreamhost)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 6ADD1121A28;
+	Mon, 08 Dec 2025 22:21:01 +0000 (UTC)
+ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
+	t=1765232461;
+	b=qZiy6ry/ZBfinqyEfJvr7nVpcrbPpSKaMlWE9UjDAg/pNCBukuD2NAnMncvzqIGsIAVpzM
+	HzwS189SP3AI08MspeucPD8PGF6+8vqsupoIG1T1UzWoKaKKLeyM0pFB/I/OGiGuLK7RO/
+	taG2bde3EVeUQg/SSASUb+/AucTAGklXoGKz2tOTFCJVfD4mjizVvlxWzBpJ6SLd/gGmpu
+	04S8D7/mOtwTPu5ynesELlJc3JkwMJQrhGyuhtgaiacRXmicLPNQRjCqf79rW22vErzgUo
+	a/ZX9cvMZFfTXg+TKoEuDqoY7bg7kCG8G0BeDh+t9uP7QvLt+O3G1BsO8xFDaw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=mailchannels.net;
+	s=arc-2022; t=1765232461;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references:dkim-signature;
+	bh=L1RQ3iFll8k4vyXkf57ManBwY/nb1VghWZ8P3Q8kdCM=;
+	b=cbS+u8RxM3GJjfOBZB9V+GlXlYQRkE+Q659aQYj6E3lNCmJjsVKAaz23xirJfrFvV8OTBj
+	JwpGeTTwxqXwlvoV+OgR8xyNtH2AEMXSNC2rxVtqAPIUOdr3Lpa8Yax8ubCFnQZnRPz2rF
+	hcdQa+Q3SbRdRI+4gwE0+HROavgVG618i2lv8l3f67x855LFsi5s3fKAPIT56leQzWrfkl
+	6DtYDqYQmt4yFSctLfaoIDAL50udm/ye2ZtAwasaZAAidEtElA/GY0lWjrnMLPpGNcGrDu
+	ExKh8p7n3YDMPsXtItG3DitQO1A4tu6xLD7Imnt9coo2B/cuk5XSFKCxIcAzrA==
+ARC-Authentication-Results: i=1;
+	rspamd-57b9fc4dc5-grwdn;
+	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
+X-Sender-Id: dreamhost|x-authsender|rob@landley.net
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
+X-MailChannels-Auth-Id: dreamhost
+X-Coil-Whispering: 0033e86560d9169c_1765232461776_2558580605
+X-MC-Loop-Signature: 1765232461776:1297394009
+X-MC-Ingress-Time: 1765232461775
+Received: from pdx1-sub0-mail-a247.dreamhost.com (pop.dreamhost.com
+ [64.90.62.162])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
+	by 100.103.73.45 (trex/7.1.3);
+	Mon, 08 Dec 2025 22:21:01 +0000
+Received: from [192.168.88.2] (unknown [209.81.127.98])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	(Authenticated sender: rob@landley.net)
+	by pdx1-sub0-mail-a247.dreamhost.com (Postfix) with ESMTPSA id 4dQGf41lb2z106B;
+	Mon,  8 Dec 2025 14:21:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
+	s=dreamhost; t=1765232461;
+	bh=L1RQ3iFll8k4vyXkf57ManBwY/nb1VghWZ8P3Q8kdCM=;
+	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
+	b=eJb/RiLlvRi4iGeCSlIcsiY3teg4ovb/kpSB0cIkachS1hxBEWt2NOG9hsGWOG1Nq
+	 J0ixH5dJhTETWB0rzWaQq4Mus6J9EUG+plLoUuZVp2mk/Gk5UAxj/qktIiG4st54kL
+	 o7BSP7dknliEVwlz+lYeN9MoXVCjjA9Jt+47QDhMhew3WNtfvk5+deCc5vQF/+0BZZ
+	 OY/Cb5ZCnAzShd9lL7nzM8DETmqU4u2g32be+3hcrWvKlH39gDhCUaMIhDyd5NxToe
+	 u7BO9evWD8w37HVK5/igxtD1aH44bI6EEjm53Uh9QB2HtKx5ugRAd/8pi/GGdmSbZT
+	 6/t8XN//fiDQQ==
+Message-ID: <f10e135e-14c5-4bc0-8100-1712be3796dd@landley.net>
+Date: Mon, 8 Dec 2025 16:20:57 -0600
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <aTcVXrUXVsyjaT22@shepard>
+User-Agent: Mozilla Thunderbird
+Subject: Re: Kconfig dangling references (BZ 216748)
+To: Randy Dunlap <rdunlap@infradead.org>,
+ Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, andrew.jones@linux.dev,
+ Alexander Shishkin <alexander.shishkin@linux.intel.com>,
+ "dri-devel@lists.freedesktop.org" <dri-devel@lists.freedesktop.org>,
+ Paul Kocialkowski <paulk@sys-base.io>, chrome-platform@lists.linux.dev,
+ Paul Cercueil <paul@crapouillou.net>,
+ linux-stm32@st-md-mailman.stormreply.com,
+ Srinivas Kandagatla <srini@kernel.org>,
+ Philipp Zabel <p.zabel@pengutronix.de>,
+ Matti Vaittinen <mazziesaccount@gmail.com>,
+ Jonathan Cameron <jic23@kernel.org>,
+ Vaibhav Hiremath <hvaibhav.linux@gmail.com>, linux-sh@vger.kernel.org,
+ Max Filippov <jcmvbkbc@gmail.com>
+References: <22b92ddf-6321-41b5-8073-f9c7064d3432@infradead.org>
+Content-Language: en-US
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <22b92ddf-6321-41b5-8073-f9c7064d3432@infradead.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-On Mon, Dec 08, 2025 at 07:13:50PM +0100, Paul Kocialkowski wrote:
-> Hi Randy,
-> 
-> On Sun 07 Dec 25, 18:04, Randy Dunlap wrote:
-> > from  https://bugzilla.kernel.org/show_bug.cgi?id=216748
-> > 
-> > The bugzilla entry includes a Perl script and a shell script.
-> > This is the edited result of running them (I removed some entries that were noise).
-> 
-> [...]
-> 
-> > DRM_KMS_DMA_HELPER ---
-> > drivers/gpu/drm/adp/Kconfig:9:	select DRM_KMS_DMA_HELPER
-> > drivers/gpu/drm/logicvc/Kconfig:7:	select DRM_KMS_DMA_HELPER
-> 
-> For these two, the symbol was removed in commit
-> 09717af7d13d63df141ae6e71686289989d17efd
+On 12/7/25 20:04, Randy Dunlap wrote:
+> USB_OHCI_SH ---
+> arch/sh/Kconfig:334:	select USB_OHCI_SH if USB_OHCI_HCD
+> arch/sh/Kconfig:344:	select USB_OHCI_SH if USB_OHCI_HCD
+> arch/sh/Kconfig:429:	select USB_OHCI_SH if USB_OHCI_HCD
+> arch/sh/Kconfig:455:	select USB_OHCI_SH if USB_OHCI_HCD
+> arch/sh/configs/sh7757lcr_defconfig:61:CONFIG_USB_OHCI_SH=y
+Commit 231a72e03af6 removed the only user of CONFIG_USB_OHCI_SH (an 
+#ifdef in drivers/usb/host/ohci-hcd.c), commit f6723b569a67 missed it 
+cleaning up, then commit 4f6dfc2136fb special case removed the symbol 
+but not references to it.
 
-That commit removed DRM_KMS_CMA_HELPER. Later commit 6bcfe8eaeef0
-("drm/fb: rename FB CMA helpers to FB DMA helpers") renamed
-DRM_KMS_CMA_HELPER erroneously to DRM_KMS_DMA_HELPER.
+It can go.
 
-> but these two drivers either were
-> missed by the batch rename or were introduced a bit later.
-
-In the case of drivers/gpu/drm/adp/Kconfig it was missed much later
-during review (but iirc went through the same rename out of tree).
-
-> Since the symbol selected DRM_GEM_CMA_HELPER (which is still needed by the
-> drivers), it should be replaced with DRM_GEM_CMA_HELPER.
-
-That symbol doesn't exist anymore either. It's now DRM_GEM_DMA_HELPER
-which is already present in both files.
-
-So the "select DRM_KMS_DMA_HELPER" lines can be removed from both files.
-
-Janne
+Rob
