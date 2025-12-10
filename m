@@ -1,215 +1,148 @@
-Received: from aposti.net (aposti.net [185.119.170.32])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from leonov.paulk.fr (leonov.paulk.fr [185.233.101.22])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 061626FC5;
-	Wed, 10 Dec 2025 13:17:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.119.170.32
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DCE5326FDBD;
+	Wed, 10 Dec 2025 22:10:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.233.101.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765372646; cv=none; b=aUlcRiEWkcvXz4dg+n624o5EcevZ1qGwI6HsyzCST5ITksB4pCeFQKLFSnIHNwK702n4h5N2ou/bv3DL60270rWDDng9WHLrqnB6Eso+aJc+L+YkDNkUtvucOILhXtNOZoOsjYaKtSj/5xn2e6A2G6PMbTnzhRCBb/dk7NFGVyI=
+	t=1765404627; cv=none; b=FFRi5WUvb3WwRR66Cl+UsJ3LXe54+GYEueV6tt2epOVsevNGHapZcyRvP5azSXGeJbPmd+88ZCyV+Chex0/SjoM98fadrXp5Sgv5+kQWyYGsHiJ56r91KCswMTHgZsSGASlaCJweac989wJPRw1D8sJrJJVt7PMuRIFFFMLTe+A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765372646; c=relaxed/simple;
-	bh=jcPu3SNVQJaXw9PqEo38M18ABhD7SAoOI2W2LvihJ68=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=KRdleWvJ3m97Pnh889nzPVtHX26xI8yG7D/D2P1hg3v8/1do1X4rAIt4o0OcHzIRJCN/VwKPBDoWZqDvToGGGEMzYTIXoB9+5QrphkzHYBRtpNo+K0Cws/cmqANC6nndRnUp7ml8HR6lHl0TuNaijhsY1vLRjvxUo2UoS9cEKjk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=crapouillou.net; spf=pass smtp.mailfrom=crapouillou.net; dkim=pass (1024-bit key) header.d=crapouillou.net header.i=@crapouillou.net header.b=RnCMPHJ8; arc=none smtp.client-ip=185.119.170.32
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=crapouillou.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=crapouillou.net
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=crapouillou.net header.i=@crapouillou.net header.b="RnCMPHJ8"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=crapouillou.net;
-	s=mail; t=1765372011;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=cDRFy6vcE6IK0n780GaRWgRqUqt6rq2uXI/t4/Gr+Mo=;
-	b=RnCMPHJ8+5bLooq6YXu3nxjc4rHzf3q6p7Xq5Db7RIOUc6t+Xd3ujkkPR0UB3ezQtrVOcb
-	eEW6BLRdJMR0FiH+oIzNU8lDYzI29mfeAEpWk0l8VPS1wWY4/shf0rvBVsaV0G+NMHf00k
-	+Cudz+YjfUoQ/V5j0AoCmAvEmoGw5dk=
-Message-ID: <4b6db1eb455fff8e3c7372943faa5ef179c1d19f.camel@crapouillou.net>
+	s=arc-20240116; t=1765404627; c=relaxed/simple;
+	bh=9Mbw+2a+O0bpocbYBboqIR0wKgD/bxSaeJe1Sq+BSnE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=q/5gSkUC3JSQmdmMXRSk87tcZeqZZuLuCQB4lRMIOKvzY4t0DgWtb8iRQCveYND/+p45I88n1P0Qx8jhTs3p9aziJvYgl426rnTb1Po9uDMbjNBlAAPqHlug7ZhUYT8t4hT7HU8HUhytWmPVdS8SBTONGxILEaQ/Yteuu2ftcMw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sys-base.io; spf=pass smtp.mailfrom=sys-base.io; arc=none smtp.client-ip=185.233.101.22
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sys-base.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sys-base.io
+Received: from laika.paulk.fr (12.234.24.109.rev.sfr.net [109.24.234.12])
+	by leonov.paulk.fr (Postfix) with ESMTPS id 85D0E1F8005F;
+	Wed, 10 Dec 2025 22:09:49 +0000 (UTC)
+Received: by laika.paulk.fr (Postfix, from userid 65534)
+	id 0A9C4B127E9; Wed, 10 Dec 2025 22:09:38 +0000 (UTC)
+X-Spam-Level: 
+Received: from collins (unknown [192.168.1.1])
+	by laika.paulk.fr (Postfix) with ESMTPSA id EBB48B127E9;
+	Wed, 10 Dec 2025 22:09:35 +0000 (UTC)
+Date: Wed, 10 Dec 2025 23:09:33 +0100
+From: Paul Kocialkowski <paulk@sys-base.io>
+To: Janne Grunau <j@jannau.net>
+Cc: Randy Dunlap <rdunlap@infradead.org>,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Andy Shevchenko <andy.shevchenko@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>, andrew.jones@linux.dev,
+	linux-omap@vger.kernel.org, openbmc@lists.ozlabs.org,
+	linux-sound@vger.kernel.org,
+	Alexander Shishkin <alexander.shishkin@linux.intel.com>,
+	linux-mips@vger.kernel.org, asahi@lists.linux.dev,
+	"dri-devel@lists.freedesktop.org" <dri-devel@lists.freedesktop.org>,
+	chrome-platform@lists.linux.dev,
+	Paul Cercueil <paul@crapouillou.net>,
+	linux-stm32@st-md-mailman.stormreply.com,
+	Linux ARM <linux-arm-kernel@lists.infradead.org>,
+	linux-gpio@vger.kernel.org, Srinivas Kandagatla <srini@kernel.org>,
+	Philipp Zabel <p.zabel@pengutronix.de>,
+	Matti Vaittinen <mazziesaccount@gmail.com>,
+	Jonathan Cameron <jic23@kernel.org>,
+	Vaibhav Hiremath <hvaibhav.linux@gmail.com>,
+	linux-sh@vger.kernel.org, x86@kernel.org,
+	Max Filippov <jcmvbkbc@gmail.com>
 Subject: Re: Kconfig dangling references (BZ 216748)
-From: Paul Cercueil <paul@crapouillou.net>
-To: Randy Dunlap <rdunlap@infradead.org>, Linux Kernel Mailing List
-	 <linux-kernel@vger.kernel.org>
-Cc: Andy Shevchenko <andy.shevchenko@gmail.com>, Arnd Bergmann
- <arnd@arndb.de>, 	andrew.jones@linux.dev, linux-omap@vger.kernel.org,
- openbmc@lists.ozlabs.org, 	linux-sound@vger.kernel.org, Alexander Shishkin	
- <alexander.shishkin@linux.intel.com>, linux-mips@vger.kernel.org, 
-	asahi@lists.linux.dev, "dri-devel@lists.freedesktop.org"	
- <dri-devel@lists.freedesktop.org>, Paul Kocialkowski <paulk@sys-base.io>, 
-	chrome-platform@lists.linux.dev, linux-stm32@st-md-mailman.stormreply.com, 
- Linux ARM <linux-arm-kernel@lists.infradead.org>,
- linux-gpio@vger.kernel.org, Srinivas Kandagatla	 <srini@kernel.org>,
- Philipp Zabel <p.zabel@pengutronix.de>, Matti Vaittinen	
- <mazziesaccount@gmail.com>, Jonathan Cameron <jic23@kernel.org>, Vaibhav
- Hiremath <hvaibhav.linux@gmail.com>, linux-sh@vger.kernel.org,
- x86@kernel.org, Max Filippov	 <jcmvbkbc@gmail.com>
-Date: Wed, 10 Dec 2025 14:06:41 +0100
-In-Reply-To: <22b92ddf-6321-41b5-8073-f9c7064d3432@infradead.org>
+Message-ID: <aTnvnaRuJ5lF4dVv@collins>
 References: <22b92ddf-6321-41b5-8073-f9c7064d3432@infradead.org>
-Autocrypt: addr=paul@crapouillou.net; prefer-encrypt=mutual;
- keydata=mQENBF0KhcEBCADkfmrzdTOp/gFOMQX0QwKE2WgeCJiHPWkpEuPH81/HB2dpjPZNW03ZM
- LQfECbbaEkdbN4YnPfXgcc1uBe5mwOAPV1MBlaZcEt4M67iYQwSNrP7maPS3IaQJ18ES8JJ5Uf5Uz
- FZaUawgH+oipYGW+v31cX6L3k+dGsPRM0Pyo0sQt52fsopNPZ9iag0iY7dGNuKenaEqkYNjwEgTtN
- z8dt6s3hMpHIKZFL3OhAGi88wF/21isv0zkF4J0wlf9gYUTEEY3Eulx80PTVqGIcHZzfavlWIdzhe
- +rxHTDGVwseR2Y1WjgFGQ2F+vXetAB8NEeygXee+i9nY5qt9c07m8mzjABEBAAG0JFBhdWwgQ2VyY
- 3VlaWwgPHBhdWxAY3JhcG91aWxsb3UubmV0PokBTgQTAQoAOBYhBNdHYd8OeCBwpMuVxnPua9InSr
- 1BBQJdCoXBAhsDBQsJCAcCBhUKCQgLAgQWAgMBAh4BAheAAAoJEHPua9InSr1BgvIH/0kLyrI3V0f
- 33a6D3BJwc1grbygPVYGuC5l5eMnAI+rDmLR19E2yvibRpgUc87NmPEQPpbbtAZt8On/2WZoE5OIP
- dlId/AHNpdgAtGXo0ZX4LGeVPjxjdkbrKVHxbcdcnY+zzaFglpbVSvp76pxqgVg8PgxkAAeeJV+ET
- 4t0823Gz2HzCL/6JZhvKAEtHVulOWoBh368SYdolp1TSfORWmHzvQiCCCA+j0cMkYVGzIQzEQhX7U
- rf9N/nhU5/SGLFEi9DcBfXoGzhyQyLXflhJtKm3XGB1K/pPulbKaPcKAl6rIDWPuFpHkSbmZ9r4KF
- lBwgAhlGy6nqP7O3u7q23hRU=
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+ <aTcVXrUXVsyjaT22@shepard>
+ <20251208200555.GA333481@robin.jannau.net>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="MEb6eXQ93P1+3Wd8"
+Content-Disposition: inline
+In-Reply-To: <20251208200555.GA333481@robin.jannau.net>
 
-Hi Randy,
 
-Le dimanche 07 d=C3=A9cembre 2025 =C3=A0 18:04 -0800, Randy Dunlap a =C3=A9=
-crit=C2=A0:
-> from=C2=A0 https://bugzilla.kernel.org/show_bug.cgi?id=3D216748
->=20
-> The bugzilla entry includes a Perl script and a shell script.
-> This is the edited result of running them (I removed some entries
-> that were noise).
->=20
-> I'll try to Cc: all of the relevant mailing lists or individuals.
->=20
->=20
-> ARCH_HAS_HOLES_MEMORYMODEL ---
-> arch/arm/mach-omap1/Kconfig:7:	select ARCH_HAS_HOLES_MEMORYMODEL
->=20
-> ARM_ERRATA_794072 ---
-> arch/arm/mach-npcm/Kconfig:33:	select ARM_ERRATA_794072
->=20
-> ARM_SMC_MBOX ---
-> arch/arm64/Kconfig.platforms:375:	select ARM_SMC_MBOX
->=20
-> CLK_FIXED_FCH ---
-> sound/soc/amd/Kconfig:11:	select CLK_FIXED_FCH
-> sound/soc/amd/Kconfig:48:	select CLK_FIXED_FCH
-> sound/soc/amd/acp/Kconfig:107:	select CLK_FIXED_FCH
->=20
-> CONFIG_STM ---
-> drivers/hwtracing/stm/Kconfig:16:	default CONFIG_STM=C2=A0 # should
-> be STM
-> drivers/hwtracing/stm/Kconfig:31:	default CONFIG_STM
->=20
-> CPU_HAS_LOAD_STORE_LR ---
-> arch/mips/Kconfig:1411:	select CPU_HAS_LOAD_STORE_LR
->=20
-> DRM_KMS_DMA_HELPER ---
-> drivers/gpu/drm/adp/Kconfig:9:	select DRM_KMS_DMA_HELPER
-> drivers/gpu/drm/logicvc/Kconfig:7:	select DRM_KMS_DMA_HELPER
->=20
-> EXTCON_TCSS_CROS_EC ---
-> drivers/usb/typec/ucsi/Kconfig:76:	depends on
-> !EXTCON_TCSS_CROS_EC
->=20
-> MACH_JZ4755 ---
-> drivers/clk/ingenic/Kconfig:20:	default MACH_JZ4755
-> drivers/pinctrl/pinctrl-
-> ingenic.c:158:	IS_ENABLED(CONFIG_MACH_JZ4755) << ID_JZ4755 |
-> drivers/pinctrl/pinctrl-ingenic.c:4616:		.data =3D
-> IF_ENABLED(CONFIG_MACH_JZ4755, &jz4755_chip_info)
->=20
-> MACH_JZ4760 ---
-> drivers/clk/ingenic/Kconfig:40:	default MACH_JZ4760
-> drivers/pinctrl/pinctrl-
-> ingenic.c:159:	IS_ENABLED(CONFIG_MACH_JZ4760) << ID_JZ4760 |
-> drivers/pinctrl/pinctrl-ingenic.c:4620:		.data =3D
-> IF_ENABLED(CONFIG_MACH_JZ4760, &jz4760_chip_info)
-> drivers/pinctrl/pinctrl-ingenic.c:4624:		.data =3D
-> IF_ENABLED(CONFIG_MACH_JZ4760, &jz4760_chip_info)
+--MEb6eXQ93P1+3Wd8
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Those were added when upstreaming support for the JZ4755/JZ4760, but
-the DTS files and actual support in arch/mips/ was never sent.
+Hi Janne,
 
-Instead of dropping those, I'll try to upstream the basic support for
-those SoCs in the coming days.
+Le Mon 08 Dec 25, 21:05, Janne Grunau a =C3=A9crit :
+> On Mon, Dec 08, 2025 at 07:13:50PM +0100, Paul Kocialkowski wrote:
+> > Hi Randy,
+> >=20
+> > On Sun 07 Dec 25, 18:04, Randy Dunlap wrote:
+> > > from  https://bugzilla.kernel.org/show_bug.cgi?id=3D216748
+> > >=20
+> > > The bugzilla entry includes a Perl script and a shell script.
+> > > This is the edited result of running them (I removed some entries tha=
+t were noise).
+> >=20
+> > [...]
+> >=20
+> > > DRM_KMS_DMA_HELPER ---
+> > > drivers/gpu/drm/adp/Kconfig:9:	select DRM_KMS_DMA_HELPER
+> > > drivers/gpu/drm/logicvc/Kconfig:7:	select DRM_KMS_DMA_HELPER
+> >=20
+> > For these two, the symbol was removed in commit
+> > 09717af7d13d63df141ae6e71686289989d17efd
+>=20
+> That commit removed DRM_KMS_CMA_HELPER. Later commit 6bcfe8eaeef0
+> ("drm/fb: rename FB CMA helpers to FB DMA helpers") renamed
+> DRM_KMS_CMA_HELPER erroneously to DRM_KMS_DMA_HELPER.
+>=20
+> > but these two drivers either were
+> > missed by the batch rename or were introduced a bit later.
+>=20
+> In the case of drivers/gpu/drm/adp/Kconfig it was missed much later
+> during review (but iirc went through the same rename out of tree).
+>=20
+> > Since the symbol selected DRM_GEM_CMA_HELPER (which is still needed by =
+the
+> > drivers), it should be replaced with DRM_GEM_CMA_HELPER.
+>=20
+> That symbol doesn't exist anymore either. It's now DRM_GEM_DMA_HELPER
+> which is already present in both files.
 
-Cheers,
--Paul
+Thanks for the details! It seems that I was looking at an older tree.
 
->=20
-> MACH_STM32MP25 ---
-> drivers/pinctrl/stm32/Kconfig:58:	default MACH_STM32MP25 ||
-> (ARCH_STM32 && ARM64)
->=20
-> MFD_AIROHA_AN8855 ---
-> drivers/nvmem/Kconfig:33:	depends on MFD_AIROHA_AN8855 ||
-> COMPILE_TEST
->=20
-> MFD_TN48M_CPLD ---
-> drivers/gpio/Kconfig:1624:	depends on MFD_TN48M_CPLD ||
-> COMPILE_TEST
-> drivers/reset/Kconfig:365:	depends on MFD_TN48M_CPLD ||
-> COMPILE_TEST
-> drivers/reset/Kconfig:366:	default MFD_TN48M_CPLD
->=20
-> MIPS_BAIKAL_T1 ---
-> drivers/ata/Kconfig:197:	select MFD_SYSCON if (MIPS_BAIKAL_T1
-> || COMPILE_TEST)
-> drivers/bus/Kconfig:43:	depends on MIPS_BAIKAL_T1 || COMPILE_TEST
-> drivers/bus/Kconfig:58:	depends on MIPS_BAIKAL_T1 || COMPILE_TEST
-> drivers/clk/baikal-t1/Kconfig:4:	depends on (MIPS_BAIKAL_T1
-> && OF) || COMPILE_TEST
-> drivers/clk/baikal-t1/Kconfig:5:	default MIPS_BAIKAL_T1
-> drivers/clk/baikal-t1/Kconfig:20:	default MIPS_BAIKAL_T1
-> drivers/clk/baikal-t1/Kconfig:33:	default MIPS_BAIKAL_T1
-> drivers/clk/baikal-t1/Kconfig:45:	default MIPS_BAIKAL_T1
-> drivers/hwmon/Kconfig:462:	depends on MIPS_BAIKAL_T1 ||
-> COMPILE_TEST
-> drivers/i2c/busses/Kconfig:589:	select MFD_SYSCON if MIPS_BAIKAL_T1
-> drivers/memory/Kconfig:69:	depends on MIPS_BAIKAL_T1 ||
-> COMPILE_TEST
-> drivers/mtd/maps/Kconfig:81:	depends on MIPS_BAIKAL_T1 ||
-> COMPILE_TEST
-> drivers/pci/controller/dwc/Kconfig:89:	depends on MIPS_BAIKAL_T1 ||
-> COMPILE_TEST
-> drivers/spi/Kconfig:370:	depends on MIPS_BAIKAL_T1 ||
-> COMPILE_TEST
->=20
-> PINCTRL_MILBEAUT ---
-> arch/arm/mach-milbeaut/Kconfig:16:	select PINCTRL_MILBEAUT
->=20
-> SND_SOC_AC97_BUS_NEW ---
-> sound/soc/pxa/Kconfig:21:	select SND_SOC_AC97_BUS_NEW
->=20
-> SND_SOC_CS35L56_CAL_SYSFS_COMMON ---
-> sound/soc/codecs/Kconfig:920:	select
-> SND_SOC_CS35L56_CAL_SYSFS_COMMON
->=20
-> TEST_KUNIT_DEVICE_HELPERS ---
-> drivers/iio/test/Kconfig:11:	select TEST_KUNIT_DEVICE_HELPERS
->=20
-> USB_HSIC_USB3613 ---
-> drivers/staging/greybus/Kconfig:209:	depends on USB_HSIC_USB3613
-> || COMPILE_TEST
-> drivers/staging/greybus/arche-platform.c:26:#if
-> IS_ENABLED(CONFIG_USB_HSIC_USB3613)
->=20
-> USB_OHCI_SH ---
-> arch/sh/Kconfig:334:	select USB_OHCI_SH if USB_OHCI_HCD
-> arch/sh/Kconfig:344:	select USB_OHCI_SH if USB_OHCI_HCD
-> arch/sh/Kconfig:429:	select USB_OHCI_SH if USB_OHCI_HCD
-> arch/sh/Kconfig:455:	select USB_OHCI_SH if USB_OHCI_HCD
-> arch/sh/configs/sh7757lcr_defconfig:61:CONFIG_USB_OHCI_SH=3Dy
->=20
-> X86_P6_NOP ---
-> arch/x86/Kconfig.cpufeatures:41:	depends on X86_64 ||
-> X86_P6_NOP
-> arch/x86/Makefile_32.cpu:48:ifneq ($(CONFIG_X86_P6_NOP),y)
->=20
-> XTENSA_PLATFORM_ESP32 ---
-> drivers/tty/serial/Kconfig:1598:	depends on
-> XTENSA_PLATFORM_ESP32 || (COMPILE_TEST && OF)
-> drivers/tty/serial/Kconfig:1611:	depends on
-> XTENSA_PLATFORM_ESP32 || (COMPILE_TEST && OF)
->=20
+> So the "select DRM_KMS_DMA_HELPER" lines can be removed from both files.
+
+Good, then I'll craft a patch removing these two lines.
+
+All the best,
+
+Paul
+
+--=20
+Paul Kocialkowski,
+
+Independent contractor - sys-base - https://www.sys-base.io/
+Free software developer - https://www.paulk.fr/
+
+Expert in multimedia, graphics and embedded hardware support with Linux.
+
+--MEb6eXQ93P1+3Wd8
+Content-Type: application/pgp-signature; name=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEAbcMXZQMtj1fphLChP3B6o/ulQwFAmk5750ACgkQhP3B6o/u
+lQxOag/+J9Lwmq+hqcg9BxoDCZl6KmFGAh/RmelPeBUew6LlQphMcDpjQ0yJavK3
+bxojss4r12rV5307+f47JlSMFJa/100MablzoWV0koupx/JCRszhYf2w1lxYHKJh
+7jwy8GLd9NnaZGaiscrckVEcfaVRufzSM2I6ErSZIMSYEZ1LUTCakTPAwrgtarZb
+b9FzHmCrau56mdC2M6StWaolU90t4em1/We8XVRtLY87MEY/VQK6qLylL2fbpuIX
+5+DjnOBDMrvyB7UJFVbzcQA4ev1ckCBvnB2JdzGOfquj6XTO23m5/L5qfxTVk6qa
+yp9ShU6lQZ9RjinifpGWf8JTYl46U7hch9PrUCE/n0FgVl2frQHb/N08ynKUniCB
+1U76zgnG48Wkj08Sz6anRvER3dqEhzJgxJxpkW1UqoXFOSBQeeJZzZONuuUxYw3M
+8JKSldwJVj/oLlvCOI6QO0Q9T+U4YS1gpNBfHbysPaJgZyqld5tXaElOo9k8P8pX
+kAMhcvAn6FaXqkX5qJOAN+91M+CkQwQlWf16G7HKV0LcOvzCtGHYWVrxb7xWw9Em
+JBZRsrdq4CaQc34D8GkBR14H6WGWkGR4OQSTqxshPv7x/S4u9vV8FQWIhLW2LToY
+kw9ephtALgBj6D79R84K2DGlmZwPH2sunV3y9huDh3SNlR5dZg8=
+=EEMR
+-----END PGP SIGNATURE-----
+
+--MEb6eXQ93P1+3Wd8--
