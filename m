@@ -1,70 +1,80 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D9FD52DAFA4;
-	Tue, 16 Dec 2025 16:59:48 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 10A0B2EC557;
+	Tue, 16 Dec 2025 19:49:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765904389; cv=none; b=iiK6vOyZoia/9y/L6NGxP64nLFevs6gXsD4Z54j2Q2z0yDThqNDjEAPj2WxoO3OBeVY1qd/0Htie6sVaI32UaPGHC83vTIhSnqMwn0dH/At4qz4Ky3sf8mO0oSIb9cF7nh+G1NJzr7U4plucLkZ4zCus/2hEF39BP9R4qIXJJRo=
+	t=1765914587; cv=none; b=A/M8GZffg0EbAjvlSESAlqBSlqHWyRxQQEA1htrAQ4DD6NArqnxChrcWpJEUyTJ65M5v3yWZHpEGShB91/YeFTP00UFvxCgZEzKOaGOwOE03pTu+Ttqp/UYEXLut5M2ebg7DqvA1/H96fzuQ8ooYI0tgZmW+jvtZOSQjaG2t/D0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765904389; c=relaxed/simple;
-	bh=IEUxEiubHfZryPxl7VoGp+qOf8EBAHnzqwRfMyWiBzs=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=CHu4MG18PwGmUZid669fWiovx6JHs4PMwmZBXuATPIyKBejlJA2Ayer9zV07+eIvT8YnKceji16CcxM2Xc3Egx/qAak61QPhspMFPk85qH9OSv9YqglR2DyNUxMjT/8Powo9F8AFdARdPAnP0oPHD78C8869B8tDoDX8NRW9z9Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hwSgG/6z; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1765914587; c=relaxed/simple;
+	bh=3FmpwD62IJUHDHR/I5ZYeJX9OsU87aYBt8XiqHww6dc=;
+	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
+	 Mime-Version:Content-Type; b=nqAcJLd/XnQ8Vi1gP02lw1o1DvYKWMo3M6F6VSbiFq+7hFxxo4EoigQ14LmIzpXWC/nHjIPASbeOztEXx3BOOEjlj06rYvD2s3VbIRZOCSDepKgI3F2+WGTgdrObmqj5dZArVGTj6WNGoru243Ab5J5e2ws7aWaWYc9rNekIHF0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=wRGHMtmb; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hwSgG/6z"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6DB8AC19422;
-	Tue, 16 Dec 2025 16:59:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1765904388;
-	bh=IEUxEiubHfZryPxl7VoGp+qOf8EBAHnzqwRfMyWiBzs=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
-	b=hwSgG/6z6szArHuo7d16I1MZ6M5yJKvZMTL19/c2eUGUBl+pW/8+IQdvDY7LaQ+5L
-	 1D7WQERB3Nqy37aYtZWrLOT9KL+RX2hZo5swx231VZYXFYlJ1qb8D7ln38AyOgskae
-	 SeBjC4nQ8LKq/A2Z8ba+RrBNrdtouR6s/HIIECxOGJIqtsMIJ0L1/kHmqH5ykig2ss
-	 pHmmFCfhMOgtCjHxYEA/2+xeQLyJ4kly2U2Sl48lQ6BV+QxjMHe69LRw2IKJkNhD9A
-	 Fm4onOIplddXlK/7hAHBTPebXAodh+op7VQs0aKliC6CouPIUG2ZfwH6x5hoM1V74J
-	 67PwaM5w+4EFQ==
-From: Vinod Koul <vkoul@kernel.org>
-To: linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, 
- Paul Mundt <lethal@linux-sh.org>, dmaengine@vger.kernel.org, 
- linux-sh@vger.kernel.org
-In-Reply-To: <20251104002001.445297-1-rdunlap@infradead.org>
-References: <20251104002001.445297-1-rdunlap@infradead.org>
-Subject: Re: [PATCH] dmaengine: shdma: correct most kernel-doc issues in
- shdma-base.h
-Message-Id: <176590438608.430148.16381479522388164901.b4-ty@kernel.org>
-Date: Tue, 16 Dec 2025 22:29:46 +0530
+	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="wRGHMtmb"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B246DC4CEF1;
+	Tue, 16 Dec 2025 19:49:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+	s=korg; t=1765914586;
+	bh=3FmpwD62IJUHDHR/I5ZYeJX9OsU87aYBt8XiqHww6dc=;
+	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+	b=wRGHMtmbERcpA6VCd7VdIJSxWeMMV3MufiaICwJM2JxmUckd4/ZDamGIp98xLnU7Z
+	 uebteatGutNpSVaCbIbB+LV6ZmqtugE23SVf1F34zvnJxpCPzgUWlQUA1tUgyCpZP6
+	 5X1mflTa7f2NerKLz8PKwSVTiVXS5dHxJMQ76kh8=
+Date: Tue, 16 Dec 2025 11:49:45 -0800
+From: Andrew Morton <akpm@linux-foundation.org>
+To: Finn Thain <fthain@linux-m68k.org>
+Cc: Peter Zijlstra <peterz@infradead.org>, Will Deacon <will@kernel.org>,
+ Andrii Nakryiko <andrii@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Alexei
+ Starovoitov <ast@kernel.org>, Boqun Feng <boqun.feng@gmail.com>,
+ bpf@vger.kernel.org, Rich Felker <dalias@libc.org>, Daniel Borkmann
+ <daniel@iogearbox.net>, Dinh Nguyen <dinguyen@kernel.org>, Eduard Zingerman
+ <eddyz87@gmail.com>, Gary Guo <gary@garyguo.net>, Geert Uytterhoeven
+ <geert@linux-m68k.org>, John Paul Adrian Glaubitz
+ <glaubitz@physik.fu-berlin.de>, Guo Ren <guoren@kernel.org>, Hao Luo
+ <haoluo@google.com>, John Fastabend <john.fastabend@gmail.com>, Jiri Olsa
+ <jolsa@kernel.org>, Jonas Bonn <jonas@southpole.se>, KP Singh
+ <kpsingh@kernel.org>, linux-arch@vger.kernel.org,
+ linux-csky@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-m68k@lists.linux-m68k.org, linux-openrisc@vger.kernel.org,
+ linux-sh@vger.kernel.org, Mark Rutland <mark.rutland@arm.com>, Martin KaFai
+ Lau <martin.lau@linux.dev>, Stanislav Fomichev <sdf@fomichev.me>, Stafford
+ Horne <shorne@gmail.com>, Song Liu <song@kernel.org>, Stefan Kristiansson
+ <stefan.kristiansson@saunalahti.fi>, Yonghong Song
+ <yonghong.song@linux.dev>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: Re: [PATCH v5 0/4] Align atomic storage
+Message-Id: <20251216114945.df117ce1f176dd7752244cfb@linux-foundation.org>
+In-Reply-To: <cover.1765866665.git.fthain@linux-m68k.org>
+References: <cover.1765866665.git.fthain@linux-m68k.org>
+X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-X-Mailer: b4 0.13.0
 
+On Tue, 16 Dec 2025 17:31:05 +1100 Finn Thain <fthain@linux-m68k.org> wrote:
 
-On Mon, 03 Nov 2025 16:20:01 -0800, Randy Dunlap wrote:
-> Fix kernel-doc comments in include/linux/shdma-base.h to avoid
-> most warnings:
+> This series adds the __aligned attribute to atomic_t and atomic64_t
+> definitions in include/linux and include/asm-generic (respectively)
+> to get natural alignment of both types on csky, m68k, microblaze,
+> nios2, openrisc and sh.
 > 
-> - prefix an enum name with "enum"
-> - prefix enum values with '@'
-> - prefix struct member names with '@'
+> This series also adds Kconfig options to enable a new run-time warning
+> to help reveal misaligned atomic accesses on platforms which don't
+> trap that.
 > 
-> [...]
+> The performance impact is expected to vary across platforms and workloads.
+> The measurements I made on m68k show that some workloads run faster and
+> others slower.
 
-Applied, thanks!
+Looks nice, thanks.
 
-[1/1] dmaengine: shdma: correct most kernel-doc issues in shdma-base.h
-      commit: de4761fb57f6a71eeb5a4c1167ae3606b08d8f59
-
-Best regards,
--- 
-~Vinod
-
-
+I don't know which tree this is aimed at.  I grabbed a copy for
+mm.git's mm-nonmm-unstable tree, can drop it again if this pops up in
+linux-next via another route.
