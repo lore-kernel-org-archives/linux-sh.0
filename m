@@ -1,80 +1,81 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from cstnet.cn (smtp84.cstnet.cn [159.226.251.84])
+	(using TLSv1.2 with cipher DHE-RSA-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 10A0B2EC557;
-	Tue, 16 Dec 2025 19:49:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73653279327;
+	Fri, 19 Dec 2025 14:46:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=159.226.251.84
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1765914587; cv=none; b=A/M8GZffg0EbAjvlSESAlqBSlqHWyRxQQEA1htrAQ4DD6NArqnxChrcWpJEUyTJ65M5v3yWZHpEGShB91/YeFTP00UFvxCgZEzKOaGOwOE03pTu+Ttqp/UYEXLut5M2ebg7DqvA1/H96fzuQ8ooYI0tgZmW+jvtZOSQjaG2t/D0=
+	t=1766155573; cv=none; b=DuDQpAZpASS46AAcMam3vZA2/Ra6GdK6OZzrsv/blwnyGMvELZF2gvv8gASUWMjWI/+YWODf38RQntrLKdgaYJ3c+NiK72JMLvLMuzY1l0mTygK5iywYOTYh2Zjbk1JqzwDVR2iU7tEgkPD0o+joxlFe+qUvCUS2ko/mg/vqaYA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1765914587; c=relaxed/simple;
-	bh=3FmpwD62IJUHDHR/I5ZYeJX9OsU87aYBt8XiqHww6dc=;
-	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
-	 Mime-Version:Content-Type; b=nqAcJLd/XnQ8Vi1gP02lw1o1DvYKWMo3M6F6VSbiFq+7hFxxo4EoigQ14LmIzpXWC/nHjIPASbeOztEXx3BOOEjlj06rYvD2s3VbIRZOCSDepKgI3F2+WGTgdrObmqj5dZArVGTj6WNGoru243Ab5J5e2ws7aWaWYc9rNekIHF0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=wRGHMtmb; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="wRGHMtmb"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B246DC4CEF1;
-	Tue, 16 Dec 2025 19:49:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
-	s=korg; t=1765914586;
-	bh=3FmpwD62IJUHDHR/I5ZYeJX9OsU87aYBt8XiqHww6dc=;
-	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-	b=wRGHMtmbERcpA6VCd7VdIJSxWeMMV3MufiaICwJM2JxmUckd4/ZDamGIp98xLnU7Z
-	 uebteatGutNpSVaCbIbB+LV6ZmqtugE23SVf1F34zvnJxpCPzgUWlQUA1tUgyCpZP6
-	 5X1mflTa7f2NerKLz8PKwSVTiVXS5dHxJMQ76kh8=
-Date: Tue, 16 Dec 2025 11:49:45 -0800
-From: Andrew Morton <akpm@linux-foundation.org>
-To: Finn Thain <fthain@linux-m68k.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Will Deacon <will@kernel.org>,
- Andrii Nakryiko <andrii@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Alexei
- Starovoitov <ast@kernel.org>, Boqun Feng <boqun.feng@gmail.com>,
- bpf@vger.kernel.org, Rich Felker <dalias@libc.org>, Daniel Borkmann
- <daniel@iogearbox.net>, Dinh Nguyen <dinguyen@kernel.org>, Eduard Zingerman
- <eddyz87@gmail.com>, Gary Guo <gary@garyguo.net>, Geert Uytterhoeven
- <geert@linux-m68k.org>, John Paul Adrian Glaubitz
- <glaubitz@physik.fu-berlin.de>, Guo Ren <guoren@kernel.org>, Hao Luo
- <haoluo@google.com>, John Fastabend <john.fastabend@gmail.com>, Jiri Olsa
- <jolsa@kernel.org>, Jonas Bonn <jonas@southpole.se>, KP Singh
- <kpsingh@kernel.org>, linux-arch@vger.kernel.org,
- linux-csky@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, linux-openrisc@vger.kernel.org,
- linux-sh@vger.kernel.org, Mark Rutland <mark.rutland@arm.com>, Martin KaFai
- Lau <martin.lau@linux.dev>, Stanislav Fomichev <sdf@fomichev.me>, Stafford
- Horne <shorne@gmail.com>, Song Liu <song@kernel.org>, Stefan Kristiansson
- <stefan.kristiansson@saunalahti.fi>, Yonghong Song
- <yonghong.song@linux.dev>, Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: Re: [PATCH v5 0/4] Align atomic storage
-Message-Id: <20251216114945.df117ce1f176dd7752244cfb@linux-foundation.org>
-In-Reply-To: <cover.1765866665.git.fthain@linux-m68k.org>
-References: <cover.1765866665.git.fthain@linux-m68k.org>
-X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	s=arc-20240116; t=1766155573; c=relaxed/simple;
+	bh=ncw0luK/773+7JSgLJmoBwr7ZbgCtTvgNWvlC3Ph6sQ=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=qFBLp3XpYejYidwrUPVljX0nBVdm2980IjghiGAuFTstneGwDj9kC3sKlLXohDWQ/vA4PI7rvvI76pEKDeYgenH1CSZW4hTCO2VPKsT11AKdDaJn0okN1RD55q5cUhlazeOc1hkkeOBP7MBjwK3csuPTY4clJtvzQOZmOTJJ55w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=isrc.iscas.ac.cn; spf=pass smtp.mailfrom=isrc.iscas.ac.cn; arc=none smtp.client-ip=159.226.251.84
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=isrc.iscas.ac.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=isrc.iscas.ac.cn
+Received: from localhost.localdomain (unknown [36.112.3.209])
+	by APP-05 (Coremail) with SMTP id zQCowACnPREmZUVpXaowAQ--.43934S2;
+	Fri, 19 Dec 2025 22:45:58 +0800 (CST)
+From: Haoxiang Li <lihaoxiang@isrc.iscas.ac.cn>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Haoxiang Li <lihaoxiang@isrc.iscas.ac.cn>
+Subject: [PATCH] sh: maple: fix an api misuse in maple_attach_driver()
+Date: Fri, 19 Dec 2025 22:45:57 +0800
+Message-Id: <20251219144557.638297-1-lihaoxiang@isrc.iscas.ac.cn>
+X-Mailer: git-send-email 2.25.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-CM-TRANSID:zQCowACnPREmZUVpXaowAQ--.43934S2
+X-Coremail-Antispam: 1UD129KBjvdXoWrKw18GryUXF1ftFWrury5twb_yoW3GwbEkr
+	W8ursrWr1DGF1fGry5Gr1YvryYv3Wqg3yIgr1Iqr93CryUurWqgryYvrs3AryYqrWxAFnr
+	J34qgr1jkw1akjkaLaAFLSUrUUUUjb8apTn2vfkv8UJUUUU8Yxn0WfASr-VFAUDa7-sFnT
+	9fnUUIcSsGvfJTRUUUb4xFF20E14v26r1j6r4UM7CY07I20VC2zVCF04k26cxKx2IYs7xG
+	6r1S6rWUM7CIcVAFz4kK6r1j6r18M28lY4IEw2IIxxk0rwA2F7IY1VAKz4vEj48ve4kI8w
+	A2z4x0Y4vE2Ix0cI8IcVAFwI0_Jr0_JF4l84ACjcxK6xIIjxv20xvEc7CjxVAFwI0_Gr0_
+	Cr1l84ACjcxK6I8E87Iv67AKxVW8JVWxJwA2z4x0Y4vEx4A2jsIEc7CjxVAFwI0_Gr1j6F
+	4UJwAS0I0E0xvYzxvE52x082IY62kv0487Mc02F40EFcxC0VAKzVAqx4xG6I80ewAv7VC0
+	I7IYx2IY67AKxVWUGVWUXwAv7VC2z280aVAFwI0_Jr0_Gr1lOx8S6xCaFVCjc4AY6r1j6r
+	4UM4x0Y48IcxkI7VAKI48JM4x0x7Aq67IIx4CEVc8vx2IErcIFxwCY1x0262kKe7AKxVWU
+	AVWUtwCF04k20xvY0x0EwIxGrwCFx2IqxVCFs4IE7xkEbVWUJVW8JwC20s026c02F40E14
+	v26r1j6r18MI8I3I0E7480Y4vE14v26r106r1rMI8E67AF67kF1VAFwI0_JF0_Jw1lIxkG
+	c2Ij64vIr41lIxAIcVC0I7IYx2IY67AKxVWUJVWUCwCI42IY6xIIjxv20xvEc7CjxVAFwI
+	0_Gr0_Cr1lIxAIcVCF04k26cxKx2IYs7xG6r1j6r1xMIIF0xvEx4A2jsIE14v26r1j6r4U
+	MIIF0xvEx4A2jsIEc7CjxVAFwI0_Gr0_Gr1UYxBIdaVFxhVjvjDU0xZFpf9x0JUBmhwUUU
+	UU=
+X-CM-SenderInfo: 5olkt0x0ld0ww6lv2u4olvutnvoduhdfq/1tbiDAgBE2lFN+VvmQAAse
 
-On Tue, 16 Dec 2025 17:31:05 +1100 Finn Thain <fthain@linux-m68k.org> wrote:
+If device_register() fails, put_device() is the correct way
+to drop the device_reference.
 
-> This series adds the __aligned attribute to atomic_t and atomic64_t
-> definitions in include/linux and include/asm-generic (respectively)
-> to get natural alignment of both types on csky, m68k, microblaze,
-> nios2, openrisc and sh.
-> 
-> This series also adds Kconfig options to enable a new run-time warning
-> to help reveal misaligned atomic accesses on platforms which don't
-> trap that.
-> 
-> The performance impact is expected to vary across platforms and workloads.
-> The measurements I made on m68k show that some workloads run faster and
-> others slower.
+Found by code review.
 
-Looks nice, thanks.
+Signed-off-by: Haoxiang Li <lihaoxiang@isrc.iscas.ac.cn>
+---
+ drivers/sh/maple/maple.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I don't know which tree this is aimed at.  I grabbed a copy for
-mm.git's mm-nonmm-unstable tree, can drop it again if this pops up in
-linux-next via another route.
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 6dc0549f7900..20b7c2cd852b 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -393,7 +393,7 @@ static void maple_attach_driver(struct maple_device *mdev)
+ 		dev_warn(&mdev->dev, "could not register device at"
+ 			" (%d, %d), with error 0x%X\n", mdev->unit,
+ 			mdev->port, error);
+-		maple_free_dev(mdev);
++		put_device(&mdev->dev);
+ 		mdev = NULL;
+ 		return;
+ 	}
+-- 
+2.25.1
+
