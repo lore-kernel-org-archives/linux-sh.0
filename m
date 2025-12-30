@@ -1,102 +1,113 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78AC1224AF0;
-	Mon, 29 Dec 2025 13:55:27 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A530323B63F;
+	Tue, 30 Dec 2025 22:20:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767016527; cv=none; b=iAlBCpKfVTydfbLGw3rfVdAQ/y26jFyI/UXweRc6rdQgCDLotE8uTLR7TsAoV1pOqX/sXJh8DYEr+tC08/Odtw+/+d00VvRNUAubWIGv4KZAb+Y6SDHgzRLgdA9WlZYXZFnXiSBCLxu1ZqK8rXYYhCqelK1IPSbo5ygJlOdoKC0=
+	t=1767133227; cv=none; b=VKgbMrItsftVTXamXxA6R1eQ60cHi3t34qXKWuDF1fhjE0F7EScOInQPhRO8re1pU797YLW+QhW7DlYfdqrMeVdoilnXXvchaRiCDHlxF9c810NNlEPEecB4Lf+rCr/r38tg7AUqdBqs9FMdPxkPCPkCFnguPmPih8fml8dHh/Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767016527; c=relaxed/simple;
-	bh=KUzcCQmQKdCc6BXDXkIzmgljIGG78Dm71TrJEBQ0UVk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=tWhrptlcLvaf+QdrS9gnBNvHdigWdFR7jUoAH+R0XjKieLsNgjOdXzq616Y0IAyVoVEVlCNAwaWoc8O4Q4Xsi/Yf+71e4LSQJKRHu1mrc4oJw23OGkQhXtYS27x7mN4yb3272GVspIhIKZzyU2cNOFyw266DDuvVAJ88cWv4mNM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YGxdnq2k; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1767133227; c=relaxed/simple;
+	bh=IJaOP76+q4Po8eWxi85XaZX3Oi+lXkVbhIbvvFFgqic=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=eraWkflPYRWgoXVCo+2v1nWMN/QiREg5cI6EKmGW9B8nlQ8tCmQQehQpD6Y5UoI7haQR5GJmpc1t3h8Vhjjw+BXMOwPtRadfQ3S3yLTrpGwm62M234Y/IIaKd4nhHnyacuCtJzEW2qJCdVDxq38iTTVPIc1DkQ4XyS9DdChOZf0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Z5VIGRXN; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YGxdnq2k"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2B958C4CEF7;
-	Mon, 29 Dec 2025 13:55:23 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Z5VIGRXN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8FC59C4CEFB;
+	Tue, 30 Dec 2025 22:20:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1767016527;
-	bh=KUzcCQmQKdCc6BXDXkIzmgljIGG78Dm71TrJEBQ0UVk=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=YGxdnq2k/1YHQkO+jdKT72GRWIqp9MvmMpClq2GsOdPjlPP0FWxM04kupp5c2Q36H
-	 WhlDnqIsMmUc8EKUXxMVpxOS42QmCYKRBBIDWLcXcg4PUPqipaWdrKH1gKS1FwASa/
-	 hKp6pXPaUfKZpSt6S9+PDmd4sDLYk+k7PB2/GgxYMbTYOOhWXttLamMY9XPRpV3eOG
-	 +7yYHchowcnAlit4edYM+tpviihqUXpxV86rHDGshmddrsiLgHbLG6n6z8+q8V0Y39
-	 wHGA0q9QyXUGWHVXz4L51blEjBjtP/4YARdm22YWyWh7Tr/vFqZHJq9k7MphA7j8SR
-	 mM6Yjtx2b2iDw==
-Message-ID: <d17b3b7e-2d3e-4b0c-aa55-ce82fecc1710@kernel.org>
-Date: Mon, 29 Dec 2025 07:55:22 -0600
+	s=k20201202; t=1767133227;
+	bh=IJaOP76+q4Po8eWxi85XaZX3Oi+lXkVbhIbvvFFgqic=;
+	h=From:Subject:Date:To:Cc:From;
+	b=Z5VIGRXNufV6oA/WsPljHsr+gmlkjfwZaYG9DJQPUaBu0FGxhoREqrlbm4TBM3KLv
+	 CfTKhmnDSZnO137JKZ1fg5VJ8T0cPSjZl8ELIEA6pjHnbSS0QFon1il/Rabs5jwl7B
+	 wZOeNhmp7kK0YQybLCmKnHhfxq91lQGw8RGdv91eTaKBjIKZV/mJz7W8AhjmdMFefe
+	 4+1LFxdKc+TcBfG2RLywH1n8I0ZSuwAEADXh4HTLernp0QBZcyddFnNFz5o3MClueD
+	 TNQbkQcg5GZWKMn7MfR+GowTyjhfzYoUgBtykT/ah+gqYTktQsei6sBCVMFtr86/5q
+	 HPJSIrhj+RXAQ==
+From: Vincent Mailhol <mailhol@kernel.org>
+Subject: [PATCH 0/6] video/logo: allow custom boot logo and simplify logic
+Date: Tue, 30 Dec 2025 23:19:59 +0100
+Message-Id: <20251230-custom-logo-v1-0-4736374569ee@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 11/28] nios2: introduce arch_zone_limits_init()
-To: Mike Rapoport <rppt@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Alex Shi <alexs@kernel.org>, Alexander Gordeev <agordeev@linux.ibm.com>,
- Andreas Larsson <andreas@gaisler.com>, Borislav Petkov <bp@alien8.de>,
- Brian Cain <bcain@kernel.org>,
- "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
- Catalin Marinas <catalin.marinas@arm.com>,
- "David S. Miller" <davem@davemloft.net>,
- Dave Hansen <dave.hansen@linux.intel.com>,
- David Hildenbrand <david@kernel.org>,
- Geert Uytterhoeven <geert@linux-m68k.org>, Guo Ren <guoren@kernel.org>,
- Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>,
- Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
- Johannes Berg <johannes@sipsolutions.net>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Jonathan Corbet <corbet@lwn.net>, "Liam R. Howlett"
- <Liam.Howlett@oracle.com>, Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
- Magnus Lindholm <linmag7@gmail.com>, Matt Turner <mattst88@gmail.com>,
- Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>,
- Michal Hocko <mhocko@suse.com>, Michal Simek <monstr@monstr.eu>,
- Muchun Song <muchun.song@linux.dev>, Oscar Salvador <osalvador@suse.de>,
- Palmer Dabbelt <palmer@dabbelt.com>, Pratyush Yadav <pratyush@kernel.org>,
- Richard Weinberger <richard@nod.at>, Russell King <linux@armlinux.org.uk>,
- Stafford Horne <shorne@gmail.com>, Suren Baghdasaryan <surenb@google.com>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>,
- Vineet Gupta <vgupta@kernel.org>, Vlastimil Babka <vbabka@suse.cz>,
- Will Deacon <will@kernel.org>, x86@kernel.org, linux-alpha@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
- linux-cxl@vger.kernel.org, linux-doc@vger.kernel.org,
- linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
- linux-mm@kvack.org, linux-openrisc@vger.kernel.org,
- linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
- linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
- linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org,
- linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
- sparclinux@vger.kernel.org
-References: <20251228124001.3624742-1-rppt@kernel.org>
- <20251228124001.3624742-12-rppt@kernel.org>
-Content-Language: en-US
-From: Dinh Nguyen <dinguyen@kernel.org>
-In-Reply-To: <20251228124001.3624742-12-rppt@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAA9QVGkC/6tWKk4tykwtVrJSqFYqSi3LLM7MzwNyDHUUlJIzE
+ vPSU3UzU4B8JSMDI1NDIyNz3eTS4pL8XN2c/PR8XUtjo5Q0Y0OzRAOjZCWgjoKi1LTMCrBp0bG
+ 1tQBMQx5yXQAAAA==
+X-Change-ID: 20251227-custom-logo-932df316a02c
+To: Helge Deller <deller@gmx.de>, 
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, 
+ linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, 
+ Vincent Mailhol <mailhol@kernel.org>
+X-Mailer: b4 0.14.3
+X-Developer-Signature: v=1; a=openpgp-sha256; l=2381; i=mailhol@kernel.org;
+ h=from:subject:message-id; bh=IJaOP76+q4Po8eWxi85XaZX3Oi+lXkVbhIbvvFFgqic=;
+ b=kA0DAAoW0WQ+QNd/fbMByyZiAGlUUBOivXxlTiBGqwSvhQaBGAfioo1F2U2Le5hGm1fquj91G
+ oiRBAAWCgA5FiEEpncJCyCIcUtWwv050WQ+QNd/fbMFAmlUUBMbFIAAAAAABAAObWFudTIsMi41
+ KzEuMTEsMiwyAAoJENFkPkDXf32zZ5gBANLGrkQXCzUwEdhPKb2E4i2Yx2imi+EUE0zN0wi5Wjf
+ 0AQCKSHCgRa1vTHRu14LQQHjgSRr1PznOL6AKA1UOC3LIBg==
+X-Developer-Key: i=mailhol@kernel.org; a=openpgp;
+ fpr=ED8F700574E67F20E574E8E2AB5FEB886DBB99C2
 
+This series allows the user to replace the default kernel boot logo by
+a custom one directly in the kernel configuration. This makes it
+easier to customise the boot logo without the need to modify the
+sources and allows such customisation to remain persistent after
+applying the configuration to another version of the kernel.
 
+Patch #1 and #2 are clean-up and preparation while patch #3 is the
+main feature of this series: making the boot logo customisable.
 
-On 12/28/25 06:39, Mike Rapoport wrote:
-> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-> 
-> Move calculations of zone limits to a dedicated arch_zone_limits_init()
-> function.
-> 
-> Later MM core will use this function as an architecture specific callback
-> during nodes and zones initialization and thus there won't be a need to
-> call free_area_init() from every architecture.
-> 
-> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
-> ---
->   arch/nios2/mm/init.c | 8 ++++++--
->   1 file changed, 6 insertions(+), 2 deletions(-)
-> 
+While working on this, I realised that managing the logo file directly
+in Kbuild allows us to simplify how we handle the different existing
+variants of the Tux logo. This series thus ends with a clean-up which
+moves all the logo selection logic to Kbuild, simplifying the Makefile
+and C code.
 
-Acked-by: Dinh Nguyen <dinguyen@kernel.org>
+Patch #4 and #5 do a tree-wide clean-up on the Kconfig symbols that
+are to be removed in patch #6 and patch #6 simplify the logic as
+explained above.
+
+Signed-off-by: Vincent Mailhol <mailhol@kernel.org>
+---
+Vincent Mailhol (6):
+      video/logo: remove orphan .pgm Makefile rule
+      video/logo: add a type parameter to the logo makefile function
+      video/logo: allow custom logo
+      newport_con: depend on LOGO_LINUX_CLUT224 instead of LOGO_SGI_CLUT224
+      sh: defconfig: remove CONFIG_LOGO_SUPERH_*
+      video/logo: move logo selection logic to Kconfig
+
+ arch/sh/configs/dreamcast_defconfig      |  2 -
+ arch/sh/configs/ecovec24_defconfig       |  2 -
+ arch/sh/configs/kfr2r09_defconfig        |  2 -
+ arch/sh/configs/migor_defconfig          |  2 -
+ arch/sh/configs/rts7751r2d1_defconfig    |  2 -
+ arch/sh/configs/rts7751r2dplus_defconfig |  2 -
+ arch/sh/configs/se7724_defconfig         |  2 -
+ arch/sh/configs/se7780_defconfig         |  2 -
+ arch/sh/configs/sh7785lcr_defconfig      |  3 --
+ arch/sh/configs/urquell_defconfig        |  3 --
+ drivers/video/console/newport_con.c      |  4 +-
+ drivers/video/logo/Kconfig               | 84 ++++++++++++++++++--------------
+ drivers/video/logo/Makefile              | 26 +++-------
+ drivers/video/logo/logo.c                | 46 ++---------------
+ include/linux/linux_logo.h               |  9 ----
+ 15 files changed, 61 insertions(+), 130 deletions(-)
+---
+base-commit: 8640b74557fc8b4c300030f6ccb8cd078f665ec8
+change-id: 20251227-custom-logo-932df316a02c
+
+Best regards,
+-- 
+Vincent Mailhol <mailhol@kernel.org>
+
