@@ -1,93 +1,158 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from flow-b8-smtp.messagingengine.com (flow-b8-smtp.messagingengine.com [202.12.124.143])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC44B2777E0;
-	Wed, 31 Dec 2025 06:46:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9A6CD246768;
+	Wed, 31 Dec 2025 08:32:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.143
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767163605; cv=none; b=iBGGbpOeARjE+WtIM5xSTNtjzBRlt5BpTjveEYAunMzpH3u7AK3vweEA5eGsJu1bloMn6cKuVTshj+mYdlxpW4im9dkgJJvurdqaaSWdYFUNb28fztg83e5wCWtDTz+LvICQCJWKBISauklGymX9brDpUAKgUkYi3HY4clySmmA=
+	t=1767169926; cv=none; b=MdBlNSpxxlZZ4YI+JYm1I6/Pgz+/tNSxSCtYV7/bvJM2GjAEtWQ9oQnQGpDZBaqKM02nICWA7OmSkBvtlGBEbiAYC7kJFTMyJ5iVW0yd6nr6wZfVJZs9nssMYzVIhRwcShLgytg/SM48qFsxS2UOVXAT+I+2AdWILf0t2AJHzXk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767163605; c=relaxed/simple;
-	bh=QpQpiIjMgAqmAOmtydj8BNOPhOz9nWYymZ8gOyeJv+s=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=UIEjNQUoPKBA9+aFkAmpopWg1aBFIxFY/TJmmor7Nm0j3j474Z0iilg7gVq8bZo7yLZp0zuFn2WunZ0zDbVWne8W+s+1sbrNsRwt4EHOuxTR2eAyG7GeJBWAakZY5mvlqEJarXoq4CLVxS49KVtokKUzOE6ZGGLEr1fSEFI7WZ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ntXMmUJA; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1767169926; c=relaxed/simple;
+	bh=7DcCyNAxIOrE8PfdIo71cf+hyldla10OgBJkDOcbRtQ=;
+	h=Message-ID:From:Subject:Date:To:Cc; b=s+ZFFarG607jQffIzkfhk+SNmmFj1b/PBzWvQ9yN67cXoN1O250fN/tn0FyFeCStK4DwMgzQdukur4+VXCsVBK2IkbWrXG2WxBTuBYlzWsLgVCprMRshnm8OWRRLPB877WsaPn+6yTBxTiOK2CR6q0ffLJjKns9lyYIWQlvuHqg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=none smtp.mailfrom=linux-m68k.org; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=J5n9Lbs4; arc=none smtp.client-ip=202.12.124.143
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ntXMmUJA"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C3916C113D0;
-	Wed, 31 Dec 2025 06:46:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1767163605;
-	bh=QpQpiIjMgAqmAOmtydj8BNOPhOz9nWYymZ8gOyeJv+s=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=ntXMmUJAxO5H8srGF4tNdHgo0lFMwkrc1fuFBV00J5Tb+WM/T7R4u9JOqctNUZQJ9
-	 XYxl5+6LClFAMnewT84dKC1wdD+L79lms4e7jJI4B4VRIxvVk2wh2RzN/kfoBQ9zvQ
-	 vrajgYUrYswv2oj5VfBfcCLGHqZVOUHJM9Bs/2yQIXICCypPBdj14NXNB4lM76yYbj
-	 3WP6S9UtMNNFKDrShzihHTivi5+OaTM8HRj6TmoWmoIqcaiL8YXJS2olROD3vsiwPM
-	 wq+5LcGZxXeY3d9OSMaJQUJCY2ZOsqjtPZsDyuyJA7RN+y8l5QIgTHuscvyfK+PDFN
-	 /r6pVdO9HecjA==
-Message-ID: <0949ad6f-d703-47c9-8681-c64f17da07ac@kernel.org>
-Date: Wed, 31 Dec 2025 07:46:40 +0100
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="J5n9Lbs4"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailflow.stl.internal (Postfix) with ESMTP id 76BBE13000B8;
+	Wed, 31 Dec 2025 03:32:01 -0500 (EST)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-01.internal (MEProxy); Wed, 31 Dec 2025 03:32:02 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:date:date:feedback-id
+	:feedback-id:from:from:in-reply-to:message-id:reply-to:subject
+	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+	fm2; t=1767169921; x=1767177121; bh=Lb2eWdiKdYUIGHuGDDbo7kxfILv0
+	pg03yvKu0vOb+CE=; b=J5n9Lbs4zQ75be3RA51MEYLNsx/D6J6wHE9mjE4Rt+Qf
+	15YQS4LRZ1UBtJuj9+PDhm9Im1kyDJOqAwCZ5PcNufD2WbNmN4XKLgfHwPtTGj7s
+	jgcL1YphW7FW2JHHjwFz5FXtqz4n2SfuXMAmKzIn5Y08IXkvjBs+DDGcspip5Zci
+	cZOmQvmXeCH7j+s5HD3OubVT2LyDYVtPcEcE7uTQKrFsIydtuoj0wuO3ubwwuc75
+	/Gbmctq8XdZFrKXpe2IMDda+gJAFYzAbD8xaC8KyIVfS1NjssIF7jKDvrjgpKwSd
+	SNRRbSEmluMxhkw8NP1kxqbLfWWhTAYVLGfsVwKj3A==
+X-ME-Sender: <xms:fd9UaeiRyKe6EAsts2vuraIWpAGpXYF6S0-ab29iEfg7uIWZsD1jkg>
+    <xme:fd9Uab2fCrjO4ugtginziqp8h-lz0CMGt13DuAQ1828yc4hQNJ1Ml-AzEZAwbR_9d
+    H_-IiI1UP3mRr9WfBOkp6bX4eLNpAZCkwEvgC4oB9Bk8hKG22PNcsU>
+X-ME-Received: <xmr:fd9UaaRW79jsdBtsY1cm8DSOV-NMfoSsF4LSUaTK1lpZOJKtJ14gh1ADzUrbroBSux_Or8KN6wb-zvcO4UoNBdavy_nO4W2C-u0>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgdekvdegfecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
+    hrpefkhffufffvveestddtredttddttdenucfhrhhomhephfhinhhnucfvhhgrihhnuceo
+    fhhthhgrihhnsehlihhnuhigqdhmieekkhdrohhrgheqnecuggftrfgrthhtvghrnhepud
+    evtdeiveefvdffteduheetieehtdekhfekiedvledvtdehkeetieeuuddufeeunecuffho
+    mhgrihhnpedujedrqdhnvgifnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpe
+    hmrghilhhfrhhomhepfhhthhgrihhnsehlihhnuhigqdhmieekkhdrohhrghdpnhgspghr
+    tghpthhtohepgeegpdhmohguvgepshhmthhpohhuthdprhgtphhtthhopegrkhhpmheslh
+    hinhhugidqfhhouhhnuggrthhiohhnrdhorhhgpdhrtghpthhtohepphgvthgvrhiisehi
+    nhhfrhgruggvrggurdhorhhgpdhrtghpthhtohepfihilhhlsehkvghrnhgvlhdrohhrgh
+    dprhgtphhtthhopegrnhgurhhiiheskhgvrhhnvghlrdhorhhgpdhrtghpthhtoheprghr
+    uggssehkvghrnhgvlhdrohhrghdprhgtphhtthhopegrrhhnugesrghrnhgusgdruggvpd
+    hrtghpthhtoheprghstheskhgvrhhnvghlrdhorhhgpdhrtghpthhtohepsghoqhhunhdr
+    fhgvnhhgsehgmhgrihhlrdgtohhmpdhrtghpthhtohepsghpsegrlhhivghnkedruggv
+X-ME-Proxy: <xmx:fd9UaValjqnDrsAQZyzs-n4h9vaQLYxBBEFAH518d7YwUZVtZhwY7A>
+    <xmx:fd9Uaf5eZ4_XVFMc3_Z0pxzB8lW2sV9GCiONli5I5Py9efDA1Rg0-Q>
+    <xmx:fd9UaeuA0xIpFY3NulbznfmXRFsySF9OzbhkbNhUMkBgnjiGEBaN_g>
+    <xmx:fd9UaR4DSIAE_aLXWohDbPAmv_HVG0l-QieXD8fgUiUIz_pVBIMZvg>
+    <xmx:gd9UaSAy4Z2KnDeHIMQ8JvSZv23grHngVf6siI2XZGpH97_SQThrlfqY>
+Feedback-ID: i58a146ae:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 31 Dec 2025 03:31:56 -0500 (EST)
+Message-ID: <cover.1767169542.git.fthain@linux-m68k.org>
+From: Finn Thain <fthain@linux-m68k.org>
+Subject: [PATCH v6 0/4] Align atomic storage
+Date: Wed, 31 Dec 2025 19:25:42 +1100
+To: Andrew Morton <akpm@linux-foundation.org>,
+    Peter Zijlstra <peterz@infradead.org>,
+    Will Deacon <will@kernel.org>
+Cc: Andrii Nakryiko <andrii@kernel.org>,    Ard Biesheuvel <ardb@kernel.org>,
+    Arnd Bergmann <arnd@arndb.de>,    Alexei Starovoitov <ast@kernel.org>,
+    Boqun Feng <boqun.feng@gmail.com>,    Borislav Petkov <bp@alien8.de>,
+    bpf@vger.kernel.org,    Rich Felker <dalias@libc.org>,
+    Daniel Borkmann <daniel@iogearbox.net>,
+    Dave Hansen <dave.hansen@linux.intel.com>,
+    Dinh Nguyen <dinguyen@kernel.org>,
+    Eduard Zingerman <eddyz87@gmail.com>,    Gary Guo <gary@garyguo.net>,
+    Geert Uytterhoeven <geert@linux-m68k.org>,
+    John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+    Guo Ren <guoren@kernel.org>,    Hao Luo <haoluo@google.com>,
+    "H. Peter Anvin" <hpa@zytor.com>,
+    John Fastabend <john.fastabend@gmail.com>,
+    Jiri Olsa <jolsa@kernel.org>,    Jonas Bonn <jonas@southpole.se>,
+    KP Singh <kpsingh@kernel.org>,    linux-arch@vger.kernel.org,
+    linux-csky@vger.kernel.org,    linux-efi@vger.kernel.org,
+    linux-kernel@vger.kernel.org,    linux-m68k@lists.linux-m68k.org,
+    linux-openrisc@vger.kernel.org,    linux-sh@vger.kernel.org,
+    Mark Rutland <mark.rutland@arm.com>,
+    Martin KaFai Lau <martin.lau@linux.dev>,
+    Ingo Molnar <mingo@redhat.com>,    Sasha Levin <sashal@kernel.org>,
+    Stanislav Fomichev <sdf@fomichev.me>,
+    Stafford Horne <shorne@gmail.com>,    Song Liu <song@kernel.org>,
+    Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+    Thomas Gleixner <tglx@linutronix.de>,    x86@kernel.org,
+    Yonghong Song <yonghong.song@linux.dev>,
+    Yoshinori Sato <ysato@users.sourceforge.jp>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/6] video/logo: allow custom boot logo and simplify logic
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Helge Deller <deller@gmx.de>, Greg Kroah-Hartman
- <gregkh@linuxfoundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>,
- Rich Felker <dalias@libc.org>
-Cc: linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
- linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-References: <20251230-custom-logo-v1-0-4736374569ee@kernel.org>
- <12a2ee5ca1a085fe0bd0c1b2d6e08589445cbf66.camel@physik.fu-berlin.de>
-From: Vincent Mailhol <mailhol@kernel.org>
-Content-Language: en-US
-Autocrypt: addr=mailhol@kernel.org; keydata=
- xjMEZluomRYJKwYBBAHaRw8BAQdAf+/PnQvy9LCWNSJLbhc+AOUsR2cNVonvxhDk/KcW7FvN
- JFZpbmNlbnQgTWFpbGhvbCA8bWFpbGhvbEBrZXJuZWwub3JnPsKZBBMWCgBBFiEE7Y9wBXTm
- fyDldOjiq1/riG27mcIFAmdfB/kCGwMFCQp/CJcFCwkIBwICIgIGFQoJCAsCBBYCAwECHgcC
- F4AACgkQq1/riG27mcKBHgEAygbvORJOfMHGlq5lQhZkDnaUXbpZhxirxkAHwTypHr4A/joI
- 2wLjgTCm5I2Z3zB8hqJu+OeFPXZFWGTuk0e2wT4JzjgEZx4y8xIKKwYBBAGXVQEFAQEHQJrb
- YZzu0JG5w8gxE6EtQe6LmxKMqP6EyR33sA+BR9pLAwEIB8J+BBgWCgAmFiEE7Y9wBXTmfyDl
- dOjiq1/riG27mcIFAmceMvMCGwwFCQPCZwAACgkQq1/riG27mcJU7QEA+LmpFhfQ1aij/L8V
- zsZwr/S44HCzcz5+jkxnVVQ5LZ4BANOCpYEY+CYrld5XZvM8h2EntNnzxHHuhjfDOQ3MAkEK
-In-Reply-To: <12a2ee5ca1a085fe0bd0c1b2d6e08589445cbf66.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
 
-On 31/12/2025 at 00:19, John Paul Adrian Glaubitz wrote:
-> Hi Vincent,
-> 
-> On Tue, 2025-12-30 at 23:19 +0100, Vincent Mailhol wrote:
->> This series allows the user to replace the default kernel boot logo by
->> a custom one directly in the kernel configuration. This makes it
->> easier to customise the boot logo without the need to modify the
->> sources and allows such customisation to remain persistent after
->> applying the configuration to another version of the kernel.
-> 
-> Wouldn't it make more sense to make the boot logo to be configurable
-> at runtime so that users don't have to rebuild their kernel at all
-> to change their boot logo?
+This series adds the __aligned attribute to atomic_t and atomic64_t
+definitions in include/linux and include/asm-generic (respectively)
+to get natural alignment of both types on csky, m68k, microblaze,
+nios2, openrisc and sh.
 
-I thought about that. The problem is that the logo is loaded really
-early in the boot process. To be able to modify the logo without
-rebuilding the full kernel, the logo would basically need to become a
-kernel module that would be stored in either an initrd or on the filesystem.
+This series also adds Kconfig options to enable a new run-time warning
+to help reveal misaligned atomic accesses on platforms which don't
+trap that.
 
-The above is not impossible, but would require delaying the logo.
+The performance impact is expected to vary across platforms and workloads.
+The measurements I made on m68k show that some workloads run faster and
+others slower.
 
-If we go in that direction, I think that my series as it is right now
-would be a prerequisite anyway. Personally, I am happy with the logo
-just being configurable when compiling the kernel, so I do not intend to
-put more effort into this afterward. However, that would have prepared
-the ground if anyone wants to implement in the future what you just
-suggested.
+---
 
+Changed since v5:
+ - Added acked-by and revewed-by tags.
+ - Added a new macro to inhibit emission of __bug_table section, for the
+ benefit of pre-boot code like the EFI stub loader.
 
-Yours sincerely,
-Vincent Mailhol
+Changed since v4:
+ - Dropped parisc header file patch as it's been merged already.
+ - Submitted as PATCH instead of RFC.
+
+Changed since v3:
+ - Rebased on v6.17.
+ - New patch to resolve header dependency issue on parisc.
+ - Dropped documentation patch.
+
+Changed since v2:
+ - Specify natural alignment for atomic64_t.
+ - CONFIG_DEBUG_ATOMIC checks for natural alignment again.
+ - New patch to add weakened alignment check.
+ - New patch for explicit alignment in BPF header.
+
+---
+
+Finn Thain (3):
+  bpf: Explicitly align bpf_res_spin_lock
+  atomic: Specify alignment for atomic_t and atomic64_t
+  atomic: Add option for weaker alignment check
+
+Peter Zijlstra (1):
+  atomic: Add alignment check to instrumented atomic operations
+
+ arch/x86/boot/compressed/Makefile     |  1 +
+ drivers/firmware/efi/libstub/Makefile |  1 +
+ include/asm-generic/atomic64.h        |  2 +-
+ include/asm-generic/rqspinlock.h      |  2 +-
+ include/linux/instrumented.h          | 17 +++++++++++++++++
+ include/linux/types.h                 |  2 +-
+ kernel/bpf/rqspinlock.c               |  1 -
+ lib/Kconfig.debug                     | 18 ++++++++++++++++++
+ 8 files changed, 40 insertions(+), 4 deletions(-)
+
+-- 
+2.49.1
 
