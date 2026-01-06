@@ -1,208 +1,86 @@
-Received: from mail-vk1-f193.google.com (mail-vk1-f193.google.com [209.85.221.193])
+Received: from mail-pg1-f179.google.com (mail-pg1-f179.google.com [209.85.215.179])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 980393A1E7F
-	for <linux-sh@vger.kernel.org>; Tue,  6 Jan 2026 11:48:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.193
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A73E32E154
+	for <linux-sh@vger.kernel.org>; Tue,  6 Jan 2026 12:56:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.179
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767700107; cv=none; b=RrVczccpi7bxTtUMokHJjV+xLLDad2Dzs3nEnReTm353aQcTeQbSqtFeIaJ1NNGtC1hdRgpxWhxSxHBP7Q7Bb5rgdAceGhZ1d1kUshBYgLJzyd/VEw3tr/L/3msoBo8gugQrqFl/QqAML8hYnK1KZ2AJ1aWysu4tguG9wZtngrc=
+	t=1767704186; cv=none; b=oCxc4S07f9Xw2IZeLb2mBZ55GOpnyfDhy/jLOeCLeCYz+IFMVf+h2IwuBf93UQCKPI4/JcU2xLbl+EPGXLzVSHpfI1jw+iCToIgeeTGoWpwXAM/su2UURwpjHMTPN7m2ec6f4Vn0LYaXszcEsZUUfqi8wTM8Jk6jIeLyiYI6GyA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767700107; c=relaxed/simple;
-	bh=cy90DhPfHZ+Icz6r89LIwxLLHRAHP0I0oJNrsBe1qfk=;
+	s=arc-20240116; t=1767704186; c=relaxed/simple;
+	bh=a6QY7v3K7LjddIGzyyZ7ya0cKsRU0fqtaAJcXUSvpLo=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=W5YNGhpVLBx03A0gmmJuSOGSKAq6z02ZtbUvXFWy2cB4k+YW03DSBH5Tx0imb16gxDvkEAY185a7erAf5kipdVpoM+fNgYnN9BUbjj+38hRd+qIXVvBY+UHNukTF2NYFYmr1ubeF25MnQE4s/3qbgkQEx12o4zqaeQHCjMROBSg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.193
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vk1-f193.google.com with SMTP id 71dfb90a1353d-55b2a09ff61so280868e0c.2
-        for <linux-sh@vger.kernel.org>; Tue, 06 Jan 2026 03:48:24 -0800 (PST)
+	 To:Cc:Content-Type; b=JtdJat6WfD/2hS/yY3tDfjHmw4qNtE5E7nPieN7eofStxw4xR85uKj7rnlF7ezQbQsdHOHZ1bPdLImxOFa0NSG47XxAczgVP3VKc6LFBJtwEZUoNWCLz5j8cRs9V/ZKsBzCNXTHAQFUJG8Nfp3FcCLm0Ikq/G1jqiywNll9WTq4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com; spf=pass smtp.mailfrom=0x0f.com; dkim=pass (1024-bit key) header.d=0x0f.com header.i=@0x0f.com header.b=COPvcOnV; arc=none smtp.client-ip=209.85.215.179
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=0x0f.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=0x0f.com header.i=@0x0f.com header.b="COPvcOnV"
+Received: by mail-pg1-f179.google.com with SMTP id 41be03b00d2f7-bf5ac50827dso576504a12.2
+        for <linux-sh@vger.kernel.org>; Tue, 06 Jan 2026 04:56:24 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=0x0f.com; s=google; t=1767704184; x=1768308984; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=a6QY7v3K7LjddIGzyyZ7ya0cKsRU0fqtaAJcXUSvpLo=;
+        b=COPvcOnVePvaNxl6O/hNRyX2xGpDmK9EjSC3WkJfnNhsTWD+vTeCZCD/eaEYfE8dOD
+         6dJVcJqM8Y/Fhkl+jjBQuYw5Z5AqgWTaWqyvcieysYkG8YUZY/DzZnGpKtblypfAWozv
+         s6C4yp/EF6R/Ba0S27cSWZE+6S8RJsTiIEvLs=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1767700103; x=1768304903;
+        d=1e100.net; s=20230601; t=1767704184; x=1768308984;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=eme3GKSVVTwekk5ahSqs0LbJRLjiKfIn3cO6kiKk5PI=;
-        b=bou6WtKzsKvvE9aHO/GWt7pVYFZCWwEr1wAzWsI93nWKciY/0aKKG8g2FImGhgeVgV
-         Ib1p0T5GdStN144FDjx36LgL44onYdYhG5P0c7y76qbhz8oND0Iy3GiH1CC4Hq+SQYKM
-         gW95iZf0fjhEQ+41pXHQcUakbxZh3/MIdQiI/T3A58IbAGP52dSnpMa8G/7cmwDY3IJY
-         sTApHDUZ+a3OKfsyayS3SUL6sAKzz4I2qhmv+UawAT6JriC4XlRoIVIK64zZQvDtJrRG
-         pSfDj41fMn4sjZwUvJDLnrKADcbzqHpQ2pfgZeQ4ZtWL61fvWO86hX+ZmOTomwyIDaG+
-         sdlA==
-X-Forwarded-Encrypted: i=1; AJvYcCVBEYmIXTpK3f2ySsXJ2iVRUOKxGboJi755Y5jcTaX952YjYes2U3I0AbSFXhQR/6lR4wBpG1n2Pg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yxy4mSmoysj90cZagXh+VsLGnjFHD0wdOrVZ3cU4vGgE3UD4eHW
-	DnlsPjXXYp5GRMkPeTw9uO0NZUIQkoEpV136L3pG8WeNBbbcL51tsgCS+MOELD+c
-X-Gm-Gg: AY/fxX4oHKXoDh/BS5Ors8AEQv5kTD7svEfkkTE7pmhjvUJukaA9AWlt9teHc8Z2Hb2
-	TKdk/lpkTSZN8gk/3TrAd5dhcdUZCi6c9z2N8gzZaFTW48Stfr4N7GZYRNCLFfwae3qCajZz1AS
-	M7zqFblsiz/WzySPObNEITFiuFi4xg80NFVYo7kKZqUj92XsBc+LHKaZbxda6t71I2jW8mqm09j
-	FGSvinSaTUFmZ7VwvPNPkCvbxLqFHiispbcOWE9ZZuL4xIhO1A0kf/ZNSZT9lre5prKkI/WCfJS
-	q3NC3w+nCoaL9gVJERjGrFmGPzv7UK3CF22EMGsKeXuEhL7Ky82+0pssLz5kBuz0ciBU1RHNT0W
-	TyqbeOScTYwUNps+4BpHxlYI+snV3x727F43VutGy1jdBd4le2ml/K2JBnW51d+xy3fF7Cb87uK
-	ueDfxPdzqlusOZJ/efFYPqmPu9jXHKJms61m+KsgH4leFGg4YtroZAY0Jxpg8=
-X-Google-Smtp-Source: AGHT+IHc7R0eomWEi6bKrnmtLHuLh1wIyfFDVoivc4yFrtjezfLhWHchLxi2+oa105YZ7RbLKjLrsA==
-X-Received: by 2002:a05:6122:3194:b0:559:8051:223a with SMTP id 71dfb90a1353d-563392c675dmr676109e0c.0.1767700103454;
-        Tue, 06 Jan 2026 03:48:23 -0800 (PST)
-Received: from mail-vs1-f48.google.com (mail-vs1-f48.google.com. [209.85.217.48])
-        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-5633a3f69fdsm608997e0c.14.2026.01.06.03.48.22
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 06 Jan 2026 03:48:23 -0800 (PST)
-Received: by mail-vs1-f48.google.com with SMTP id ada2fe7eead31-5dfd0101905so292187137.3
-        for <linux-sh@vger.kernel.org>; Tue, 06 Jan 2026 03:48:22 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCXDnqdLyQpCHAGfuVfbiALkYUJyCaZ4YT8b970GEgEmtSU8Meb1URooRE19EoLe/vPUcktcp/L6tw==@vger.kernel.org
-X-Received: by 2002:a05:6102:3588:b0:5db:d411:20cd with SMTP id
- ada2fe7eead31-5ec744a8304mr863867137.28.1767700102655; Tue, 06 Jan 2026
- 03:48:22 -0800 (PST)
+        bh=a6QY7v3K7LjddIGzyyZ7ya0cKsRU0fqtaAJcXUSvpLo=;
+        b=VSoNoqwpkS4oSGs+P+CEWbiis1oUCiJ5Bx3/zVO35ISMvo1r9/+XDDyxzj1iwFmRUU
+         xYoNccx+wGHWyceyHbyB3kTZC+LZXoyHtUeJ9/JAia9lLRweS+bQb6VfUrp/mbVdF8go
+         fHu2pmg67dSjVZq6XBwTTJOVmXqMCfoGivnvtN/DwCTMjviWofJDQtwda4cg8xj7xnXS
+         DU52Oe+945qwRCFUGKeSPCjJD8IbN8JFE+yxih+0SQUE7N/3bzFp1wf65x7eXlzDyeN/
+         tVhTj8aP9xAmdG7lx+FNp0lcM5v40k3PwIyjRDYJffmTGMMfh2GuCJ/+5IEs+vb1QBEV
+         kaXA==
+X-Forwarded-Encrypted: i=1; AJvYcCVF7weRlaT3dDVj83jBtsPa7yjsSv7ixPdo2dqQnJsCPIi24pCUGvWqv/zKYEgZN/JrZUu7wSxi6w==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwZTyV9L1ptw2Rl8xJOxB/Sxgw8V7RcJo6RPwUAvr+yOXSjY2nf
+	rzPAWMb3EJqvqfWg/O5aMV5Y68ZkxJo7FW9nELJiVsdG/OwiW8V7+huHEUvLV8qkAwrURymX0bn
+	vYbeiCcW/ZexWBDsoROXK3Mq0sS+KvypR+qZbv74qVA==
+X-Gm-Gg: AY/fxX4C/Na+RA7KkMLZw05wiVc6xEyN5RONWZGCON/u44wvwTpMFK28RQIXeEr3RI4
+	vIbWwj188fo7x6q/dWCybY7xUbBxPPQsmc/0Od7I1DP/q0cAEDtG8hbPyMSKbNeGbPyBN95Y75k
+	hUC3chYFmMcXiH4WjVjCeXnO2HhnojjqGu+zsH9NSEE0ZWG+GsxWXwupspa+FCmtz+Yfl6NdfsV
+	HmVSfB6AWNQWRhJ9VAjNIRe6b+70RlwLZqa85AGzxA2v2Thz+ivnSwYBeKHHxId940cyi0joVPI
+	Ax7mqPM=
+X-Google-Smtp-Source: AGHT+IHnONGJjk+cAuGQ/Uc3C9K5oE87B+HOi6y2Nb+5V2EGCNfaEvbJpioISHK4gDmLBHgSsc6t8cW7NhLgahAIJWI=
+X-Received: by 2002:a17:90b:3e83:b0:341:315:f4ed with SMTP id
+ 98e67ed59e1d1-34f5f280f61mr2131814a91.10.1767704183640; Tue, 06 Jan 2026
+ 04:56:23 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260101-custom-logo-v2-0-8eec06dfbf85@kernel.org> <20260101-custom-logo-v2-6-8eec06dfbf85@kernel.org>
-In-Reply-To: <20260101-custom-logo-v2-6-8eec06dfbf85@kernel.org>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 6 Jan 2026 12:48:11 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdVy48F5HAfqfJgbY83KDAztb9YWTqm8mT1ntTfj0311oA@mail.gmail.com>
-X-Gm-Features: AQt7F2oMgVPDZ6yIPBL4v-hrcVUiy-32V0b_EbYL6M5HBMZvyW9vi5iymuHAylg
-Message-ID: <CAMuHMdVy48F5HAfqfJgbY83KDAztb9YWTqm8mT1ntTfj0311oA@mail.gmail.com>
+References: <20260101-custom-logo-v2-0-8eec06dfbf85@kernel.org>
+ <20260101-custom-logo-v2-6-8eec06dfbf85@kernel.org> <CAMuHMdVy48F5HAfqfJgbY83KDAztb9YWTqm8mT1ntTfj0311oA@mail.gmail.com>
+In-Reply-To: <CAMuHMdVy48F5HAfqfJgbY83KDAztb9YWTqm8mT1ntTfj0311oA@mail.gmail.com>
+From: Daniel Palmer <daniel@0x0f.com>
+Date: Tue, 6 Jan 2026 21:56:11 +0900
+X-Gm-Features: AQt7F2oqCzC4ATldD0uEPXW8K0e3G46S_P8BzIk8JoOxtgGMBUB2Uvx42XKGtbU
+Message-ID: <CAFr9PX=hc31at7uHrZ3qcqtTd=B+726WZyxMz+7j1bAJ1vokhQ@mail.gmail.com>
 Subject: Re: [PATCH v2 6/6] video/logo: move logo selection logic to Kconfig
-To: Vincent Mailhol <mailhol@kernel.org>
-Cc: Helge Deller <deller@gmx.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-fbdev@vger.kernel.org, 
-	dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org, 
-	linux-sh@vger.kernel.org, linux-m68k <linux-m68k@lists.linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Vincent Mailhol <mailhol@kernel.org>, Helge Deller <deller@gmx.de>, 
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+	linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, 
+	linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-m68k <linux-m68k@lists.linux-m68k.org>
 Content-Type: text/plain; charset="UTF-8"
 
-Hi Vincent,
+On Tue, 6 Jan 2026 at 20:54, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
 
-CC linux-m68k
-
-Thanks for your patch, which is now commit bd710b3da7308cb1
-("video/logo: move logo selection logic to Kconfig") in fbdev/for-next.
-
-On Thu, 1 Jan 2026 at 16:26, Vincent Mailhol <mailhol@kernel.org> wrote:
-> Now that the path to the logo file can be directly entered in Kbuild,
-> there is no more need to handle all the logo file selection in the
-> Makefile and the C files.
-
-This may do the wrong thing when booting a multi-platform kernel.
-
+> E.g. an m68k multi-platform kernel including Mac support will scare
+> non-Mac users into thinking their machine was assimilated by the
+> Apple Empire...
 >
-> The only exception is the logo_spe_clut224 which is only used by the
-> Cell processor (found for example in the Playstation 3) [1]. This
-> extra logo uses its own different image which shows up on a separate
-> line just below the normal logo. Because the extra logo uses a
-> different image, it can not be factorized under the custom logo logic.
->
-> Move all the logo file selection logic to Kbuild (except from the
-> logo_spe_clut224.ppm), this done, clean-up the C code to only leave
-> one entry for each logo type (monochrome, 16-colors and 224-colors).
->
-> [1] Cell SPE logos
-> Link: https://lore.kernel.org/all/20070710122702.765654000@pademelon.sonytel.be/
->
-> Signed-off-by: Vincent Mailhol <mailhol@kernel.org>
 
-> --- a/drivers/video/logo/Kconfig
-> +++ b/drivers/video/logo/Kconfig
-
-> @@ -61,6 +63,12 @@ config LOGO_LINUX_CLUT224
->  config LOGO_LINUX_CLUT224_FILE
->         string "224-color logo .ppm file"
->         depends on LOGO_LINUX_CLUT224
-> +       default "drivers/video/logo/logo_dec_clut224.ppm" if MACH_DECSTATION || ALPHA
-> +       default "drivers/video/logo/logo_mac_clut224.ppm" if MAC
-
-E.g. an m68k multi-platform kernel including Mac support will scare
-non-Mac users into thinking their machine was assimilated by the
-Apple Empire...
-
-> +       default "drivers/video/logo/logo_parisc_clut224.ppm" if PARISC
-> +       default "drivers/video/logo/logo_sgi_clut224.ppm" if SGI_IP22 || SGI_IP27 || SGI_IP32
-> +       default "drivers/video/logo/logo_sun_clut224.ppm" if SPARC
-> +       default "drivers/video/logo/logo_superh_clut224.ppm" if SUPERH
->         default "drivers/video/logo/logo_linux_clut224.ppm"
->         help
->           Takes a path to a 224-color logo in the portable pixmap file
-
-> --- a/drivers/video/logo/logo.c
-> +++ b/drivers/video/logo/logo.c
-> @@ -48,59 +48,21 @@ const struct linux_logo * __ref fb_find_logo(int depth)
->         if (nologo || logos_freed)
->                 return NULL;
->
-> -       if (depth >= 1) {
->  #ifdef CONFIG_LOGO_LINUX_MONO
-> -               /* Generic Linux logo */
-> +       if (depth >= 1)
->                 logo = &logo_linux_mono;
->  #endif
-> -#ifdef CONFIG_LOGO_SUPERH_MONO
-> -               /* SuperH Linux logo */
-> -               logo = &logo_superh_mono;
-> -#endif
-> -       }
->
-> -       if (depth >= 4) {
->  #ifdef CONFIG_LOGO_LINUX_VGA16
-> -               /* Generic Linux logo */
-> +       if (depth >= 4)
->                 logo = &logo_linux_vga16;
->  #endif
-> -#ifdef CONFIG_LOGO_SUPERH_VGA16
-> -               /* SuperH Linux logo */
-> -               logo = &logo_superh_vga16;
-> -#endif
-> -       }
->
-> -       if (depth >= 8) {
->  #ifdef CONFIG_LOGO_LINUX_CLUT224
-> -               /* Generic Linux logo */
-> +       if (depth >= 8)
->                 logo = &logo_linux_clut224;
->  #endif
-> -#ifdef CONFIG_LOGO_DEC_CLUT224
-> -               /* DEC Linux logo on MIPS/MIPS64 or ALPHA */
-> -               logo = &logo_dec_clut224;
-> -#endif
-> -#ifdef CONFIG_LOGO_MAC_CLUT224
-> -               /* Macintosh Linux logo on m68k */
-> -               if (MACH_IS_MAC)
-
-MACH_IS_MAC can be a runtime check.
-
-> -                       logo = &logo_mac_clut224;
-> -#endif
-> -#ifdef CONFIG_LOGO_PARISC_CLUT224
-> -               /* PA-RISC Linux logo */
-> -               logo = &logo_parisc_clut224;
-> -#endif
-> -#ifdef CONFIG_LOGO_SGI_CLUT224
-> -               /* SGI Linux logo on MIPS/MIPS64 */
-> -               logo = &logo_sgi_clut224;
-> -#endif
-> -#ifdef CONFIG_LOGO_SUN_CLUT224
-> -               /* Sun Linux logo */
-> -               logo = &logo_sun_clut224;
-> -#endif
-> -#ifdef CONFIG_LOGO_SUPERH_CLUT224
-> -               /* SuperH Linux logo */
-> -               logo = &logo_superh_clut224;
-> -#endif
-> -       }
-> +
->         return logo;
->  }
->  EXPORT_SYMBOL_GPL(fb_find_logo);
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+This is actually how I tell if my Amiga or Mac is currently connected
+to my monitor... Amiga has the normal tux, Mac has the tux inside of a
+monitor.
