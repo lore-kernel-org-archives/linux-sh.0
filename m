@@ -1,117 +1,181 @@
-Received: from fhigh-b8-smtp.messagingengine.com (fhigh-b8-smtp.messagingengine.com [202.12.124.159])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj1-f44.google.com (mail-pj1-f44.google.com [209.85.216.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A5F81D5160;
-	Tue,  6 Jan 2026 22:16:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.159
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 81A852512FF
+	for <linux-sh@vger.kernel.org>; Wed,  7 Jan 2026 04:58:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767737797; cv=none; b=YjLn7mdXAAUvPq/WCfPACtusABbAxZXRkag2oQzT0n3L7xsA3G1C24X7+3IkYJL+isVpjt5YsPMybyqCoNqhAUmj/Nbjd6cGVs5qjwjUsmvsboGk2flHS9Jq17Ct/0TOjVMTPMFMWSZefWvhCGDZfyYSA734EcgydIczjHx8+zg=
+	t=1767761904; cv=none; b=mjGK4JrF0aq+0TFFXxYXLHV7xhPC+F2Lj0a8vNIdfCtkwXdYB7QzMFnmrDztleUT9JMpQ9nHuTe1EsZr0OZwjYzE0Hd1e4e0yihZ83u9YjYEUrtPsx3Tk6EgGXvbcit1lAxo1L+7kDWRyMk2CiwlwPSFxulXVyBbWQQPaGON0Fw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767737797; c=relaxed/simple;
-	bh=y1PBfHHQwgDsCuB/Snw5qx45/pmVXCS4prsOZvmoeoM=;
-	h=Date:From:To:cc:Subject:In-Reply-To:Message-ID:References:
-	 MIME-Version:Content-Type; b=r+9ficmQpMu/re/fE52nzPies7rZCUl/t9Tpu/SFpn7cGO/rg7N15I0DXW08+rLRBKXyy8IkpfULffu8AmKtO6VL61QMfFeJTBOfzAgzmNr0xB41UZ1eExUO+TTuiMP7QzAzI/7uuFpu5EEOoJC0EXzXW5lCrHd6hwi+8TjSoFM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=none smtp.mailfrom=linux-m68k.org; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=bwMvFZ0H; arc=none smtp.client-ip=202.12.124.159
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
+	s=arc-20240116; t=1767761904; c=relaxed/simple;
+	bh=u52IYXtkIGi8sisrJ2GXaZQiFovGjOBhfJtTiCU+FIM=;
+	h=From:To:Cc:Subject:In-Reply-To:Date:Message-ID:References:
+	 MIME-Version:Content-Type; b=WOX6jIUJGg12PfiVl9JMLOyRCkNBVc3nFdpKAlzJor9AhLKlvNJGLbhVry5BWcr8IkU6Madz9CB9oC01U3l2SNK878hht2hfmRFC6PS7AHjMl5rVi0QYMmJ7XZ4G1eGehzPHFWK3zrH2qrGPpjOt2hvUnIPFnH+4ytGv4FZRuVM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=XE9OHB7K; arc=none smtp.client-ip=209.85.216.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="bwMvFZ0H"
-Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 2A85F7A00B6;
-	Tue,  6 Jan 2026 17:16:34 -0500 (EST)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-06.internal (MEProxy); Tue, 06 Jan 2026 17:16:34 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1767737794; x=1767824194; bh=mEWm+WVkhC7n0p80aiPEAouq9j7WfHhQI7z
-	k97WgZbc=; b=bwMvFZ0HgjtwLz59FNEVvzcp7IjHw40oX8W9io8nTRYVFbV+9rY
-	yMhFFnXxxCRDHnDBDnt9Om76DBRpB4gNjPPX5l5hQpwom+UhVzokzsqr1YbFryo6
-	gmXKAJ2bt0/B3KVromdltBPTTTy8gKPnclMd0n+epZguGfzra++q4hf6KJh2l797
-	YScHy/nrpOeHBXYmk96Rwb3x1sS1fjBd5KI8a0iV7qwrLZsrLBDX7HLFPzy3JEA7
-	FJMttBOnViQkYnu8XU06mARwrraTsiwBoAhCBaXosBDo2r8z3aj0tWlZUS6Twgmf
-	zVwfCmCNJ4Byl4wkAcxE82thYHudnT46eLw==
-X-ME-Sender: <xms:wYldaUkyJEKLPiOlQ_pCImcbQBdIP0HOPZS1D2D_0DKdZQTUYT77nQ>
-    <xme:wYldaXjyqPWi3MxC6_H2FIQAe7POFz5boE_nNquhW4cw0__ZJuiP3LgiO3Kn_8RpE
-    MDTb5xCaS_HQ4YdT9mJLdYD2KDg3PdGZVzXYkENoTqPGs-AsjGRap8>
-X-ME-Received: <xmr:wYldabRa3sBXlU6hNQCJc_0dvsa0cxpY_bJ8iOLrU8Tptz4Z-1QXXC5Pw6d-3V8E35fPRTeU33985UWapGja2OEAN0tor02QBUM>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefgedrtddtgddutddufeejucetufdoteggodetrf
-    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
-    rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
-    gurhepfffhvfevufgjkfhfgggtsehttdertddttddvnecuhfhrohhmpefhihhnnhcuvfhh
-    rghinhcuoehfthhhrghinheslhhinhhugidqmheikehkrdhorhhgqeenucggtffrrghtth
-    gvrhhnpeelueehleehkefgueevtdevteejkefhffekfeffffdtgfejveekgeefvdeuheeu
-    leenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpehfth
-    hhrghinheslhhinhhugidqmheikehkrdhorhhgpdhnsggprhgtphhtthhopeduvddpmhho
-    uggvpehsmhhtphhouhhtpdhrtghpthhtohepmhgrihhlhhholheskhgvrhhnvghlrdhorh
-    hgpdhrtghpthhtohepghgvvghrtheslhhinhhugidqmheikehkrdhorhhgpdhrtghpthht
-    ohepuggvlhhlvghrsehgmhigrdguvgdprhgtphhtthhopehgrhgvghhkhheslhhinhhugi
-    hfohhunhgurghtihhonhdrohhrghdprhgtphhtthhopeihshgrthhosehushgvrhhsrdhs
-    ohhurhgtvghfohhrghgvrdhjphdprhgtphhtthhopegurghlihgrsheslhhisggtrdhorh
-    hgpdhrtghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinhdr
-    uggvpdhrtghpthhtoheplhhinhhugidqfhgsuggvvhesvhhgvghrrdhkvghrnhgvlhdroh
-    hrghdprhgtphhtthhopegurhhiqdguvghvvghlsehlihhsthhsrdhfrhgvvgguvghskhht
-    ohhprdhorhhg
-X-ME-Proxy: <xmx:wYldaR-emsrm7Fdppl-LLB4KZXDyglfbl8yhtRwyve1xrvE5qgXcbA>
-    <xmx:wYldaUO14_MqWJ26DTDcsBC3FGQvQTgewIwTd7sxSWdsEiTNTdQtbg>
-    <xmx:wYldaaiesD6tlOnqoGwgUFaUZdu9pbEpwGQdd3WUns9KSFWVF69BfA>
-    <xmx:wYldafkQGjXAXlOibwpD6dsRs4106CBvdYwvStf3wB08i-9yf4YLqA>
-    <xmx:woldaY6fvP1eHQ8-GqFzoIdgNywDpYHH4YzBggjNmEhg3tNpPaxNyTr7>
-Feedback-ID: i58a146ae:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 6 Jan 2026 17:16:30 -0500 (EST)
-Date: Wed, 7 Jan 2026 09:16:27 +1100 (AEDT)
-From: Finn Thain <fthain@linux-m68k.org>
-To: Vincent Mailhol <mailhol@kernel.org>
-cc: Geert Uytterhoeven <geert@linux-m68k.org>, Helge Deller <deller@gmx.de>, 
-    Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
-    Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-    John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-    linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org, 
-    linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, 
-    linux-m68k <linux-m68k@lists.linux-m68k.org>
-Subject: Re: [PATCH v2 6/6] video/logo: move logo selection logic to
- Kconfig
-In-Reply-To: <dda4052e-b843-43fa-850c-a1bb20e4a8e3@kernel.org>
-Message-ID: <eac23137-f6cd-0789-074c-279de76f72a0@linux-m68k.org>
-References: <20260101-custom-logo-v2-0-8eec06dfbf85@kernel.org> <20260101-custom-logo-v2-6-8eec06dfbf85@kernel.org> <CAMuHMdVy48F5HAfqfJgbY83KDAztb9YWTqm8mT1ntTfj0311oA@mail.gmail.com> <dda4052e-b843-43fa-850c-a1bb20e4a8e3@kernel.org>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="XE9OHB7K"
+Received: by mail-pj1-f44.google.com with SMTP id 98e67ed59e1d1-34c1d98ba11so1480148a91.3
+        for <linux-sh@vger.kernel.org>; Tue, 06 Jan 2026 20:58:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1767761902; x=1768366702; darn=vger.kernel.org;
+        h=mime-version:references:message-id:date:in-reply-to:subject:cc:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=nurUXHNs091EaceKYt0jtxQiBJ2IaAdTDr7CGJ+zWBU=;
+        b=XE9OHB7Kl+IegOavGwsCniq7IfH569pyWSwOB3GH4IFakEzMoVU0qTAM99Htm/LTZa
+         oIrdXqofABAYlYf0vbgd+n0GUNiJzVIPiyO8CScU6yhPMURk/UDM/RVMGFEztgjtLPNS
+         WRPiIEJnD0Ff9/Z8WNMKc7Anw6/nMx8MAbq3s3xv9xn+5m1oNJCX1ktobB6O3+C+tCKf
+         0dT43+gSNEm71HVEC9CZgI8klLsPbgoiQqrHQwigH/O6I0GQ3Ti8owh0piXgvhZN4xe2
+         1m7D9Rr/nZ33sxwqrbUB/YINiEIurizt1znhUcLNHdGYLs9ErvXCDeFUGjhnGu4pVoK6
+         wLTQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1767761902; x=1768366702;
+        h=mime-version:references:message-id:date:in-reply-to:subject:cc:to
+         :from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=nurUXHNs091EaceKYt0jtxQiBJ2IaAdTDr7CGJ+zWBU=;
+        b=ew6p9MxzZQHw7jIl0oLLqGxPdrUKkUmJOeWBt89DGADbygmhhHRhVqX5iQQo8oRdjW
+         e9bn7I9aM4i7jaTW9fHpOKBdG0+ouAqAwO0VuBaoCmpDRWk9igJDGnrSmc2d+fjVufNi
+         Znpgw33uTbpJQvcOFe6eU0KX4ie93faVm4WbHv/EVtZ0WvAdAvoWj4jdK/TxBKC4JzDe
+         jtOEnA9rn9MLjxES4JvAIZZU+lcf4Qu0jbyz430hA8KEDZ0tLx8Cg5E0Mhc0cUsgt11K
+         trUkiy2gMRCPaaahNzHCXPL9sSfDfdsHwwT8XvV6SNf3vHaYimEgbjtT03HGfNYPt3Yw
+         FH+w==
+X-Forwarded-Encrypted: i=1; AJvYcCVtiO3oAqqDjUZ2uvAVbGLupBVclvBw96ucBhKa3bUu0CXyOAfohIIqZPolgubQtVnwTGFzpi6wXg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyQU8hYTzPqJ9DHQXCDnU2oN6Zqat+I5uRGIlmQbrsirNs+M+oV
+	/UN+noGytUXTr/wcBqsKpb9rR0HRB6IvgQtkj4YeZSKFUomKwpReRQ9v
+X-Gm-Gg: AY/fxX5AGI58B/wXm09RY4j7oMTQeYIiAFdSB2+E/ypoF85qhRY6FAgQ9gh6i3lp09E
+	odwU3JMRntAEHpmU2j2njwj0qFgmY/oIe05Z9ACsfsK9ZoyFp3YWEce4Bb0eGigy5DKhDxCcMSL
+	5dT+FLRN6BvMmH/IJk9Bpb80E5mkkb6Kf3bYHtEbBpUyfr7CVackm3JAhuJnUIT25CqlkG7PCEZ
+	ztc5pKVlV28SO52ljVyvdLZ0wzI0B5D0cgjG+GWv1RsYz/ZTRwypooe+/5Z5LhBUD0X4J79mhw8
+	Qht9nXk5lXfYIJFSeG9QI5/qjcB2xknv8uTrNSAvF4E+0hfOGH8padAoaDKOOVXwG8sTJ8oBLAF
+	sQFCZYGGeAGwugvY7D04lHPR09YCew4KAm+SE8QPMEd/XNd1CzqA3YCfiqK1oK8tUmvQTQ3rWh3
+	pRQt6kSg==
+X-Google-Smtp-Source: AGHT+IE3iEJ4twso46GOnqJPDopUox2qFLaKHiDPKI95vlPPxjV/F7mxvaI/CeOE2s8GrRHRScEd6Q==
+X-Received: by 2002:a17:90b:6c7:b0:335:2eef:4ca8 with SMTP id 98e67ed59e1d1-34f68d3b4a4mr1191743a91.33.1767761901762;
+        Tue, 06 Jan 2026 20:58:21 -0800 (PST)
+Received: from dw-tp ([49.207.192.172])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-34f5fb75902sm3622895a91.16.2026.01.06.20.58.04
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 06 Jan 2026 20:58:20 -0800 (PST)
+From: Ritesh Harjani (IBM) <ritesh.list@gmail.com>
+To: Mike Rapoport <rppt@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Alex Shi <alexs@kernel.org>, Alexander Gordeev <agordeev@linux.ibm.com>, 
+	Andreas Larsson <andreas@gaisler.com>, Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>, 
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, Catalin Marinas <catalin.marinas@arm.com>, 
+	"David S. Miller" <davem@davemloft.net>, Dave Hansen <dave.hansen@linux.intel.com>, 
+	David Hildenbrand <david@kernel.org>, Dinh Nguyen <dinguyen@kernel.org>, 
+	Geert Uytterhoeven <geert@linux-m68k.org>, Guo Ren <guoren@kernel.org>, 
+	Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, 
+	Ingo Molnar <mingo@redhat.com>, Johannes Berg <johannes@sipsolutions.net>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Jonathan Corbet <corbet@lwn.net>, 
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>, Lorenzo Stoakes <lorenzo.stoakes@oracle.com>, 
+	Magnus Lindholm <linmag7@gmail.com>, Matt Turner <mattst88@gmail.com>, 
+	Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Hocko <mhocko@suse.com>, 
+	Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@kernel.org>, Muchun Song <muchun.song@linux.dev>, 
+	Oscar Salvador <osalvador@suse.de>, Palmer Dabbelt <palmer@dabbelt.com>, 
+	Pratyush Yadav <pratyush@kernel.org>, Richard Weinberger <richard@nod.at>, 
+	Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, 
+	Suren Baghdasaryan <surenb@google.com>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+	Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>, 
+	Vlastimil Babka <vbabka@suse.cz>, Will Deacon <will@kernel.org>, x86@kernel.org, 
+	linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
+	linux-csky@vger.kernel.org, linux-cxl@vger.kernel.org, 
+	linux-doc@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, 
+	linux-mips@vger.kernel.org, linux-mm@kvack.org, 
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, 
+	linux-um@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, 
+	loongarch@lists.linux.dev, sparclinux@vger.kernel.org
+Subject: Re: [PATCH v2 14/28] powerpc: introduce arch_zone_limits_init()
+In-Reply-To: <20260102070005.65328-15-rppt@kernel.org>
+Date: Wed, 07 Jan 2026 09:57:34 +0530
+Message-ID: <87ldia9he1.ritesh.list@gmail.com>
+References: <20260102070005.65328-1-rppt@kernel.org> <20260102070005.65328-15-rppt@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
+
+Mike Rapoport <rppt@kernel.org> writes:
+
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+>
+> Move calculations of zone limits to a dedicated arch_zone_limits_init()
+> function.
+>
+> Later MM core will use this function as an architecture specific callback
+> during nodes and zones initialization and thus there won't be a need to
+> call free_area_init() from every architecture.
+>
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> ---
+>  arch/powerpc/mm/mem.c | 22 ++++++++++++----------
+>  1 file changed, 12 insertions(+), 10 deletions(-)
+>
+> diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+> index 3ddbfdbfa941..32c496bfab4f 100644
+> --- a/arch/powerpc/mm/mem.c
+> +++ b/arch/powerpc/mm/mem.c
+> @@ -221,13 +221,23 @@ static int __init mark_nonram_nosave(void)
+>   * anyway) will take a first dip into ZONE_NORMAL and get otherwise served by
+>   * ZONE_DMA.
+>   */
+> -static unsigned long max_zone_pfns[MAX_NR_ZONES];
+> +void __init arch_zone_limits_init(unsigned long *max_zone_pfns)
+> +{
+> +#ifdef CONFIG_ZONE_DMA
+> +	max_zone_pfns[ZONE_DMA]	= min(zone_dma_limit, max_low_pfn - 1) + 1;
+
+Hi Mike, 
+
+This doesn't look correct. Isn't the zone_dma_limit value in bytes actually?
+Shouldn't it be -
+
+     max_zone_pfns[ZONE_DMA] = min((zone_dma_limit >> PAGE_SHIFT) + 1, max_low_pfn);
 
 
-On Tue, 6 Jan 2026, Vincent Mailhol wrote:
+-ritesh
 
-> > 
-> > MACH_IS_MAC can be a runtime check.
-> 
-> OK. I missed this.
-> 
 
-You can use "qemu-system-m68k -M q800 ..." to run the code you're 
-interested in.
-
-$ qemu-system-m68k -M q800 -g 800x600x16
-qemu-system-m68k: unknown display mode: width 800, height 600, depth 16
-Available modes:
-    640x480x1
-    640x480x2
-    640x480x4
-    640x480x8
-    640x480x24
-    800x600x1
-    800x600x2
-    800x600x4
-    800x600x8
-    800x600x24
-    1152x870x1
-    1152x870x2
-    1152x870x4
-    1152x870x8
+> +#endif
+> +	max_zone_pfns[ZONE_NORMAL] = max_low_pfn;
+> +#ifdef CONFIG_HIGHMEM
+> +	max_zone_pfns[ZONE_HIGHMEM] = max_pfn;
+> +#endif
+> +}
+>  
+>  /*
+>   * paging_init() sets up the page tables - in fact we've already done this.
+>   */
+>  void __init paging_init(void)
+>  {
+> +	unsigned long max_zone_pfns[MAX_NR_ZONES];
+>  	unsigned long long total_ram = memblock_phys_mem_size();
+>  	phys_addr_t top_of_ram = memblock_end_of_DRAM();
+>  	int zone_dma_bits;
+> @@ -259,15 +269,7 @@ void __init paging_init(void)
+>  
+>  	zone_dma_limit = DMA_BIT_MASK(zone_dma_bits);
+>  
+> -#ifdef CONFIG_ZONE_DMA
+> -	max_zone_pfns[ZONE_DMA]	= min(max_low_pfn,
+> -				      1UL << (zone_dma_bits - PAGE_SHIFT));
+> -#endif
+> -	max_zone_pfns[ZONE_NORMAL] = max_low_pfn;
+> -#ifdef CONFIG_HIGHMEM
+> -	max_zone_pfns[ZONE_HIGHMEM] = max_pfn;
+> -#endif
+> -
+> +	arch_zone_limits_init(max_zone_pfns);
+>  	free_area_init(max_zone_pfns);
+>  
+>  	mark_nonram_nosave();
+> -- 
+> 2.51.0
 
