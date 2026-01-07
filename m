@@ -1,139 +1,224 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-vk1-f195.google.com (mail-vk1-f195.google.com [209.85.221.195])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 419192DBF4B;
-	Wed,  7 Jan 2026 10:20:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C9DF52F0C48
+	for <linux-sh@vger.kernel.org>; Wed,  7 Jan 2026 10:37:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.195
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767781244; cv=none; b=ohDY8wpreqv8XGJyVOw7crRkmGcacGRsi+znTE+3GZEwxBDjzfAEvxfQnqAdIxO2Ru4tthTml5Vb8Rxy+wqoqV08FDL7ZCaaUxYYjr4vzf2V/Pn0KBvnF5ywdcWHGav3wy5NbpJ85U6RftgwMX+CxaLKjbrkinQMVruaKIKbJis=
+	t=1767782230; cv=none; b=CCu43LYDQqSQpQYMJz+2ruE65KqKWzRZc5JYJ4Gf8f4fpXnA96KJxsVc9eJrqUfiFfwQn613Z7LhwrP10sL9G+86S1O/95mM62Mn0IR0eeivNGNcrA40Nlxk2uPCUV1NabQlWen8epX1ScwdV+glDZr7xDBZz2+E6xqyGsbQLXc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767781244; c=relaxed/simple;
-	bh=2N7QgaN9sMjltiFqaQG4UkyiWR5RDDQ2n4IgHLPouW4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=eEyua+8T5cp4yjT5z4zsBQOsGjJIQKj+73aTCJ/yqN9jBkezrvLTBPUz2k7AVVbmS58tV2qBCAUMWZnbjFJOhdjAaH6hwqsttMofOP6b871+bmybV+iZcDnI+FAfAXuWD+zbuLfTbqKfVXKybwwMk5YdTmum/RMoj5FGyFUHZyU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=HG3UgZmi; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="HG3UgZmi"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 332F3C4CEF7;
-	Wed,  7 Jan 2026 10:20:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1767781243;
-	bh=2N7QgaN9sMjltiFqaQG4UkyiWR5RDDQ2n4IgHLPouW4=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=HG3UgZmir72YPYFm/emlV/3aORPdbjLAnBvpX04p5XtFP762LStn/wPAzNuqOQyK8
-	 k7OnYBM5tMSwl6jbeHb8PLi19AGtC/53sTnfGuvHRwU1J5fTUCYLII+PuhChCRsuuP
-	 lesNvqozgo8UJHTVTNpJsDervk1O2VsPtftbzvVYNlT5k9C+Ou7zoWZDNLa9w7OL7l
-	 1I+dvThsPPRQrJPx2bNt/P7eQY786Hlh4y2DUZqzVomuI/Tc2vep7bqbTNymx1RDAb
-	 W1AWrPHPHnhn5oDQwiHOAOhH7g90DnMJIt+6Fqkfre323p/NzMyoEh/2zKKa/f4rTg
-	 6GL2C2ybj5rcA==
-Date: Wed, 7 Jan 2026 12:20:23 +0200
-From: Mike Rapoport <rppt@kernel.org>
-To: Ritesh Harjani <ritesh.list@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Alex Shi <alexs@kernel.org>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	David Hildenbrand <david@kernel.org>,
-	Dinh Nguyen <dinguyen@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
-	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
-	Ingo Molnar <mingo@redhat.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Jonathan Corbet <corbet@lwn.net>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
-	Magnus Lindholm <linmag7@gmail.com>,
-	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Michal Hocko <mhocko@suse.com>, Michal Simek <monstr@monstr.eu>,
-	Muchun Song <muchun.song@linux.dev>,
-	Oscar Salvador <osalvador@suse.de>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Pratyush Yadav <pratyush@kernel.org>,
-	Richard Weinberger <richard@nod.at>,
-	Russell King <linux@armlinux.org.uk>,
-	Stafford Horne <shorne@gmail.com>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>,
-	Vlastimil Babka <vbabka@suse.cz>, Will Deacon <will@kernel.org>,
-	x86@kernel.org, linux-alpha@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-	linux-cxl@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-	linux-mm@kvack.org, linux-openrisc@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org,
-	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-	sparclinux@vger.kernel.org
-Subject: Re: [PATCH v2 14/28] powerpc: introduce arch_zone_limits_init()
-Message-ID: <aV4zZ8D5eaLC6K-w@kernel.org>
-References: <20260102070005.65328-1-rppt@kernel.org>
- <20260102070005.65328-15-rppt@kernel.org>
- <87ldia9he1.ritesh.list@gmail.com>
+	s=arc-20240116; t=1767782230; c=relaxed/simple;
+	bh=GodLXSsnWrNdZeqyDmGiRErnjF0qHoHPpF4pgtaEMSQ=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=n2iyVE5B08jDzapQ9JELgSvdVgFeveqZ5ou6Kv+iU49AqGebWTBTGYDDhw4TO01g5BY+Q/p3Zu2vl+dFkja1PRM2WnRiIgevRP/VkwGk5eG4OpgS2IJgCrZaFWVjM8WrnRdsVFiOoTD1ST8tP/wBapReUZJjFmt8ga/PBgLOzRU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.195
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-vk1-f195.google.com with SMTP id 71dfb90a1353d-55b22d3b2a6so536463e0c.1
+        for <linux-sh@vger.kernel.org>; Wed, 07 Jan 2026 02:37:08 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1767782227; x=1768387027;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=QvR5DRwy1DSGr/ekGfe0RQqbV4Hkmy/mYDx8B3sEcoo=;
+        b=BQBc2acyjP65gGIJpflF4Z3mQ70nSWw3xJFm/9H6G5mmUmPcSK1tYgX2VaO/X0qU+n
+         2PHKF5RwJnXGTsZi94xT5X5o1r8nqGHHe4is+RTahS8KOMkGDLHnDWh4r86vjoUjzvV8
+         C45mnqoHmaIkmyF7aEbxr4yA9Qp5uspUwFEEhdUyYVBLGs+zWbwwceYWqWYceNgIG1Rv
+         DBatmPW5R2VLU4pFWN5bQAz5WTztRocB1btIgiXTdTmikzRtDpXGWE3IH/rtLpW8lJVo
+         i3SeApbSe8OfAsm2iT+x+XjRagCuJJm041zJGSKOx7MvSBY0elku5enkwdoxqM7gXQ+u
+         pisA==
+X-Forwarded-Encrypted: i=1; AJvYcCW62LCdQqlhf+Ssbnk9Sumak0jGf9OVE8sFQ2m/E9sdhu4aWLXATMIR5BalBNMOFxufu6MP91lamg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwUP6nfVYm5pSgVMcvdwBiwZsYAB259eIFTfIoOY3OmjaBIFWzo
+	TOQYMAKIMjP4z89OPDraiP8iVF+ZJHu+MWJahwopoiss3dUJ+lF5Rxk9xXYVxUhb
+X-Gm-Gg: AY/fxX4XnubqCnK5A5wsQ5oLMEFxwOfUiPdi+hKxPxxZhrxBhNKrOkMmh4wFfyBfody
+	GY8kNwjXXCP4qZQf8FKfA0lFCmgDA+06KpmiaXr2stCj0Oza+5CS8+nCa6jFudiVUuPUTUDugiu
+	TSixKtkExYGneAZXWgM/A3ezAbEP7LBG9WZKLUXp2mFIAy56lpQdmS2B1TcmiqJF9VYhvbj+8Fn
+	rC9tjgK9aku2HAiRAXr/9NhEZwWVQpKL23e3aaLekYid/9pzUYEGs6RjCTmZYysET1KfqD3paov
+	vMSBh14kMgNCZPRQlDA3/qFQbJeA91mM0r3ZEMz7TMrj8alC4Hvchtp0D1ZWBA73uQQlYoliCz6
+	DA5g2ASIFIWpAWnDQivJqcWZg0227dKHvbdvrc01GMZvBLoEt2CxPwp8zZHurhtVREpuA6JYvFM
+	A92yjf8yyQlKig/ssDHgqQeKiLmHqiCbHGmZCWK6WS4wnfpjAitBpnrQytSXnpQQA=
+X-Google-Smtp-Source: AGHT+IGj1uzKciiQw2EyqBrvtXG1LB7bRj+rwEwEj441Lugx2CArc4c2UQJmJK6NhRs6x236NCs92Q==
+X-Received: by 2002:ac5:c252:0:b0:55e:4f9a:103f with SMTP id 71dfb90a1353d-56339ea0a47mr1385274e0c.8.1767782227561;
+        Wed, 07 Jan 2026 02:37:07 -0800 (PST)
+Received: from mail-vk1-f178.google.com (mail-vk1-f178.google.com. [209.85.221.178])
+        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-944124e906esm2226034241.14.2026.01.07.02.37.06
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 07 Jan 2026 02:37:07 -0800 (PST)
+Received: by mail-vk1-f178.google.com with SMTP id 71dfb90a1353d-55b22d3b2a6so536450e0c.1
+        for <linux-sh@vger.kernel.org>; Wed, 07 Jan 2026 02:37:06 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCX5nk4yI9AZFQj+NsZ2XufsUxwQ4y90kxmbKM2C6RQ+vCEVmJkV6jFvXrp9FlsARQHa64M1ki7Xqw==@vger.kernel.org
+X-Received: by 2002:ac5:ccaf:0:b0:54a:8deb:21a7 with SMTP id
+ 71dfb90a1353d-56339dbf03dmr1504773e0c.4.1767782226762; Wed, 07 Jan 2026
+ 02:37:06 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <87ldia9he1.ritesh.list@gmail.com>
+References: <20260101-custom-logo-v2-0-8eec06dfbf85@kernel.org>
+ <20260101-custom-logo-v2-6-8eec06dfbf85@kernel.org> <CAMuHMdVy48F5HAfqfJgbY83KDAztb9YWTqm8mT1ntTfj0311oA@mail.gmail.com>
+ <dda4052e-b843-43fa-850c-a1bb20e4a8e3@kernel.org>
+In-Reply-To: <dda4052e-b843-43fa-850c-a1bb20e4a8e3@kernel.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 7 Jan 2026 11:36:54 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdXz9uKxQ0dH68a+xt4FHqVgdskvO3QRvev1_Wq8h-a1Qg@mail.gmail.com>
+X-Gm-Features: AQt7F2pWk5T5DK2Ps7GBdxmwjo6y5zM4oGY-k4cbzlgDPgVvKEzWy8YEHXjK3cA
+Message-ID: <CAMuHMdXz9uKxQ0dH68a+xt4FHqVgdskvO3QRvev1_Wq8h-a1Qg@mail.gmail.com>
+Subject: Re: [PATCH v2 6/6] video/logo: move logo selection logic to Kconfig
+To: Vincent Mailhol <mailhol@kernel.org>
+Cc: Helge Deller <deller@gmx.de>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-fbdev@vger.kernel.org, 
+	dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-m68k <linux-m68k@lists.linux-m68k.org>
+Content-Type: text/plain; charset="UTF-8"
 
-Hi,
+Hi Vincent,
 
-On Wed, Jan 07, 2026 at 09:57:34AM +0530, Ritesh Harjani wrote:
-> Mike Rapoport <rppt@kernel.org> writes:
-> 
-> > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+On Tue, 6 Jan 2026 at 21:10, Vincent Mailhol <mailhol@kernel.org> wrote:
+> On 06/01/2026 at 12:48, Geert Uytterhoeven wrote:
+> > Thanks for your patch, which is now commit bd710b3da7308cb1
+> > ("video/logo: move logo selection logic to Kconfig") in fbdev/for-next.
 > >
-> > Move calculations of zone limits to a dedicated arch_zone_limits_init()
-> > function.
+> > On Thu, 1 Jan 2026 at 16:26, Vincent Mailhol <mailhol@kernel.org> wrote:
+> >> Now that the path to the logo file can be directly entered in Kbuild,
+> >> there is no more need to handle all the logo file selection in the
+> >> Makefile and the C files.
 > >
-> > Later MM core will use this function as an architecture specific callback
-> > during nodes and zones initialization and thus there won't be a need to
-> > call free_area_init() from every architecture.
+> > This may do the wrong thing when booting a multi-platform kernel.
 > >
-> > Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
-> > ---
-> >  arch/powerpc/mm/mem.c | 22 ++++++++++++----------
-> >  1 file changed, 12 insertions(+), 10 deletions(-)
+> >>
+> >> The only exception is the logo_spe_clut224 which is only used by the
+> >> Cell processor (found for example in the Playstation 3) [1]. This
+> >> extra logo uses its own different image which shows up on a separate
+> >> line just below the normal logo. Because the extra logo uses a
+> >> different image, it can not be factorized under the custom logo logic.
+> >>
+> >> Move all the logo file selection logic to Kbuild (except from the
+> >> logo_spe_clut224.ppm), this done, clean-up the C code to only leave
+> >> one entry for each logo type (monochrome, 16-colors and 224-colors).
+> >>
+> >> [1] Cell SPE logos
+> >> Link: https://lore.kernel.org/all/20070710122702.765654000@pademelon.sonytel.be/
+> >>
+> >> Signed-off-by: Vincent Mailhol <mailhol@kernel.org>
 > >
-> > diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-> > index 3ddbfdbfa941..32c496bfab4f 100644
-> > --- a/arch/powerpc/mm/mem.c
-> > +++ b/arch/powerpc/mm/mem.c
-> > @@ -221,13 +221,23 @@ static int __init mark_nonram_nosave(void)
-> >   * anyway) will take a first dip into ZONE_NORMAL and get otherwise served by
-> >   * ZONE_DMA.
-> >   */
-> > -static unsigned long max_zone_pfns[MAX_NR_ZONES];
-> > +void __init arch_zone_limits_init(unsigned long *max_zone_pfns)
-> > +{
-> > +#ifdef CONFIG_ZONE_DMA
-> > +	max_zone_pfns[ZONE_DMA]	= min(zone_dma_limit, max_low_pfn - 1) + 1;
-> 
-> Hi Mike, 
-> 
-> This doesn't look correct. Isn't the zone_dma_limit value in bytes actually?
-> Shouldn't it be -
-> 
->      max_zone_pfns[ZONE_DMA] = min((zone_dma_limit >> PAGE_SHIFT) + 1, max_low_pfn);
+> >> --- a/drivers/video/logo/Kconfig
+> >> +++ b/drivers/video/logo/Kconfig
+> >
+> >> @@ -61,6 +63,12 @@ config LOGO_LINUX_CLUT224
+> >>  config LOGO_LINUX_CLUT224_FILE
+> >>         string "224-color logo .ppm file"
+> >>         depends on LOGO_LINUX_CLUT224
+> >> +       default "drivers/video/logo/logo_dec_clut224.ppm" if MACH_DECSTATION || ALPHA
+> >> +       default "drivers/video/logo/logo_mac_clut224.ppm" if MAC
+> >
+> > E.g. an m68k multi-platform kernel including Mac support will scare
+> > non-Mac users into thinking their machine was assimilated by the
+> > Apple Empire...
+> >
+> >> +       default "drivers/video/logo/logo_parisc_clut224.ppm" if PARISC
+> >> +       default "drivers/video/logo/logo_sgi_clut224.ppm" if SGI_IP22 || SGI_IP27 || SGI_IP32
+> >> +       default "drivers/video/logo/logo_sun_clut224.ppm" if SPARC
+> >> +       default "drivers/video/logo/logo_superh_clut224.ppm" if SUPERH
+> >>         default "drivers/video/logo/logo_linux_clut224.ppm"
+> >>         help
+> >>           Takes a path to a 224-color logo in the portable pixmap file
+> >
+> >> --- a/drivers/video/logo/logo.c
+> >> +++ b/drivers/video/logo/logo.c
+> >> @@ -48,59 +48,21 @@ const struct linux_logo * __ref fb_find_logo(int depth)
+> >>         if (nologo || logos_freed)
+> >>                 return NULL;
+> >>
+> >> -       if (depth >= 1) {
+> >>  #ifdef CONFIG_LOGO_LINUX_MONO
+> >> -               /* Generic Linux logo */
+> >> +       if (depth >= 1)
+> >>                 logo = &logo_linux_mono;
+> >>  #endif
+> >> -#ifdef CONFIG_LOGO_SUPERH_MONO
+> >> -               /* SuperH Linux logo */
+> >> -               logo = &logo_superh_mono;
+> >> -#endif
+> >> -       }
+> >>
+> >> -       if (depth >= 4) {
+> >>  #ifdef CONFIG_LOGO_LINUX_VGA16
+> >> -               /* Generic Linux logo */
+> >> +       if (depth >= 4)
+> >>                 logo = &logo_linux_vga16;
+> >>  #endif
+> >> -#ifdef CONFIG_LOGO_SUPERH_VGA16
+> >> -               /* SuperH Linux logo */
+> >> -               logo = &logo_superh_vga16;
+> >> -#endif
+> >> -       }
+> >>
+> >> -       if (depth >= 8) {
+> >>  #ifdef CONFIG_LOGO_LINUX_CLUT224
+> >> -               /* Generic Linux logo */
+> >> +       if (depth >= 8)
+> >>                 logo = &logo_linux_clut224;
+> >>  #endif
+> >> -#ifdef CONFIG_LOGO_DEC_CLUT224
+> >> -               /* DEC Linux logo on MIPS/MIPS64 or ALPHA */
+> >> -               logo = &logo_dec_clut224;
+> >> -#endif
+> >> -#ifdef CONFIG_LOGO_MAC_CLUT224
+> >> -               /* Macintosh Linux logo on m68k */
+> >> -               if (MACH_IS_MAC)
+> >
+> > MACH_IS_MAC can be a runtime check.
+>
+> OK. I missed this.
+>
+> I think there are two options to fix this:
+>
+>   1. Keep CONFIG_LOGO_MAC_CLUT224 untouched
+>   2. Remove logo_mac_clut224.ppm
+>
+> The first option is less controversial but I would like to ask you what
+> you think about removing the logo_mac_clut224 file.
+>
+> Here, we are speaking of the Macintosh 68k which ended sales in 1995,
+> right? So the user base should be rather small, I guess.
 
-You are right, I'll update it for v3. 
- 
-> -ritesh
+Yes, the user base is small.
+
+BTW, the only reason you don't have this issue with MACH_DECSTATION and
+the various SGI_IP* options is that MIPS does not support multi-platform
+kernels.
+
+> And people who still want the custom MAC logo would still be able to add
+>
+>   CONFIG_LOGO_MAC_CLUT224="path/to/logo_mac_clut224.ppm"
+
+LOGO_LINUX_CLUT224_FILE ;-)
+
+> to their config to restore the old behaviour anyway.
+>
+> My choice would go more toward the removal option but what do you think?
+
+I am not too attached to keeping the dynamic behavior for the Mac logo,
+I just wanted to point out the impact.
+I expect most people who care about logos (in products) just have their
+own custom out-of-tree code.  As fb_find_logo() and the underlying
+infrastructure still exists, I don't expect them to have too much
+trouble forward porting that to newer kernels.
+
+What do other people think?
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
-Sincerely yours,
-Mike.
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
