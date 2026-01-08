@@ -1,117 +1,183 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB3524B252A;
-	Thu,  8 Jan 2026 13:38:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D4D3322B7F;
+	Thu,  8 Jan 2026 19:03:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1767879488; cv=none; b=CuLRjiK+jDumSIyluwOqEKYRnCD8jyj/hRtPSCe8G+84oE+tafuNJDXVeGc2TKuGe0gJgGT9lJ9/KfwwoAdqsaUh5hgsRCGy+D7SSujgeEK4gCwg4PmJ/DesccmJYGChCLY0kgFQ0yFsXhwnD82iu2nWKWGiyKYlCUTelYzoNwo=
+	t=1767899009; cv=none; b=MLzxxkX+xoe8l5KB/L+w6lqQXaGMaqH5aaWMibS72eg6G6/M0gxT/Su18FTAf4727GM+jLrB8FGcG8blv3fppw5mMJHCG7eJaMvt1/wqlRMat6+/GAFI+w4hnndM55UL5PggXsf4VoXGICffg95O8k9DVrSdjR6dzrQsAKfZ76M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1767879488; c=relaxed/simple;
-	bh=VJKhVx5DGpVLVYb2XKJ8mMHhMksRI4ZPi6UFAnGjOes=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=E/b1rwVykzSzFdTmFSuQsI3GN4QUzG/6dyHoCKWTIix87ysOvfRUKxv/zDv3DxnD/V38JUH0N47WMUy3np/ktl+E+86tFKe21vLoCVlYIcGhVXpTcNV3kTTnoORO+s9/8WzzGSZwnFujYhqGrddM1jhUiCfF+8Crhhge3TodKw4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lKSNSmMu; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1767899009; c=relaxed/simple;
+	bh=EshLODRY/dMwTs1Aorg+jUiM2EDzqs+CcePETEAt+ic=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=vERvmNDEMbePCER5Sb8xCdovgDdHStnQwo85doxe3icyadxjEr94O3M0MjZmFvtWjWXmEwJipJJCmOMHzpuj9zmmAIgqilfhQRZgyyh75CQjRriUzXOBvgEyX7O/QgFQGYdUAJzHj1xJLV76XvrGvG8IrvG+p3z9NDPiH6KWPGE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RTqkK0ww; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lKSNSmMu"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EBE32C116C6;
-	Thu,  8 Jan 2026 13:37:47 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RTqkK0ww"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 813FDC116C6;
+	Thu,  8 Jan 2026 19:03:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1767879487;
-	bh=VJKhVx5DGpVLVYb2XKJ8mMHhMksRI4ZPi6UFAnGjOes=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=lKSNSmMui9b0uWXSR001Pt88qSwhYL4W2bFV32qwFJ/6CmW/Ao5TYVAY3Z+59376e
-	 LGMD9MiGBnRAvJH8NMvzcia4RujNN/Ji55DA7R7FC9V5WsJbqtoAPJTAPUCr5atPUE
-	 poGy32Xu92IK7Q6/R8BLK5Dfhvm0ifmZuiuV3C9vgar8FlNP1ez1Sr09T2iAeyAOsS
-	 gk385QWtqNoWlz57jEfTxAmmfx4P4Mski6nsScaJkhVKadirubTC5FVXcq8viEItJc
-	 1AEPIPxLDV87+Z5JZ+lhld5Il8971MVKAXSlnW8bHrCKUMYsXlt6o7qcTWAv0XBwbd
-	 WP7HoXXSByWCw==
-Date: Thu, 8 Jan 2026 15:37:44 +0200
-From: Mike Rapoport <rppt@kernel.org>
-To: Kalle Niemi <kaleposti@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Alex Shi <alexs@kernel.org>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	David Hildenbrand <david@kernel.org>,
-	Dinh Nguyen <dinguyen@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
-	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
-	Ingo Molnar <mingo@redhat.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Jonathan Corbet <corbet@lwn.net>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
-	Magnus Lindholm <linmag7@gmail.com>,
-	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Michal Hocko <mhocko@suse.com>, Michal Simek <monstr@monstr.eu>,
-	Muchun Song <muchun.song@linux.dev>,
-	Oscar Salvador <osalvador@suse.de>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Pratyush Yadav <pratyush@kernel.org>,
-	Richard Weinberger <richard@nod.at>,
-	Russell King <linux@armlinux.org.uk>,
-	Stafford Horne <shorne@gmail.com>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>,
-	Vlastimil Babka <vbabka@suse.cz>, Will Deacon <will@kernel.org>,
-	x86@kernel.org, linux-alpha@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-	linux-cxl@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-	linux-mm@kvack.org, linux-openrisc@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org,
-	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-	sparclinux@vger.kernel.org,
-	matti Vaittinen <mazziesaccount@gmail.com>
-Subject: Re: [PATCH v2 22/28] arch, mm: consolidate initialization of nodes,
- zones and memory map
-Message-ID: <aV-zKGYP6EUETaQ2@kernel.org>
-References: <20260102070005.65328-1-rppt@kernel.org>
- <20260102070005.65328-23-rppt@kernel.org>
- <5f9a0269-f9d5-4ee0-bf57-62148d762f7f@gmail.com>
+	s=k20201202; t=1767899009;
+	bh=EshLODRY/dMwTs1Aorg+jUiM2EDzqs+CcePETEAt+ic=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=RTqkK0wwaNCmV2+Bt9l+DRj7ZBtcHHuNln/Dp0Y+KKhYSeecMLE0HKaw3Va93hNCE
+	 IDCFprFV4/bjvkOGbFy54/fi7Chg+JKV9FGRYOV6ds0bFxFYJKSKQOfqc8LhYcFBUU
+	 9AXbSCWF6y3WyY6iE8U5m+afG/oO4ZPQs7ANNVAfDLnblr7s7KUAGrWX87fdpJfvbF
+	 eRO5Sg/5DB6PoqAIYc3zHEXjoEIYmuObhkK2FlhXv38/9l/rV+dWDWC6er6tCFub6i
+	 Z/EJCh1aGHSyYSjCwT5l7hyWHA4WfCRlygh8pGhIGiYkVbPSg8GTRNd8MRsQfrmK2W
+	 lh09rSoRoNS/g==
+Message-ID: <f450c22f-a967-4c83-a7c0-f461fd5f1039@kernel.org>
+Date: Thu, 8 Jan 2026 20:03:24 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <5f9a0269-f9d5-4ee0-bf57-62148d762f7f@gmail.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 6/6] video/logo: move logo selection logic to Kconfig
+To: Geert Uytterhoeven <geert@linux-m68k.org>, Helge Deller <deller@gmx.de>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+ Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
+ linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-m68k <linux-m68k@lists.linux-m68k.org>
+References: <20260101-custom-logo-v2-0-8eec06dfbf85@kernel.org>
+ <20260101-custom-logo-v2-6-8eec06dfbf85@kernel.org>
+ <CAMuHMdVy48F5HAfqfJgbY83KDAztb9YWTqm8mT1ntTfj0311oA@mail.gmail.com>
+ <dda4052e-b843-43fa-850c-a1bb20e4a8e3@kernel.org>
+ <CAMuHMdXz9uKxQ0dH68a+xt4FHqVgdskvO3QRvev1_Wq8h-a1Qg@mail.gmail.com>
+ <487ac672-3a2e-4897-aaba-7ae44bcf341a@gmx.de>
+ <CAMuHMdUqHUrg6XwqXCSwv-3TwiYUOfbBMpMiuS89d1uwChBYaQ@mail.gmail.com>
+From: Vincent Mailhol <mailhol@kernel.org>
+Content-Language: en-US
+Autocrypt: addr=mailhol@kernel.org; keydata=
+ xjMEZluomRYJKwYBBAHaRw8BAQdAf+/PnQvy9LCWNSJLbhc+AOUsR2cNVonvxhDk/KcW7FvN
+ JFZpbmNlbnQgTWFpbGhvbCA8bWFpbGhvbEBrZXJuZWwub3JnPsKZBBMWCgBBFiEE7Y9wBXTm
+ fyDldOjiq1/riG27mcIFAmdfB/kCGwMFCQp/CJcFCwkIBwICIgIGFQoJCAsCBBYCAwECHgcC
+ F4AACgkQq1/riG27mcKBHgEAygbvORJOfMHGlq5lQhZkDnaUXbpZhxirxkAHwTypHr4A/joI
+ 2wLjgTCm5I2Z3zB8hqJu+OeFPXZFWGTuk0e2wT4JzjgEZx4y8xIKKwYBBAGXVQEFAQEHQJrb
+ YZzu0JG5w8gxE6EtQe6LmxKMqP6EyR33sA+BR9pLAwEIB8J+BBgWCgAmFiEE7Y9wBXTmfyDl
+ dOjiq1/riG27mcIFAmceMvMCGwwFCQPCZwAACgkQq1/riG27mcJU7QEA+LmpFhfQ1aij/L8V
+ zsZwr/S44HCzcz5+jkxnVVQ5LZ4BANOCpYEY+CYrld5XZvM8h2EntNnzxHHuhjfDOQ3MAkEK
+In-Reply-To: <CAMuHMdUqHUrg6XwqXCSwv-3TwiYUOfbBMpMiuS89d1uwChBYaQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-Hi,
-
-On Thu, Jan 08, 2026 at 11:24:07AM +0200, Kalle Niemi wrote:
-> On 1/2/26 08:59, Mike Rapoport wrote:
-> > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-> > 
-> Hello,
+On 07/01/2026 at 14:53, Geert Uytterhoeven wrote:
+> Hi Helge,
 > 
-> This patch got bisected to cause BeagleBone Black boot failure in linux-next
-> version next-20260107.
-
-Can you check if this patch fixes it?
-
-https://lore.kernel.org/all/aVpWpLV4Dut5Muo2@kernel.org/
- 
-> At the moment I cannot provide any helpful information about this.
+> On Wed, 7 Jan 2026 at 13:21, Helge Deller <deller@gmx.de> wrote:
+>> On 1/7/26 11:36, Geert Uytterhoeven wrote:
+>>> On Tue, 6 Jan 2026 at 21:10, Vincent Mailhol <mailhol@kernel.org> wrote:
+>>>> On 06/01/2026 at 12:48, Geert Uytterhoeven wrote:
+>>>>> Thanks for your patch, which is now commit bd710b3da7308cb1
+>>>>> ("video/logo: move logo selection logic to Kconfig") in fbdev/for-next.
+>>>>>
+>>>>> On Thu, 1 Jan 2026 at 16:26, Vincent Mailhol <mailhol@kernel.org> wrote:
+>>>>>> Now that the path to the logo file can be directly entered in Kbuild,
+>>>>>> there is no more need to handle all the logo file selection in the
+>>>>>> Makefile and the C files.
+>>>>>
+>>>>> This may do the wrong thing when booting a multi-platform kernel.
+>>>>>
+>>>>>>
+>>>>>> The only exception is the logo_spe_clut224 which is only used by the
+>>>>>> Cell processor (found for example in the Playstation 3) [1]. This
+>>>>>> extra logo uses its own different image which shows up on a separate
+>>>>>> line just below the normal logo. Because the extra logo uses a
+>>>>>> different image, it can not be factorized under the custom logo logic.
+>>>>>>
+>>>>>> Move all the logo file selection logic to Kbuild (except from the
+>>>>>> logo_spe_clut224.ppm), this done, clean-up the C code to only leave
+>>>>>> one entry for each logo type (monochrome, 16-colors and 224-colors).
+>>>>>>
+>>>>>> [1] Cell SPE logos
+>>>>>> Link: https://lore.kernel.org/all/20070710122702.765654000@pademelon.sonytel.be/
+>>>>>>
+>>>>>> Signed-off-by: Vincent Mailhol <mailhol@kernel.org>
+>>>>>
+>>>>>> --- a/drivers/video/logo/Kconfig
+>>>>>> +++ b/drivers/video/logo/Kconfig
+>>>>>
+>>>>>> @@ -61,6 +63,12 @@ config LOGO_LINUX_CLUT224
+>>>>>>   config LOGO_LINUX_CLUT224_FILE
+>>>>>>          string "224-color logo .ppm file"
+>>>>>>          depends on LOGO_LINUX_CLUT224
+>>>>>> +       default "drivers/video/logo/logo_dec_clut224.ppm" if MACH_DECSTATION || ALPHA
+>>>>>> +       default "drivers/video/logo/logo_mac_clut224.ppm" if MAC
+>>>>>
+>>>>> E.g. an m68k multi-platform kernel including Mac support will scare
+>>>>> non-Mac users into thinking their machine was assimilated by the
+>>>>> Apple Empire...
 > 
-> BR
-> Kalle
+>>>>>> --- a/drivers/video/logo/logo.c
+>>>>>> +++ b/drivers/video/logo/logo.c
+> 
+>>>>>> -#ifdef CONFIG_LOGO_MAC_CLUT224
+>>>>>> -               /* Macintosh Linux logo on m68k */
+>>>>>> -               if (MACH_IS_MAC)
+>>>>>
+>>>>> MACH_IS_MAC can be a runtime check.
+>>>>
+>>>> OK. I missed this.
+>>>>
+>>>> I think there are two options to fix this:
+>>>>
+>>>>    1. Keep CONFIG_LOGO_MAC_CLUT224 untouched
+>>>>    2. Remove logo_mac_clut224.ppm
+>>>>
+>>>> The first option is less controversial but I would like to ask you what
+>>>> you think about removing the logo_mac_clut224 file.
+>>>>
+>>>> Here, we are speaking of the Macintosh 68k which ended sales in 1995,
+>>>> right? So the user base should be rather small, I guess.
+>>>
+>>> Yes, the user base is small.
+>>>
+>>> BTW, the only reason you don't have this issue with MACH_DECSTATION and
+>>> the various SGI_IP* options is that MIPS does not support multi-platform
+>>> kernels.
+>>>
+>>>> And people who still want the custom MAC logo would still be able to add
+>>>>
+>>>>    CONFIG_LOGO_MAC_CLUT224="path/to/logo_mac_clut224.ppm"
+>>>
+>>> LOGO_LINUX_CLUT224_FILE ;-)
 
--- 
-Sincerely yours,
-Mike.
+D'oh!
+
+>>>> to their config to restore the old behaviour anyway.
+>>>>
+>>>> My choice would go more toward the removal option but what do you think?
+>>>
+>>> I am not too attached to keeping the dynamic behavior for the Mac logo,
+>>> I just wanted to point out the impact.
+>>> I expect most people who care about logos (in products) just have their
+>>> own custom out-of-tree code.  As fb_find_logo() and the underlying
+>>> infrastructure still exists, I don't expect them to have too much
+>>> trouble forward porting that to newer kernels.
+>>>
+>>> What do other people think?
+>>
+>> This is about a small visible icon. It's not some relevant feature.
+>> So, I think it's unfortunate that the patch then drops the specific mac logo.
+>> But adding additional coding and complexity to simply make this logo
+>> visible for such a small user base IMHO does not justify the effort.
+> 
+> This patch does not drop the specific Mac logo.
+> Instead, it prioritizes the Mac logo over the generic logo when Mac
+> support is enabled in a multi-platform kernel.
+
+It seems that there is a consensus between the three of us that we can
+drop the MAC logo.
+
+I will send right away a v3 with will contain one extra patch to drop
+the Macintosh logo with a note in the patch of how to restore it using
+LOGO_LINUX_CLUT224_FILE.
+
+
+Yours sincerely,
+Vincent Mailhol
+
