@@ -1,136 +1,108 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17E96314B72;
-	Mon, 12 Jan 2026 07:35:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 472E22C159E;
+	Mon, 12 Jan 2026 11:02:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=193.142.43.55
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768203303; cv=none; b=Sb9birxABwnbRoSE4Y34sq5no3Ua4z6CUoDl5mliV5nXlbSwxtGCw0aljqBnqFGYqvFP/ih3dnNOzXKN+HcDzqtUsl3q3wgMz5McTVWVrN620PfevRPowdOKqMY+l3nBxkyGjTj99VeJcm5Nk0kml36ttEjeqhGmnkg+R/4qHhU=
+	t=1768215744; cv=none; b=Gp2DYUcmJmPwd0JTInEHc1IqC6QZAp9QHNd8Mu2aPRJ48rUBjU3vs1OYqguIlGTYhwv+0u5ZL50qc3pFIRWAhVW/yLACgiCTGWWdoSmiMwb7vjPliAi9EobjqrJii9niiDA63LnDkXZ7o+4EAS3FbT6HblCQvFgSrkKbJ5Q66J4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1768203303; c=relaxed/simple;
-	bh=H0wpDyU4+hGvGadEaJXaoKwU4fABU87rkRhUJIykrtE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dBhrdeRTh92xdo/ID8VjGaJCDnL79nrEGYmjfQokOWH22fRZGusq10tUTd3PCap2g7mk31OxDYB/1cnX4+3EqO4XNIt8ildaVlo1lHkMpFC8/dnIf7MJaP1nU6b4ESSm6gLT4cYmgLDlA2SlGt9IxE70ceY3onZoz4059iqw3Bk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cB9JlNOs; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1768215744; c=relaxed/simple;
+	bh=IAa8kAIr8igIXYoAmJsieGw5X+7r4/60mVrE4LvaaK8=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=lHRv5Q2a9a/pyKsoe55VOOnXniMYswlmwAvA0w9skYH6/9kvrCEaHsaSEaNPY/kQ22E2lM08c8JnXDk/vb2jTsdqJx6hEyl80vlMExBVmG4or/YAGODs9BAmvWSM1urU/o8NRv6WBOOqBf4mQ1KwuZP1PJuQE4m6YmQq3W9oxuc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de; spf=pass smtp.mailfrom=linutronix.de; dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=3BBwgYK0; dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=YOevUfWr; arc=none smtp.client-ip=193.142.43.55
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cB9JlNOs"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 61041C19422;
-	Mon, 12 Jan 2026 07:34:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1768203303;
-	bh=H0wpDyU4+hGvGadEaJXaoKwU4fABU87rkRhUJIykrtE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=cB9JlNOsE5ASTDSwfciaJvBRecBB1lB0Uwj+GaWwyCjgypyJQWPdkiELZQ8iVJPfz
-	 nMocJbirHN/1lk3J7Si3fdDg+XjkNRlIqWpD36vowiVH0S+GvTZEHLt/X4w6L2bjbX
-	 MW70tMpH6LtqJ9xirliNmH6ey3Jn3uobFlK0X2Mc7rV2i4ddTSmSf1HxKEBm5toCRi
-	 d46Yvu6ZlmDb9ZF7jcWZyute2z21cTSvo7YbjPFCodLjqoxUiSIWkDnwdalYjHh76y
-	 ow7pMfD3F6CiXLdHJYJqrOQj4clSEc/bsWScF8TIIT22yhLrTWzvu1RJLquyFnQ26r
-	 U5L75tv4dABXw==
-Date: Mon, 12 Jan 2026 09:34:40 +0200
-From: Mike Rapoport <rppt@kernel.org>
-To: Alexander Gordeev <agordeev@linux.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Alex Shi <alexs@kernel.org>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	David Hildenbrand <david@kernel.org>,
-	Dinh Nguyen <dinguyen@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>,
-	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>,
-	Ingo Molnar <mingo@redhat.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Klara Modin <klarasmodin@gmail.com>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
-	Magnus Lindholm <linmag7@gmail.com>,
-	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Michal Hocko <mhocko@suse.com>, Michal Simek <monstr@monstr.eu>,
-	Muchun Song <muchun.song@linux.dev>,
-	Oscar Salvador <osalvador@suse.de>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Pratyush Yadav <pratyush@kernel.org>,
-	Richard Weinberger <richard@nod.at>,
-	Ritesh Harjani <ritesh.list@gmail.com>,
-	Russell King <linux@armlinux.org.uk>,
-	Stafford Horne <shorne@gmail.com>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>,
-	Vlastimil Babka <vbabka@suse.cz>, Will Deacon <will@kernel.org>,
-	x86@kernel.org, linux-alpha@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-	linux-cxl@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-	linux-mm@kvack.org, linux-openrisc@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org,
-	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-	sparclinux@vger.kernel.org
-Subject: Re: [PATCH v3 17/29] s390: introduce arch_zone_limits_init()
-Message-ID: <aWSkELL7xJ04QAct@kernel.org>
-References: <20260111082105.290734-1-rppt@kernel.org>
- <20260111082105.290734-18-rppt@kernel.org>
- <b211f877-f9bb-4892-b67c-d2610048575a-agordeev@linux.ibm.com>
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="3BBwgYK0";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="YOevUfWr"
+From: =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1768215738;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=U023K304bJTKo1/P4/kEmxrXnT/F/Lcy2Swt5fcx2U0=;
+	b=3BBwgYK0nGbYqfkxrmsJLZv6E/BoACptu59OXJFJ0hiafJOhLj3olHPrjb0OijLRIt1023
+	BABL0DANp2U5zlsDDz9mxNFYSNoN9elzXtJI+Yc9B6DjvisgC4HpHyiA3smRcD1v4Qhrj/
+	easzEyFUsHTRi2CfcqbDYRarDm6/zX9j0DiIQGACtB+3w+EKeXr+frTtvh8JU2xq5GbqZL
+	19gBp485b7PogLWpVDEISD3rRjO4K7O+KO6e3/Zw2luk+iJDbVsY1isaRDiZ7BMqqUV/6g
+	m28QsVCvHzDoedOmWjmrR0zNBuzAk3NnPUvzzoY3vPRhQ/08ACGZffzw9cQH5Q==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1768215738;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=U023K304bJTKo1/P4/kEmxrXnT/F/Lcy2Swt5fcx2U0=;
+	b=YOevUfWrvL+A2BDUvA2lCoLcld7DLkuXBXzO3W0PmIRLdjCNu6mosshHTr4GTPdPtnsxUl
+	jFBit6CSKf0ad3Aw==
+Date: Mon, 12 Jan 2026 12:02:15 +0100
+Subject: [PATCH] sh: remove CONFIG_VSYSCALL reference from UAPI
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <b211f877-f9bb-4892-b67c-d2610048575a-agordeev@linux.ibm.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+Message-Id: <20260112-uapi-sh-at-sysinfo-ehdr-v1-1-b01dfe98a66a@linutronix.de>
+X-B4-Tracking: v=1; b=H4sIALbUZGkC/x3MMQqAMAxA0atIZgNtUEGvIg6lpjZLlUZFEe9uc
+ XzD/w8oZ2GFoXog8ykqayqwdQU+urQwylwMZKgz1hIebhPUiG5HvVVSWJHjnDFQ5yyxb/vGQKm
+ 3zEGu/zxO7/sBdPx6V2kAAAA=
+X-Change-ID: 20260112-uapi-sh-at-sysinfo-ehdr-f26a12ec5940
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, 
+ Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, 
+ =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1768215737; l=1388;
+ i=thomas.weissschuh@linutronix.de; s=20240209; h=from:subject:message-id;
+ bh=IAa8kAIr8igIXYoAmJsieGw5X+7r4/60mVrE4LvaaK8=;
+ b=rUXELVLk/lP9Pi4q5dB7aCtuysdnKkWs33Iyr8wxGlKn3iVbC+ho83OSYfW0u/4984wTYoBsB
+ tkjf9+c8bmeCY4Tt2dqx5gZ2lSXpz4lI2qJfIlYp305wza8fT9Dv64i
+X-Developer-Key: i=thomas.weissschuh@linutronix.de; a=ed25519;
+ pk=pfvxvpFUDJV2h2nY0FidLUml22uGLSjByFbM6aqQQws=
 
-Hi,
+The definition of AT_SYSINFO_EHDR was gated between CONFIG_VSYSCALL to
+avoid a default gate VMA to be created. However that default gate VMA
+was removed entirely in commit a6c19dfe3994
+("arm64,ia64,ppc,s390,sh,tile,um,x86,mm: remove default gate area").
 
-On Mon, Jan 12, 2026 at 08:02:48AM +0100, Alexander Gordeev wrote:
-> On Sun, Jan 11, 2026 at 10:20:51AM +0200, Mike Rapoport wrote:
-> 
-> Hi Mike,
-> 
-> ...
-> > +void __init arch_zone_limits_init(unsigned long *max_zone_pfns)
-> > +{
-> > +	max_zone_pfns[ZONE_DMA] = virt_to_pfn(MAX_DMA_ADDRESS);
-> > +	max_zone_pfns[ZONE_NORMAL] = max_low_pfn;
-> > +}
-> > +
-> >  /*
-> >   * paging_init() sets up the page tables
-> >   */
-> > @@ -97,8 +103,7 @@ void __init paging_init(void)
-> >  	sparse_init();
-> >  	zone_dma_limit = DMA_BIT_MASK(31);
-> >  	memset(max_zone_pfns, 0, sizeof(max_zone_pfns));
-> > -	max_zone_pfns[ZONE_DMA] = virt_to_pfn(MAX_DMA_ADDRESS);
-> > -	max_zone_pfns[ZONE_NORMAL] = max_low_pfn;
-> > +	arch_zone_limits_init(max_zone_pfns);
-> 
-> You move initialization of max_zone_pfns[] to a function, name the
-> function arch_zone_limits_init(), but leave the initializatio of
-> max_zone_pfns[] to zeroes outside. Should not it be brought along?
+Remove the now unnecessary conditional.
 
-The idea is that is the caller responsibility to initialize max_zone_pfns
-to zero. After patch 24: "arch, mm: consolidate initialization of
-SPARSE memory model" there is a single caller of arch_zone_limits_init()
-and having initialization of max_zone_pfns() there is more optimal than
-having 20-something of those.
+Signed-off-by: Thomas Weißschuh <thomas.weissschuh@linutronix.de>
+---
+ arch/sh/include/uapi/asm/auxvec.h | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/sh/include/uapi/asm/auxvec.h b/arch/sh/include/uapi/asm/auxvec.h
+index 8eb47ede7193..63fcc39e2c6a 100644
+--- a/arch/sh/include/uapi/asm/auxvec.h
++++ b/arch/sh/include/uapi/asm/auxvec.h
+@@ -13,14 +13,10 @@
+  */
+ #define AT_FPUCW		18	/* Used FPU control word.  */
  
-> >  	free_area_init(max_zone_pfns);
-> >  }
-> 
-> Thanks!
+-#if defined(CONFIG_VSYSCALL) || !defined(__KERNEL__)
+ /*
+- * Only define this in the vsyscall case, the entry point to
+- * the vsyscall page gets placed here. The kernel will attempt
+- * to build a gate VMA we don't care about otherwise..
++ * The entry point to the vsyscall page gets placed here.
+  */
+ #define AT_SYSINFO_EHDR		33
+-#endif
+ 
+ /*
+  * More complete cache descriptions than AT_[DIU]CACHEBSIZE.  If the
 
+---
+base-commit: 8f0b4cce4481fb22653697cced8d0d04027cb1e8
+change-id: 20260112-uapi-sh-at-sysinfo-ehdr-f26a12ec5940
+
+Best regards,
 -- 
-Sincerely yours,
-Mike.
+Thomas Weißschuh <thomas.weissschuh@linutronix.de>
+
