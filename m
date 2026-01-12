@@ -1,98 +1,91 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 999BD2D0C92;
-	Mon, 12 Jan 2026 12:01:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BA6E277CAB;
+	Mon, 12 Jan 2026 22:23:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1768219271; cv=none; b=dS08M3bxCMud+yfKbwpmR6gCKop90UDqBrjnqmJQJUeNZqeWDYipI0caIDTUy2sWgo26QfMk98XM8ps+IE0VmJ3fmzW5tw5pwzQpR5EcvcR3IHrcxrJPBdKpj06cSwk1C2NRpBG1fbLvzFOk30jV21xKQgWniFem+fjOVukKAU4=
+	t=1768256606; cv=none; b=LKgWQiO+v0EKFHvBqT3TJtXEUEWxJUNJbJ3cdiOJwsa3148baIOFlBRxza+aDmUtvI54VTsaZkynhO7nWcPLK+zPljnUc9TOOdCNUh0d0lakBWNNVb1v66fdyXPGR40hKIACzk1nIsTpeXdkpKWv2ZHhPU9wWdUWYU6fQe2h+eQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1768219271; c=relaxed/simple;
-	bh=pvnCiRGbTjvcrXFThHpR1sloVZ4+gCNwm2MPtG1Ewzw=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=VcTj0haJab+VoiZJR3hbckn6AkEj1gn9U28NXq2yjyvjsmGvPDP7XCLlTX3lcAYnvte4/B3iNxvt349bhA+h/7T1GUcVe1MZdra5VXdao7iiS1D2538O4Tie+bqdtQAnh0sCnjNx69m8L4zpd4osaODtYVtMC3kdB6TYyZd7c+U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=QSHNBjaH; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1768256606; c=relaxed/simple;
+	bh=SpuDKcG9IirDr1Ez2z498LsN8t6S/nWxhPc0slzDnQc=;
+	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
+	 Mime-Version:Content-Type; b=hu/uW86hR9TiY8ScZcdSWMNG/qbh5b7zycl+THzK7YQL1T2VS76+oDgERRthuheyx8ayURNK6K0I21tRV0SS/anjheds4wKmFm0LNTIRp/jnIlxC2ouIFi5qCaCiGZiPOEqnxVgyCdszPk8sHJI4Z/ISU5HA60hqfhIOU1Y0p5Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=Cu3Pfm/+; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="QSHNBjaH"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=uy/Csc951RMs1BGcxDXnMJgcIsvXT1wkN9PLJYeLWvI=; t=1768219269;
-	x=1768824069; b=QSHNBjaH+lDbCEgrXa6pHdvRk4NSFs2ccRVNDQFJk2a++bwRrnX+HX59IQaV8
-	6YMozl72CmnyFC1lD/f1aHKDQEOnH+gWeXzc3b8yZKH3/cb0IcnBS1DSKSCWeQuK/dUgsrIHzV8k0
-	hyPJDUsBiMKHhSyGo+fRw7jpO0tmyC2DdumAMqN1kf+lS0T+/xoePivkObsgXeEjhkn014Avh/tm3
-	yFTVIN4PthUYHQSorz3CkFmyKxOyC75vYHgd9y23Vlw/qLXWL5T2MSigEqw7m1s1gJlyUsBnOsH75
-	+zmbUpAnVWcUnZcuczfxvfe3RnLzcKya+nFif7tk2dwT9bHAmA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1vfGbb-00000001bse-0hi7; Mon, 12 Jan 2026 13:01:07 +0100
-Received: from p5dc55f29.dip0.t-ipconnect.de ([93.197.95.41] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1vfGba-00000003UM3-3owq; Mon, 12 Jan 2026 13:01:07 +0100
-Message-ID: <9dfb01dced05b0efe0dbde22b8470e0b0bbc5b38.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: remove CONFIG_VSYSCALL reference from UAPI
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Thomas =?ISO-8859-1?Q?Wei=DFschuh?= <thomas.weissschuh@linutronix.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>,  Arnd Bergmann	 <arnd@arndb.de>,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date: Mon, 12 Jan 2026 13:01:06 +0100
-In-Reply-To: <20260112125659-d522ea0c-80a5-4b09-9ab8-76182f94893e@linutronix.de>
-References: 
-	<20260112-uapi-sh-at-sysinfo-ehdr-v1-1-b01dfe98a66a@linutronix.de>
-	 <aacdc1083c37bddfb721b732bdd7019f30b3915c.camel@physik.fu-berlin.de>
-	 <20260112125659-d522ea0c-80a5-4b09-9ab8-76182f94893e@linutronix.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.58.2 
+	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="Cu3Pfm/+"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B1AAAC116D0;
+	Mon, 12 Jan 2026 22:23:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+	s=korg; t=1768256605;
+	bh=SpuDKcG9IirDr1Ez2z498LsN8t6S/nWxhPc0slzDnQc=;
+	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+	b=Cu3Pfm/+1TcchxFM/qGiV5fGrKj24o0e3dohdRVVx8JRBK5f1xTeaKdQe1aN7KItj
+	 nSpF4OOybQ5f2IlmddpVi4OD3JNYihOeyIRTxNzuxSiGem9/NnrlLPMv/9xRBenAfz
+	 EMoQzi5wVQrdA51MdiCDjlgWkvA7qQuIwG0aa67A=
+Date: Mon, 12 Jan 2026 14:23:23 -0800
+From: Andrew Morton <akpm@linux-foundation.org>
+To: Mike Rapoport <rppt@kernel.org>, Kalle Niemi <kaleposti@gmail.com>
+Cc: Alex Shi <alexs@kernel.org>, Alexander Gordeev <agordeev@linux.ibm.com>,
+ Andreas Larsson <andreas@gaisler.com>, Borislav Petkov <bp@alien8.de>,
+ Brian Cain <bcain@kernel.org>, "Christophe Leroy (CS GROUP)"
+ <chleroy@kernel.org>, Catalin Marinas <catalin.marinas@arm.com>,
+ "David S. Miller" <davem@davemloft.net>, Dave Hansen
+ <dave.hansen@linux.intel.com>, David Hildenbrand <david@kernel.org>, Dinh
+ Nguyen <dinguyen@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>,
+ Guo Ren <guoren@kernel.org>, Heiko Carstens <hca@linux.ibm.com>, Helge
+ Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar
+ <mingo@redhat.com>, Johannes Berg <johannes@sipsolutions.net>, John Paul
+ Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Jonathan Corbet
+ <corbet@lwn.net>, Klara Modin <klarasmodin@gmail.com>, "Liam R. Howlett"
+ <Liam.Howlett@oracle.com>, Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
+ Magnus Lindholm <linmag7@gmail.com>, Matt Turner <mattst88@gmail.com>, Max
+ Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>,
+ Michal Hocko <mhocko@suse.com>, Michal Simek <monstr@monstr.eu>, Muchun
+ Song <muchun.song@linux.dev>, Oscar Salvador <osalvador@suse.de>, Palmer
+ Dabbelt <palmer@dabbelt.com>, Pratyush Yadav <pratyush@kernel.org>, Richard
+ Weinberger <richard@nod.at>, Ritesh Harjani <ritesh.list@gmail.com>,
+ Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>,
+ Suren Baghdasaryan <surenb@google.com>, Thomas Bogendoerfer
+ <tsbogend@alpha.franken.de>, Thomas Gleixner <tglx@linutronix.de>, Vasily
+ Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>, Vlastimil
+ Babka <vbabka@suse.cz>, Will Deacon <will@kernel.org>, x86@kernel.org,
+ linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-csky@vger.kernel.org, linux-cxl@vger.kernel.org,
+ linux-doc@vger.kernel.org, linux-hexagon@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+ linux-mips@vger.kernel.org, linux-mm@kvack.org,
+ linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+ linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+ linux-um@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+ loongarch@lists.linux.dev, sparclinux@vger.kernel.org
+Subject: Re: [PATCH v3 00/29] arch, mm: consolidate hugetlb early
+ reservation
+Message-Id: <20260112142323.495fc43e662e7d276b0fa371@linux-foundation.org>
+In-Reply-To: <20260111082105.290734-1-rppt@kernel.org>
+References: <20260111082105.290734-1-rppt@kernel.org>
+X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-Hi,
+On Sun, 11 Jan 2026 10:20:34 +0200 Mike Rapoport <rppt@kernel.org> wrote:
 
-On Mon, 2026-01-12 at 12:58 +0100, Thomas Wei=C3=9Fschuh wrote:
-> > Thanks for your patch!
-> >=20
-> > I don't really know what AT_SYSINFO_EHDR is about. Could you explain th=
-e background
-> > a little so that I have a better understanding of what I am reviewing?
->=20
-> It is the entrypoint to the vDSO. From getauxval(3):
->=20
->  AT_SYSINFO_EHDR
->         The address of a page containing the virtual Dynamic Shared Objec=
-t (vDSO) that the kernel creates
->         in order to provide fast implementations of certain system calls.
->=20
->=20
-> That UAPI constant needs to be exposed to userspace even if the specific
-> kernel does not have a vDSO. This is the current behavior which is preser=
-ved.
-> Userspace will detect the presence or absence of the vDSO based in the
-> auxiliary vector.
+> v3 changes:
+> * fix empty_zero_page initialization on arm
+> * fix ZONE_DMA limit calculation on powerpc
+> * add Acks
 
-Thanks, this explains a lot. I will review the patch later this week.
+updated, thanks.  I'll suppress the ensuing email flood.
 
-Adrian
+Kalle, can you please retest sometime, see if the BeagleBone Black boot
+failure was fixed?
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Seems we haven't heard back from rmk regarding
+https://lkml.kernel.org/r/aVrUDeSkqqY9ZCtS@shell.armlinux.org.uk.
