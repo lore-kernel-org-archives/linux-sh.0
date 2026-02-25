@@ -1,131 +1,207 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f182.google.com (mail-pg1-f182.google.com [209.85.215.182])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A822292B4B;
-	Tue, 24 Feb 2026 15:40:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA3E238F220
+	for <linux-sh@vger.kernel.org>; Wed, 25 Feb 2026 09:34:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.182
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1771947617; cv=none; b=gHNQeG77cnX9YykWQu2QQZs4Jz7HW+007g/K6lQWHGw12BYZ3YhECskEE0xdYgZlDoK/COkMZ4V3ekYzCqCSxP4iTrc/7MtaHdg7AShyijGdZtDJphkp4yivtNkjM9JplIzNsohwLaToKTXvl4V7Rrx32ElZZ8wVrga60xKRb1I=
+	t=1772012057; cv=none; b=i1FdKVUginEG4NjcuulbfQYgIztY+Me0h44LOaOLDEPttF/mzbW9VHuySJPTEZEfKIOGqewSjVCd/LLFlK7rnixk8xikylYDR0iPb0Mh/XotNJNwUrDpiAoj3XI/ptxbN2yPPzB820C/s1RetlyiD23rFNtT+rljGT3/IWZ13K4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1771947617; c=relaxed/simple;
-	bh=srk0uTNaaacQz2nu1j3DQaF6E0wsSw5ZNBNzz1ikkeE=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ERfYycHiXbFuP7zGXN3+cTXySVu8mOMXHoHO1A89vSsOeho9TDJRXkvZsM3hI+wfIX5yxxV+papCQmbHNZtjA35eF2kGCZvMNOY1fu5XuTNo0JE6ImoCGQgb1UPMlTEUkjV82XbWRO39gBWi2om68GZcHJ4aEJRl3ipujsxqQuI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Hu7c3DZ+; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1772012057; c=relaxed/simple;
+	bh=EChnaz/wNdUCH/LaAhkqduGVIV85xoH+0j8ZN2XBYUg=;
+	h=From:To:Cc:Subject:In-Reply-To:Date:Message-ID:References:
+	 MIME-Version:Content-Type; b=a3U8IVpNYvLBCpuqtvmtzYLiY/Dl+NDcahmKjaiTSuehYlEy9phGDltEGhJusu3/p8SW3iObfIRwbpeSW0BiEXyldNB4mLplsvKfN0dnamy5BZomsHQMVDrfBR0+61TxwSm8dcSvbKvF2e6P6MyE3I8rueE7ahPYhupEfF4lQGE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=E4h3WVnV; arc=none smtp.client-ip=209.85.215.182
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Hu7c3DZ+"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=LceCOnYlHuu8mShQ6WRwYJwmoSi3gbgKh1LyplWGMrY=; t=1771947614;
-	x=1772552414; b=Hu7c3DZ+1NB1+5jFfuOAtos4rGtgPpVx2wGNgZZGBOyb9FIpyJic9jxMB2Qcu
-	nDWOL16tZH7Tg2jA/7BenEg+7kftV3X/DNd2PcelMB/RyvGLtIMKI96/k4pKmEE73QS4loadaGd9v
-	0xThht/3VgHgjdGz48LPC1nKxv+9zmYWiQXJo/ObzouYGIzl/aVAbtWhpUnIWNur1Sa7NGG6W0LDS
-	feSu8MrGp6SY4Qe0028XjRLFmKiHJrifEumaB2H+z/RM68qCLo18NmrPhWpsNVkikUdwMy9FmNFYD
-	lhV35vy6uQphJB4vsLEq/JyQ6JhcD7nUuzfzPpKt5pP91nJu9A==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1vuuW8-00000002yig-0acq; Tue, 24 Feb 2026 16:40:08 +0100
-Received: from p5dc55f29.dip0.t-ipconnect.de ([93.197.95.41] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1vuuW7-00000003dhS-3ZC7; Tue, 24 Feb 2026 16:40:08 +0100
-Message-ID: <9668ee6dd3e3de7a230893a8cc734de25a517e68.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: remove CONFIG_VSYSCALL reference from UAPI
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Thomas =?ISO-8859-1?Q?Wei=DFschuh?= <thomas.weissschuh@linutronix.de>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Date: Tue, 24 Feb 2026 16:40:06 +0100
-In-Reply-To: <20260224-uapi-sh-at-sysinfo-ehdr-v2-1-b309fe77ca04@linutronix.de>
-References: 
-	<20260224-uapi-sh-at-sysinfo-ehdr-v2-1-b309fe77ca04@linutronix.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.58.3 
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="E4h3WVnV"
+Received: by mail-pg1-f182.google.com with SMTP id 41be03b00d2f7-c6e3e4e7388so2187646a12.1
+        for <linux-sh@vger.kernel.org>; Wed, 25 Feb 2026 01:34:14 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1772012054; x=1772616854; darn=vger.kernel.org;
+        h=mime-version:references:message-id:date:in-reply-to:subject:cc:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=JxnsaOQZey5wMq56BxN2EdEuMBW71mGq+RSuzcss/8M=;
+        b=E4h3WVnVoBDWixEI3M7sRAhWcGnqkgnMkrRN354zlXhRhc9W1sDSE7sIdADBxrhF3G
+         7H7pa8egtVR+7ar95UobKjIdgO/POBr9tKnMHQwwbD7sYP90AWCwFLOpdbZZgL/+mPI9
+         qYrUk9/IM8m/2FDAs9UrXJPIg11Efn89UxCEKT3dz0xeuI6nGuT26RYfvMwRf354syjk
+         lNaRZ7uFuCwu8dKuXpLeIb0i3Tr7E3VEaIP1P6+HoC3NZ/iSXQ/1yREjjUC88ttCJxqW
+         Th9RXRLgyHHDGWXN/hsVf7SKNGPmsfZr9BQjmNviNfxFrYlZyD1CiP5SuqV/fBP3Ml/y
+         6Qug==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1772012054; x=1772616854;
+        h=mime-version:references:message-id:date:in-reply-to:subject:cc:to
+         :from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=JxnsaOQZey5wMq56BxN2EdEuMBW71mGq+RSuzcss/8M=;
+        b=gChByI7n2oER8yuGokXuvxMiY/G1Gchvzz14CHu1LdrWeYQ7Q69mrRvYBVJ6kCNvCP
+         dT05xuJzsKRN+3xcwngK+lH2uJqoLX2XgI6qbKPYHQoj9HVZ1n5izZfG3tBdVWHYFl7+
+         6ORO+aj8dAf+KOJBLvh4qq+EzfXYtL78CruvYiWgsrcfkJ3t26NvyVZOFS9FHCPVnha6
+         zqNwpg4MC9ISGioFAlTtxg5sQeLILXGxJBTvjEzTJksF/ZksSJMwvuodSADGZx+6wInv
+         N3CJvMa8xEGpABS7yBXXAYRfoAyq6rNAx1u3ca4hKcGr0TzVzOlDOwnloqkdUAfuvWQ4
+         YR1g==
+X-Forwarded-Encrypted: i=1; AJvYcCXlCZGsfPTEJd8RvirZ2zT2Qqv0kkikZtKbR8U8yXyK2763bkJ6NpkjlRsvutXk+Cu8gQzTEx8Edw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyzP1mM31+5DOAFy56oUhBFuG0LG+5fhuyicOgmInH+o26B920O
+	h4GWIq+pQCXNQbYavKKlAOVDgwv9GkmiR7z+xz9uiy+W/T2t086x46an
+X-Gm-Gg: ATEYQzySFfo4jX04MnnfeNGLbyAbJoEjNqjYRuFsvIX19TH09WX/8oQmicJksWGUhYV
+	7mt02/31ep8KC2U0p5F0vUJUe0LkufJFNpLQaA+xtSpqq8rweivsMuqMu91/KX23JHN/ZJSwWbS
+	OAS30adMnp9GDhb+shZYEYaMn8nrMOgyLCMPEtekiUumGOqXjeoXbqeX33WtkW8xweTvvP3BVqe
+	qY4e27KCW3pL/0WmxO+UNbBNrnwVNNNM5USOt+UYGAJL+mE7ktOslyxXpfakT37/ud0kicTCFAM
+	SJPPIheIvyyEcr9gpC9bCJl5Krvt8hgZ++/zT7OhqM4gIj/en3E5xHfkv9bOWKduTSBmXo7L2Uh
+	MXzwGd43haXi/Y96CTVQNIUHi2in/0JXAK51xKz8UWfNRrDW7gRvNlnzgTLwyDbe4/CUx09pk6z
+	H24vz2GW+E0Iz+QPICJQ==
+X-Received: by 2002:a17:90b:3dcc:b0:340:c60b:f362 with SMTP id 98e67ed59e1d1-358ae7c6ca9mr13087754a91.6.1772012054135;
+        Wed, 25 Feb 2026 01:34:14 -0800 (PST)
+Received: from dw-tp ([203.81.242.210])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3590188126esm2256635a91.6.2026.02.25.01.33.53
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 25 Feb 2026 01:34:13 -0800 (PST)
+From: Ritesh Harjani (IBM) <ritesh.list@gmail.com>
+To: Mike Rapoport <rppt@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Alex Shi <alexs@kernel.org>, Alexander Gordeev <agordeev@linux.ibm.com>, 
+	Andreas Larsson <andreas@gaisler.com>, Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@kernel.org>, 
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, Catalin Marinas <catalin.marinas@arm.com>, 
+	"David S. Miller" <davem@davemloft.net>, Dave Hansen <dave.hansen@linux.intel.com>, 
+	David Hildenbrand <david@kernel.org>, Dinh Nguyen <dinguyen@kernel.org>, 
+	Geert Uytterhoeven <geert@linux-m68k.org>, Guo Ren <guoren@kernel.org>, 
+	Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, 
+	Ingo Molnar <mingo@redhat.com>, Johannes Berg <johannes@sipsolutions.net>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Jonathan Corbet <corbet@lwn.net>, 
+	Klara Modin <klarasmodin@gmail.com>, "Liam R. Howlett" <Liam.Howlett@oracle.com>, 
+	Lorenzo Stoakes <lorenzo.stoakes@oracle.com>, Magnus Lindholm <linmag7@gmail.com>, 
+	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>, 
+	Michael Ellerman <mpe@ellerman.id.au>, Michal Hocko <mhocko@suse.com>, Michal Simek <monstr@monstr.eu>, 
+	Mike Rapoport <rppt@kernel.org>, Muchun Song <muchun.song@linux.dev>, 
+	Oscar Salvador <osalvador@suse.de>, Palmer Dabbelt <palmer@dabbelt.com>, 
+	Pratyush Yadav <pratyush@kernel.org>, Richard Weinberger <richard@nod.at>, 
+	Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, 
+	Suren Baghdasaryan <surenb@google.com>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+	Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>, Vineet Gupta <vgupta@kernel.org>, 
+	Vlastimil Babka <vbabka@suse.cz>, Will Deacon <will@kernel.org>, x86@kernel.org, 
+	linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
+	linux-csky@vger.kernel.org, linux-cxl@vger.kernel.org, 
+	linux-doc@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, 
+	linux-mips@vger.kernel.org, linux-mm@kvack.org, 
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org, 
+	linux-um@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, 
+	loongarch@lists.linux.dev, sparclinux@vger.kernel.org
+Subject: Re: [PATCH v3 24/29] arch, mm: consolidate initialization of SPARSE memory model
+In-Reply-To: <20260111082105.290734-25-rppt@kernel.org>
+Date: Wed, 25 Feb 2026 09:00:35 +0530
+Message-ID: <87tsv5h544.ritesh.list@gmail.com>
+References: <20260111082105.290734-1-rppt@kernel.org> <20260111082105.290734-25-rppt@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain
 
-Hi Thomas,
+Mike Rapoport <rppt@kernel.org> writes:
 
-On Tue, 2026-02-24 at 16:35 +0100, Thomas Wei=C3=9Fschuh wrote:
-> AT_SYSINFO_EHDR defines the auxvector index representing the vDSO
-> entrypoint. Its value or presence does not depend on whether a vDSO
-> is actually provided by the kernel.
->=20
-> The definition of AT_SYSINFO_EHDR was gated between CONFIG_VSYSCALL to
-> avoid a default gate VMA to be created. However that default gate VMA
-> was removed entirely in commit a6c19dfe3994
-> ("arm64,ia64,ppc,s390,sh,tile,um,x86,mm: remove default gate area").
->=20
-> Remove the now unnecessary conditional.
->=20
-> Signed-off-by: Thomas Wei=C3=9Fschuh <thomas.weissschuh@linutronix.de>
-> ---
-> Changes in v2:
-> - Rebase on v7.0-rc1
-> - Flesh out commit message
-> - Link to v1: https://lore.kernel.org/r/20260112-uapi-sh-at-sysinfo-ehdr-=
-v1-1-b01dfe98a66a@linutronix.de
-> ---
->  arch/sh/include/uapi/asm/auxvec.h | 6 +-----
->  1 file changed, 1 insertion(+), 5 deletions(-)
->=20
-> diff --git a/arch/sh/include/uapi/asm/auxvec.h b/arch/sh/include/uapi/asm=
-/auxvec.h
-> index 8eb47ede7193..63fcc39e2c6a 100644
-> --- a/arch/sh/include/uapi/asm/auxvec.h
-> +++ b/arch/sh/include/uapi/asm/auxvec.h
-> @@ -13,14 +13,10 @@
->   */
->  #define AT_FPUCW		18	/* Used FPU control word.  */
-> =20
-> -#if defined(CONFIG_VSYSCALL) || !defined(__KERNEL__)
->  /*
-> - * Only define this in the vsyscall case, the entry point to
-> - * the vsyscall page gets placed here. The kernel will attempt
-> - * to build a gate VMA we don't care about otherwise..
-> + * The entry point to the vsyscall page gets placed here.
->   */
->  #define AT_SYSINFO_EHDR		33
-> -#endif
-> =20
->  /*
->   * More complete cache descriptions than AT_[DIU]CACHEBSIZE.  If the
->=20
-> ---
-> base-commit: 6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f
-> change-id: 20260112-uapi-sh-at-sysinfo-ehdr-f26a12ec5940
->=20
-> Best regards,
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+>
+> Every architecture calls sparse_init() during setup_arch() although the
+> data structures created by sparse_init() are not used until the
+> initialization of the core MM.
+>
+> Beside the code duplication, calling sparse_init() from architecture
+> specific code causes ordering differences of vmemmap and HVO initialization
+> on different architectures.
+>
+> Move the call to sparse_init() from architecture specific code to
+> free_area_init() to ensure that vmemmap and HVO initialization order is
+> always the same.
+>
 
-Looks good to me. I'll pick it up later this week. There are a number of pa=
-tches
-that have accumulated over the past months since I got too busy to work on =
-sh-linux.
+Hello Mike,
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+[    0.000000][    T0] ------------[ cut here ]------------
+[    0.000000][    T0] WARNING: arch/powerpc/include/asm/io.h:879 at virt_to_phys+0x44/0x1b8, CPU#0: swapper/0
+[    0.000000][    T0] Modules linked in:
+[    0.000000][    T0] CPU: 0 UID: 0 PID: 0 Comm: swapper Not tainted 6.19.0-12139-gc57b1c00145a #31 PREEMPT
+[    0.000000][    T0] Hardware name: IBM pSeries (emulated by qemu) POWER10 (architected) 0x801200 0xf000006 of:SLOF,git-ee03ae pSeries
+[    0.000000][    T0] NIP:  c000000000601584 LR: c000000004075de4 CTR: c000000000601548
+[    0.000000][    T0] REGS: c000000004d1f870 TRAP: 0700   Not tainted  (6.19.0-12139-gc57b1c00145a)
+[    0.000000][    T0] MSR:  8000000000021033 <SF,ME,IR,DR,RI,LE>  CR: 48022448  XER: 20040000
+[    0.000000][    T0] CFAR: c0000000006016c4 IRQMASK: 1
+[    0.000000][    T0] GPR00: c000000004075dd4 c000000004d1fb10 c00000000304bb00 c000000180000000
+[    0.000000][    T0] GPR04: 0000000000000009 0000000000000009 c000000004ec94a0 0000000000000000
+[    0.000000][    T0] GPR08: 0000000000018000 0000000000000001 c000000004921280 0000000048022448
+[    0.000000][    T0] GPR12: c000000000601548 c000000004fe0000 0000000000000004 0000000000000004
+[    0.000000][    T0] GPR16: 000000000287fb08 0000000000000060 0000000000000002 0000000002831750
+[    0.000000][    T0] GPR20: 0000000002831778 fffffffffffffffd c000000004d78050 00000000051cbb00
+[    0.000000][    T0] GPR24: 0000000005a40008 c000000000000000 c000000000400000 0000000000000100
+[    0.000000][    T0] GPR28: c000000004d78050 0000000000000000 c000000004ecd4a8 0000000000000001
+[    0.000000][    T0] NIP [c000000000601584] virt_to_phys+0x44/0x1b8
+[    0.000000][    T0] LR [c000000004075de4] alloc_bootmem+0x144/0x1a8
+[    0.000000][    T0] Call Trace:
+[    0.000000][    T0] [c000000004d1fb50] [c000000004075dd4] alloc_bootmem+0x134/0x1a8
+[    0.000000][    T0] [c000000004d1fba0] [c000000004075fac] __alloc_bootmem_huge_page+0x164/0x230
+[    0.000000][    T0] [c000000004d1fbe0] [c000000004030bc4] alloc_bootmem_huge_page+0x44/0x138
+[    0.000000][    T0] [c000000004d1fc10] [c000000004076e48] hugetlb_hstate_alloc_pages+0x350/0x5ac
+[    0.000000][    T0] [c000000004d1fd30] [c0000000040782f0] hugetlb_bootmem_alloc+0x15c/0x19c
+[    0.000000][    T0] [c000000004d1fd70] [c00000000406d7b4] mm_core_init_early+0x7c/0xdf4
+[    0.000000][    T0] [c000000004d1ff30] [c000000004011d84] start_kernel+0xac/0xc58
+[    0.000000][    T0] [c000000004d1ffe0] [c00000000000e99c] start_here_common+0x1c/0x20
+[    0.000000][    T0] Code: 6129ffff 792907c6 6529ffff 6129ffff 7c234840 40810018 3d2201e8 3929a7a8 e9290000 7c291840 41810044 3be00001 <0b1f0000> 3d20bfff 6129ffff 792907c6
 
-Adrian
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+I think this is happening because, now in mm_core_early_init(), the
+order of initialization between hugetlb_bootmem_alloc() and
+free_area_init() is reversed. Since free_area_init() -> sparse_init()
+is responsible for setting SECTIONS and vmemmap area. 
+
+Then in alloc_bootmem() (from hugetlb_bootmem_alloc() path), it uses virt_to_phys(m)...
+
+			/*
+			 * For pre-HVO to work correctly, pages need to be on
+			 * the list for the node they were actually allocated
+			 * from. That node may be different in the case of
+			 * fallback by memblock_alloc_try_nid_raw. So,
+			 * extract the actual node first.
+			 */
+			if (m)
+				listnode = early_pfn_to_nid(PHYS_PFN(virt_to_phys(m)));
+
+
+... virt_to_phys on powerpc uses:
+
+static inline unsigned long virt_to_phys(const volatile void * address)
+{
+	WARN_ON(IS_ENABLED(CONFIG_DEBUG_VIRTUAL) && !virt_addr_valid(address));
+
+	return __pa((unsigned long)address);
+}
+
+#define virt_addr_valid(vaddr)	({					\
+	unsigned long _addr = (unsigned long)vaddr;			\
+	_addr >= PAGE_OFFSET && _addr < (unsigned long)high_memory &&	\
+	pfn_valid(virt_to_pfn((void *)_addr));				\
+})
+
+
+I think the above warning in dmesg gets printed from above WARN_ON, i.e.
+because pfn_valid() is false, since we haven't done sparse_init() yet.
+
+So, what I wanted to check was - do you think instead of virt_to_phys(), we
+could directly use __pa() here() in mm/hugetlb.c, since these are
+memblock alloc addresses? i.e.: 
+
+// alloc_bootmem():
+-   listnode = early_pfn_to_nid(PHYS_PFN(virt_to_phys(m)));
++   listnode = early_pfn_to_nid(PHYS_PFN(__pa(m)));
+
+// __alloc_bootmem_huge_page():
+-   memblock_reserved_mark_noinit(virt_to_phys((void *)m + PAGE_SIZE),
++   memblock_reserved_mark_noinit(__pa((void *)m + PAGE_SIZE),
+
+
+Thoughts?
+
+-ritesh
