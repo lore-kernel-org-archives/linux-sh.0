@@ -1,120 +1,74 @@
-Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2AA70373C0F;
-	Mon,  2 Mar 2026 12:25:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=193.142.43.55
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 341CE32AAA0;
+	Mon,  2 Mar 2026 16:29:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772454356; cv=none; b=Baztd+kwLWUnaaGJKYHw5ywhf+fA8Y7Nk4Em0PkHDJ63wOk2Yl+StUolET1ywzqAwyZ8dNU2ePEWBe2E2aj4V8lpbmTbd0nLynUgbM2omglnBWZ1IOU4ZLwhyPpfLO2BTMEgS0CqCKaBUWJxL/0KBKpSUqt0xqWjqlwG1hFsuX8=
+	t=1772468944; cv=none; b=H7QfsaOIZBSPPzGt8uhCrwG2MzJT2qnvJspNtecAUNVRHY9avCD4PPV5oDfoxRStAIuCJXYAiu3c9tdhrgB5XsFyy3BpxyTuEb3wWNQwqY/iaLmZ0F/XTTraBjoLJ1Zy4pWbW/KyZRHcLswK3BvD3YV8GOrqrOlt5nJjZYzyBPc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772454356; c=relaxed/simple;
-	bh=1k5fCTPjgHXmT1wIddDgmvVMNFYPCfoGbNYiBvOaniE=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=ClNG2WnI0d3lRam122Qp1FhgJaboRS+x+ocMMGI8hlZbKpdB0PpMs1Ej215HixfG8IEVzaRfKfJ/hZJLltlF34PJYtbKqaBCT5J4puAE64YqIIDnB0ye8Nl0ji17ONDMHiiYJysVNTrS1tHK9RJeTNiYy+ljGu+Zp3uPl8CPw4w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de; spf=pass smtp.mailfrom=linutronix.de; dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=MW1bGCsS; dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=Glqb/iX5; arc=none smtp.client-ip=193.142.43.55
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
+	s=arc-20240116; t=1772468944; c=relaxed/simple;
+	bh=Q5EJz0ks9pfcEKpulvqPiKiB3QcWP4MPjhaSyuLWtKA=;
+	h=Mime-Version:Content-Type:Date:Message-Id:Subject:Cc:To:From:
+	 References:In-Reply-To; b=oYjpaLHj7p56aK7O2Ptf4kvKNKsIq+wjGXSGKzWpRN7MFvRoF3uALoW1POfw8vB5gcCH9mlEq6CTWF8MAaVBMO6RLB5ETMOIrtdJznRRO3kmTR+IwSxR+j8iyZINsJk0XOg+47RpUzCK7Rr//ku3BQ1nVNwKHcZFKWHR7xqSeww=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Lxn3G3Qg; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="MW1bGCsS";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="Glqb/iX5"
-From: =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020; t=1772454352;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=rUatCUMGjSOAYdWwYL9kAf5S0UMPuz+Fx84eRD4pGU4=;
-	b=MW1bGCsS9DfO9X+v0DSKadvLFn+SWmk1pn+rddicrRlb+25XuZl0eJt6iP0G+BXg34cvQ+
-	1Ypq8dU9/4H9JLtsbNLwN5Op4E1bl+T4qCK3Q+t4+bjDkmJqqKq1cZulRp0Q5bjxyuTa47
-	wiRCfLK8Jy/Zk+I2mf8sQaKTwx9mwTzg39fMPaeuYCeMY1g5BgCHN7iPogP3geq0eUFj3Z
-	1espng2OIo24NrTFZzZJjZfVEZhat3bTP91FgzcChTJq/X8HDD3/SOOdkrO038gUGid1NP
-	/TG9xAya313yScFDighxypdFYvV3s2al8OVDGX6NMfe71/7TtA36WV+yKWJIog==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020e; t=1772454352;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=rUatCUMGjSOAYdWwYL9kAf5S0UMPuz+Fx84eRD4pGU4=;
-	b=Glqb/iX58ImwLmydqxjJwzbHZqXKn5FJ/rKO/+KdO7fpIDILYZKeypk8G9y+WgL/AIWKQi
-	8ZSn2D4OHrttUMCg==
-Date: Mon, 02 Mar 2026 13:25:38 +0100
-Subject: [PATCH 14/15] alpha: remove AT_VECTOR_SIZE_ARCH from UAPI
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Lxn3G3Qg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 551A2C19423;
+	Mon,  2 Mar 2026 16:29:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1772468943;
+	bh=Q5EJz0ks9pfcEKpulvqPiKiB3QcWP4MPjhaSyuLWtKA=;
+	h=Date:Subject:Cc:To:From:References:In-Reply-To:From;
+	b=Lxn3G3QgbEq3Mw2dsJKkaDqk5SKvaOp5Gs4pFlnODhb9INkygZgiGZdaRoF6Nuv0P
+	 BR5iV8/i60Q1y6PJKV4iGJjZnWcac/kTJlLw83K/8Ffwb5VyMP5SqyfxAIUCptdFsL
+	 rhofpvbYeC6LMiGyD8zKmrP5KlGcbLEB1f/lpHB2r+Sa6zKXHSgU5GQHec+qJe4oav
+	 ehMfC5OXRAer9/XETfOexepaoaQhDQ+4BXSp0PDwcxVfKbDAqIw2/NYv69viXzd0Yh
+	 93ws0C0XQw6/8aCxDkUW6RJ8V1Rr165zj6wx/1abbm6pySatXQLzfBn2dEnQZ20QIg
+	 x5E0dXBq/qbGg==
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-Message-Id: <20260302-at-vector-size-arch-v1-14-a11f03ba2ca8@linutronix.de>
-References: <20260302-at-vector-size-arch-v1-0-a11f03ba2ca8@linutronix.de>
-In-Reply-To: <20260302-at-vector-size-arch-v1-0-a11f03ba2ca8@linutronix.de>
-To: Kees Cook <kees@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, 
- linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
- linux-riscv@lists.infradead.org, loongarch@lists.linux.dev, 
- linux-s390@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
- linux-mips@vger.kernel.org, sparclinux@vger.kernel.org, 
- linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, 
- =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1772454343; l=1621;
- i=thomas.weissschuh@linutronix.de; s=20240209; h=from:subject:message-id;
- bh=1k5fCTPjgHXmT1wIddDgmvVMNFYPCfoGbNYiBvOaniE=;
- b=+emcoOjpmCtOGbRKRilDXun4wh9rZo8IxjTkm9zYNPepV3X+fcHLumuZs3KaZBdDmhAbmZz3X
- Sar6SiZRFKiDIiijEXUFkxsbjuuwCItZ6i5gyRlwHoXVec8Fv7oUaT2
-X-Developer-Key: i=thomas.weissschuh@linutronix.de; a=ed25519;
- pk=pfvxvpFUDJV2h2nY0FidLUml22uGLSjByFbM6aqQQws=
+Mime-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+Date: Mon, 02 Mar 2026 17:28:58 +0100
+Message-Id: <DGSFSTFQ4Z1K.31HQCRTB3ZHF7@kernel.org>
+Subject: Re: [PATCH 1/3] driver core: generalize driver_override in struct
+ device
+Cc: <gregkh@linuxfoundation.org>, <rafael@kernel.org>,
+ <hanguidong02@gmail.com>, <ysato@users.sourceforge.jp>, <dalias@libc.org>,
+ <glaubitz@physik.fu-berlin.de>, <abelvesa@kernel.org>, <srini@kernel.org>,
+ <s.nawrocki@samsung.com>, <nuno.sa@analog.com>,
+ <driver-core@lists.linux.dev>, <linux-kernel@vger.kernel.org>,
+ <imx@lists.linux.dev>, <linux-hwmon@vger.kernel.org>,
+ <linux-arm-msm@vger.kernel.org>, <linux-sound@vger.kernel.org>,
+ <linux-sh@vger.kernel.org>
+To: "Armin Wolf" <W_Armin@gmx.de>
+From: "Danilo Krummrich" <dakr@kernel.org>
+References: <20260302002729.19438-1-dakr@kernel.org>
+ <20260302002729.19438-2-dakr@kernel.org>
+ <bc06539d-84b3-4500-86e7-3f01f1ea3183@gmx.de>
+In-Reply-To: <bc06539d-84b3-4500-86e7-3f01f1ea3183@gmx.de>
 
-There is nothing userspace can do with this value. In the kernel is
-always combined with AT_VECTOR_SIZE_BASE, which is not exposed to
-userspace and also changes from time to time.
+On Mon Mar 2, 2026 at 11:23 AM CET, Armin Wolf wrote:
+> Nice patch series, centralizing the handling of driver_override in the
+> device core removes a lot of duplicated code.
+>
+> I wonder if we can also move DEVICE_ATTR_DRIVER_OVERRIDE() into the devic=
+e
+> core by registering the associated sysfs attribute inside bus_add_device(=
+).
+>
+> Bus types that honor driver_override could for example set a boolean flag
+> inside struct bus_type to tell the device core that driver_override is
+> supported.
+>
+> However this is just a suggestion, the current patch series seems fine to=
+ me.
 
-Move the symbol to a kernel-internal header.
-
-Signed-off-by: Thomas Weißschuh <thomas.weissschuh@linutronix.de>
----
- arch/alpha/include/asm/auxvec.h      | 7 +++++++
- arch/alpha/include/uapi/asm/auxvec.h | 8 +++-----
- 2 files changed, 10 insertions(+), 5 deletions(-)
-
-diff --git a/arch/alpha/include/asm/auxvec.h b/arch/alpha/include/asm/auxvec.h
-new file mode 100644
-index 000000000000..fa90ee4f899c
---- /dev/null
-+++ b/arch/alpha/include/asm/auxvec.h
-@@ -0,0 +1,7 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef __ASM_ALPHA_AUXVEC_H
-+#define __ASM_ALPHA_AUXVEC_H
-+
-+#define AT_VECTOR_SIZE_ARCH 4 /* entries in ARCH_DLINFO */
-+
-+#endif /* __ASM_ALPHA_AUXVEC_H */
-diff --git a/arch/alpha/include/uapi/asm/auxvec.h b/arch/alpha/include/uapi/asm/auxvec.h
-index 57cae8780d81..d21b87b6730a 100644
---- a/arch/alpha/include/uapi/asm/auxvec.h
-+++ b/arch/alpha/include/uapi/asm/auxvec.h
-@@ -1,6 +1,6 @@
- /* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
--#ifndef __ASM_ALPHA_AUXVEC_H
--#define __ASM_ALPHA_AUXVEC_H
-+#ifndef __UAPI_ASM_ALPHA_AUXVEC_H
-+#define __UAPI_ASM_ALPHA_AUXVEC_H
- 
- /* Reserve these numbers for any future use of a VDSO.  */
- #if 0
-@@ -22,6 +22,4 @@
- #define AT_L2_CACHESHAPE	36
- #define AT_L3_CACHESHAPE	37
- 
--#define AT_VECTOR_SIZE_ARCH 4 /* entries in ARCH_DLINFO */
--
--#endif /* __ASM_ALPHA_AUXVEC_H */
-+#endif /* __UAPI_ASM_ALPHA_AUXVEC_H */
-
--- 
-2.53.0
-
+That's a very good suggestion, thanks for pointing it out. In fact, I alrea=
+dy
+thought of this at some point, but then forgot to implement it. :)
