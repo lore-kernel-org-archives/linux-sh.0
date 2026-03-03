@@ -1,74 +1,121 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 341CE32AAA0;
-	Mon,  2 Mar 2026 16:29:03 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0B43633F383;
+	Tue,  3 Mar 2026 11:57:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1772468944; cv=none; b=H7QfsaOIZBSPPzGt8uhCrwG2MzJT2qnvJspNtecAUNVRHY9avCD4PPV5oDfoxRStAIuCJXYAiu3c9tdhrgB5XsFyy3BpxyTuEb3wWNQwqY/iaLmZ0F/XTTraBjoLJ1Zy4pWbW/KyZRHcLswK3BvD3YV8GOrqrOlt5nJjZYzyBPc=
+	t=1772539051; cv=none; b=MNwlTF36O620k4TrwVMh2+m+JwrulypwQDVL5YQgwNIdOKbuBhw9o67Ogl6GA0owlijK1UueaaepmBjYHHJZyJNmhGNcclKuc2OYQDXIahW8M0bSGbNctrr5UXGgvPj19FLOug6WdRwc0TVxk/gjOnFCBHIxylkyEhcMLhE4804=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1772468944; c=relaxed/simple;
-	bh=Q5EJz0ks9pfcEKpulvqPiKiB3QcWP4MPjhaSyuLWtKA=;
-	h=Mime-Version:Content-Type:Date:Message-Id:Subject:Cc:To:From:
-	 References:In-Reply-To; b=oYjpaLHj7p56aK7O2Ptf4kvKNKsIq+wjGXSGKzWpRN7MFvRoF3uALoW1POfw8vB5gcCH9mlEq6CTWF8MAaVBMO6RLB5ETMOIrtdJznRRO3kmTR+IwSxR+j8iyZINsJk0XOg+47RpUzCK7Rr//ku3BQ1nVNwKHcZFKWHR7xqSeww=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Lxn3G3Qg; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1772539051; c=relaxed/simple;
+	bh=vXaHvCEHJXa60E12gJk4qXYIo6yuZXE+bxs1JmCmVKI=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=fnMhORnIDoCroHZqMJcdlhK99E/snPeCUX1fq1CmTj0SDR2cVHQydvAyzqCUN/j8ykvqX9L63uXwOZsXP3i0PWpDZY56Ajou2jVyJEAxZv4AMf6cjtYuBPG4BVEryvSPjkm3q3ecoh9rIlCyJdCg4VitHz+lrTeUE2mB5RxarMI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QMEYOJMB; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Lxn3G3Qg"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 551A2C19423;
-	Mon,  2 Mar 2026 16:29:00 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QMEYOJMB"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1895CC116C6;
+	Tue,  3 Mar 2026 11:57:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1772468943;
-	bh=Q5EJz0ks9pfcEKpulvqPiKiB3QcWP4MPjhaSyuLWtKA=;
-	h=Date:Subject:Cc:To:From:References:In-Reply-To:From;
-	b=Lxn3G3QgbEq3Mw2dsJKkaDqk5SKvaOp5Gs4pFlnODhb9INkygZgiGZdaRoF6Nuv0P
-	 BR5iV8/i60Q1y6PJKV4iGJjZnWcac/kTJlLw83K/8Ffwb5VyMP5SqyfxAIUCptdFsL
-	 rhofpvbYeC6LMiGyD8zKmrP5KlGcbLEB1f/lpHB2r+Sa6zKXHSgU5GQHec+qJe4oav
-	 ehMfC5OXRAer9/XETfOexepaoaQhDQ+4BXSp0PDwcxVfKbDAqIw2/NYv69viXzd0Yh
-	 93ws0C0XQw6/8aCxDkUW6RJ8V1Rr165zj6wx/1abbm6pySatXQLzfBn2dEnQZ20QIg
-	 x5E0dXBq/qbGg==
+	s=k20201202; t=1772539050;
+	bh=vXaHvCEHJXa60E12gJk4qXYIo6yuZXE+bxs1JmCmVKI=;
+	h=From:To:Cc:Subject:Date:From;
+	b=QMEYOJMB3DeR1jQdolTaUXAdR0T4xlXJUqmGaZ2z2Fb7auuJToYN8vNDDx5lCCpAw
+	 SzgzOogn/OsS2Jhw2ROKEJHX1igHMLBUIzsJ4PhyQXfWxAEXBblCVI1g/YZY/To7i3
+	 qRZT4rb7NcxkziIe0UHAQQk93MJFTpMb+eX8SYirsJu89Bq5Do/w+fdv9vLeDq/hic
+	 Ey2QaLrbeiIZPs7s0MgK2/gUNVBnFTmcBYXQ/ovv1PWIO1EGIg0PF4co8x1vGQhCKt
+	 Mlr8UIgcT6EMfLzt2opMnPSXylZB+OU5L4qsYgU0RHDi2317uZgnJecmrc16iu2rVo
+	 KaL/iRCcpArqA==
+From: Danilo Krummrich <dakr@kernel.org>
+To: gregkh@linuxfoundation.org,
+	rafael@kernel.org,
+	hanguidong02@gmail.com,
+	ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	abelvesa@kernel.org,
+	srini@kernel.org,
+	s.nawrocki@samsung.com,
+	nuno.sa@analog.com
+Cc: driver-core@lists.linux.dev,
+	linux-kernel@vger.kernel.org,
+	imx@lists.linux.dev,
+	linux-hwmon@vger.kernel.org,
+	linux-arm-msm@vger.kernel.org,
+	linux-sound@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	Danilo Krummrich <dakr@kernel.org>
+Subject: [PATCH v2 0/4] driver core: generalize driver_override infrastructure
+Date: Tue,  3 Mar 2026 12:53:17 +0100
+Message-ID: <20260303115720.48783-1-dakr@kernel.org>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
-Date: Mon, 02 Mar 2026 17:28:58 +0100
-Message-Id: <DGSFSTFQ4Z1K.31HQCRTB3ZHF7@kernel.org>
-Subject: Re: [PATCH 1/3] driver core: generalize driver_override in struct
- device
-Cc: <gregkh@linuxfoundation.org>, <rafael@kernel.org>,
- <hanguidong02@gmail.com>, <ysato@users.sourceforge.jp>, <dalias@libc.org>,
- <glaubitz@physik.fu-berlin.de>, <abelvesa@kernel.org>, <srini@kernel.org>,
- <s.nawrocki@samsung.com>, <nuno.sa@analog.com>,
- <driver-core@lists.linux.dev>, <linux-kernel@vger.kernel.org>,
- <imx@lists.linux.dev>, <linux-hwmon@vger.kernel.org>,
- <linux-arm-msm@vger.kernel.org>, <linux-sound@vger.kernel.org>,
- <linux-sh@vger.kernel.org>
-To: "Armin Wolf" <W_Armin@gmx.de>
-From: "Danilo Krummrich" <dakr@kernel.org>
-References: <20260302002729.19438-1-dakr@kernel.org>
- <20260302002729.19438-2-dakr@kernel.org>
- <bc06539d-84b3-4500-86e7-3f01f1ea3183@gmx.de>
-In-Reply-To: <bc06539d-84b3-4500-86e7-3f01f1ea3183@gmx.de>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On Mon Mar 2, 2026 at 11:23 AM CET, Armin Wolf wrote:
-> Nice patch series, centralizing the handling of driver_override in the
-> device core removes a lot of duplicated code.
->
-> I wonder if we can also move DEVICE_ATTR_DRIVER_OVERRIDE() into the devic=
-e
-> core by registering the associated sysfs attribute inside bus_add_device(=
-).
->
-> Bus types that honor driver_override could for example set a boolean flag
-> inside struct bus_type to tell the device core that driver_override is
-> supported.
->
-> However this is just a suggestion, the current patch series seems fine to=
- me.
+Currently, there are 12 busses (including platform and PCI) that duplicate the
+driver_override logic for their individual devices.
 
-That's a very good suggestion, thanks for pointing it out. In fact, I alrea=
-dy
-thought of this at some point, but then forgot to implement it. :)
+All of them seem to be prone to the bug described in [1].
+
+While this could be solved for every bus individually using a separate lock,
+solving this in the driver-core generically results in less (and cleaner)
+changes overall.
+
+Thus, move driver_override to struct device, provide corresponding accessors for
+busses and handle locking with a separate lock internally.
+
+In particular, add device_set_driver_override(), device_has_driver_override(),
+device_match_driver_override() and a helper, DEVICE_ATTR_DRIVER_OVERRIDE(), to
+declare the corresponding sysfs store() and show() callbacks.
+
+Until all busses have migrated, keep driver_set_override() in place.
+
+Note that we can't use the device lock for the reasons described in [2].
+
+This patch series includes the migration of the platform bus; patches for all
+other affected busses still need to be extracted as a follow-up of the WIP
+treewide patch in [3].
+
+[1] https://bugzilla.kernel.org/show_bug.cgi?id=220789
+[2] https://lore.kernel.org/driver-core/DGRGTIRHA62X.3RY09D9SOK77P@kernel.org/
+[3] https://git.kernel.org/pub/scm/linux/kernel/git/dakr/linux.git/log/?h=driver_override
+
+Changes in v2:
+  - Drop DEVICE_ATTR_DRIVER_OVERRIDE() and make driver_override a
+    struct bus_type feature instead.
+  - Add driver_override documentation in .../driver-model/binding.rst.
+  - Move kfree(dev->driver_override.name) before release().
+  - hwmon: axi-fan: Use NULL instead of dev_name() in
+    devm_request_threaded_irq().
+
+Danilo Krummrich (4):
+  driver core: generalize driver_override in struct device
+  docs: driver-model: document driver_override
+  hwmon: axi-fan: don't use driver_override as IRQ name
+  driver core: platform: use generic driver_override infrastructure
+
+ .../driver-api/driver-model/binding.rst       | 48 +++++++++++++++
+ arch/sh/drivers/platform_early.c              |  6 +-
+ drivers/base/bus.c                            | 43 ++++++++++++-
+ drivers/base/core.c                           |  2 +
+ drivers/base/dd.c                             | 60 +++++++++++++++++++
+ drivers/base/platform.c                       | 37 ++----------
+ drivers/bus/simple-pm-bus.c                   |  4 +-
+ drivers/clk/imx/clk-scu.c                     |  3 +-
+ drivers/hwmon/axi-fan-control.c               |  2 +-
+ drivers/slimbus/qcom-ngd-ctrl.c               |  6 +-
+ include/linux/device.h                        | 54 +++++++++++++++++
+ include/linux/device/bus.h                    |  4 ++
+ include/linux/platform_device.h               |  5 --
+ sound/soc/samsung/i2s.c                       |  6 +-
+ 14 files changed, 228 insertions(+), 52 deletions(-)
+
+
+base-commit: 11439c4635edd669ae435eec308f4ab8a0804808
+-- 
+2.53.0
+
