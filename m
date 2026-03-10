@@ -1,39 +1,38 @@
-Received: from mail.avm.de (mail.avm.de [212.42.244.120])
+Received: from mail.avm.de (mail.avm.de [212.42.244.119])
 	(using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C96F481666;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31673480DFA;
 	Tue, 10 Mar 2026 11:55:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.42.244.120
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.42.244.119
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773143759; cv=none; b=oK9yNb382uspJ4QUQ7pTPeI79tYINtVv7g0WxXkWfKXkkBnDWkC2Q0Z9e1BYQFkgrgqBgCQvgq5r0+2Nqf5Pj6DFIutSIDsEPCSf1DBwjV2b9Ehx1XEzhjCxAKqfcQ3Opz7OfM8z+RQPsTnvJMjjuv5hclibQIOsMxsfROg0mV8=
+	t=1773143758; cv=none; b=L/sDSVTy7Uw++Lfp1vPvFR4Gq6Hp+lujrOClYGEvm3upgPKYYwwzci8ITdTMxVDX10XWUCmJEr6fOKe2Ks9q9OW5xU4z8+mI12smb5N24m/ILzwcrUw/8yyUVABDv4KyS0ZRVakKauy/Mu3/IHEWkA/pcCKQ35OiobbVRrmHK0E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773143759; c=relaxed/simple;
-	bh=u291MpoQyOoQ8laFPzXzGEOIKYw0K1QgWZAkzpMyO94=;
+	s=arc-20240116; t=1773143758; c=relaxed/simple;
+	bh=Axff4FnAHPNmyZXZ2vgEuavJkfKhCKJPqZGqnoou9Q8=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=kZBffhccXZjDyCeztHhsCUjNGrXNiW70IRgIyKCqHOMQmqp0HrphnQnxDCF8bPlSXO7LzEJzoGG6rayOtwjeHeS8NjtUTMz86S/FBUkWLD0utA1gga7E+Narr4P1mQ76xBsxClyl+Nb9U1mTaP9g1yiYRS9l7pMvE9/5QyH/cZQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=avm.de; spf=pass smtp.mailfrom=avm.de; dkim=pass (1024-bit key) header.d=avm.de header.i=@avm.de header.b=pfJbt85u; arc=none smtp.client-ip=212.42.244.120
+	 In-Reply-To:To:Cc; b=PbCeYXmq2uf4MzSzntQmrtKOzK9TuynPCThdoLBBsbtLXYh1XXsxIT4PIp3l5/UFWZj/osf4FOGEy+bR5yLLUncrDkyx4vsaGSH/x/pc66/j06YBd5u8uN6MJ0rSLFBsG3SG8LISy3fExKq1jeyvmXghmd8j5QUQHmbf71U1vK0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=avm.de; spf=pass smtp.mailfrom=avm.de; dkim=pass (1024-bit key) header.d=avm.de header.i=@avm.de header.b=vC8qGYtm; arc=none smtp.client-ip=212.42.244.119
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=avm.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=avm.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=avm.de header.i=@avm.de header.b="pfJbt85u"
+	dkim=pass (1024-bit key) header.d=avm.de header.i=@avm.de header.b="vC8qGYtm"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=avm.de; s=mail;
-	t=1773143726; bh=u291MpoQyOoQ8laFPzXzGEOIKYw0K1QgWZAkzpMyO94=;
+	t=1773143726; bh=Axff4FnAHPNmyZXZ2vgEuavJkfKhCKJPqZGqnoou9Q8=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
-	b=pfJbt85uD4zLpj0lQeOLViL89C0RYRidKaNUSGC9C4bArigffG5cBpXBe8djbAWNm
-	 Ia5FOWiJQQrnKQdUoD/mDbTsHiTJQ9pvD5aeDw8DVgI8t70K9ZrXhUsjK11KkT+XqX
-	 NbWFpUGaREUVl40pOx82IEVDP7TyUdODT+R7wKg4=
+	b=vC8qGYtmoTTFtKG57rlNoXWnybB42U6r7mF3yDjZNK169i+LPPc6FbsKjJViJXz0P
+	 z0SkvHe3S8CzlbyDQgjnVKCfReu3jwjo1Tnr6q9iIPykZjcNCRLdwFjqB3/YTiencA
+	 upketXPZTZxW0W7lPSDpgLsiq82FnKI8pFh7qlSE=
 Received: from [212.42.244.71] (helo=mail.avm.de)
 	by mail.avm.de with ESMTP (eXpurgate 4.55.2)
 	(envelope-from <phahn-oss@avm.de>)
-	id 69b006ae-b734-7f0000032729-7f000001c0a8-1
+	id 69b006ae-2367-7f0000032729-7f000001c97e-1
 	for <multiple-recipients>; Tue, 10 Mar 2026 12:55:26 +0100
 Received: from mail-auth.avm.de (dovecot-mx-01.avm.de [212.42.244.71])
 	by mail.avm.de (Postfix) with ESMTPS;
 	Tue, 10 Mar 2026 12:55:26 +0100 (CET)
 From: Philipp Hahn <phahn-oss@avm.de>
-Date: Tue, 10 Mar 2026 12:49:11 +0100
-Subject: [PATCH 45/61] thermal: Prefer IS_ERR_OR_NULL over manual NULL
- check
+Date: Tue, 10 Mar 2026 12:48:59 +0100
+Subject: [PATCH 33/61] mm: Prefer IS_ERR_OR_NULL over manual NULL check
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -42,7 +41,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260310-b4-is_err_or_null-v1-45-bd63b656022d@avm.de>
+Message-Id: <20260310-b4-is_err_or_null-v1-33-bd63b656022d@avm.de>
 References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
 In-Reply-To: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
 To: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com, 
@@ -72,24 +71,22 @@ To: amd-gfx@lists.freedesktop.org, apparmor@lists.ubuntu.com,
  sched-ext@lists.linux.dev, target-devel@vger.kernel.org, 
  tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev, 
  Philipp Hahn <phahn-oss@avm.de>
-Cc: Eduardo Valentin <edubezval@gmail.com>, Keerthy <j-keerthy@ti.com>, 
- "Rafael J. Wysocki" <rafael@kernel.org>, 
- Daniel Lezcano <daniel.lezcano@kernel.org>, Zhang Rui <rui.zhang@intel.com>, 
- Lukasz Luba <lukasz.luba@arm.com>
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1238; i=phahn-oss@avm.de;
- h=from:subject:message-id; bh=u291MpoQyOoQ8laFPzXzGEOIKYw0K1QgWZAkzpMyO94=;
- b=owEBbQGS/pANAwAKATQtBlPRrKzbAcsmYgBpsAZv85jT8mK77P0DgzyoB3jbjqxnd52qin/43
- 73TECCS4NSJATMEAAEKAB0WIQQ5bPBtrWDUcDQCppg0LQZT0ays2wUCabAGbwAKCRA0LQZT0ays
- 2zstCACwpYJlOocsZ3HBVMWCF0IhNq09wby5LkvAsENXavKVYKWH0lNK553mHyG2L0hqOjwgfmQ
- 2R6ChfeUAdB1pLjTViMeeaIXq4AlyCRjEyAsVR/bQ5/US1JrFGhJzXarTPhODhjHiBoPAuzZhOB
- 8fipmcjA1HLbJFaREcynXwQWmFtG9ouLXgkvipVtzsg9HQdQPWOUefHLkAAvMOKdk+hmDB4ECbB
- NiykkLaAUziz7cfWSAQQRPcA1Gr6EaK8Vw6tF4Kl2S0zRlJlORdN+u8vB04XH9TW/DB1ISJvpll
- cqhryBZ8g4FfGeREfmgUyiQqqlzXdeOdKWH1FU8uNB4YFH+q
+Cc: Catalin Marinas <catalin.marinas@arm.com>, 
+ Andrew Morton <akpm@linux-foundation.org>
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3181; i=phahn-oss@avm.de;
+ h=from:subject:message-id; bh=Axff4FnAHPNmyZXZ2vgEuavJkfKhCKJPqZGqnoou9Q8=;
+ b=owEBbQGS/pANAwAKATQtBlPRrKzbAcsmYgBpsAZGGzCaztqu0lpdWvBpBbRCmO+WdPRS9iZCq
+ y8ebihz4r+JATMEAAEKAB0WIQQ5bPBtrWDUcDQCppg0LQZT0ays2wUCabAGRgAKCRA0LQZT0ays
+ 21/8B/wPP7xI3S+6VTDXKISgyNvBqi0UZCbrYypvYfajV0SZbWCEuGKdkXjsEnnFt9YRKxoHeyi
+ XmpmbA47CMrp+VNl6him9YVO8BEPZHU4T3m6BB2+Ps31+3rQDfYs7d+nPEStYiJ7CseLk0vc9Xu
+ aMyI8bSdyPpcRveFxPuH/uy4iV8zrSXLAoi0Ddm83MyR2aRNl2iCZfPRsvcbR2T8dPBVJjhKzKb
+ 5v+Zz66IZ/QArfKSmSkUD+nw+Micr3w6XFCa9e1WMrdcQ/Zh9MZx0TWZwcRgOAgfEwQG/fxgX8/
+ bLP83oq+8G1pw01czFBtKoe7eUKh6J8z9KOOUPoqLrMipRXq
 X-Developer-Key: i=phahn-oss@avm.de; a=openpgp;
  fpr=58AF7C2E007CDBE62C59E078F50EFDCF8AD04B1A
-X-purgate-ID: 149429::1773143726-E65C1A3D-DC24C704/0/0
+X-purgate-ID: 149429::1773143726-05CBBE1F-4CFCA352/0/0
 X-purgate-type: clean
-X-purgate-size: 1240
+X-purgate-size: 3183
 X-purgate-Ad: Categorized by eleven eXpurgate (R) https://www.eleven.de
 X-purgate: This mail is considered clean (visit https://www.eleven.de for further information)
 X-purgate: clean
@@ -97,35 +94,93 @@ X-purgate: clean
 Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
 check.
 
-Change generated with coccinelle.
+Change generated with coccinelle and adapted by hand.
 
-To: Eduardo Valentin <edubezval@gmail.com>
-To: Keerthy <j-keerthy@ti.com>
-To: "Rafael J. Wysocki" <rafael@kernel.org>
-To: Daniel Lezcano <daniel.lezcano@kernel.org>
-To: Zhang Rui <rui.zhang@intel.com>
-To: Lukasz Luba <lukasz.luba@arm.com>
-Cc: linux-pm@vger.kernel.org
-Cc: linux-omap@vger.kernel.org
+To: Catalin Marinas <catalin.marinas@arm.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-mm@kvack.org
 Cc: linux-kernel@vger.kernel.org
 Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
 ---
- drivers/thermal/ti-soc-thermal/ti-thermal-common.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ mm/kmemleak.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/thermal/ti-soc-thermal/ti-thermal-common.c b/drivers/thermal/ti-soc-thermal/ti-thermal-common.c
-index 0cf0826b805a998abd0d4e2cfa6938de8a46c4f0..9218417e6d923ec370e032f5b91f9a839fd293f4 100644
---- a/drivers/thermal/ti-soc-thermal/ti-thermal-common.c
-+++ b/drivers/thermal/ti-soc-thermal/ti-thermal-common.c
-@@ -228,7 +228,7 @@ int ti_thermal_register_cpu_cooling(struct ti_bandgap *bgp, int id)
- 		return 0;
+diff --git a/mm/kmemleak.c b/mm/kmemleak.c
+index d79acf5c51006c3ed42fd88a2246ca148e401999..91136be23a84d825698e98b4f2d0e666429dd593 100644
+--- a/mm/kmemleak.c
++++ b/mm/kmemleak.c
+@@ -1092,7 +1092,7 @@ void __ref kmemleak_alloc(const void *ptr, size_t size, int min_count,
+ {
+ 	pr_debug("%s(0x%px, %zu, %d)\n", __func__, ptr, size, min_count);
  
- 	data = ti_bandgap_get_sensor_data(bgp, id);
--	if (!data || IS_ERR(data))
-+	if (IS_ERR_OR_NULL(data))
- 		data = ti_thermal_build_data(bgp, id);
+-	if (kmemleak_enabled && ptr && !IS_ERR(ptr))
++	if (kmemleak_enabled && !IS_ERR_OR_NULL(ptr))
+ 		create_object((unsigned long)ptr, size, min_count, gfp);
+ }
+ EXPORT_SYMBOL_GPL(kmemleak_alloc);
+@@ -1152,7 +1152,7 @@ void __ref kmemleak_free(const void *ptr)
+ {
+ 	pr_debug("%s(0x%px)\n", __func__, ptr);
  
- 	if (!data)
+-	if (kmemleak_free_enabled && ptr && !IS_ERR(ptr))
++	if (kmemleak_free_enabled && !IS_ERR_OR_NULL(ptr))
+ 		delete_object_full((unsigned long)ptr, 0);
+ }
+ EXPORT_SYMBOL_GPL(kmemleak_free);
+@@ -1170,7 +1170,7 @@ void __ref kmemleak_free_part(const void *ptr, size_t size)
+ {
+ 	pr_debug("%s(0x%px)\n", __func__, ptr);
+ 
+-	if (kmemleak_enabled && ptr && !IS_ERR(ptr))
++	if (kmemleak_enabled && !IS_ERR_OR_NULL(ptr))
+ 		delete_object_part((unsigned long)ptr, size, 0);
+ }
+ EXPORT_SYMBOL_GPL(kmemleak_free_part);
+@@ -1238,7 +1238,7 @@ void __ref kmemleak_not_leak(const void *ptr)
+ {
+ 	pr_debug("%s(0x%px)\n", __func__, ptr);
+ 
+-	if (kmemleak_enabled && ptr && !IS_ERR(ptr))
++	if (kmemleak_enabled && !IS_ERR_OR_NULL(ptr))
+ 		make_gray_object((unsigned long)ptr);
+ }
+ EXPORT_SYMBOL(kmemleak_not_leak);
+@@ -1255,7 +1255,7 @@ void __ref kmemleak_transient_leak(const void *ptr)
+ {
+ 	pr_debug("%s(0x%px)\n", __func__, ptr);
+ 
+-	if (kmemleak_enabled && ptr && !IS_ERR(ptr))
++	if (kmemleak_enabled && !IS_ERR_OR_NULL(ptr))
+ 		reset_checksum((unsigned long)ptr);
+ }
+ EXPORT_SYMBOL(kmemleak_transient_leak);
+@@ -1287,7 +1287,7 @@ void __ref kmemleak_ignore(const void *ptr)
+ {
+ 	pr_debug("%s(0x%px)\n", __func__, ptr);
+ 
+-	if (kmemleak_enabled && ptr && !IS_ERR(ptr))
++	if (kmemleak_enabled && !IS_ERR_OR_NULL(ptr))
+ 		make_black_object((unsigned long)ptr, 0);
+ }
+ EXPORT_SYMBOL(kmemleak_ignore);
+@@ -1307,7 +1307,7 @@ void __ref kmemleak_scan_area(const void *ptr, size_t size, gfp_t gfp)
+ {
+ 	pr_debug("%s(0x%px)\n", __func__, ptr);
+ 
+-	if (kmemleak_enabled && ptr && size && !IS_ERR(ptr))
++	if (kmemleak_enabled && size && !IS_ERR_OR_NULL(ptr))
+ 		add_scan_area((unsigned long)ptr, size, gfp);
+ }
+ EXPORT_SYMBOL(kmemleak_scan_area);
+@@ -1325,7 +1325,7 @@ void __ref kmemleak_no_scan(const void *ptr)
+ {
+ 	pr_debug("%s(0x%px)\n", __func__, ptr);
+ 
+-	if (kmemleak_enabled && ptr && !IS_ERR(ptr))
++	if (kmemleak_enabled && !IS_ERR_OR_NULL(ptr))
+ 		object_no_scan((unsigned long)ptr);
+ }
+ EXPORT_SYMBOL(kmemleak_no_scan);
 
 -- 
 2.43.0
