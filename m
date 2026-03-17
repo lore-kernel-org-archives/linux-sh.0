@@ -1,157 +1,311 @@
-Received: from mail-vs1-f45.google.com (mail-vs1-f45.google.com [209.85.217.45])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E59F2394481
-	for <linux-sh@vger.kernel.org>; Tue, 17 Mar 2026 08:36:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.217.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A355634EF15;
+	Tue, 17 Mar 2026 09:15:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773736587; cv=none; b=eU/EqIi/hHKtvvzSpz71ajLt4BaQGbjosQmyR15pZVvWPpir2uSOnS9qJa+lVm5rR2KCuiOcAoqj9Q6R/weTEPyXsGmiZr2q65j2+S22MQ/uifZ27ASzlPS3k1vrO5znGl/C67Sau//KXoBH10Rw+ZEtUCG39qR9eHU8KQmVh9s=
+	t=1773738916; cv=none; b=f36ZJ9aj1HsqhMolci/y12iyjlXDmDQvPxe8s7kFswCIJo7HSTW/dMGE4BZWOkvXr7S+Og9ea5062Ox9tLUKgFRhgPf3dTm8TMb58sN6SH4jtEkGCycoch5spBlsiuZjfTUg2j9z3uhscVU6HlZ09B950eLruWuNo2ur18ohhV0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773736587; c=relaxed/simple;
-	bh=1IbAI1LF70M+Kjw+h3BaLZwBsh7cf418N6PFDl+oOnk=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=g/tGwwyAJJaNVpy2Jbc+wnqoCK9C+yVvO4Np+Sq886W+HllSaOTiBgvkzsh7aez5d77yDIOm9kv3a74bxVN5v9MlxlWolSizbcpWZuzGIY7ltrHbv5Bzlb4JpkfPK5inruJbjyiuzdN9RkYYKMzfvbagi7rEgsKsCfVls0A+bfg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.217.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vs1-f45.google.com with SMTP id ada2fe7eead31-5ffc6a96665so1416890137.0
-        for <linux-sh@vger.kernel.org>; Tue, 17 Mar 2026 01:36:25 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773736585; x=1774341385;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=idH2bB7nbOzzZw2WFTC74GwVow5g1kiitlzGsuFZK5o=;
-        b=H0WFz+1835bK1RvyVNErY4V/XfjviJsBpqaSrQBAbQLnFgFCOrOZx8TAYtHdtqoIiw
-         0rKM3haP5VWGFDIUYEH1+lauvakW/DN47yBHYNLVWcWU6oxM29ayHAZwyXfHAsj9nRmu
-         TwzPjlhMGQnfxXJQdTuih/vnCtd9HDwGUlBm3SKkZ40k2Kf6fhxrnkGVVbj6GkGXrJC3
-         VfueWfxweGhXG7LZdm2UwFPqv2znkT/MFqIQJUWfFploOillBSfjT6nU2dghc7pd0Ika
-         e0mhhSZ34TOvN3f29oUmQEkM3LwcOEuqS+d9KWIZUHKxfXospL1PfzenC73Ag1aDZCI5
-         hySQ==
-X-Forwarded-Encrypted: i=1; AJvYcCXY33aBjxczXMuU2IyDT/Wq9BxPnJNq9e4cNp6z9feM6xKbU6YdtJuimUyrG+5Vwz3aGEEE99zJRw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YymqJtPwblEoQhs6FZnemgUo8z3iDEtZFmeeQQngZEf4g4mC5f6
-	p/qnrG9twa5PXYGF2u6eOp9sxXY0wAxLSEvzbJO54YUzPC8z92TdnPTShL9IcdYE
-X-Gm-Gg: ATEYQzxfxd6gFAc6S5FP2tdF0k++M3xViXvW8OOI761XB1/x5VjfGsuv0Isz20NRwt+
-	k35p/yCDn1tXs+nqxU1/TOljH14ClXoFUasv3e+fatn2xIGu4eFJrPyAW8KPT+a7L4pWdAYKeD+
-	7YT3QSMuWO5VK6db3MagydnL54mPmbn5YVA0VYy1uvSVkhKc+V2dY+F4zbjCkc02vLMW3b/Rn7a
-	D+tJWREnGr2TEAyTJxU/qIKFGbcYEvy2LfwFAaCsi1NZEE+OrS5soWDQKimOLUW1308qwOsU5IR
-	/J9dzNCQ7rmrq1FA+uauPWTjdDF5DJRIe+Idxu0NRylW3yXi22FIlirg1/Yj7t0NTb6uIIwm/fU
-	HR8mKt2B9DwK9n2szYR6Rl2bqFkjgo5bVgAAS+efjYoKl0DXejkzeV2a8UV4+DfSs9jjV55klPv
-	Hdcs4IzQmdrKBcHQKuj5abteUD2u1wI1qVIZCKS3Czr7vfzf8+GfQZSuESvGBXFRuh
-X-Received: by 2002:a05:6102:358e:b0:5ff:d192:ff2f with SMTP id ada2fe7eead31-6020e50efdcmr6582390137.26.1773736584924;
-        Tue, 17 Mar 2026 01:36:24 -0700 (PDT)
-Received: from mail-vk1-f172.google.com (mail-vk1-f172.google.com. [209.85.221.172])
-        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-950cb55c975sm2837504241.5.2026.03.17.01.36.24
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 17 Mar 2026 01:36:24 -0700 (PDT)
-Received: by mail-vk1-f172.google.com with SMTP id 71dfb90a1353d-56af30dde0cso2063929e0c.2
-        for <linux-sh@vger.kernel.org>; Tue, 17 Mar 2026 01:36:24 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCXWI9sqXEdaAKdiAvMvFb9Nme0YgGwH/XEZ3r3QfnG7s8FZx91d/tpnP759HQCj/AQl2fwqQPGWNg==@vger.kernel.org
-X-Received: by 2002:a05:6102:5127:b0:5ff:2569:cfe7 with SMTP id
- ada2fe7eead31-6020e2129e6mr6024902137.10.1773736584585; Tue, 17 Mar 2026
- 01:36:24 -0700 (PDT)
+	s=arc-20240116; t=1773738916; c=relaxed/simple;
+	bh=QU6cedlzf40aFEFMHAi3oFEJtwf/R3OvK72FIzwtc/c=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=Lx2GxE/IDBl+fpvhZauRfxkGC1U4RI41XJ7mt0ni7DBk5HwWupdCBh6qXsIO7uFNeN8G9NnP88sDs/LepIwted9MYl+JwtLwueeUl75Ql7AUHtsX5seh23kqU0kXE+VV/3akvz1T/MTZT8jkfaIT0qgNgd1Sxc3R8ou7ixgBR5g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VQ4BnuZz; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VQ4BnuZz"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 19933C19425;
+	Tue, 17 Mar 2026 09:14:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1773738916;
+	bh=QU6cedlzf40aFEFMHAi3oFEJtwf/R3OvK72FIzwtc/c=;
+	h=From:Subject:Date:To:Cc:From;
+	b=VQ4BnuZzjGlyHuYCbl/mEKd7zh11jNZHM6YOmeZHshjwK7wAidut5bW59fUtAEXsF
+	 LPrDV/0BkMPGm+OJixWV70wz76CjI7ChsKDFhgNC2W34z47FQe0lHP3u0iv7QCx6TM
+	 h+pw5pDiAHiX9uP7B2DDiXpzrT6KYsbPR7UCv0w1HuTX65DzWGjkfmOONp++HBzeoI
+	 W35XeW99LW6pqjsde/3KUhI6qN9+5JT/76M2rqzs0qozQfuchLSotd/EnU+b43RHXh
+	 QYMfZORHioe+ZjSW10OOkakkBEnXg9s7kH9nnBEvUCCjLwnJvrcNHqItv+HuXbE3Da
+	 wb4xOWrkkkXlg==
+From: "Vincent Mailhol (Arm)" <mailhol@kernel.org>
+Subject: [PATCH 0/9] configs: cleanup obsolete or incorrect assignments
+Date: Tue, 17 Mar 2026 10:13:36 +0100
+Message-Id: <20260317-arm_defconf_cleanup-v1-0-8eecb7fdd24d@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260303115720.48783-1-dakr@kernel.org> <20260303115720.48783-5-dakr@kernel.org>
- <DH4M3DJ4P58T.1BGVAVXN71Z09@kernel.org>
-In-Reply-To: <DH4M3DJ4P58T.1BGVAVXN71Z09@kernel.org>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 17 Mar 2026 09:36:13 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdW=hfK82_QKXL=n-nMos-HjScKuw9jNTy4xsxJ2qnPYyA@mail.gmail.com>
-X-Gm-Features: AaiRm50LJFP1R3ITAUSRjqb1napf13plX5N5KjefHP89RPorlF5H9VKuGn2urAs
-Message-ID: <CAMuHMdW=hfK82_QKXL=n-nMos-HjScKuw9jNTy4xsxJ2qnPYyA@mail.gmail.com>
-Subject: Re: [PATCH v2 4/4] driver core: platform: use generic driver_override infrastructure
-To: Danilo Krummrich <dakr@kernel.org>
-Cc: gregkh@linuxfoundation.org, rafael@kernel.org, hanguidong02@gmail.com, 
-	ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
-	abelvesa@kernel.org, srini@kernel.org, s.nawrocki@samsung.com, 
-	nuno.sa@analog.com, brgl@kernel.org, driver-core@lists.linux.dev, 
-	linux-kernel@vger.kernel.org, imx@lists.linux.dev, 
-	linux-hwmon@vger.kernel.org, linux-arm-msm@vger.kernel.org, 
-	linux-sound@vger.kernel.org, linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAEAbuWkC/x3MTQqAIBBA4avErBPUor+rRIjpWANloRSBdPek5
+ bd4L0HEQBhhKBIEvCnS4TNEWYBZtV+Qkc0GyWXDKyGZDruy6MzhnTIban+dzFjRunrWfddbyOU
+ Z0NHzX8fpfT8esQDDZQAAAA==
+To: Nathan Chancellor <nathan@kernel.org>, Nicolas Schier <nsc@kernel.org>, 
+ Mikko Rapeli <mikko.rapeli@linaro.org>, 
+ Richard Henderson <richard.henderson@linaro.org>, 
+ Matt Turner <mattst88@gmail.com>, Magnus Lindholm <linmag7@gmail.com>, 
+ Russell King <linux@armlinux.org.uk>, Aaro Koskinen <aaro.koskinen@iki.fi>, 
+ Andreas Kemnade <andreas@kemnade.info>, Kevin Hilman <khilman@baylibre.com>, 
+ Roger Quadros <rogerq@kernel.org>, Tony Lindgren <tony@atomide.com>, 
+ Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, 
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+ Madhavan Srinivasan <maddy@linux.ibm.com>, 
+ Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, 
+ "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, 
+ Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, 
+ Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>, 
+ Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, 
+ Alexander Gordeev <agordeev@linux.ibm.com>, 
+ Christian Borntraeger <borntraeger@linux.ibm.com>, 
+ Sven Schnelle <svens@linux.ibm.com>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>, 
+ Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>, 
+ x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
+ Sebastian Andrzej Siewior <bigeasy@linutronix.de>, 
+ Clark Williams <clrkwllms@kernel.org>, Steven Rostedt <rostedt@goodmis.org>, 
+ Pablo Neira Ayuso <pablo@netfilter.org>, 
+ Krzysztof Kozlowski <krzk@kernel.org>, 
+ Alim Akhtar <alim.akhtar@samsung.com>, Frank Li <Frank.Li@nxp.com>, 
+ Sascha Hauer <s.hauer@pengutronix.de>, 
+ Pengutronix Kernel Team <kernel@pengutronix.de>, 
+ Fabio Estevam <festevam@gmail.com>, Vladimir Zapolskiy <vz@mleia.com>, 
+ Piotr Wojtaszczyk <piotr.wojtaszczyk@timesys.com>, 
+ Liviu Dudau <liviu.dudau@arm.com>, Sudeep Holla <sudeep.holla@kernel.org>, 
+ Lorenzo Pieralisi <lpieralisi@kernel.org>, 
+ Geert Uytterhoeven <geert+renesas@glider.be>, 
+ Magnus Damm <magnus.damm@gmail.com>, 
+ Vladimir Kondratiev <vladimir.kondratiev@mobileye.com>, 
+ Gregory CLEMENT <gregory.clement@bootlin.com>, 
+ =?utf-8?q?Th=C3=A9o_Lebrun?= <theo.lebrun@bootlin.com>, 
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
+ Helge Deller <deller@gmx.de>, Janusz Krzysztofik <jmkrzyszt@gmail.com>, 
+ =?utf-8?q?Jonathan_Neusch=C3=A4fer?= <j.neuschaefer@gmx.net>, 
+ Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, 
+ Thomas Zimmermann <tzimmermann@suse.de>, Arnd Bergmann <arnd@arndb.de>, 
+ Heiko Stuebner <heiko@sntech.de>, 
+ Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, 
+ Mark Brown <broonie@kernel.org>, Eric Biggers <ebiggers@kernel.org>, 
+ Ard Biesheuvel <ardb@kernel.org>, 
+ Sricharan Ramabadhran <quic_srichara@quicinc.com>, 
+ Bjorn Andersson <andersson@kernel.org>, Michael Walle <mwalle@kernel.org>, 
+ Guenter Roeck <linux@roeck-us.net>, 
+ Srinivas Kandagatla <srinivas.kandagatla@oss.qualcomm.com>, 
+ "Rob Herring (Arm)" <robh@kernel.org>, 
+ Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>, 
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+ Anna Schumaker <anna.schumaker@oracle.com>
+Cc: Alexandre Gonzalo <alexandre.gonzalo@arm.com>, 
+ linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
+ linux-omap@vger.kernel.org, loongarch@lists.linux.dev, 
+ linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+ linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
+ linux-sh@vger.kernel.org, linux-rt-devel@lists.linux.dev, 
+ linux-samsung-soc@vger.kernel.org, imx@lists.linux.dev, 
+ linux-renesas-soc@vger.kernel.org, linux-parisc@vger.kernel.org, 
+ openbmc@lists.ozlabs.org, "Vincent Mailhol (Arm)" <mailhol@kernel.org>
+X-Mailer: b4 0.13.0
+X-Developer-Signature: v=1; a=openpgp-sha256; l=8431; i=mailhol@kernel.org;
+ h=from:subject:message-id; bh=QU6cedlzf40aFEFMHAi3oFEJtwf/R3OvK72FIzwtc/c=;
+ b=owGbwMvMwCV2McXO4Xp97WbG02pJDJk7pVvaF++b0PNYl09G4rhpZ5/F95IzPF8ENlalen5lX
+ tdxvoyno5SFQYyLQVZMkWVZOSe3Qkehd9ihv5Ywc1iZQIYwcHEKwEQOCDMyvJL+9Nvo+385B4nm
+ Cy6lJuYqus3+jtGCa5OqhZc35J5iZGToaOwWd/8w895elfePn0w9IhU3K2dRZcenlrOWTzyUps3
+ jAQA=
+X-Developer-Key: i=mailhol@kernel.org; a=openpgp;
+ fpr=ED8F700574E67F20E574E8E2AB5FEB886DBB99C2
 
-Hi Danilo,
+The arm64 defconfig contains several inconsistencies, as shown by the
+following merge_config warnings:
 
-On Tue, 17 Mar 2026 at 00:57, Danilo Krummrich <dakr@kernel.org> wrote:
-> On Tue Mar 3, 2026 at 12:53 PM CET, Danilo Krummrich wrote:
-> > diff --git a/arch/sh/drivers/platform_early.c b/arch/sh/drivers/platform_early.c
-> > index 143747c45206..3cd17bb0be67 100644
-> > --- a/arch/sh/drivers/platform_early.c
-> > +++ b/arch/sh/drivers/platform_early.c
-> > @@ -25,10 +25,12 @@ static int platform_match(struct device *dev, struct device_driver *drv)
-> >  {
-> >       struct platform_device *pdev = to_platform_device(dev);
-> >       struct platform_driver *pdrv = to_platform_driver(drv);
-> > +     int ret;
-> >
-> >       /* When driver_override is set, only bind to the matching driver */
-> > -     if (pdev->driver_override)
-> > -             return !strcmp(pdev->driver_override, drv->name);
-> > +     ret = device_match_driver_override(dev, drv);
-> > +     if (ret >= 0)
-> > +             return ret;
-> >
-> >       /* Then try to match against the id table */
-> >       if (pdrv->id_table)
->
-> I was just about to pick up this series, but then noticed that checking for
-> driver_override in the platform_early case doesn't make sense in the first place
-> and was accidentally added when the platform_match() callback was copied over in
-> commit 507fd01d5333 ("drivers: move the early platform device support to
-> arch/sh").
->
-> Thus, I'm going to drop this hunk and add in the following patch; please let me
-> know if there are any concerns.
->
-> commit 39cae4095efda4b00b436c0fc46f21de84128969
-> Author: Danilo Krummrich <dakr@kernel.org>
-> Date:   Tue Mar 17 00:37:15 2026 +0100
->
->     sh: platform_early: remove pdev->driver_override check
->
->     In commit 507fd01d5333 ("drivers: move the early platform device support to
->     arch/sh") platform_match() was copied over to the sh platform_early
->     code, accidentally including the driver_override check.
->
->     This check does not make sense for platform_early, as sysfs is not even
->     available in first place at this point in the boot process, hence remove
->     the check.
->
->     Fixes: 507fd01d5333 ("drivers: move the early platform device support to arch/sh")
->     Signed-off-by: Danilo Krummrich <dakr@kernel.org>
->
-> diff --git a/arch/sh/drivers/platform_early.c b/arch/sh/drivers/platform_early.c
-> index 143747c45206..48ddbc547bd9 100644
-> --- a/arch/sh/drivers/platform_early.c
-> +++ b/arch/sh/drivers/platform_early.c
-> @@ -26,10 +26,6 @@ static int platform_match(struct device *dev, struct device_driver *drv)
->         struct platform_device *pdev = to_platform_device(dev);
->         struct platform_driver *pdrv = to_platform_driver(drv);
->
-> -       /* When driver_override is set, only bind to the matching driver */
-> -       if (pdev->driver_override)
-> -               return !strcmp(pdev->driver_override, drv->name);
-> -
->         /* Then try to match against the id table */
->         if (pdrv->id_table)
->                 return platform_match_id(pdrv->id_table, pdev) != NULL;
+  $ ARCH=arm64 ./scripts/kconfig/merge_config.sh arch/arm64/configs/defconfig
+  Using arch/arm64/configs/defconfig as base
+  #
+  # configuration written to .config
+  #
+  WARNING: Value requested for CONFIG_NETFILTER_XT_TARGET_CHECKSUM not in final .config
+  Requested value: CONFIG_NETFILTER_XT_TARGET_CHECKSUM=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP_NF_FILTER not in final .config
+  Requested value: CONFIG_IP_NF_FILTER=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP_NF_TARGET_REJECT not in final .config
+  Requested value: CONFIG_IP_NF_TARGET_REJECT=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP_NF_NAT not in final .config
+  Requested value: CONFIG_IP_NF_NAT=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP_NF_TARGET_MASQUERADE not in final .config
+  Requested value: CONFIG_IP_NF_TARGET_MASQUERADE=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP_NF_MANGLE not in final .config
+  Requested value: CONFIG_IP_NF_MANGLE=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP6_NF_FILTER not in final .config
+  Requested value: CONFIG_IP6_NF_FILTER=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP6_NF_TARGET_REJECT not in final .config
+  Requested value: CONFIG_IP6_NF_TARGET_REJECT=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP6_NF_MANGLE not in final .config
+  Requested value: CONFIG_IP6_NF_MANGLE=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP6_NF_NAT not in final .config
+  Requested value: CONFIG_IP6_NF_NAT=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IP6_NF_TARGET_MASQUERADE not in final .config
+  Requested value: CONFIG_IP6_NF_TARGET_MASQUERADE=m
+  Actual value:
+  WARNING: Value requested for CONFIG_SENSORS_SA67MCU not in final .config
+  Requested value: CONFIG_SENSORS_SA67MCU=m
+  Actual value:
+  WARNING: Value requested for CONFIG_FB_MODE_HELPERS not in final .config
+  Requested value: CONFIG_FB_MODE_HELPERS=y
+  Actual value:
+  WARNING: Value requested for CONFIG_SND_SOC_ROCKCHIP not in final .config
+  Requested value: CONFIG_SND_SOC_ROCKCHIP=m
+  Actual value:
+  WARNING: Value requested for CONFIG_IPQ_APSS_5018 not in final .config
+  Requested value: CONFIG_IPQ_APSS_5018=y
+  Actual value:
+  WARNING: Value requested for CONFIG_SLIM_QCOM_CTRL not in final .config
+  Requested value: CONFIG_SLIM_QCOM_CTRL=m
+  Actual value:
+  WARNING: Value requested for CONFIG_NFS_V4_1 not in final .config
+  Requested value: CONFIG_NFS_V4_1=y
+  Actual value:
+  WARNING: CONFIG_CRYPTO_SHA3 differs:
+  Requested value: CONFIG_CRYPTO_SHA3=m
+  Actual value:    CONFIG_CRYPTO_SHA3=y
+  ./scripts/kconfig/merge_config.sh: 384: [: false: unexpected operator
 
-Nice catch!
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The issues fall into several categories:
 
-Gr{oetje,eeting}s,
+  - assignments to removed or renamed configuration symbols.
 
-                        Geert
+  - assignments to symbols that became hidden or internal.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  - assignments that are requested as module (=m) but which have a
+    built-in parent dependency (=y).
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+This series cleans up all those issues. While the focus is the arm64
+defconfig, fixes that apply more broadly are extended treewide.
+
+After applying this series, merge_config.sh runs without warnings on
+the arm64 defconfig. Below script was used to confirm that no symbols
+got inadvertently removed:
+
+  #!/bin/sh
+
+  DIR=$(mktemp -d)
+
+  # Generate conf before this series
+  git checkout $(git merge-base HEAD @{upstream})
+  for arch in arch/*/; do
+      for conf in "$arch"configs/*defconfig; do
+        ARCH=$(basename $arch) \
+        KCONFIG_CONFIG="$DIR/$(basename $arch)_$(basename $conf)_before" \
+            ./scripts/kconfig/merge_config.sh $conf
+      done
+  done
+
+  # Generate conf after this series
+  git checkout -
+  for arch in arch/*/; do
+      for conf in "$arch"configs/*defconfig; do
+        ARCH=$(basename $arch) \
+        KCONFIG_CONFIG="$DIR/$(basename $arch)_$(basename $conf)_after" \
+            ./scripts/kconfig/merge_config.sh $conf
+      done
+  done
+
+  # Compare
+  for arch in arch/*/; do
+      for conf in "$arch"configs/*defconfig; do
+        if diff --unified \
+                "$DIR/$(basename $arch)_$(basename $conf)_before" \
+                "$DIR/$(basename $arch)_$(basename $conf)_after"; then
+            echo "$conf: OK"
+        else
+            echo "$conf: configuration changed"
+        fi
+      done
+  done
+
+Signed-off-by: Vincent Mailhol (Arm) <mailhol@kernel.org>
+---
+Vincent Mailhol (Arm) (9):
+      scripts: kconfig: merge_config.sh: use POSIX '=' in test
+      configs: remove orphan dependencies of NETFILTER_XTABLES_LEGACY
+      configs: remove obsolete assignments to CONFIG_NFS_V4_1
+      configs: remove implicit assignments to FB_MODE_HELPERS
+      arm: configs: remove obsolete assignments to SND_SOC_ROCKCHIP
+      arm64: defconfig: remove implicit assignment to CRYPTO_SHA3
+      arm64: defconfig: remove incorrect assignment to IPQ_APSS_5018
+      arm64: defconfig: remove obsolete assignment to SENSORS_SA67MCU
+      arm64: defconfig: remove obsolete assignment to SLIM_QCOM_CTRL
+
+ arch/alpha/configs/defconfig                |  1 -
+ arch/arm/configs/am200epdkit_defconfig      |  1 -
+ arch/arm/configs/collie_defconfig           |  1 -
+ arch/arm/configs/ep93xx_defconfig           |  1 -
+ arch/arm/configs/exynos_defconfig           |  1 -
+ arch/arm/configs/imx_v6_v7_defconfig        |  2 --
+ arch/arm/configs/ixp4xx_defconfig           |  3 ---
+ arch/arm/configs/keystone_defconfig         |  3 ---
+ arch/arm/configs/lpc18xx_defconfig          |  1 -
+ arch/arm/configs/lpc32xx_defconfig          |  2 --
+ arch/arm/configs/mps2_defconfig             |  1 -
+ arch/arm/configs/multi_v7_defconfig         |  2 --
+ arch/arm/configs/mxs_defconfig              |  1 -
+ arch/arm/configs/omap1_defconfig            |  1 -
+ arch/arm/configs/omap2plus_defconfig        |  1 -
+ arch/arm/configs/shmobile_defconfig         |  1 -
+ arch/arm/configs/spitz_defconfig            |  4 ----
+ arch/arm/configs/wpcm450_defconfig          |  1 -
+ arch/arm64/configs/defconfig                | 18 ------------------
+ arch/loongarch/configs/loongson32_defconfig |  1 -
+ arch/loongarch/configs/loongson64_defconfig |  1 -
+ arch/mips/configs/bmips_stb_defconfig       |  2 --
+ arch/mips/configs/cavium_octeon_defconfig   |  1 -
+ arch/mips/configs/db1xxx_defconfig          |  1 -
+ arch/mips/configs/eyeq5_defconfig           |  1 -
+ arch/mips/configs/eyeq6_defconfig           |  1 -
+ arch/mips/configs/fuloong2e_defconfig       |  3 ---
+ arch/mips/configs/generic_defconfig         |  1 -
+ arch/mips/configs/gpr_defconfig             |  3 ---
+ arch/mips/configs/ip22_defconfig            |  6 ------
+ arch/mips/configs/lemote2f_defconfig        |  1 -
+ arch/mips/configs/loongson2k_defconfig      |  3 ---
+ arch/mips/configs/loongson3_defconfig       | 11 -----------
+ arch/mips/configs/malta_defconfig           |  6 ------
+ arch/mips/configs/malta_kvm_defconfig       |  6 ------
+ arch/mips/configs/maltaup_xpa_defconfig     |  6 ------
+ arch/mips/configs/mtx1_defconfig            |  6 ------
+ arch/mips/configs/rb532_defconfig           |  3 ---
+ arch/mips/configs/rm200_defconfig           |  6 ------
+ arch/mips/configs/rt305x_defconfig          |  3 ---
+ arch/mips/configs/xway_defconfig            |  3 ---
+ arch/parisc/configs/generic-64bit_defconfig |  1 -
+ arch/powerpc/configs/85xx/stx_gp3_defconfig |  1 -
+ arch/powerpc/configs/cell_defconfig         |  3 ---
+ arch/powerpc/configs/linkstation_defconfig  |  3 ---
+ arch/powerpc/configs/mvme5100_defconfig     |  3 ---
+ arch/powerpc/configs/pmac32_defconfig       |  3 ---
+ arch/powerpc/configs/ppc6xx_defconfig       |  6 ------
+ arch/riscv/configs/defconfig                |  9 ---------
+ arch/sh/configs/titan_defconfig             |  6 ------
+ arch/x86/configs/i386_defconfig             |  7 -------
+ arch/x86/configs/x86_64_defconfig           |  7 -------
+ arch/xtensa/configs/virt_defconfig          |  1 -
+ scripts/kconfig/merge_config.sh             |  2 +-
+ 54 files changed, 1 insertion(+), 172 deletions(-)
+---
+base-commit: f338e77383789c0cae23ca3d48adcc5e9e137e3c
+change-id: 20260312-arm_defconf_cleanup-cd17f4ba989d
+
+Best regards,
+-- 
+Vincent Mailhol (Arm) <mailhol@kernel.org>
+
