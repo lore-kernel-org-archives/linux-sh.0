@@ -1,162 +1,115 @@
-Received: from mail-ed1-f44.google.com (mail-ed1-f44.google.com [209.85.208.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtpbgeu2.qq.com (smtpbgeu2.qq.com [18.194.254.142])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB31636D50B
-	for <linux-sh@vger.kernel.org>; Thu, 19 Mar 2026 14:28:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.44
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1773930484; cv=pass; b=hmPuCnGPAh8INQ3YUrdxXCBH9q4/UOdrIzRYw9vEHaw7xiUEW/yv9TarUzJsfvr37rpvIcRiG79Et9W9Vw7b3Aly/VH/caAk9hiUY4PjL2B9QBkllTZTMTIk12YAtF5rEusW7qAlsyo8vTHuNy84ccwyzp1lDmWhcKYnAW6s8Lg=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1773930484; c=relaxed/simple;
-	bh=x6wZk7AvpBRTPYt5th9R3ycT2p5XdAgtnR98fAb1EOE=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=EXna/wBdy4eBxFf1JLy4UFyJtgEtLV6abAxXicPEixGUZBavhqcd6R9jMhNXFvoB5uW9sxYrdAQGpcI2avEbuQyPooz/cWHZtu9MRz69+ICzSzGUCCPWCO2dirVkTof2I0JKhg1u1ZdeyvGaUABCdvkZTuFSDc1wEITD8RgB4sc=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=kcCKrhoY; arc=pass smtp.client-ip=209.85.208.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9C8536C5B3
+	for <linux-sh@vger.kernel.org>; Sat, 21 Mar 2026 10:59:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=18.194.254.142
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1774090768; cv=none; b=T3r57SrOJfOFbZ0KTGQtJFNJ0GBE3YbhDGLMzq0147ifFr1PPzYItj/xvkKin7y/pEH4bsFsChZZgXx32PEr8f9ME1r0VbsJFaixhdCPjA9IrJRAHYwjvKI5kpTODa3LH8a8pXAykQuV1lBhtyKpeu9til1DpbHVO3eEHua4im8=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1774090768; c=relaxed/simple;
+	bh=Caf6TQDvga2gI14s4bnJtzSZvEQ3Ue62kQfVOs6T/Xw=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=YBStLei++ryVxzkRXBXhiM1fkaRoFhZG9WmtQJKmFPA6S6Gy3uqKDIoNOFs8QyTUJUV+ecULojG6QoOiPoiM3lQkpTg9RAUsjQheML0fcWeOBKwvMPF1brJd1fgLlgsDiKq1r7M3hkHPvUt/HnaGssRtvCj4h1seQKqblA8ePWY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=smail.nju.edu.cn; spf=pass smtp.mailfrom=smail.nju.edu.cn; dkim=pass (1024-bit key) header.d=smail.nju.edu.cn header.i=@smail.nju.edu.cn header.b=zhq5Tzme; arc=none smtp.client-ip=18.194.254.142
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=smail.nju.edu.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=smail.nju.edu.cn
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="kcCKrhoY"
-Received: by mail-ed1-f44.google.com with SMTP id 4fb4d7f45d1cf-662b5bf4b10so2003305a12.1
-        for <linux-sh@vger.kernel.org>; Thu, 19 Mar 2026 07:28:00 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1773930479; cv=none;
-        d=google.com; s=arc-20240605;
-        b=ig/XQ4tb6c8zrOuR2i4qUB8Dw+nrO9S1Mmu0Xyz3GZ5nE4tNaRW+G49pP2FsOEgO8+
-         F5GPKZ4cg0CRe1q3TUN8a/fUbz6aSqY6WG7e9FZ7KpVBSu/HCm1OtPhP6oT4GrwS+dHw
-         jNrBo/TZU4logt6mZaAFGZwgrE/7k4KZTmwvnN0OuqnY1/Zx+YrZ3flX4GZ4JfNZ9xTw
-         P0pnBzyJPKQ7Mir9eHtkoA+H/CtT7gPB75hD+IJf3kBAnW/ITlz8BDsWKBlQytg+g6e0
-         jMe2v3Y+Xj58DQP3hhMNEJVua6WYc9g4gRKlZPP9qrR/TXUa1dmr5Pp0NNS4XIAenTBq
-         nmhQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=wEYdsi/UQnV1ulkUEVFM3uerucLpRLXH0M0xgNStZdI=;
-        fh=vHG+qMhqI0eWa0UKa8nkk8OBQmRYBiXYqwLqRIEIoUs=;
-        b=hQDdJ7zljRYAUwGcfFhgyAYwHXfIkY+5CtvdA2dFTnarIPIquBMJgL49Cr6UCYqAYV
-         aGpp2NTx0Plh7LvRFl8clSWS3Os1Z/7WYhsjjbHa9IPAzfkDqGlkYPlQpSaerdnAcxZZ
-         PIQzjXg0l8AIgMNt0zKcZUsbu66oSS4wzGNq8heYiBYdNqeISeHC/vmDJKrjRG36Erg7
-         IzAIrAbCbXRY+Il6gST9MXa/P6yyrbk/MdYoLscYttrJYmlKAMaMuZM7X8P70KV3jEsM
-         vExqPb+1Mv7qJqVq9su1VH+KllRkgtfCpgab6u3Jv5IX2FYSJA2pSUw7ECnPOBuEYumc
-         lWqg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1773930479; x=1774535279; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=wEYdsi/UQnV1ulkUEVFM3uerucLpRLXH0M0xgNStZdI=;
-        b=kcCKrhoYX+8CZszcDQbuZD6T4DnxTVx1KFlZ0Jph2pEsT7DV9Mnj1YT1bYrXCuAa+S
-         hpDAfQ1xXxUjFpI++GUXCzaWS1y6BSStTwjGD+OnOBciNoZ7Xp1VqamSGoaSAqSZ1u5R
-         945g+zKdeorBhg1AKG/Bb90H6R2LtDirpwrPvj5Oh9WzuAiCQSN2EnknkZHTKsbab/zB
-         fnD79VSfUGwENxCYTTrjL7dnOT3K9jltAF8JDxfu2vpVHutMN4ta0fP0qdP80PoqOA/o
-         HPeL/1Ukubwi4cdQoCwu31uFJ5Bte1R3lZPg/JzllRmeny1zCPKEmeQumCaUrIAZcRJw
-         +4tw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1773930479; x=1774535279;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=wEYdsi/UQnV1ulkUEVFM3uerucLpRLXH0M0xgNStZdI=;
-        b=kK0lhiIm8hxlVs9V7yRuTynMxXtk/emncDUVRN7dUDF4wgV57/MziXmROFsyqGYk3p
-         idHI/+HxPtvRXy8j6rvT8H1Ry3lggqHIGSbQXZPin7LixpcTEJIAtNJhcv9f7QiAAVsj
-         EZomqn7WPAN43kRrrATV0ZcfpZk4fGDwfAU1zefqimH+U9qNFQo84DtMjMGIIS+JsgR+
-         4wQuD0e/9Dfma5prY7pWIYnDA8u1JE4PtJXcjJ8B0Mi/ov0ONas8ImZi9wuxsb+jgM60
-         n5EVswm+uXc2ZXtavDbd5684vsaraQ1mjAwoTKw2TTTyHUD4gNZAPXzqsIFB3JW7Grot
-         PktA==
-X-Forwarded-Encrypted: i=1; AJvYcCXyzxA7+utvXziDQJwBx27mGvkWmELKXfU7PSlrbV4mqjvAHvf51mx9BY2pljtISoAv+vuxvi4I6w==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwfU6T5y6K/ImbuugZ4wbITWTV9FxJwDzJZgjnCThD7tVJoQiLC
-	84KJu8Exu8IY/lIcdyMbbgeLlCsc5R9vnyRXqMVQQ9IM8HS4XIM7TpMt9LGhONlF/YEAswYlE5s
-	JdbKWyARqsRdkQZCtvl45l9pvyr46dvc=
-X-Gm-Gg: ATEYQzz6YJ8A0eNSyYOsYYcr4+TfTOr50fdiEV0b4691fS661+Nj9TJRoD81YGaxK5p
-	blgiv6UxpHsarftIP1xbML+Qjq7ikM7CD3j2rGhIby3yWhdpMwIflRxDx0b+1tUOeMVi08NfUAI
-	c9YdWG/EvAocauN9It0/Bt7PVtdlh/bAwocMeyqMCBidopXWbtySN5Ivb3KXFd3CHNbuz0ex4Je
-	DKsVayv54IN7DLawd4cbxEr6Y2Drs/+hwT52S0xff45R442rU8mDHl4CWZ13A76fTZCmaLPDdSk
-	3jgSA1AxWw==
-X-Received: by 2002:a17:906:ee83:b0:b96:db93:5d0e with SMTP id
- a640c23a62f3a-b97f4ab7799mr545864466b.41.1773930478856; Thu, 19 Mar 2026
- 07:27:58 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=smail.nju.edu.cn header.i=@smail.nju.edu.cn header.b="zhq5Tzme"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=smail.nju.edu.cn;
+	s=iohv2404; t=1774090762;
+	bh=OOX7PrBi+MPnA/I/2kiIoL+PzEZ997dSYiKk42mOm9Q=;
+	h=From:To:Subject:Date:Message-Id:MIME-Version;
+	b=zhq5TzmefVIT+S7d7fFFm4wCy30/QIsDDQTGkhDymXr7oOoR5SXvZ4N+dALxn+t1T
+	 00Bzsi0u1eDV4HrdVRBrYzU6cQicub64Ifui+kyE9VYB3Qcf0jTJzkcVAd6C6UZOm+
+	 RO40hJwjXlA+ookweuRhjZxC71yLdClcNCOcLCB4=
+X-QQ-mid: esmtpsz20t1774090760t50d08972
+X-QQ-Originating-IP: lhjHYwalPvcWDH1aePlL6hCiCB08mOFwj1IFl3ymZyM=
+Received: from localhost.localdomain ( [116.172.93.199])
+	by bizesmtp.qq.com (ESMTP) with 
+	id ; Sat, 21 Mar 2026 18:59:18 +0800 (CST)
+X-QQ-SSF: 0000000000000000000000000000000
+X-QQ-GoodBg: 0
+X-BIZMAIL-ID: 7265402500091038811
+EX-QQ-RecipientCnt: 12
+From: Kexin Sun <kexinsun@smail.nju.edu.cn>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	rppt@kernel.org,
+	akpm@linux-foundation.org,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Cc: julia.lawall@inria.fr,
+	xutong.ma@inria.fr,
+	kexinsun@smail.nju.edu.cn,
+	yunbolyu@smu.edu.sg,
+	ratnadiraw@smu.edu.sg
+Subject: [PATCH] sh: update outdated reference to init_bootmem()
+Date: Sat, 21 Mar 2026 18:59:17 +0800
+Message-Id: <20260321105917.7890-1-kexinsun@smail.nju.edu.cn>
+X-Mailer: git-send-email 2.25.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260302-at-vector-size-arch-v1-0-a11f03ba2ca8@linutronix.de> <20260302-at-vector-size-arch-v1-7-a11f03ba2ca8@linutronix.de>
-In-Reply-To: <20260302-at-vector-size-arch-v1-7-a11f03ba2ca8@linutronix.de>
-From: Andy Chiu <andybnac@gmail.com>
-Date: Thu, 19 Mar 2026 09:27:47 -0500
-X-Gm-Features: AaiRm52wQD6uRKulnt1Y_ioaRFL-b1bqEKDLHZMA0LYwV13CAWHAV79Bf5laR-o
-Message-ID: <CAFTtA3O74BTJz8d87CJFQpa8Sub_ouKyyAB8cTXUxd=BnUzS7Q@mail.gmail.com>
-Subject: Re: [PATCH 07/15] RISC-V: Remove AT_VECTOR_SIZE_ARCH from UAPI
-To: =?UTF-8?Q?Thomas_Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
-Cc: Kees Cook <kees@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-mm@kvack.org, 
-	linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, 
-	linux-arm-kernel@lists.infradead.org, linux-riscv@lists.infradead.org, 
-	loongarch@lists.linux.dev, linux-s390@vger.kernel.org, 
-	linuxppc-dev@lists.ozlabs.org, linux-mips@vger.kernel.org, 
-	sparclinux@vger.kernel.org, linux-sh@vger.kernel.org, 
-	linux-alpha@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-QQ-SENDSIZE: 520
+Feedback-ID: esmtpsz:smail.nju.edu.cn:qybglogicsvrgz:qybglogicsvrgz5b-0
+X-QQ-XMAILINFO: NWbLsQpranWgJeQg4wBc2K7qEJINiAO3nYTxxcuBhoimolYS9jG5yjpG
+	GlQFPPmDsjK0dAdPHSvs4UQpe8sUkXnHYnHwOiph8wIqcvAk1V87TDh5nxi4E1Ht9H176RD
+	P4LHJeMSuv1TpiWTV54kZr1+u0vfQzCvR9biBy8gA0UPQnbwsjVZgziunUg0m1VvQAGq4qU
+	jR2E3MqYehXcZ1ypUHQ12j+fmHCrQAvXl1THYBtRy8gLzeebd/Qyf15WpHb4qnvuTdD7Peb
+	sF+phFKyl+VW6hs0s3hD+EFuEUg6vcVhhjFtHdibGB0jHFKWA23mkdzcYSP22KJxLQiWyAe
+	/wuTIgrWdggZEKSClnmWxmxOUTNlg3f0wMFbebsWd1MNkiDNERrEL6Lw7q7lHjU4+gDRsxA
+	8PCrhlODlgZETQjcBpgOjLtS41Hy16JIf+MGcQ6U8aZgW9vkpz3ZzQd6fb36DAT0qrxgjdg
+	jEICrwnPSlC0bIbuksZE27agL4BcNyLVqYSUZNxVYahh3m76tRgXSYWOdDd0KWtNIjkfQ9S
+	6Y4fXEWNgd7Kd6idu7Z3UDPD3Zj2v/4Q2YhIyLVLvNMtU+PhXaWlbVzIVZ1k9zvw9LcqxOv
+	X1tmoD332PL+M4Og8n/GiMXrKtCeDy0jNIa9BGfjU+gOOyv+vgyKWhPgg1MgQqD9yd5/6HJ
+	400spXGP5htEhpDp/hSyoxJS3eeLjSggfG1erxWBtJJhZZcs0HLqycjTcGGKwIDjOO5bhHD
+	NH7hRwNizn1ZWTMaBrYUEeik13GbUvDGSUS/WoWUpOLRk2mq4xXcePlD40goxEQmU44Srt8
+	ynIH1YIeUU4IKDaxWkPJ1T8kz4Avl3SI3xWyomho3vDWgmA6LP02FFk8/BRuO9mmEkX/wsz
+	PZwH9hjyxBJFoCnBatCpupSAOBbQ02AtNiFM7ar+H0AjF8ZwTHSxpy24Igs1x7ScmQEGyQ8
+	KS37gIOnSjn+mcs82myqqU+RsF0W3rDVUkFUTzYWXvq469nORbgE09K5hS7h+UhEEX+Fhzx
+	MhbpG1v57aGcoooi9rGxK51YrA0RDkDwSexBP5T58daBKliMimbB5NQrsenm7dlIH+noU6k
+	LCibNCizsrbYUH9iuKfadc=
+X-QQ-XMRINFO: Mp0Kj//9VHAxzExpfF+O8yhSrljjwrznVg==
+X-QQ-RECHKSPAM: 0
 
-On Mon, Mar 2, 2026 at 6:27=E2=80=AFAM Thomas Wei=C3=9Fschuh
-<thomas.weissschuh@linutronix.de> wrote:
->
-> There is nothing userspace can do with this value. In the kernel is
-> always combined with AT_VECTOR_SIZE_BASE, which is not exposed to
-> userspace and also changes from time to time.
->
-> Move the symbol to a kernel-internal header.
->
-> Signed-off-by: Thomas Wei=C3=9Fschuh <thomas.weissschuh@linutronix.de>
+The bootmem allocator was replaced by memblock in commit
+355c45affca7 ("mm: remove bootmem allocator implementation.")
+and init_bootmem() no longer exists.  The comment in
+early_reserve_mem() still describes a two-step bootmem
+validation that no longer applies: the reservation is now a
+single memblock_reserve() call.  Rewrite the comment to
+describe what the reservation actually covers.
 
-Reviewed-by: Andy Chiu <andybnac@gmail.com>
+Assisted-by: unnamed:deepseek-v3.2 coccinelle
+Signed-off-by: Kexin Sun <kexinsun@smail.nju.edu.cn>
+---
+ arch/sh/mm/init.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-> ---
->  arch/riscv/include/asm/auxvec.h      | 13 +++++++++++++
->  arch/riscv/include/uapi/asm/auxvec.h |  2 --
->  2 files changed, 13 insertions(+), 2 deletions(-)
->
-> diff --git a/arch/riscv/include/asm/auxvec.h b/arch/riscv/include/asm/aux=
-vec.h
-> new file mode 100644
-> index 000000000000..fb4233445276
-> --- /dev/null
-> +++ b/arch/riscv/include/asm/auxvec.h
-> @@ -0,0 +1,13 @@
-> +/* SPDX-License-Identifier: GPL-2.0-only */
-> +/*
-> + * Copyright (C) 2012 ARM Ltd.
-> + * Copyright (C) 2015 Regents of the University of California
-> + */
-> +
-> +#ifndef _ASM_RISCV_AUXVEC_H
-> +#define _ASM_RISCV_AUXVEC_H
-> +
-> +/* entries in ARCH_DLINFO */
-> +#define AT_VECTOR_SIZE_ARCH    10
-> +
-> +#endif /* _UAPI_ASM_RISCV_AUXVEC_H */
-> diff --git a/arch/riscv/include/uapi/asm/auxvec.h b/arch/riscv/include/ua=
-pi/asm/auxvec.h
-> index 95050ebe9ad0..0a725f2aa2e7 100644
-> --- a/arch/riscv/include/uapi/asm/auxvec.h
-> +++ b/arch/riscv/include/uapi/asm/auxvec.h
-> @@ -33,8 +33,6 @@
->  #define AT_L3_CACHESIZE                46
->  #define AT_L3_CACHEGEOMETRY    47
->
-> -/* entries in ARCH_DLINFO */
-> -#define AT_VECTOR_SIZE_ARCH    10
->  #define AT_MINSIGSTKSZ         51
->
->  #endif /* _UAPI_ASM_RISCV_AUXVEC_H */
->
-> --
-> 2.53.0
->
->
-> _______________________________________________
-> linux-riscv mailing list
-> linux-riscv@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-riscv
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 464a3a63e2fa..c008db3d422e 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -242,10 +242,10 @@ static void __init early_reserve_mem(void)
+ 	start_pfn = PFN_UP(__pa(_end));
+ 
+ 	/*
+-	 * Reserve the kernel text and Reserve the bootmem bitmap. We do
+-	 * this in two steps (first step was init_bootmem()), because
+-	 * this catches the (definitely buggy) case of us accidentally
+-	 * initializing the bootmem allocator with an invalid RAM area.
++	 * Use memblock_reserve() to protect the kernel image (text
++	 * through bss).  The start address accounts for the zero-page
++	 * offset configured by the platform; the size is rounded up
++	 * past _end.
+ 	 */
+ 	memblock_reserve(start, (PFN_PHYS(start_pfn) + PAGE_SIZE - 1) - start);
+ 
+-- 
+2.25.1
+
