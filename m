@@ -1,53 +1,75 @@
-Received: from smtpbgeu2.qq.com (smtpbgeu2.qq.com [18.194.254.142])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f173.google.com (mail-pl1-f173.google.com [209.85.214.173])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9C8536C5B3
-	for <linux-sh@vger.kernel.org>; Sat, 21 Mar 2026 10:59:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=18.194.254.142
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A5143ACA68
+	for <linux-sh@vger.kernel.org>; Mon, 23 Mar 2026 13:55:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774090768; cv=none; b=T3r57SrOJfOFbZ0KTGQtJFNJ0GBE3YbhDGLMzq0147ifFr1PPzYItj/xvkKin7y/pEH4bsFsChZZgXx32PEr8f9ME1r0VbsJFaixhdCPjA9IrJRAHYwjvKI5kpTODa3LH8a8pXAykQuV1lBhtyKpeu9til1DpbHVO3eEHua4im8=
+	t=1774274155; cv=none; b=c1o1JOrfQPIo8/rPe8Dbe/ZtLjUBOjhz4J+jmogh7ZEwIqebxRzRkbl80hcMPB3/O6UDr+h3LQjw2S5Xm3LfqqTVEAnEXWQbC4iV0S7k2SQS1S9wg3X+K3VyuvDJYHxDvBPdvAXqC6K+AZGL/UADoCrRWiLINoOsvyjKTQlDmVI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774090768; c=relaxed/simple;
-	bh=Caf6TQDvga2gI14s4bnJtzSZvEQ3Ue62kQfVOs6T/Xw=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=YBStLei++ryVxzkRXBXhiM1fkaRoFhZG9WmtQJKmFPA6S6Gy3uqKDIoNOFs8QyTUJUV+ecULojG6QoOiPoiM3lQkpTg9RAUsjQheML0fcWeOBKwvMPF1brJd1fgLlgsDiKq1r7M3hkHPvUt/HnaGssRtvCj4h1seQKqblA8ePWY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=smail.nju.edu.cn; spf=pass smtp.mailfrom=smail.nju.edu.cn; dkim=pass (1024-bit key) header.d=smail.nju.edu.cn header.i=@smail.nju.edu.cn header.b=zhq5Tzme; arc=none smtp.client-ip=18.194.254.142
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=smail.nju.edu.cn
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=smail.nju.edu.cn
+	s=arc-20240116; t=1774274155; c=relaxed/simple;
+	bh=ptUbi7coE8TiCTgvjCOJdhXmMm9zZV1RIxnNmpsvNUY=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=jLuySRahDniJUe+ZXZjgjfyC479FGiQCUlk2dS9rBC0HdRvxgZOAqJJ254yS4pvgQU4MZaa0MvVhaZyvDTQX31WKh5glFEEV3gMPoLY5TM3Zoc9f8yobNxOKFWGwYJTGvqmhDfOW2HSUTwwCN5xPAUEvMJBbkiwrFpoFnUkKIAg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=SFjIkSLb; arc=none smtp.client-ip=209.85.214.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=smail.nju.edu.cn header.i=@smail.nju.edu.cn header.b="zhq5Tzme"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=smail.nju.edu.cn;
-	s=iohv2404; t=1774090762;
-	bh=OOX7PrBi+MPnA/I/2kiIoL+PzEZ997dSYiKk42mOm9Q=;
-	h=From:To:Subject:Date:Message-Id:MIME-Version;
-	b=zhq5TzmefVIT+S7d7fFFm4wCy30/QIsDDQTGkhDymXr7oOoR5SXvZ4N+dALxn+t1T
-	 00Bzsi0u1eDV4HrdVRBrYzU6cQicub64Ifui+kyE9VYB3Qcf0jTJzkcVAd6C6UZOm+
-	 RO40hJwjXlA+ookweuRhjZxC71yLdClcNCOcLCB4=
-X-QQ-mid: esmtpsz20t1774090760t50d08972
-X-QQ-Originating-IP: lhjHYwalPvcWDH1aePlL6hCiCB08mOFwj1IFl3ymZyM=
-Received: from localhost.localdomain ( [116.172.93.199])
-	by bizesmtp.qq.com (ESMTP) with 
-	id ; Sat, 21 Mar 2026 18:59:18 +0800 (CST)
-X-QQ-SSF: 0000000000000000000000000000000
-X-QQ-GoodBg: 0
-X-BIZMAIL-ID: 7265402500091038811
-EX-QQ-RecipientCnt: 12
-From: Kexin Sun <kexinsun@smail.nju.edu.cn>
-To: ysato@users.sourceforge.jp,
-	dalias@libc.org,
-	glaubitz@physik.fu-berlin.de,
-	rppt@kernel.org,
-	akpm@linux-foundation.org,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SFjIkSLb"
+Received: by mail-pl1-f173.google.com with SMTP id d9443c01a7336-2ad21f437eeso37606645ad.0
+        for <linux-sh@vger.kernel.org>; Mon, 23 Mar 2026 06:55:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1774274153; x=1774878953; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=gX403DU43tnkaleCen3mlLyVekGcaUJRBonPOPbGQtY=;
+        b=SFjIkSLb6hCeV6O6C0rMZn9Ic10VRNRaECLQK/c2sn6NWaZgQUEKdAr406SoSmeybA
+         4ZrkRBXuiQ68yXXDuqeCt6gYZ3oDHRaZuTr8nWD7xfJxBhEs5cgfXXwvGWnbdUJpBZFi
+         Uv3x7AxkMJPm1VB+SlWCjugJVtQNqXphz9NU34oCJ/jFtP4LD1f9a0jt3rfQQ0ryXLhR
+         vKAHVsMEMtn6CVqM42/umHMRZQYtU+nKOjoWchw/3RFy5zIQJTkWPsRc0Ya0LKOxueGX
+         JzBcQS9q5j5oNnEZbErXiOZulbOrdZ114gyYzpIe0TdEVxtKFOSaJBIYEE1GlnwMzPym
+         jAFQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1774274153; x=1774878953;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=gX403DU43tnkaleCen3mlLyVekGcaUJRBonPOPbGQtY=;
+        b=k92Tnx4zCOlwZ7aF9swE3cBYyyHE4We5kHgB4f8eKfGqvVEn/gjqS2TkKNRuBWYwbA
+         64Ec8PzKb525x/qDHE3C5xyuqfGp+OQHNONKhvdPbl11ZZ0HF6HDI3Kw78S3hRLYrd1l
+         Kuh6ymKomgaVgm/DA4UEOwUY7CCtrp74uFa7/TwcnKFihpVhf6NsqfGyCPkwB/EWBeRI
+         lzFKjW+GmbxcTWauePazzPzUeSdsn2y3frGG0IcaoE0qeOoIol8GdD3MJFXwPj56lq29
+         6UAzktKm39SyGRiR+C2Ukw9AAbsLEK0TnN1VFftsCRs4z+Eo6UBhdzFkocYO9A16aA3Z
+         4P3A==
+X-Forwarded-Encrypted: i=1; AJvYcCXsw8igIBdSkJCzP6fZ8DtbHkKhqcgTmY2fjc93XyfXoV+wanHF2qLbsemaZ4h1jfo7MTOm0BcYxg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YydUyCnSPDrXS51HSt1r3Iih9++922pKXUnQENfoa6X7MWIu6B4
+	ZFAvvyZSHnYZuzRdoAe3Mu5FubfaGKB9tDNE/1hQx8MUzBPmAwKvGPXl
+X-Gm-Gg: ATEYQzztTR662haVI06IUhCm6JZ6GbRup1R6xct7RfkmxIKDHcPTaTbI8yrXUHqivEl
+	kx5kRMwnV35YEWso1cEeL2MOpYSn5G7jl/1H3zZ0rHVN9vaTwoUqQVxubSJxnizp/1nNRa2Y81c
+	TvSI/LCK3m2A5oKq2oFefaSH323xH0FFbjSf6VyJRwCw3h7M6Q+ZAyhgv/3L5ZLWqZK9phI5hA1
+	8ZCPPF9V24iK4aA4tkXnUpa4kmjENFmc86X1dlzi6caycNpiPFa7G2KjM9qyMk2csRXX49Wvf23
+	z0l2DBP+rDS9Zl6m1TEJOPOk6xpg0/33z7U6eyVcfet9iu9Ty+nqtIXBxZ7S9yNmhsLa3c5XDtW
+	mpO5e/ITXs72uaMV11wnss0RUBW92Ka5aPCQ33DwNLZpczcFP8pWXm80tXVPAx960/obqds2TZL
+	fg5o0DY63npeMIsTPS50Ze
+X-Received: by 2002:a17:902:db12:b0:2ae:7f85:33d1 with SMTP id d9443c01a7336-2b082636715mr116185785ad.0.1774274153320;
+        Mon, 23 Mar 2026 06:55:53 -0700 (PDT)
+Received: from lgs.. ([223.80.110.53])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b083527f90sm108967095ad.19.2026.03.23.06.55.50
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 23 Mar 2026 06:55:53 -0700 (PDT)
+From: Guangshuo Li <lgs201920130244@gmail.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Guangshuo Li <lgs201920130244@gmail.com>,
+	Adrian McMenamin <adrian@newgolddream.dyndns.info>,
+	Paul Mundt <lethal@linux-sh.org>,
 	linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Cc: julia.lawall@inria.fr,
-	xutong.ma@inria.fr,
-	kexinsun@smail.nju.edu.cn,
-	yunbolyu@smu.edu.sg,
-	ratnadiraw@smu.edu.sg
-Subject: [PATCH] sh: update outdated reference to init_bootmem()
-Date: Sat, 21 Mar 2026 18:59:17 +0800
-Message-Id: <20260321105917.7890-1-kexinsun@smail.nju.edu.cn>
-X-Mailer: git-send-email 2.25.1
+Cc: stable@vger.kernel.org
+Subject: [PATCH] maple: Fix refcount leak in maple_attach_driver() error path
+Date: Mon, 23 Mar 2026 21:55:40 +0800
+Message-ID: <20260323135540.922928-1-lgs201920130244@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -55,61 +77,40 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-QQ-SENDSIZE: 520
-Feedback-ID: esmtpsz:smail.nju.edu.cn:qybglogicsvrgz:qybglogicsvrgz5b-0
-X-QQ-XMAILINFO: NWbLsQpranWgJeQg4wBc2K7qEJINiAO3nYTxxcuBhoimolYS9jG5yjpG
-	GlQFPPmDsjK0dAdPHSvs4UQpe8sUkXnHYnHwOiph8wIqcvAk1V87TDh5nxi4E1Ht9H176RD
-	P4LHJeMSuv1TpiWTV54kZr1+u0vfQzCvR9biBy8gA0UPQnbwsjVZgziunUg0m1VvQAGq4qU
-	jR2E3MqYehXcZ1ypUHQ12j+fmHCrQAvXl1THYBtRy8gLzeebd/Qyf15WpHb4qnvuTdD7Peb
-	sF+phFKyl+VW6hs0s3hD+EFuEUg6vcVhhjFtHdibGB0jHFKWA23mkdzcYSP22KJxLQiWyAe
-	/wuTIgrWdggZEKSClnmWxmxOUTNlg3f0wMFbebsWd1MNkiDNERrEL6Lw7q7lHjU4+gDRsxA
-	8PCrhlODlgZETQjcBpgOjLtS41Hy16JIf+MGcQ6U8aZgW9vkpz3ZzQd6fb36DAT0qrxgjdg
-	jEICrwnPSlC0bIbuksZE27agL4BcNyLVqYSUZNxVYahh3m76tRgXSYWOdDd0KWtNIjkfQ9S
-	6Y4fXEWNgd7Kd6idu7Z3UDPD3Zj2v/4Q2YhIyLVLvNMtU+PhXaWlbVzIVZ1k9zvw9LcqxOv
-	X1tmoD332PL+M4Og8n/GiMXrKtCeDy0jNIa9BGfjU+gOOyv+vgyKWhPgg1MgQqD9yd5/6HJ
-	400spXGP5htEhpDp/hSyoxJS3eeLjSggfG1erxWBtJJhZZcs0HLqycjTcGGKwIDjOO5bhHD
-	NH7hRwNizn1ZWTMaBrYUEeik13GbUvDGSUS/WoWUpOLRk2mq4xXcePlD40goxEQmU44Srt8
-	ynIH1YIeUU4IKDaxWkPJ1T8kz4Avl3SI3xWyomho3vDWgmA6LP02FFk8/BRuO9mmEkX/wsz
-	PZwH9hjyxBJFoCnBatCpupSAOBbQ02AtNiFM7ar+H0AjF8ZwTHSxpy24Igs1x7ScmQEGyQ8
-	KS37gIOnSjn+mcs82myqqU+RsF0W3rDVUkFUTzYWXvq469nORbgE09K5hS7h+UhEEX+Fhzx
-	MhbpG1v57aGcoooi9rGxK51YrA0RDkDwSexBP5T58daBKliMimbB5NQrsenm7dlIH+noU6k
-	LCibNCizsrbYUH9iuKfadc=
-X-QQ-XMRINFO: Mp0Kj//9VHAxzExpfF+O8yhSrljjwrznVg==
-X-QQ-RECHKSPAM: 0
 
-The bootmem allocator was replaced by memblock in commit
-355c45affca7 ("mm: remove bootmem allocator implementation.")
-and init_bootmem() no longer exists.  The comment in
-early_reserve_mem() still describes a two-step bootmem
-validation that no longer applies: the reservation is now a
-single memblock_reserve() call.  Rewrite the comment to
-describe what the reservation actually covers.
+As device_register() calls device_initialize() before device_add(), the
+failure path in maple_attach_driver() is reached after the embedded
+struct device has already been initialized and its lifetime is expected
+to be managed through the device core reference counting. However, that
+path frees mdev and its associated resources directly via
+maple_free_dev(), rather than releasing them through put_device() and
+the normal release path. This may leave the reference count of the
+embedded struct device unbalanced, resulting in a refcount leak and
+potentially leading to a use-after-free.
 
-Assisted-by: unnamed:deepseek-v3.2 coccinelle
-Signed-off-by: Kexin Sun <kexinsun@smail.nju.edu.cn>
+A possible fix would be to use put_device() in the error path and let
+maple_release_device() handle the final cleanup.
+
+Fixes: b3c69e248176 ("maple: more robust device detection.")
+Cc: stable@vger.kernel.org
+Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
 ---
- arch/sh/mm/init.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/sh/maple/maple.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 464a3a63e2fa..c008db3d422e 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -242,10 +242,10 @@ static void __init early_reserve_mem(void)
- 	start_pfn = PFN_UP(__pa(_end));
- 
- 	/*
--	 * Reserve the kernel text and Reserve the bootmem bitmap. We do
--	 * this in two steps (first step was init_bootmem()), because
--	 * this catches the (definitely buggy) case of us accidentally
--	 * initializing the bootmem allocator with an invalid RAM area.
-+	 * Use memblock_reserve() to protect the kernel image (text
-+	 * through bss).  The start address accounts for the zero-page
-+	 * offset configured by the platform; the size is rounded up
-+	 * past _end.
- 	 */
- 	memblock_reserve(start, (PFN_PHYS(start_pfn) + PAGE_SIZE - 1) - start);
- 
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 6dc0549f7900..20b7c2cd852b 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -393,7 +393,7 @@ static void maple_attach_driver(struct maple_device *mdev)
+ 		dev_warn(&mdev->dev, "could not register device at"
+ 			" (%d, %d), with error 0x%X\n", mdev->unit,
+ 			mdev->port, error);
+-		maple_free_dev(mdev);
++		put_device(&mdev->dev);
+ 		mdev = NULL;
+ 		return;
+ 	}
 -- 
-2.25.1
+2.43.0
 
