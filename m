@@ -1,247 +1,109 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-ua1-f47.google.com (mail-ua1-f47.google.com [209.85.222.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FF663C1995
-	for <linux-sh@vger.kernel.org>; Wed,  1 Apr 2026 08:54:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F0543C6A36
+	for <linux-sh@vger.kernel.org>; Wed,  1 Apr 2026 08:55:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775033645; cv=none; b=RUyrWvJ0duEp8uI6GLwzoSgj0ehCVfYFLiS2l4VY5Q9cYYAj/l+KlMlgplaZpp/89sDikosmShEjeCVOBIRoz6GhFtelm0YF/yvu4hiA5RuLW2q8oMmnKrcYdxPO39F1ZJHLRY2f0G+vG2yQI/+6nx+y0XHwf9OmFu/lv0Vf4d0=
+	t=1775033733; cv=none; b=gVqL3JJ6mKJ36f11eosTTnGiekg4W2ACtzUU9eIgAdqtGebQPWOonO6DdbwwHZzgujPn5MCVztBIehJkIwdsJGF9FM9i5MMYPkoi99Em4sUYG75EAUk/9n+bNfMTljCZo9Wp7wigytUckYEZYXfTbnk6KnhqTFTSQgbxrEj16os=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775033645; c=relaxed/simple;
-	bh=DG7IYwW7Tlr8/aqIdPEJ92Z6Z77qPVf5dY4BLgz4bFY=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=E33AyceR7cHuFnl21PM/+awplWPxEkcFTNKp3ipWRewM1pZS1USEney4Zgz9GjyTX+FSUaoh6qLzSEWOHe7yx/qzNRfAOIJB/N1DEG4DXRk8ClqXUwyPi2/Pao42Lldh/9PBpGdPp4gLVcb3qzzh1Zdaav97qtdb4l7qbtbGgo0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=C0fVeUsO; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=P4ROMt1Q; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=C0fVeUsO; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=P4ROMt1Q; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="C0fVeUsO";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="P4ROMt1Q";
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="C0fVeUsO";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="P4ROMt1Q"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 5852B4D2B5;
-	Wed,  1 Apr 2026 08:54:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1775033641; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=o+IX56azF29oXQElIrJw3ZKbvTu0puqydV8fgZCzB8M=;
-	b=C0fVeUsOls72Cimzhdvb/rksNEjnmlgZ6zCy+3ll2Dz2Ga7q4KkHyKd4yEmALSmnbqtKOD
-	u3jU9RKhXWuW+UQbHgF3NdA3p/3CkkicD+iYrNMYk7rmTp4HLW4rrwolRIVitNdHI5KtAL
-	U+AyiMYHiH2GDeC8+HJN4lyFEtePkqE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1775033641;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=o+IX56azF29oXQElIrJw3ZKbvTu0puqydV8fgZCzB8M=;
-	b=P4ROMt1QjVMqvm3jyjdx9InzdHPYy+66uqWaNRLECKmO6S0skWI6AaYnQSJrdHP40le+sH
-	+GTO/z/YQiwuNZDg==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=C0fVeUsO;
-	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=P4ROMt1Q
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1775033641; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=o+IX56azF29oXQElIrJw3ZKbvTu0puqydV8fgZCzB8M=;
-	b=C0fVeUsOls72Cimzhdvb/rksNEjnmlgZ6zCy+3ll2Dz2Ga7q4KkHyKd4yEmALSmnbqtKOD
-	u3jU9RKhXWuW+UQbHgF3NdA3p/3CkkicD+iYrNMYk7rmTp4HLW4rrwolRIVitNdHI5KtAL
-	U+AyiMYHiH2GDeC8+HJN4lyFEtePkqE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1775033641;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=o+IX56azF29oXQElIrJw3ZKbvTu0puqydV8fgZCzB8M=;
-	b=P4ROMt1QjVMqvm3jyjdx9InzdHPYy+66uqWaNRLECKmO6S0skWI6AaYnQSJrdHP40le+sH
-	+GTO/z/YQiwuNZDg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C5E954A0B0;
-	Wed,  1 Apr 2026 08:54:00 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id y+rkLijdzGlRIQAAD6G6ig
-	(envelope-from <tzimmermann@suse.de>); Wed, 01 Apr 2026 08:54:00 +0000
-Message-ID: <808dcd39-ed04-4288-9b21-55b47354de17@suse.de>
-Date: Wed, 1 Apr 2026 10:53:59 +0200
+	s=arc-20240116; t=1775033733; c=relaxed/simple;
+	bh=PLwE7ZRL+90SQiNMXF/jgGyBWAlL49+g6LjfNcljtzw=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=Z8ohVgCwvF7uIozxRET7F82Pl201cxL4EWx+rMgX89KUGqTskFS0BZqFqulBEptGb4ZkZ8cyk9F7mgwk859oavFPv810Yfrq3ypMNqpefwqcr4VZULSZwDAOqXYWSWUZ4hDH1gO0z1ew4deB7KkfYDdOnBaUnBkk0pr+gAlSzEk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ua1-f47.google.com with SMTP id a1e0cc1a2514c-951a0e3cdabso3672418241.1
+        for <linux-sh@vger.kernel.org>; Wed, 01 Apr 2026 01:55:30 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1775033729; x=1775638529;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=JovjSUZC1lNxdv0gpf2LIekR3ONpuaO8xMZDQYnx+qs=;
+        b=N73uI0PJ+j9rixgJjctLNf+eyepI21A4lP0zt9Alw2mL3TfDIpDf/g4GanpRdNLJwM
+         sOmgORpp0vp86zCVGPIIl0v7LkizpA3WZqCWWFb0J1OxX1YhEFER0BFuCMWGzxr1AbfP
+         Y/mAzY+QLvU0wjGlian47C7sGMwSykmSY4ILn6uYoFVw45iad8DMWiW6uPfjjtooMxeE
+         FIPLmVMnCgPXSvYqZkWrht1zZSiEU8CzrwE358V1Nhw5LM9ZSvZBudm+11bm4y3skqt0
+         4DLUThbEhN5cuP2WxQaERO89EA1flRlazOKsMddUYbylWFCQDr1sH3A5IlVAWQtjN6U9
+         7Lfw==
+X-Forwarded-Encrypted: i=1; AJvYcCXbp43xKuAwgLyChz6byzHqcBdgFvb9Egcf1RncOWpQQQpjH+pdYubfoBwNlyDoLfHQ/sOiJdk+SA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yzb2adbZiLefRuBAk8CTfTTdmWFzMpZp7Y/lf0JZR7hK30nWg7L
+	OxTuRCzqdM9kfbUfohnhFJnUF5EtMvgx9ZDINfLRQUspKTZWp3OMAmexhheOuja7
+X-Gm-Gg: ATEYQzwfw7JY5wmq7m0Eiz3puFIlC0P7Svk0w1cpIeh/83v5EQQClYfQxBlludopMVS
+	MNShBYQgXOOb7vvDd9dyQ/N8awOjE68YoC9kknB/AnKfo1FqgNjhwlGfn+R0DkD8Nus6Qyi77km
+	kap01v6fnIera/1hHsht8jQZ3o1cY15bMpaxGrDQxm242K1QJCMhGQLeH6kyNQiPFlyQv7yjFRx
+	qF4wjXGhDy5a5yGWqtje+kwGmA+jZ36sqHZ1XprI4O7rsc8hl16UqDCEk8lsGE1BEz1RAFXlORv
+	m1VRZYZk/agOm21LnXPv/Cc+C+IOc7vK7l1EfrQl9LxLvQ3+2b9YiDQeeGJFxg+gjyv2RA3Om6z
+	V/IvVQ/jFIX8VN9NYbg/uzvXibBh+p3AxfrctiO06CYDoR/63WU/CY3bqkKyVaeZuL2nKI82I0w
+	r0hFaQKBddIS20CgZ4I9kG5LFLWt3ISLyrSoHInTzayWz1xKd1AtcoTE+8memNZVu+59vnfxM=
+X-Received: by 2002:a05:6102:4187:b0:5ff:cb2c:a04c with SMTP id ada2fe7eead31-60567db3783mr1071924137.1.1775033729402;
+        Wed, 01 Apr 2026 01:55:29 -0700 (PDT)
+Received: from mail-ua1-f52.google.com (mail-ua1-f52.google.com. [209.85.222.52])
+        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-9539e29ea3csm13313103241.5.2026.04.01.01.55.28
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 01 Apr 2026 01:55:28 -0700 (PDT)
+Received: by mail-ua1-f52.google.com with SMTP id a1e0cc1a2514c-953a8eed138so2222303241.3
+        for <linux-sh@vger.kernel.org>; Wed, 01 Apr 2026 01:55:28 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCV7rLdHQRYx3qRXfNdqGDp722hH9TuxY8GECrwS+tSSjiaDmFScqDnOKChSFCboW3jMyo5IB/GPpA==@vger.kernel.org
+X-Received: by 2002:a05:6102:14a5:b0:5ff:d434:b507 with SMTP id
+ ada2fe7eead31-6056811633cmr1013502137.17.1775033728220; Wed, 01 Apr 2026
+ 01:55:28 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] arch/sh: Drop CONFIG_FIRMWARE_EDID from defconfig files
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- ysato@users.sourceforge.jp, dalias@libc.org, arnd@arndb.de
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
- dri-devel@lists.freedesktop.org
 References: <20260401083242.214492-1-tzimmermann@suse.de>
- <b7c978f9728c1a1197e90a98bcec5e8e4dc7e7ec.camel@physik.fu-berlin.de>
-Content-Language: en-US
-From: Thomas Zimmermann <tzimmermann@suse.de>
-Autocrypt: addr=tzimmermann@suse.de; keydata=
- xsBNBFs50uABCADEHPidWt974CaxBVbrIBwqcq/WURinJ3+2WlIrKWspiP83vfZKaXhFYsdg
- XH47fDVbPPj+d6tQrw5lPQCyqjwrCPYnq3WlIBnGPJ4/jreTL6V+qfKRDlGLWFjZcsrPJGE0
- BeB5BbqP5erN1qylK9i3gPoQjXGhpBpQYwRrEyQyjuvk+Ev0K1Jc5tVDeJAuau3TGNgah4Yc
- hdHm3bkPjz9EErV85RwvImQ1dptvx6s7xzwXTgGAsaYZsL8WCwDaTuqFa1d1jjlaxg6+tZsB
- 9GluwvIhSezPgnEmimZDkGnZRRSFiGP8yjqTjjWuf0bSj5rUnTGiyLyRZRNGcXmu6hjlABEB
- AAHNJ1Rob21hcyBaaW1tZXJtYW5uIDx0emltbWVybWFubkBzdXNlLmRlPsLAjgQTAQgAOAIb
- AwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgBYhBHIX+6yM6c9jRKFo5WgNwR1TC3ojBQJftODH
- AAoJEGgNwR1TC3ojx1wH/0hKGWugiqDgLNXLRD/4TfHBEKmxIrmfu9Z5t7vwUKfwhFL6hqvo
- lXPJJKQpQ2z8+X2vZm/slsLn7J1yjrOsoJhKABDi+3QWWSGkaGwRJAdPVVyJMfJRNNNIKwVb
- U6B1BkX2XDKDGffF4TxlOpSQzdtNI/9gleOoUA8+jy8knnDYzjBNOZqLG2FuTdicBXblz0Mf
- vg41gd9kCwYXDnD91rJU8tzylXv03E75NCaTxTM+FBXPmsAVYQ4GYhhgFt8S2UWMoaaABLDe
- 7l5FdnLdDEcbmd8uLU2CaG4W2cLrUaI4jz2XbkcPQkqTQ3EB67hYkjiEE6Zy3ggOitiQGcqp
- j//OwE0EWznS4AEIAMYmP4M/V+T5RY5at/g7rUdNsLhWv1APYrh9RQefODYHrNRHUE9eosYb
- T6XMryR9hT8XlGOYRwKWwiQBoWSDiTMo/Xi29jUnn4BXfI2px2DTXwc22LKtLAgTRjP+qbU6
- 3Y0xnQN29UGDbYgyyK51DW3H0If2a3JNsheAAK+Xc9baj0LGIc8T9uiEWHBnCH+RdhgATnWW
- GKdDegUR5BkDfDg5O/FISymJBHx2Dyoklv5g4BzkgqTqwmaYzsl8UxZKvbaxq0zbehDda8lv
- hFXodNFMAgTLJlLuDYOGLK2AwbrS3Sp0AEbkpdJBb44qVlGm5bApZouHeJ/+n+7r12+lqdsA
- EQEAAcLAdgQYAQgAIAIbDBYhBHIX+6yM6c9jRKFo5WgNwR1TC3ojBQJftOH6AAoJEGgNwR1T
- C3ojVSkIALpAPkIJPQoURPb1VWjh34l0HlglmYHvZszJWTXYwavHR8+k6Baa6H7ufXNQtThR
- yIxJrQLW6rV5lm7TjhffEhxVCn37+cg0zZ3j7zIsSS0rx/aMwi6VhFJA5hfn3T0TtrijKP4A
- SAQO9xD1Zk9/61JWk8OysuIh7MXkl0fxbRKWE93XeQBhIJHQfnc+YBLprdnxR446Sh8Wn/2D
- Ya8cavuWf2zrB6cZurs048xe0UbSW5AOSo4V9M0jzYI4nZqTmPxYyXbm30Kvmz0rYVRaitYJ
- 4kyYYMhuULvrJDMjZRvaNe52tkKAvMevcGdt38H4KSVXAylqyQOW5zvPc4/sq9c=
-In-Reply-To: <b7c978f9728c1a1197e90a98bcec5e8e4dc7e7ec.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-4.51 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_TLS_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	MID_RHS_MATCH_FROM(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[7];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.de:mid,suse.de:dkim,suse.de:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:url];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	DKIM_TRACE(0.00)[suse.de:+]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -4.51
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 5852B4D2B5
+In-Reply-To: <20260401083242.214492-1-tzimmermann@suse.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 1 Apr 2026 10:55:17 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdX5B6LpZ5ffaOc0Et0PK+G=_c8yD5K8JynRwu5T8rHfsw@mail.gmail.com>
+X-Gm-Features: AQROBzAaKXfPphxAx92Ddhxtbq8urMrWt59bUWKyg2D17bALeZWDk-W7fhNxXrk
+Message-ID: <CAMuHMdX5B6LpZ5ffaOc0Et0PK+G=_c8yD5K8JynRwu5T8rHfsw@mail.gmail.com>
+Subject: Re: [PATCH] arch/sh: Drop CONFIG_FIRMWARE_EDID from defconfig files
+To: Thomas Zimmermann <tzimmermann@suse.de>
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
+	arnd@arndb.de, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	dri-devel@lists.freedesktop.org, 
+	Linux ARM <linux-arm-kernel@lists.infradead.org>, 
+	linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, linux-mips@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Hi
+Hi Thomas,
 
-Am 01.04.26 um 10:46 schrieb John Paul Adrian Glaubitz:
-> Hi Thomas,
+CC arm/mips/ppc, as you sent similar patches for these arches.
+
+On Wed, 1 Apr 2026 at 10:40, Thomas Zimmermann <tzimmermann@suse.de> wrote:
+> CONFIG_FIRMWARE_EDID=y depends on X86 or EFI_GENERIC_STUB. Neither is
+> true here, so drop the lines from the defconfig files.
 >
-> On Wed, 2026-04-01 at 10:32 +0200, Thomas Zimmermann wrote:
->> CONFIG_FIRMWARE_EDID=y depends on X86 or EFI_GENERIC_STUB. Neither is
->> true here, so drop the lines from the defconfig files.
->>
->> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
->> ---
->>   arch/sh/configs/dreamcast_defconfig | 1 -
->>   arch/sh/configs/hp6xx_defconfig     | 1 -
->>   arch/sh/configs/se7343_defconfig    | 1 -
->>   arch/sh/configs/se7780_defconfig    | 1 -
->>   4 files changed, 4 deletions(-)
->>
->> diff --git a/arch/sh/configs/dreamcast_defconfig b/arch/sh/configs/dreamcast_defconfig
->> index dd58797e8298..b31bf17fe112 100644
->> --- a/arch/sh/configs/dreamcast_defconfig
->> +++ b/arch/sh/configs/dreamcast_defconfig
->> @@ -50,7 +50,6 @@ CONFIG_HW_RANDOM=y
->>   CONFIG_WATCHDOG=y
->>   CONFIG_SH_WDT=y
->>   CONFIG_FB=y
->> -CONFIG_FIRMWARE_EDID=y
->>   CONFIG_FB_PVR2=y
->>   CONFIG_FRAMEBUFFER_CONSOLE=y
->>   CONFIG_FONTS=y
->> diff --git a/arch/sh/configs/hp6xx_defconfig b/arch/sh/configs/hp6xx_defconfig
->> index 04a9fcb4342a..b6116a203a27 100644
->> --- a/arch/sh/configs/hp6xx_defconfig
->> +++ b/arch/sh/configs/hp6xx_defconfig
->> @@ -35,7 +35,6 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
->>   CONFIG_LEGACY_PTY_COUNT=64
->>   # CONFIG_HWMON is not set
->>   CONFIG_FB=y
->> -CONFIG_FIRMWARE_EDID=y
->>   CONFIG_FB_HIT=y
->>   CONFIG_FB_SH_MOBILE_LCDC=y
->>   CONFIG_FRAMEBUFFER_CONSOLE=y
->> diff --git a/arch/sh/configs/se7343_defconfig b/arch/sh/configs/se7343_defconfig
->> index 2d4d1f974f14..b3ce8a502787 100644
->> --- a/arch/sh/configs/se7343_defconfig
->> +++ b/arch/sh/configs/se7343_defconfig
->> @@ -57,7 +57,6 @@ CONFIG_I2C=y
->>   CONFIG_I2C_SH_MOBILE=y
->>   # CONFIG_HWMON is not set
->>   CONFIG_FB=y
->> -CONFIG_FIRMWARE_EDID=y
->>   CONFIG_FB_SH_MOBILE_LCDC=m
->>   CONFIG_SOUND=y
->>   CONFIG_SND=y
->> diff --git a/arch/sh/configs/se7780_defconfig b/arch/sh/configs/se7780_defconfig
->> index 13fa6a59b8f1..9e96b000cb99 100644
->> --- a/arch/sh/configs/se7780_defconfig
->> +++ b/arch/sh/configs/se7780_defconfig
->> @@ -60,7 +60,6 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
->>   # CONFIG_HW_RANDOM is not set
->>   CONFIG_THERMAL=y
->>   CONFIG_FB=y
->> -CONFIG_FIRMWARE_EDID=y
->>   CONFIG_FB_SH_MOBILE_LCDC=m
->>   CONFIG_FRAMEBUFFER_CONSOLE=y
->>   CONFIG_LOGO=y
-> Thanks for catching this! I wonder where this configuration entry comes from though.
->
-> My SH7785LCR board does have a DVI output as well as a Silicon Motion SM-501 video
-> chip though, so I think it should be able to perform EDID in general. Or is the
-> protocol actually tied to the x86 architecture? What about monitors on a PowerPC
-> workstation, for example? Does EDID not work there at all?
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 
-Yes, your system can fetch the EDID via the Linux driver. But 
-FIRMWARE_EDID is a special feature where the EDID gets delivered by the 
-boot loader. This has always only been possible on x86 or with EFI.
+Thanks for your patch!
 
-Best regards
-Thomas
+Upon first look, your changes match the (current) dependencies
+of FIRMWARE_EDID.  The dependency on X86 was added in commit
+7e35fc7ab433683f ("video: Make CONFIG_FIRMWARE_EDID generally
+available") in v6.17-rc1.
+However, CONFIG_FIRMWARE_EDID also protects fb_firmware_edid(),
+which seems to extract the EDID from the PCI ROM, and is thus not
+x86-specific?  That function is only ever called by three fbdev drivers
+(i810, nv, savagefb), though.
 
->
-> Thanks,
-> Adrian
->
+I assume none of these work on SuperH, so
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
---
-Thomas Zimmermann
-Graphics Driver Developer
-SUSE Software Solutions Germany GmbH
-Frankenstr. 146, 90461 Nürnberg, Germany, www.suse.com
-GF: Jochen Jaser, Andrew McDonald, Werner Knoblich, (HRB 36809, AG Nürnberg)
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
