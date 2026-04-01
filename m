@@ -1,168 +1,183 @@
-Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.8])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 52A443AA1B2;
-	Fri, 27 Mar 2026 10:29:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.8
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3425E3B3C0F
+	for <linux-sh@vger.kernel.org>; Wed,  1 Apr 2026 08:32:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1774607354; cv=none; b=keG8S0eKOtsDy0M2UMRN9cCH5OcCbjOkusojCHtgdeKcW9FhoH+u0IPEBCsJqhHaAv7amQ9xRm2zpXgk/+9+fSyfA4TzzY/NuPwhj+n/DSykYbUyTunllF5QF5vzAQYZQjuRoVllfnAwPsr+yX6KVyp6JdEV1ZixPBetu9pYYeY=
+	t=1775032371; cv=none; b=oNWEuqEaCxe+bixwwKoaaZpZn7umqKb1GtBvPZUTujb+UUnrs6+PQC0D/Q5nItZHo7HJJtGLgEA6GDvYuix990j5aiUE1zj9P1Xt3sDhnyqcdBQUoLJmtnB+YMiIJVCCpjVLHQfAwLLKn1+/XnPNBXbG8aeawrN8M2cgAMS7xV4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1774607354; c=relaxed/simple;
-	bh=AQrZsYS87uRLSAUzR2yt6e8HOvPMEsktxMC+0rqw0oY=;
-	h=From:Date:To:cc:Subject:In-Reply-To:Message-ID:References:
-	 MIME-Version:Content-Type; b=nVuYhg6gY5IMwE6tnlqy3yOoA4E2e+6tsyvnzitFBWc03tx1m2so0L45gAxs8Zxl1htN/84Xhr/YxkkpcsfiaD8d361Cf0Y3qlcWJ8tyr7BV1N+GDH5FpD7d1TrGotUtEoLjDsijTUnJx6ZXbBSUx3FxUSGSvKEnY6dvn/TuKW8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com; spf=pass smtp.mailfrom=linux.intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=SX0nzWlZ; arc=none smtp.client-ip=192.198.163.8
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.intel.com
+	s=arc-20240116; t=1775032371; c=relaxed/simple;
+	bh=zAZcmT5Cbrnqx+kVgfQumdm2Unc+201ePP1R+xC/yrc=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pU4bm9YqG3E8gV9b2rdBfAeKD1eL96FwtNJ3LDrNWbRGWL4P0N2N7yuZ4AaAM8OlfuDOnV2+hty0SbAaOu65ScQF1Bs/ZYVIZfAPT0EktN2p4jLPOiYqh+Hgb7nFSuEgTePekQ72spYnz/+MhX6GfRSJx/luyxYLFg74CgMg6wA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=F/JjfJl+; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=JroWuT3/; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=TYWNo6GM; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=NRpqMqRC; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="SX0nzWlZ"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1774607353; x=1806143353;
-  h=from:date:to:cc:subject:in-reply-to:message-id:
-   references:mime-version;
-  bh=AQrZsYS87uRLSAUzR2yt6e8HOvPMEsktxMC+0rqw0oY=;
-  b=SX0nzWlZIY0Lg4fyXJy1hem2uUevSvI1nbx91bp0jZYYqRr93GaLksaE
-   L6XLJWuLACGbs/Obo0LLfiusLKSxmX5HOfj2BR/OfzI5RUmPnAEbJxWGx
-   H8arvWKQ7iOn+koxe3/GEJt4fFT8S6HWH9xg10wBXdgqPJanVKkEt1Qyx
-   /7B2xb2jl7faADXEGMBpdI28tH79/++kh/ol8X0TPBLWYG1sA2mCqBcZa
-   QJQsSA1iMaFdyaMsTkz2wpp39pZGfRPODNn6QqAM5cXjkgXj8CJ1e7gn9
-   0Li0W7WV2EDfk6lWNjEzVO4kFjsRIUYdrV6xXvg6gkCesf5RAzv+5UkW8
-   Q==;
-X-CSE-ConnectionGUID: +KbLwjXESSqMmEPH1Yg2iA==
-X-CSE-MsgGUID: k3BStIGXSgiyo9+iueWvgA==
-X-IronPort-AV: E=McAfee;i="6800,10657,11741"; a="93259306"
-X-IronPort-AV: E=Sophos;i="6.23,144,1770624000"; 
-   d="scan'208";a="93259306"
-Received: from orviesa001.jf.intel.com ([10.64.159.141])
-  by fmvoesa102.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 27 Mar 2026 03:29:11 -0700
-X-CSE-ConnectionGUID: tBARr7F7SaCXrVZYlacT+g==
-X-CSE-MsgGUID: 6iZuzsYWQBOngO/GpRvA3A==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.23,144,1770624000"; 
-   d="scan'208";a="263218208"
-Received: from ijarvine-mobl1.ger.corp.intel.com (HELO localhost) ([10.245.244.186])
-  by smtpauth.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 27 Mar 2026 03:29:01 -0700
-From: =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
-Date: Fri, 27 Mar 2026 12:28:56 +0200 (EET)
-To: Bjorn Helgaas <helgaas@kernel.org>
-cc: linux-pci@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, 
-    Guenter Roeck <linux@roeck-us.net>, linux-alpha@vger.kernel.org, 
-    linux-arm-kernel@lists.infradead.org, linux-m68k@lists.linux-m68k.org, 
-    linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org, 
-    linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, 
-    linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, 
-    Geert Uytterhoeven <geert@linux-m68k.org>, 
-    Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
-    "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, 
-    Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, 
-    Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>, 
-    Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>, 
-    "H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>, 
-    Max Filippov <jcmvbkbc@gmail.com>, 
-    Madhavan Srinivasan <maddy@linux.ibm.com>, 
-    Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-    John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-    LKML <linux-kernel@vger.kernel.org>, Xifer <xiferdev@gmail.com>
-Subject: Re: [PATCH 00/10] PCI: Improve head free space usage
-In-Reply-To: <20260326192520.GA1337681@bhelgaas>
-Message-ID: <7207cde7-d47e-f79c-afe9-9b1daa79140c@linux.intel.com>
-References: <20260326192520.GA1337681@bhelgaas>
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="F/JjfJl+";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="JroWuT3/";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="TYWNo6GM";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="NRpqMqRC"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id E5FB34D282;
+	Wed,  1 Apr 2026 08:32:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1775032366; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=b7DQ7PreTDiaftRhaS42vmUDfpj962j1xAcBJ1gtvTw=;
+	b=F/JjfJl+oJn94ACEgNHpAsrTgUNCa8iiuKMwLtEnL8c7W3QZ/jwTBeH77oma1kd+9FsUiE
+	0wfKT4dETbtQdbwTbyVcyO7BBOgDlzMfD8ambH4iU2Jh/aR55PtdT7yUobBy63D/r947Or
+	Zpwo0YSuifktZY+KV/qAEvxlTj2KCKc=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1775032366;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=b7DQ7PreTDiaftRhaS42vmUDfpj962j1xAcBJ1gtvTw=;
+	b=JroWuT3/nfAmQUeiyYo4Ha0af4Q91ZuJ8vEiBpKQGQkFSR3qcIqr1KqZ1l8WU/a4Ny5M5q
+	JsvFdgex8wSRDfCA==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=TYWNo6GM;
+	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=NRpqMqRC
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1775032365; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=b7DQ7PreTDiaftRhaS42vmUDfpj962j1xAcBJ1gtvTw=;
+	b=TYWNo6GM4Rg3Pni9+63CZVEK3EK5QpNqxFUc6vuldkrleAtsXgH+hilOh/CJ+ZZQRRA1Qc
+	uK/oFDpVtzydUu6NOGk91u/nnivTQ990pPQDE7kJk3SJqPXzY+iOZ/3voLgd9vDGVZjEnh
+	j4EhMM6c6csxKfFGDSz/ovuS6y6zFMk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1775032365;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=b7DQ7PreTDiaftRhaS42vmUDfpj962j1xAcBJ1gtvTw=;
+	b=NRpqMqRCIQr+yBSsuPxCi7R991qq4bu9jJzsDSSO2IzGv79Ropi5GkFh8+SuEMqyqzCZtZ
+	YLaVj2Deg4l1P7Cw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AA8984A0B0;
+	Wed,  1 Apr 2026 08:32:45 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id e4VlKC3YzGndCwAAD6G6ig
+	(envelope-from <tzimmermann@suse.de>); Wed, 01 Apr 2026 08:32:45 +0000
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	arnd@arndb.de
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	dri-devel@lists.freedesktop.org,
+	Thomas Zimmermann <tzimmermann@suse.de>
+Subject: [PATCH] arch/sh: Drop CONFIG_FIRMWARE_EDID from defconfig files
+Date: Wed,  1 Apr 2026 10:32:34 +0200
+Message-ID: <20260401083242.214492-1-tzimmermann@suse.de>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="8323328-307680389-1774607336=:1037"
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.de:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCPT_COUNT_SEVEN(0.00)[8];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.de:mid,suse.de:dkim,suse.de:email]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: E5FB34D282
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+CONFIG_FIRMWARE_EDID=y depends on X86 or EFI_GENERIC_STUB. Neither is
+true here, so drop the lines from the defconfig files.
 
---8323328-307680389-1774607336=:1037
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+---
+ arch/sh/configs/dreamcast_defconfig | 1 -
+ arch/sh/configs/hp6xx_defconfig     | 1 -
+ arch/sh/configs/se7343_defconfig    | 1 -
+ arch/sh/configs/se7780_defconfig    | 1 -
+ 4 files changed, 4 deletions(-)
 
-On Thu, 26 Mar 2026, Bjorn Helgaas wrote:
+diff --git a/arch/sh/configs/dreamcast_defconfig b/arch/sh/configs/dreamcast_defconfig
+index dd58797e8298..b31bf17fe112 100644
+--- a/arch/sh/configs/dreamcast_defconfig
++++ b/arch/sh/configs/dreamcast_defconfig
+@@ -50,7 +50,6 @@ CONFIG_HW_RANDOM=y
+ CONFIG_WATCHDOG=y
+ CONFIG_SH_WDT=y
+ CONFIG_FB=y
+-CONFIG_FIRMWARE_EDID=y
+ CONFIG_FB_PVR2=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_FONTS=y
+diff --git a/arch/sh/configs/hp6xx_defconfig b/arch/sh/configs/hp6xx_defconfig
+index 04a9fcb4342a..b6116a203a27 100644
+--- a/arch/sh/configs/hp6xx_defconfig
++++ b/arch/sh/configs/hp6xx_defconfig
+@@ -35,7 +35,6 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_LEGACY_PTY_COUNT=64
+ # CONFIG_HWMON is not set
+ CONFIG_FB=y
+-CONFIG_FIRMWARE_EDID=y
+ CONFIG_FB_HIT=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+diff --git a/arch/sh/configs/se7343_defconfig b/arch/sh/configs/se7343_defconfig
+index 2d4d1f974f14..b3ce8a502787 100644
+--- a/arch/sh/configs/se7343_defconfig
++++ b/arch/sh/configs/se7343_defconfig
+@@ -57,7 +57,6 @@ CONFIG_I2C=y
+ CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
+ CONFIG_FB=y
+-CONFIG_FIRMWARE_EDID=y
+ CONFIG_FB_SH_MOBILE_LCDC=m
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+diff --git a/arch/sh/configs/se7780_defconfig b/arch/sh/configs/se7780_defconfig
+index 13fa6a59b8f1..9e96b000cb99 100644
+--- a/arch/sh/configs/se7780_defconfig
++++ b/arch/sh/configs/se7780_defconfig
+@@ -60,7 +60,6 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_THERMAL=y
+ CONFIG_FB=y
+-CONFIG_FIRMWARE_EDID=y
+ CONFIG_FB_SH_MOBILE_LCDC=m
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_LOGO=y
+-- 
+2.53.0
 
-> [+cc Xifer; thanks very much for reporting and testing!]
->=20
-> On Tue, Mar 24, 2026 at 06:56:23PM +0200, Ilpo J=C3=A4rvinen wrote:
-> > Hi all,
-> >=20
-> > This series attempts to take advantage of free head space (the free
-> > space before the aligned start address) in order to generally produce a
-> > tighter packing of the resources/bridge windows.
-> >=20
-> > The recent changes to the resource fitting algorithm caused resource
-> > allocation failures in some cases where a bridge window that is sized
-> > to be gapless could no longer be assigned. The previous algorithm left
-> > a huge gaps which allowed it to place the remainder (non-aligning part
-> > of the size) before the start address of used for the gapless fit,
-> > whereas the new gapless approach always had to place the remainder
-> > after the aligning part of the resources. There is not always space
-> > for the remainder triggering those failures (e.g., when the aligning
-> > part must be placed at the top of the window).
-> >=20
-> > This series attempts to allow placing the remainder once again before
-> > the aligning part, but now without leaving huge gaps to retain the
-> > benefits of the gapless bridge windows. The approach is somewhat hacky
-> > but should work thanks to PCI resources fundamentally consisting only
-> > power-of-two atoms.
-> >=20
-> > There maybe cases where architecture would not want to do such
-> > relocation. This series adds the relocation to arch
-> > pcibios_align_resource() functions to allow all of them taking
-> > advantage of the better resource packing but if somebody objects doing
-> > this relocation for a particular arch, I can remove it, please just let
-> > me know (this relocation doesn't seem critical unless there are
-> > regressions).
-> >=20
-> > Ilpo J=C3=A4rvinen (10):
-> >   resource: Add __resource_contains_unbound() for internal contains
-> >     checks
-> >   resource: Pass full extent of empty space to resource_alignf CB
-> >   resource: Rename 'tmp' variable to 'full_avail'
-> >   ARM/PCI: Remove unnecessary second application of align
-> >   am68k/PCI: Remove unnecessary second application of align
-> >   MIPS: PCI: Remove unnecessary second application of align
-> >   parisc/PCI: Cleanup align handling
-> >   PCI: Rename window_alignment() to pci_min_window_alignment()
-> >   PCI: Align head space better
-> >   PCI: Fix alignment calculation for resource size larger than align
-> >=20
-> >  arch/alpha/kernel/pci.c          |  1 +
-> >  arch/arm/kernel/bios32.c         |  9 ++++---
-> >  arch/m68k/kernel/pcibios.c       |  8 +++++--
-> >  arch/mips/pci/pci-generic.c      |  8 ++++---
-> >  arch/mips/pci/pci-legacy.c       |  3 +++
-> >  arch/parisc/kernel/pci.c         | 17 ++++++++------
-> >  arch/powerpc/kernel/pci-common.c |  6 ++++-
-> >  arch/s390/pci/pci.c              |  1 +
-> >  arch/sh/drivers/pci/pci.c        |  6 ++++-
-> >  arch/x86/pci/i386.c              |  5 +++-
-> >  arch/xtensa/kernel/pci.c         |  3 +++
-> >  drivers/pci/pci.h                |  3 +++
-> >  drivers/pci/setup-bus.c          | 15 ++++++++----
-> >  drivers/pci/setup-res.c          | 40 +++++++++++++++++++++++++++++++-
-> >  drivers/pcmcia/rsrc_nonstatic.c  |  3 ++-
-> >  include/linux/ioport.h           | 22 +++++++++++++++---
-> >  include/linux/pci.h              | 12 +++++++---
-> >  kernel/resource.c                | 33 +++++++++++++-------------
-> >  18 files changed, 149 insertions(+), 46 deletions(-)
->=20
-> I added Xifer's tested-by, fixed the "am68k" and missing "if"
-> typos, and applied these to pci/resource for v7.1.
->=20
-> Ilpo, if you post a v2 with more changes, I'll update to it.  I
-> applied the series now to get a head start on 0-day building and into
-> next.
-
-Thanks.
-
-I don't have anything in addition to those.
-
---=20
- i.
-
---8323328-307680389-1774607336=:1037--
