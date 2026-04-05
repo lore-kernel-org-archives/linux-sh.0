@@ -1,61 +1,63 @@
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F4C019995E
-	for <linux-sh@vger.kernel.org>; Sun,  5 Apr 2026 08:23:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 70BBD36C9F2
+	for <linux-sh@vger.kernel.org>; Sun,  5 Apr 2026 08:23:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775377419; cv=none; b=O+pKRQASE0LNpWC/a9tgprCUvKto5p0tdWOEYH6uX8P6eaWhJ7LIXmakWxRGK8fST28wIRegGQVtC09Nwr87VMRnvhX/0EJX55UKBOJRfm5nyjC7c+cKEArwpreBVYiICflzGjxx1+6Aro8qUJ891ko2moltGkDR3PA13TVYjh8=
+	t=1775377421; cv=none; b=cFl7j841CCOaCiTDxBNJAvx7oj18r7/XuWWz8DvVTgFbWjP2Frz83spxRWyWghJ+GcwS8Y4uyLSRL7VWFrx599eBkI8LuD5SgUhl/KPcl0gSo4rucTuBOQSU3j9KjQKpR4YT+gP9TvXP9MC0FQ4nJ6jKE8kZ87s8BjV23HkI368=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775377419; c=relaxed/simple;
-	bh=nXBjZxNx6v+haxpqtgK9dTYC9jljC5QXCpRVk0Qc8tU=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=rsEa7lRTvRb5O9rVi6NQc64qamGdB4fpwsYiCrQD6VOcj7/UOyjlUMXMHRAfWmCAUft+iZiqhhXvi3o53qBR6synw7jCiLb2VugwXNnNyLLfZPB/egfVVyg6bHqeRyr+aPTgx6/1ytrfMAWBsxzTc8wkfEFd2rmjsAEvFUF/NpI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=J9N7/zuw; arc=none smtp.client-ip=209.85.128.45
+	s=arc-20240116; t=1775377421; c=relaxed/simple;
+	bh=O818hNrmebuhm54PNjEMjBqHlwr2K30gFLLi0YLGmTw=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=bFg54VQkJwG3ZAQPXkBOlM/3mJKOGrYZdvO6Yy6KnsNh6G7IGW/Tu5RvLGeV6vrlNIggYb9oHlpQvHwDJviv1peY0XYN98sk1qZJmzOXfUuqdZaiNxIKFW2mNP0XhqRoLrapMa4SV4lbm9p0IlNzJg2Ayhy8tcJM8hGZ3+jzX6g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=GQQ+BGfq; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="J9N7/zuw"
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4887f49ec5aso43885875e9.1
-        for <linux-sh@vger.kernel.org>; Sun, 05 Apr 2026 01:23:37 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GQQ+BGfq"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-486b96760easo36710405e9.2
+        for <linux-sh@vger.kernel.org>; Sun, 05 Apr 2026 01:23:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775377416; x=1775982216; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=4EeApORW9P5wsQN32+c+u+c+Fc4o6NHbe1Tb7fJ/q/g=;
-        b=J9N7/zuwINLYe505xQXBsS8Pxto2b9DnbELq3QoBiPvBEVMUiCSauVaS8+tyl+oFej
-         ZY7DaOV1V8lFtXpkIA2cx3pw3Es0b99HtrZOjXP5+Xr3zMMbKyDkCSUhmpKAQSAFOWdM
-         G5kIccjX2IedjmuIIbVy0h2ZCCSIyPnNiOSiXtR0SziyLHDUn29ufthYPfu7GmukdfjG
-         IDKL1Q17RlJdJW0i9EH1HnJH3kUTvis0XPIpj1FtKycpSgDXir5VpUtU+4T5FGqyK0No
-         1fG8kKGYKHvk3P2mXGjCOvOugXwQh/XXVkwaCg0GF8PIUPMmT+4lNfINsWFCNTv6/53p
-         Rk4w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775377416; x=1775982216;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1775377418; x=1775982218; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=4EeApORW9P5wsQN32+c+u+c+Fc4o6NHbe1Tb7fJ/q/g=;
-        b=EGCu4Hkb/eVD7KwqZD7rPQXcKvFyB6zXsH3dc0TxTI8yEE27WflGMg3qUHmFyeDxwZ
-         TDx6xD8uxBlBAXWFTR0eYM3tOzACPY//N4H5eZkersLUe4oSD0D279EAq/4HJtu0oDfN
-         u6s6OkYU8ltOTCZwnvyRZd0fiT5jDRY0I1cELWoyj5wPi64KUsiVv9CQtsK1rNqZo8IM
-         i9HBzCqgxnuR5N5RUVO3ZF6tTB5EDowhDM4oxJ3t6LS/eX0/hcOT9mX2APOgf1ZSc5Ez
-         2rJFURzzr/tDBEnZLFbAcTFXGCFB/tKY89E5DwJ5ACI9JMEj6CCpFWiKF9z7/N8JUKfe
-         BaLQ==
-X-Gm-Message-State: AOJu0YzB3TNdDfJV5ILD5+iGZNl6xNiMNkCxy7jxB3T/ZaNRM8l7pchU
-	cfpzqNp42cjUI8HdN5gXKtmFuPmIFvYB0io5l6W44JK6dLLDWb4ItRMUwsRK0uw=
-X-Gm-Gg: AeBDiesafmnuH1XsOjDuPEtu/nsc7zNgq8cYqnAdSlI9FlQp8cGe5fnCXeLhILtkf1J
-	35xIYYOqlBBFrKBl6rmhqlBIv4tR2dhd6Ut1yG0EvNaRFB7CHLT55dpYytV2PKQE6qmQ4x5sI2S
-	HtDcVoDx5y3MJcKy3X8yWF13EAonTC98X76r9ePqKT6cUzfVWp8IJbD74XjEmcA3mJwLfRbWKaC
-	W2U/+7jsXT6wD5oW31t2D5wGEbkHVVGo3VWBykh05dnaHkfUN0/AR9p5fe/2kMwNro60hRcgpKo
-	WvbNHXW5wyljLEjY5gRukjKJ5TsomiI6fb2+ZjW0kT6nqfCn0BTnd9RH47H17vYROrufBnYL4cb
-	9Muh9yDnPhtbjStuMoUy9rCjLL+S51WURfnlsjgY31KUqYXE/cah9vi9yxq2ISVdFfzSd10VQyI
-	0BNpH/OF0mVf7rh1C2mnpKmB/HzdFC/srR7MKEKoiWfOOg3fI5f71GlmRZX4XqS3xBWjUWoQmbC
-	h5PgBpW
-X-Received: by 2002:a05:600c:4188:b0:488:a2ac:a34c with SMTP id 5b1f17b1804b1-488a2aca466mr35331975e9.12.1775377415719;
-        Sun, 05 Apr 2026 01:23:35 -0700 (PDT)
+        bh=7qyT7dMuTyeo4pWg6I7mWIhj7ve7iNx1quZYqE2iyEg=;
+        b=GQQ+BGfqkjArTMRCkgJbjsOkz2DMt1wO1Yo0esvMEVACAw+KPJ3edb6kBJynE6qpw7
+         wIZtBS5MvZ7spj+mdS5CJD1MLwFuX5RBp8aS4yx7m0WbeFjg53hpw6EEuAzi6r6zcEKr
+         l1ESCrL1zSApDzX3DaW2fSYGZWqRa3fZZjNazZ/ps67ynELZjaLG+YyjljMpVEBf7z0L
+         9gvAZLq/Tw4POJiLufGIuzdCdnB2kXtLcUB3yXYSf7kf+1MuXYM80c4n+mZHKzBHoAgs
+         nEXHjww5ssUoncVMGupEBsHcGupl0ADQnSzKLBOZIgSoxOlTnWiAhWQHx3uiCaZJoetZ
+         1VJw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1775377418; x=1775982218;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=7qyT7dMuTyeo4pWg6I7mWIhj7ve7iNx1quZYqE2iyEg=;
+        b=dvhVvA6kuBK5LdQROfi2Pz9GufxXN45WCpqCtkUbN0qqi5nJq0tuR+okeI66vscgGo
+         Z2zeptMZsTjUt07ziVjIzp7+drik0qhboywHDyRNCrP7bwCUS0zAy7lUCN1iH1r/SAXy
+         gbn3sHdkqujj+eTemgV7L4R7jZcQSEE7Ok0hCmgZr0fSKIgqNXjirC167+JIjAAzVTPx
+         mRIUXXFfN/Y3kSJgbaEHWlBL5wHkohjdCkhE6ARtuMK7NQFy1hWqraZDdRafy8mVXZlq
+         ot6+lmxlOYIecvQ6DKCLBhOvUol5wKhIb3ULBsNJaSmNGxnsnHMowjhyMBIUJZVMJThq
+         UXvQ==
+X-Gm-Message-State: AOJu0Yz/N6M95H0zfqYQN2V3fIbSlB72+CzTs1UiMSvY0YIaIEpkZI2N
+	JTHXZWRN/0UD3EOHRjhzQxaC7jBglqDTY/Ky33NanjeAoa3Vz5rtl4ubuigxy1o=
+X-Gm-Gg: AeBDieuMQ3b4xNLRFinmPrx5KpWz/Z6glFRMu9+BUQwc0ueOhusYyCDWE1xuS6n3LtW
+	EQRlmFQgzSclr/V1zzXu6M+7Ecen1rkaJ4h9AgccqAbqXU/wkv3y2rKmdg+4aRK+00/6eGFsjal
+	6fy0VCoPcoXnTM2sGgc3UH1r3Bx7BxwIbyJy3P+bkeeyl/MhsMjQS5UsWkX5IzqJSqyaq4bB/xf
+	awvITqQfkxBcag64A8D1BHykjl5qFsC7LUY9XVPmgoKYbQyhywmx/hfOYITMXKwr906iudMqNj8
+	bbz5090JnE4AHpgwXjkceiHFt3j90TrLGxsNrWYueg9cdeyswZ4q++Olptez7KCl/bUyqO0YDjb
+	xuZNqJvxmdtiOAj8On3x52aGClTvg0jJA0KMHEKXa1n8KEmzvzKPTr0Udi/PRNKJ/MIglSzi8+w
+	4n0da9qPhEulkA9QFYDqBKVGmQE7iGhTwbDXULuMvcy6W+bVjiMN+YoE619bhaA8aQV4c7MNtM/
+	XIeTtf7
+X-Received: by 2002:a05:600c:820f:b0:485:3f1c:d887 with SMTP id 5b1f17b1804b1-488997d31f6mr136814905e9.26.1775377418195;
+        Sun, 05 Apr 2026 01:23:38 -0700 (PDT)
 Received: from localhost ([2a02:810d:4a94:b300:4382:4d9a:caac:a8d9])
-        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-48899d3a4e9sm119425445e9.6.2026.04.05.01.23.34
+        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-4887e80a616sm675861105e9.2.2026.04.05.01.23.37
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 05 Apr 2026 01:23:35 -0700 (PDT)
+        Sun, 05 Apr 2026 01:23:37 -0700 (PDT)
 From: Florian Fuchs <fuchsfl@gmail.com>
 To: linux-sh@vger.kernel.org,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
@@ -63,10 +65,12 @@ To: linux-sh@vger.kernel.org,
 Cc: Adrian McMenamin <adrianmcmenamin@gmail.com>,
 	linux-kernel@vger.kernel.org,
 	Florian Fuchs <fuchsfl@gmail.com>
-Subject: [PATCH 0/2] cdrom: gdrom: fix block I/O and capacity setting
-Date: Sun,  5 Apr 2026 10:23:28 +0200
-Message-ID: <20260405082330.4104672-1-fuchsfl@gmail.com>
+Subject: [PATCH 1/2] cdrom: gdrom: replace port I/O with MMIO accessors
+Date: Sun,  5 Apr 2026 10:23:29 +0200
+Message-ID: <20260405082330.4104672-2-fuchsfl@gmail.com>
 X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20260405082330.4104672-1-fuchsfl@gmail.com>
+References: <20260405082330.4104672-1-fuchsfl@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -75,29 +79,82 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Hi all,
+GDROM_DATA_REG is a memory-mapped data register, but the driver uses
+outsw() and insw() only for this register. Replace this with local
+helpers using MMIO accessors ioread16_rep() / iowrite16_rep().
 
-This series fixes a gdrom driver Oops due to bad MMIO register access and
-fixes the missing updates of the block layer gendisk capacity that
-prevented ISO9660 mounts from working.
+Before, it oopsed accessing the data register, as the io_port_base
+P2SEG gets added to the argument in outsw() / insw(), which leads to an
+unusable drive:
 
-The change was tested on real Sega Dreamcast devices (PAL-E, NTSC-J)
-with physical CD-R discs and with GDEMU emulated discs. Before: Oops on
-mount and an unusable drive. After: Successfully able to mount and use
-the inserted medium.
+        BUG: unable to handle kernel paging request at 405f7080
+        PC: [<8c28d5b4>] gdrom_spicommand+0x6c/0xb0
 
-Thanks,
-Florian
+Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+---
+The original Oops can be reproduced just by mounting a disc, like:
+mount -t iso9660 -o ro /dev/gdrom /mnt
+---
+ drivers/cdrom/gdrom.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
 
-Florian Fuchs (2):
-  cdrom: gdrom: replace port I/O with MMIO accessors
-  cdrom: gdrom: update gendisk capacity on open
-
- drivers/cdrom/gdrom.c | 39 +++++++++++++++++++++++++++++++++++----
- 1 file changed, 35 insertions(+), 4 deletions(-)
-
-
-base-commit: 6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f
+diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
+index 4ba4dd06cbf4..dccf41fa5d0a 100644
+--- a/drivers/cdrom/gdrom.c
++++ b/drivers/cdrom/gdrom.c
+@@ -171,6 +171,16 @@ static void gdrom_identifydevice(void *buf)
+ 		data[c] = __raw_readw(GDROM_DATA_REG);
+ }
+ 
++static void gdrom_fifo_readw(void *buf, unsigned int words)
++{
++	ioread16_rep((void __iomem *)GDROM_DATA_REG, buf, words);
++}
++
++static void gdrom_fifo_writew(const void *buf, unsigned int words)
++{
++	iowrite16_rep((void __iomem *)GDROM_DATA_REG, buf, words);
++}
++
+ static void gdrom_spicommand(void *spi_string, int buflen)
+ {
+ 	short *cmd = spi_string;
+@@ -198,7 +208,7 @@ static void gdrom_spicommand(void *spi_string, int buflen)
+ 		gdrom_getsense(NULL);
+ 		return;
+ 	}
+-	outsw(GDROM_DATA_REG, cmd, 6);
++	gdrom_fifo_writew(cmd, 6);
+ }
+ 
+ 
+@@ -282,7 +292,7 @@ static int gdrom_readtoc_cmd(struct gdromtoc *toc, int session)
+ 		err = -EINVAL;
+ 		goto cleanup_readtoc;
+ 	}
+-	insw(GDROM_DATA_REG, toc, tocsize/2);
++	gdrom_fifo_readw(toc, tocsize / 2);
+ 	if (gd.status & 0x01)
+ 		err = -EINVAL;
+ 
+@@ -433,7 +443,7 @@ static int gdrom_getsense(short *bufstring)
+ 		GDROM_DEFAULT_TIMEOUT);
+ 	if (gd.pending)
+ 		goto cleanup_sense;
+-	insw(GDROM_DATA_REG, &sense, sense_command->buflen/2);
++	gdrom_fifo_readw(sense, sense_command->buflen / 2);
+ 	if (sense[1] & 40) {
+ 		pr_info("Drive not ready - command aborted\n");
+ 		goto cleanup_sense;
+@@ -612,7 +622,7 @@ static blk_status_t gdrom_readdisk_dma(struct request *req)
+ 		cpu_relax();
+ 	gd.pending = 1;
+ 	gd.transfer = 1;
+-	outsw(GDROM_DATA_REG, &read_command->cmd, 6);
++	gdrom_fifo_writew(read_command->cmd, 6);
+ 	timeout = jiffies + HZ / 2;
+ 	/* Wait for any pending DMA to finish */
+ 	while (__raw_readb(GDROM_DMA_STATUS_REG) &&
 -- 
 2.43.0
 
