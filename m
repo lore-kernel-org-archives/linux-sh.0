@@ -1,92 +1,92 @@
-Received: from mail-ed1-f52.google.com (mail-ed1-f52.google.com [209.85.208.52])
+Received: from mail-ed1-f47.google.com (mail-ed1-f47.google.com [209.85.208.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE1AE168BD
-	for <linux-sh@vger.kernel.org>; Sun,  5 Apr 2026 13:16:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 556872F1FFC
+	for <linux-sh@vger.kernel.org>; Sun,  5 Apr 2026 13:24:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.47
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775394992; cv=pass; b=NZHQgV3028E38RpPt2vSUt24A9ex4wUn9IKwgli/uOSvpFFkorhO+wYw/7LfaIX0GrC3ObjWhUxByPQiwnlNkS9YFKXRQe1skOJxfxzXF356qZ6lozGPZLgMXSvjagntPnF1EoCrgEFpjaBB0Z/vgGJHcTw5cKSnOEchzwWS36Q=
+	t=1775395492; cv=pass; b=Yog+2vZ2bFE8Evo0Ex718EA10aJonHpZTfAzqOt+wbkzIIfp0arrzi7X84Gjb0xfl2hVSF8VzQhWJRpyLY3+ehBW25fPSXM9RNbvEWxxTGEjwVzqnlWzw+lYDzbUCKSBYLNa+xiwl1POqZIqE4ygrXYqF+M0dbomsX1u2/ymTL0=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775394992; c=relaxed/simple;
-	bh=Ly4ReE5ZY6QMSHcoPlSOVHi/ePTv7bG2hci37RTMBJ0=;
+	s=arc-20240116; t=1775395492; c=relaxed/simple;
+	bh=GQ28NUfUdY0jv+w4vVK47r3Q2Dzx0TPLZxugBsDVtFs=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=fz3vzlMcXLJejJxt7oXBTDYqSLPdThpmTU4EbG8Mvaiz9KiZBeMZ2Su6Hob/eulnpOiuOUgz+JSGcD+FHet+MyFuTn2xmS8qxfwX5o3XgpzAOMhpIIvunEnAced/a0dMP91ghTLV1KKueWR/8TwcuKSrHs1XHyx1nPrvWp/S3zA=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MXlir58r; arc=pass smtp.client-ip=209.85.208.52
+	 To:Cc:Content-Type; b=ogmcnKz7rRXyCZ1AJSExZjAehfvm17dDOoP15cFBknh7SWi60bYKvRBE+8otr2NFQQDyTc3pILeOFk7zHUEEZzr6LW9pmLoI4ZZhwx4Q4kmfeJx3j4ihch+Nj0TbTV/cT9M74XIcmrF6WMXxIMJp4WeHs1IHXohlfejPMrRCBBE=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Lq5KE5AM; arc=pass smtp.client-ip=209.85.208.47
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MXlir58r"
-Received: by mail-ed1-f52.google.com with SMTP id 4fb4d7f45d1cf-66ec3b7b1deso589194a12.2
-        for <linux-sh@vger.kernel.org>; Sun, 05 Apr 2026 06:16:29 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1775394988; cv=none;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Lq5KE5AM"
+Received: by mail-ed1-f47.google.com with SMTP id 4fb4d7f45d1cf-66bb6eb28acso5795573a12.0
+        for <linux-sh@vger.kernel.org>; Sun, 05 Apr 2026 06:24:51 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1775395490; cv=none;
         d=google.com; s=arc-20240605;
-        b=ECllZtUmWSEVszzNRbFsohVsL0RI4/vtR+Nx+m5IwSOqSlilG/7c0FFjpVkGJjjPgW
-         jyf/9UONKv4/kK5rgUF2ip21PMDYyiW2RfYUqDhCKxa9wKAUMGmsK536jdL68QXrE2Ph
-         Wb1ITLFABywoMCIz5Y4CUS2cxHZTxkTrNxdqZ4BTJOt+grIrabQxk22xpE7fYnS5jSn0
-         DBlJ2aqUuT2QwDj9ZwPHR89gYQaThRu59TSSpWQkXSuDXejxFSIszMSdgbFwA6zwYkMn
-         NHXFeavSxUAZgCIpVW/dB2jS1XAVIYRBQKkCsm1I8YgMUSF8S+5ppj2sKoMDQvuFRPq6
-         ROMQ==
+        b=ap8OLZPPzhXJ35Avr3vzdhYa4sq5/7qYQn5W9nQf0YmiyKDKHUJ7Tmd6YlQEDWsQdo
+         4AYVek+gSqEw/1k6GVIrfR0Q1NwSNMPjvff7Oyli4co4RHaKuRkxC9Fd2k8f6Ki6U9Fd
+         8aAVOhvt7QG8P6gJ3HhFJG994pXNg2pHe6vd5J6CTSXD/l3/DbGaix7g6fArbdcz3H5B
+         aIFmbe9qv8RKtDwBjRaNHa2p2gk7YfGlldA93FeUSJa2lvD6qGP6UZQ+VxDoJ5cbj76s
+         5SLhb2TBFkj5ug56npS4Xwwg8tJu+RTFHruzBmsLPaeBbZMMCh3TTcziZGg9qpmispxE
+         UPuA==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:dkim-signature;
-        bh=xvpYyCRLWgdo1VGzh2pTS+EMDwube+KJdI+DsTN88c8=;
+        bh=IFdEl1snxGd722jLaP5MhSrSuC8HlnBjFSw+fdQTY04=;
         fh=T7yRQISD0yERY0gXvmjYvSbtZGnWtgsippBK2HCeEXc=;
-        b=KsS4ulWBWLgDepgy36PESqejapl7+wc0z/wJAyExdT3JZqbGU2kSRgQ/pKHKcfl3Fd
-         Av4b7zhhM4J+n/JP1hm5fmIHehBXg/Zrbw3ENa/5mcll9NyiIsCtMLlgCGV1TAVHdk9L
-         kMxax5qkmPdcPAbrKza9ea+tIb3HVtjTXM8n7hR5NETmw8LDpA/5NRb2MA15jf9aCkwp
-         XgJjhBoNX0HSglX8J2Vw8ADRn7YknrejHrTAy8L9ty2tI8V7FK7V3ft7MLqCNgqkYtVr
-         KLpOS6ATd9AbW3V+sDY9r4vML8WniB9rPt471Q5fCyAaMjiNIfraOYx6qtNKSHSH0V1u
-         TgVA==;
+        b=QfqYi+1mnsE0YHX0sH6o53+S8yv9ag0z9vLW3TgR4JKCjqhIEcieNTH72WY1oNwisB
+         23dcRolZzhZqmaSW1sqrK3dPgCqGBdShjaGem+yFIAAI8krC2RtcJvISBEJAB7223jhV
+         l/fXieFCsbhKSStAqsRjcQj4cEO8oj13ElfvkGoGWC8I5mJ9GK0lhSLItodL25+c5Nfu
+         IsimXHfEJh/pmRuKTL5Wp/ZcWidCUIYd5Z74YASmHqx+ubuvwKcsQs3iaW24hCvc8lCJ
+         FR1zrLcNF68IqizQEez1wO7ik7yf1oo3qj0m7vNDD4qik/wftQEuZRZ7uPnAJ4ze+JO8
+         WLhw==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1775394988; x=1775999788; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1775395490; x=1776000290; darn=vger.kernel.org;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=xvpYyCRLWgdo1VGzh2pTS+EMDwube+KJdI+DsTN88c8=;
-        b=MXlir58rZaiF1fL0ou4L8NR4ozdupNw5J3tO/jbBLCSUa/zAMRlzS6Ojd8FnFy8w6/
-         zAkzvc6l2G83Zxbd/iZP2+mKWZJvgXFAg/8+hoTaDQJJOBQrR5cjkroU2gM7+3mmzRpU
-         E0LZ37LArDl46yuDyISMZEUV5TJMTxmkGztTyCIAHaGVIz88dRaLhwgsf84Q0KI/NFQ5
-         uHfDIt4htKnATLT47ZSyeG7rxCP9CyluSNsju1watqUaN95UBiQMBdIcArjUd68BYwj1
-         TOLKEFekH4nZX5CgzDz++MDzHuQA5zM8Re0Ul7Htpm43Tj4wvI4nE4j+ihpJhB5eZjMa
-         0uVw==
+        bh=IFdEl1snxGd722jLaP5MhSrSuC8HlnBjFSw+fdQTY04=;
+        b=Lq5KE5AMUnIl9XmsB9j3ZpyHnGvKWNUbToja84InvIir6MEZvyRalPKFk6x/D9LwDv
+         qnhLeVSH+/c2DxyYQgaPgfAo94/p3Zq/CMEFJpyfjJjtHnhWsIJJqcDNz4UOFFcFwkAa
+         rGf7PteCKg8JMK8O0mMHA/Pp8eDuAu0mPLmGvwdIZqzRGAT52GkCZB8PEzxLYoeGlmhH
+         YduoR991fESlNCgGndZqkj5dV7TjwnbLb/0I4sk+hVWhRpnKaa+lL7yZ0KuOI4ALksQH
+         N/MBNpNOoVnQWnMbK+EwdBdzAAOEmeXFFgJ01JXlcx2og4WV7FTsGyzPy0faXEFRwEAu
+         QWbA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1775394988; x=1775999788;
+        d=1e100.net; s=20251104; t=1775395490; x=1776000290;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=xvpYyCRLWgdo1VGzh2pTS+EMDwube+KJdI+DsTN88c8=;
-        b=lAY90wEA2ljsUp5k1uxgkAw2kA+04MVRfz0oRh73olLfujfueD0kNJjRCfIi14lpeS
-         0gs14zDqktfV1/7SWoADuYKMzLlo0i1j9jwqD2YkXKoMLzoSk6LH1Ch8/flpFjtzgDh1
-         mokkLT7VwEsZNHQlrxHHxGIAmWWaoFCbswan7UxhzJYspEtGpkDJQ+YfTgNtM+i+01sz
-         PV2pwmP6V2JSAcE4LeC0eK1mAwPBeQU0zcyK+JR93FITqzrokCfAYb/6WkNC/ww919LQ
-         z+ik//yXGQ53WmcrDWImQVrRPDdpfOtx9vzfZTXy9Qr6EaKsQ1oa0LODjYhMmEyfcjwu
-         rLgg==
-X-Gm-Message-State: AOJu0Yzl7Ygwko//eBgivNIOFTZyXwgWM6YR4H1F8hOs6t4IjPNSwUov
-	mJ6HC3scWZRSIAPcQ8DCtyGytWxwLE9Dvrp71ZsOPLBbL4LYvQnmzL3cmw09id5pRJHHWNVZYgZ
-	e9gZ6cLQCNd1n3W6thiRTfj4Vhew69IuRYVrD
-X-Gm-Gg: AeBDievIfH2nAwiwWpWdcBhLJ6YRK8G0C+LKCnlkUW7k+WePe0uv60WEzULoO868THN
-	nznHUry8vPzCOthjDrcs+yyRk9a3R/38uBufktAvwkrjNqefbMVTbEmQ6hMUCH+6gM2l1xrjzfA
-	Xud0fa4cMwy8btas3onGiBjNUWRoLpUB+/X128+1/YVIvo3PE7Mj/UXMauG2M5Y/4sx59emTmPB
-	ccePO5CHSSdp/Yx31ckHvy+De8TQt5QnHTSCAmDAx2AlBpIPQC9x1RNjWNK/5muahunPlnA2Ecb
-	iceXMvQC0agjn3kHTxXn6viFeeF+c3ZcnA/6PTInXZmRiLdWEBo0iEQ9DtIlvnuaZUUJLEqvuS8
-	pbgbNiz5NM1e8rR/+BjFq
-X-Received: by 2002:a05:6402:46ce:b0:66e:7071:5ce with SMTP id
- 4fb4d7f45d1cf-66e70711494mr1989535a12.26.1775394988022; Sun, 05 Apr 2026
- 06:16:28 -0700 (PDT)
+        bh=IFdEl1snxGd722jLaP5MhSrSuC8HlnBjFSw+fdQTY04=;
+        b=KDrNaWYS8yLZDIPn5+dji5Ae9/nGDNL/n/QdRchzuE74WUQhtGbsnLjHCzr9LTx3qv
+         dcCpLPnTRQnX6iGNnUVYF8TwsWBDm3N6h0tF1QCAu23YfgAxUX8Yfqa+ehS19UL3ENhw
+         QCfwFM7hEWVBZTFbSrg72obZFERl8gNVfGAFbG4N2paPrkakdTBwsbdclVPNm7KP8cMU
+         0x/zwLRG6Jw5s8TY9zMeJzEylZP3Q7/p1bU4dxk4aSEiHRZ7r1XvUgKijxQSNyYjzIOn
+         w0zgyBwVGn6UsG3qdpH5srT2IRbuOh7swRUUNCu//k9jBHfLBcSsb+vVMn6GhnQyTPZB
+         5rvg==
+X-Gm-Message-State: AOJu0YzbkFokB6ciyIsTt8ibsl7THKoz/OU0adQffDnvxUXtBF9QlCAs
+	SM1JgMyi5BxWjhcvYBzXUL5cXnjTmZ0XB6moIp0Y+pewXgKNx672gNUR+eTqYWmj72wQIxZDLMZ
+	p4lF7tP/uL4jpvXlQLKFF+mDk4vEjlqg=
+X-Gm-Gg: AeBDietUGI6/NpFc3mpK7GVu6D8JjUM9ILaemZkcDsXyfPNndXSDYH2mq814UQHPM4/
+	hzfd2ujBuFksp0s3owX5ZY8WqDZI4Da2K/uQzllvZWHVCDf9ndTDht9UEJra5JlGrjOSMiTcdYF
+	SqqZOKcKDJsVnD1+ATVD4PAyF6nd7P6QGiBJaJR0PqZWbxDLjFRukMp0sluVdEHuDlKrOoWOVui
+	kaqPp3swxW12gCB6b0oTkbKNDdzVn63rS5hLnxaKqf1JQQv1XpOYdRIDdfphHugDUcvD0MB5o4s
+	CJHh8aMBuMseHCUT++PZfOLgYXrr4IOfSFh5gtL8p/9pbT9ItNyo7cuD2uymb6uMFI85RmIIq3e
+	CNbK9k4kqgQ==
+X-Received: by 2002:a05:6402:46d3:b0:66e:abe5:ab22 with SMTP id
+ 4fb4d7f45d1cf-66eabe5ac9amr985686a12.5.1775395489551; Sun, 05 Apr 2026
+ 06:24:49 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260405082330.4104672-1-fuchsfl@gmail.com> <20260405082330.4104672-2-fuchsfl@gmail.com>
-In-Reply-To: <20260405082330.4104672-2-fuchsfl@gmail.com>
+References: <20260405082330.4104672-1-fuchsfl@gmail.com> <20260405082330.4104672-3-fuchsfl@gmail.com>
+In-Reply-To: <20260405082330.4104672-3-fuchsfl@gmail.com>
 From: Adrian McMenamin <adrianmcmenamin@gmail.com>
-Date: Sun, 5 Apr 2026 14:16:16 +0100
-X-Gm-Features: AQROBzDcgD0a_IZndD0FdHm8XCslACnezKR1fTlZt0C7HNPV41mNpNkZBBgHe8E
-Message-ID: <CACwZE5QeuDnEOGar6-0tfkhO2s8UuvdcjMMf7ubFhVUeh=7JcA@mail.gmail.com>
-Subject: Re: [PATCH 1/2] cdrom: gdrom: replace port I/O with MMIO accessors
+Date: Sun, 5 Apr 2026 14:24:38 +0100
+X-Gm-Features: AQROBzB5_8DgoNmUALCH7wvmerr0Yw3kKkRU6Ddd7hkMMX9PSvqaglQj9kExsEM
+Message-ID: <CACwZE5Rmy3A0k3tvc32gv0V3T1LL2PaP_+S7N87mwNppLTh=PA@mail.gmail.com>
+Subject: Re: [PATCH 2/2] cdrom: gdrom: update gendisk capacity on open
 To: Florian Fuchs <fuchsfl@gmail.com>
 Cc: linux-sh@vger.kernel.org, 
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Artur Rojek <contact@artur-rojek.eu>, 
@@ -95,59 +95,28 @@ Content-Type: text/plain; charset="UTF-8"
 
 On Sun, 5 Apr 2026 at 09:23, Florian Fuchs <fuchsfl@gmail.com> wrote:
 >
-> GDROM_DATA_REG is a memory-mapped data register, but the driver uses
-> outsw() and insw() only for this register. Replace this with local
-> helpers using MMIO accessors ioread16_rep() / iowrite16_rep().
+> Update the gendisk capacity of the media. Without the capacity, the block
+> reads fail before reaching the request queue, which prevented ISO9660
+> mounts. Refresh the capacity from the TOC leadout in gdrom_bdops_open()
+> so it checks the inserted media.
 >
-> Before, it oopsed accessing the data register, as the io_port_base
-> P2SEG gets added to the argument in outsw() / insw(), which leads to an
-> unusable drive:
->
->         BUG: unable to handle kernel paging request at 405f7080
->         PC: [<8c28d5b4>] gdrom_spicommand+0x6c/0xb0
->
-> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
-> ---
-> The original Oops can be reproduced just by mounting a disc, like:
-> mount -t iso9660 -o ro /dev/gdrom /mnt
-> ---
->  drivers/cdrom/gdrom.c | 18 ++++++++++++++----
->  1 file changed, 14 insertions(+), 4 deletions(-)
->
-> diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
-> index 4ba4dd06cbf4..dccf41fa5d0a 100644
-> --- a/drivers/cdrom/gdrom.c
-> +++ b/drivers/cdrom/gdrom.c
-> @@ -171,6 +171,16 @@ static void gdrom_identifydevice(void *buf)
->                 data[c] = __raw_readw(GDROM_DATA_REG);
->  }
->
-> +static void gdrom_fifo_readw(void *buf, unsigned int words)
-> +{
-> +       ioread16_rep((void __iomem *)GDROM_DATA_REG, buf, words);
-> +}
+...
 > +
-> +static void gdrom_fifo_writew(const void *buf, unsigned int words)
-> +{
-> +       iowrite16_rep((void __iomem *)GDROM_DATA_REG, buf, words);
-> +}
-> +
->  static void gdrom_spicommand(void *spi_string, int buflen)
+>  static int gdrom_bdops_open(struct gendisk *disk, blk_mode_t mode)
 >  {
->         short *cmd = spi_string;
-> @@ -198,7 +208,7 @@ static void gdrom_spicommand(void *spi_string, int buflen)
->                 gdrom_getsense(NULL);
->                 return;
->         }
-> -       outsw(GDROM_DATA_REG, cmd, 6);
-> +       gdrom_fifo_writew(cmd, 6);
->  }
+>         int ret;
+> @@ -492,6 +511,8 @@ static int gdrom_bdops_open(struct gendisk *disk, blk_mode_t mode)
 >
+>         mutex_lock(&gdrom_mutex);
+>         ret = cdrom_open(gd.cd_info, mode);
+> +       if (!ret)
+> +               ret = gdrom_update_capacity();
+>         mutex_unlock(&gdrom_mutex);
+>         return ret;
+>  }
 
 
-This is one of those "how did this ever work to begin with" bugs when
-examined today - bur rather than introduce new local functions can we
-not just use either readsw(p, d, l)/writesw(p, d, l) or
-__raw_writew(p,d,l) and __raw_read(p,d,l) directly?
-
-Adrian
+Will this not reintrocue the potential race condition bug that was
+eliminated here -
+https://github.com/mcmenaminadrian/linux/commit/2bbea6e117357d17842114c65e9a9cf2d13ae8a3
+(not by me, I add)?
