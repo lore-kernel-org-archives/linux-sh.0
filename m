@@ -1,228 +1,140 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 011C8285C8B
-	for <linux-sh@vger.kernel.org>; Mon, 13 Apr 2026 06:59:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E86C62E975E
+	for <linux-sh@vger.kernel.org>; Mon, 13 Apr 2026 07:29:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776063566; cv=none; b=EMtrdib+SNeUy1Wf+LSfVIZRP7iXArGV+gZ7BL1gV0OHm4gxlt6zJoq3nkR9KhJFrBQeUzl+S6CXR4rTJeJ1H1WTtpVfr9Nlt1ctl2IQkVUC8yzP4ExGh+tj4NEp7H0YL6UNtoYl6gsNEFEgLOIwt+UbbVtsBe82zTR5Cd5E0f4=
+	t=1776065387; cv=none; b=uBOjBehlPSJ1+LSZ2XfGZ9eSSz8vFnIT6dLVNBuR27hOiT3hwUYDWsgl0LqooOt+IFpgN7/RamtWV2RPjoAQql6pwi0UDlgySprEcE3HNsw2uVMktP98PUQD9sDuML9UncXUdRWpT2AzpJSqkzNrblM7cjeQax6xAIDew3BlCCU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776063566; c=relaxed/simple;
-	bh=O1PXmE4CY3RIQpIQ1uhRLY/quR9HuYHzBMpY6ZEFlNI=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=beQg/N/e9c3Ygv+4I5Axvk3sUdAtoss4HFCFsGbOsrenGi7dyIRnSL7rtvvDnLs85hXykRe+L357Ihn8uhQZ5CVdhlg4sMok6jhJ05OovHTIyRBQETriZ8/xs9+WyizCTjgNfjevXdRsF9nQ09C6lvtwq6jREi52o983NNFy5HE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=N/7K7luW; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=qT6KZOnS; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=qLqGB1RT; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=JK8ZUUPL; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
+	s=arc-20240116; t=1776065387; c=relaxed/simple;
+	bh=gB5G1+RdTOzd/0swHLiEx0QiBBINmh9hL+HHLbt2BbI=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=a5faJ6F1+GRy/XZ0+9jxRz8tXOh2fkStxal4ln4DXQTSipjS8BvJniAsFeSF1A1sWp6/W4SxiNUPrJ6imfoA2Unqg5RpUDmtnLDkMJiwKEppxnNt8wot7QRnPV3iHs7KWwECeo+hNbVObnXD6CyGncl8CvxhTl6wbBVv7bshQfM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=U1G4Tzkl; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="N/7K7luW";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="qT6KZOnS";
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="qLqGB1RT";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="JK8ZUUPL"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id E82F36A83A;
-	Mon, 13 Apr 2026 06:59:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1776063563; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=bL3Vo15HEvCfhTQ/xDYWG9e0yFLeDsIe2Hwfc4O3WLA=;
-	b=N/7K7luW3PnQpn9af/kue21IKT4UcwDFalLL4pUlZwLuAr/tfP4iAj1WAQB8qBBI3ulI1A
-	ltG3lSuRLLfGsaaSY7F+KL4Xt4CXdu078/vstL3DmsQjCLioWWVUL1UIWs/6vWeytBd9yn
-	HhW57NoIQ1qTARDr1omz+bMtAQ8OXkg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1776063563;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=bL3Vo15HEvCfhTQ/xDYWG9e0yFLeDsIe2Hwfc4O3WLA=;
-	b=qT6KZOnSuavLsTJW59zo08MdIA7Ev/iRWdlT5r/NgjG3OT5BsBrksLgeQbOJcoIkgoieTS
-	3NwdJYh7OZ83mKDA==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=qLqGB1RT;
-	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=JK8ZUUPL
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1776063562; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=bL3Vo15HEvCfhTQ/xDYWG9e0yFLeDsIe2Hwfc4O3WLA=;
-	b=qLqGB1RTpRT+nGmQrNB/f/5K0Sx1zWrCqbFBkPYE5WIdLyRGXIQEWLWaY5AwAN7eP637l9
-	jh6GR8krwWQS3VVXiRFN9i3a1eEbqMXOzDtbH3fi+RGShfAUVJZHzEID3I3Hz4MSWNFiey
-	Ufcc67u39AKSbCXPYvorLoIVynbsQhI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1776063562;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=bL3Vo15HEvCfhTQ/xDYWG9e0yFLeDsIe2Hwfc4O3WLA=;
-	b=JK8ZUUPLlgX5gDmFTBhjNK8i9ZdzpIAtgo6HkW6+itBLyLMRV9JcdKBrTDeIxUtHz5z7di
-	VG8k3en3kBdiANAQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9FC9A4AD60;
-	Mon, 13 Apr 2026 06:59:22 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IyDXJUqU3Gm5MgAAD6G6ig
-	(envelope-from <tzimmermann@suse.de>); Mon, 13 Apr 2026 06:59:22 +0000
-Message-ID: <5ce643a9-59ec-480a-985e-764bf23e2485@suse.de>
-Date: Mon, 13 Apr 2026 08:59:22 +0200
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="U1G4Tzkl"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=HG8xZOikE5wswKuWNX0ZhN/h9I3xfWt6DYNlMj8kLjI=; t=1776065384;
+	x=1776670184; b=U1G4TzklW42VBIP+vs1Drf2Qj+jD6ZWui9a2XAngUSHMOBJ8WVVuN7nP9peHM
+	rQ0ztegMfcnNe3znjkv22hm9llRpL6OvzyCJWm06Pa8BOyHISB9Kh4uTM/cRbaGmbMwwdAF2KnALk
+	qhRToUz9VOLrbTX3nyz5+yQqLY971QpYrxUu/89jSDcyAVc+wNnuNdI3REy2IEM+PeoGMJTUuF3kU
+	i+xf171bA0nndtRkNp66XesxOmD3KrjP2CXjYk2KULnRedsOCaeM0h+gw4fG3WEKfbEL7QwmrsHPK
+	/GSy1bEMntgrdaodMPymvnG0S3ywOLDlVUTYEFSgMPQ+UBCOMA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1wCBji-00000003irS-1fdb; Mon, 13 Apr 2026 09:29:34 +0200
+Received: from dynamic-093-128-043-080.93.128.pool.telefonica.de ([93.128.43.80] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1wCBji-00000001ADe-0kCJ; Mon, 13 Apr 2026 09:29:34 +0200
+Message-ID: <d3af51074e76f051b72d59c1bc45ebe4eff3cb4e.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] arch: sh: Include <linux/io.h> in dac.h
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Thomas Zimmermann <tzimmermann@suse.de>, ysato@users.sourceforge.jp, 
+	dalias@libc.org, lee@kernel.org, danielt@kernel.org, simona.vetter@ffwll.ch
+Cc: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, kernel test
+ robot <lkp@intel.com>, Jingoo Han <jingoohan1@gmail.com>
+Date: Mon, 13 Apr 2026 09:29:33 +0200
+In-Reply-To: <5ce643a9-59ec-480a-985e-764bf23e2485@suse.de>
+References: <20251028170913.16711-1-tzimmermann@suse.de>
+	 <e2c0c4686908f38858716a1dcf67df7de488fd33.camel@physik.fu-berlin.de>
+	 <5ce643a9-59ec-480a-985e-764bf23e2485@suse.de>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.0 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] arch: sh: Include <linux/io.h> in dac.h
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- ysato@users.sourceforge.jp, dalias@libc.org, lee@kernel.org,
- danielt@kernel.org, simona.vetter@ffwll.ch
-Cc: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
- kernel test robot <lkp@intel.com>, Jingoo Han <jingoohan1@gmail.com>
-References: <20251028170913.16711-1-tzimmermann@suse.de>
- <e2c0c4686908f38858716a1dcf67df7de488fd33.camel@physik.fu-berlin.de>
-Content-Language: en-US
-From: Thomas Zimmermann <tzimmermann@suse.de>
-Autocrypt: addr=tzimmermann@suse.de; keydata=
- xsBNBFs50uABCADEHPidWt974CaxBVbrIBwqcq/WURinJ3+2WlIrKWspiP83vfZKaXhFYsdg
- XH47fDVbPPj+d6tQrw5lPQCyqjwrCPYnq3WlIBnGPJ4/jreTL6V+qfKRDlGLWFjZcsrPJGE0
- BeB5BbqP5erN1qylK9i3gPoQjXGhpBpQYwRrEyQyjuvk+Ev0K1Jc5tVDeJAuau3TGNgah4Yc
- hdHm3bkPjz9EErV85RwvImQ1dptvx6s7xzwXTgGAsaYZsL8WCwDaTuqFa1d1jjlaxg6+tZsB
- 9GluwvIhSezPgnEmimZDkGnZRRSFiGP8yjqTjjWuf0bSj5rUnTGiyLyRZRNGcXmu6hjlABEB
- AAHNJ1Rob21hcyBaaW1tZXJtYW5uIDx0emltbWVybWFubkBzdXNlLmRlPsLAjgQTAQgAOAIb
- AwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgBYhBHIX+6yM6c9jRKFo5WgNwR1TC3ojBQJftODH
- AAoJEGgNwR1TC3ojx1wH/0hKGWugiqDgLNXLRD/4TfHBEKmxIrmfu9Z5t7vwUKfwhFL6hqvo
- lXPJJKQpQ2z8+X2vZm/slsLn7J1yjrOsoJhKABDi+3QWWSGkaGwRJAdPVVyJMfJRNNNIKwVb
- U6B1BkX2XDKDGffF4TxlOpSQzdtNI/9gleOoUA8+jy8knnDYzjBNOZqLG2FuTdicBXblz0Mf
- vg41gd9kCwYXDnD91rJU8tzylXv03E75NCaTxTM+FBXPmsAVYQ4GYhhgFt8S2UWMoaaABLDe
- 7l5FdnLdDEcbmd8uLU2CaG4W2cLrUaI4jz2XbkcPQkqTQ3EB67hYkjiEE6Zy3ggOitiQGcqp
- j//OwE0EWznS4AEIAMYmP4M/V+T5RY5at/g7rUdNsLhWv1APYrh9RQefODYHrNRHUE9eosYb
- T6XMryR9hT8XlGOYRwKWwiQBoWSDiTMo/Xi29jUnn4BXfI2px2DTXwc22LKtLAgTRjP+qbU6
- 3Y0xnQN29UGDbYgyyK51DW3H0If2a3JNsheAAK+Xc9baj0LGIc8T9uiEWHBnCH+RdhgATnWW
- GKdDegUR5BkDfDg5O/FISymJBHx2Dyoklv5g4BzkgqTqwmaYzsl8UxZKvbaxq0zbehDda8lv
- hFXodNFMAgTLJlLuDYOGLK2AwbrS3Sp0AEbkpdJBb44qVlGm5bApZouHeJ/+n+7r12+lqdsA
- EQEAAcLAdgQYAQgAIAIbDBYhBHIX+6yM6c9jRKFo5WgNwR1TC3ojBQJftOH6AAoJEGgNwR1T
- C3ojVSkIALpAPkIJPQoURPb1VWjh34l0HlglmYHvZszJWTXYwavHR8+k6Baa6H7ufXNQtThR
- yIxJrQLW6rV5lm7TjhffEhxVCn37+cg0zZ3j7zIsSS0rx/aMwi6VhFJA5hfn3T0TtrijKP4A
- SAQO9xD1Zk9/61JWk8OysuIh7MXkl0fxbRKWE93XeQBhIJHQfnc+YBLprdnxR446Sh8Wn/2D
- Ya8cavuWf2zrB6cZurs048xe0UbSW5AOSo4V9M0jzYI4nZqTmPxYyXbm30Kvmz0rYVRaitYJ
- 4kyYYMhuULvrJDMjZRvaNe52tkKAvMevcGdt38H4KSVXAylqyQOW5zvPc4/sq9c=
-In-Reply-To: <e2c0c4686908f38858716a1dcf67df7de488fd33.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.51 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FREEMAIL_CC(0.00)[vger.kernel.org,lists.freedesktop.org,intel.com,gmail.com];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.de:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	RCPT_COUNT_SEVEN(0.00)[10];
-	MID_RHS_MATCH_FROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.de:dkim,suse.de:mid,suse.de:email,suse.com:url,intel.com:email]
-X-Rspamd-Queue-Id: E82F36A83A
-X-Spam-Flag: NO
-X-Spam-Score: -4.51
-X-Spam-Level: 
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Hi
+Hi Thomas,
 
-Am 12.04.26 um 09:35 schrieb John Paul Adrian Glaubitz:
-> Hi Thomas,
->
-> On Tue, 2025-10-28 at 18:07 +0100, Thomas Zimmermann wrote:
->> Include <linux/io.h> to avoid depending on <linux/backlight.h> for
->> including it. Declares __raw_readb() and __raw_writeb().
->>
->> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
->> Reported-by: kernel test robot <lkp@intel.com>
->> Closes: https://lore.kernel.org/oe-kbuild-all/202510282206.wI0HrqcK-lkp@intel.com/
->> Fixes: 243ce64b2b37 ("backlight: Do not include <linux/fb.h> in header file")
->> Cc: Thomas Zimmermann <tzimmermann@suse.de>
->> Cc: Daniel Thompson (RISCstar) <danielt@kernel.org>
->> Cc: Simona Vetter <simona.vetter@ffwll.ch>
->> Cc: Lee Jones <lee@kernel.org>
->> Cc: Daniel Thompson <danielt@kernel.org>
->> Cc: Jingoo Han <jingoohan1@gmail.com>
->> Cc: dri-devel@lists.freedesktop.org
->> ---
->> This is fallout from a recent cleanup of the backlight header file. I don't
->> have the option of building or testing this change, though.
->> ---
->>   arch/sh/include/cpu-sh3/cpu/dac.h | 2 ++
->>   1 file changed, 2 insertions(+)
->>
->> diff --git a/arch/sh/include/cpu-sh3/cpu/dac.h b/arch/sh/include/cpu-sh3/cpu/dac.h
->> index fd02331608a8..323ec8570bcd 100644
->> --- a/arch/sh/include/cpu-sh3/cpu/dac.h
->> +++ b/arch/sh/include/cpu-sh3/cpu/dac.h
->> @@ -2,6 +2,8 @@
->>   #ifndef __ASM_CPU_SH3_DAC_H
->>   #define __ASM_CPU_SH3_DAC_H
->>   
->> +#include <linux/io.h>
->> +
->>   /*
->>    * Copyright (C) 2003  Andriy Skulysh
->>    */
-> I'm just looking at this patch again and was wondering where <linux/backlight.h> is
-> actually being pulled in on SH3. I assume this is somewhere on the driver side, no?
+On Mon, 2026-04-13 at 08:59 +0200, Thomas Zimmermann wrote:
+> Hi
+>=20
+> Am 12.04.26 um 09:35 schrieb John Paul Adrian Glaubitz:
+> > Hi Thomas,
+> >=20
+> > On Tue, 2025-10-28 at 18:07 +0100, Thomas Zimmermann wrote:
+> > > Include <linux/io.h> to avoid depending on <linux/backlight.h> for
+> > > including it. Declares __raw_readb() and __raw_writeb().
+> > >=20
+> > > Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> > > Reported-by: kernel test robot <lkp@intel.com>
+> > > Closes: https://lore.kernel.org/oe-kbuild-all/202510282206.wI0HrqcK-l=
+kp@intel.com/
+> > > Fixes: 243ce64b2b37 ("backlight: Do not include <linux/fb.h> in heade=
+r file")
+> > > Cc: Thomas Zimmermann <tzimmermann@suse.de>
+> > > Cc: Daniel Thompson (RISCstar) <danielt@kernel.org>
+> > > Cc: Simona Vetter <simona.vetter@ffwll.ch>
+> > > Cc: Lee Jones <lee@kernel.org>
+> > > Cc: Daniel Thompson <danielt@kernel.org>
+> > > Cc: Jingoo Han <jingoohan1@gmail.com>
+> > > Cc: dri-devel@lists.freedesktop.org
+> > > ---
+> > > This is fallout from a recent cleanup of the backlight header file. I=
+ don't
+> > > have the option of building or testing this change, though.
+> > > ---
+> > >   arch/sh/include/cpu-sh3/cpu/dac.h | 2 ++
+> > >   1 file changed, 2 insertions(+)
+> > >=20
+> > > diff --git a/arch/sh/include/cpu-sh3/cpu/dac.h b/arch/sh/include/cpu-=
+sh3/cpu/dac.h
+> > > index fd02331608a8..323ec8570bcd 100644
+> > > --- a/arch/sh/include/cpu-sh3/cpu/dac.h
+> > > +++ b/arch/sh/include/cpu-sh3/cpu/dac.h
+> > > @@ -2,6 +2,8 @@
+> > >   #ifndef __ASM_CPU_SH3_DAC_H
+> > >   #define __ASM_CPU_SH3_DAC_H
+> > >  =20
+> > > +#include <linux/io.h>
+> > > +
+> > >   /*
+> > >    * Copyright (C) 2003  Andriy Skulysh
+> > >    */
+> > I'm just looking at this patch again and was wondering where <linux/bac=
+klight.h> is
+> > actually being pulled in on SH3. I assume this is somewhere on the driv=
+er side, no?
+>=20
+> Oh well, it's been ages...
+>=20
+> I've been cleaning up the plenty of places that include <linux/fb.h> and=
+=20
+> <linux/backlight.h> unnecessarily. Besides the Fixes tag, presumably=20
+> commit df1445598758 ("backlight: hp680_bl: Do not include <linux/fb.h>")=
+=20
+> is involved as well. The hp680_bl backlight driver got <linux/io.h> via=
+=20
+> <linux/fb.h> via <linux/backlight.h> before including <cpu/dac.h>. With=
+=20
+> fb.h gone from backlight.h gone,=C2=A0 dac.h should best include its=20
+> dependencies. Hence the patch here.
 
-Oh well, it's been ages...
+Perfect, thanks for the quick explanation! I will pick up the patch then.
 
-I've been cleaning up the plenty of places that include <linux/fb.h> and 
-<linux/backlight.h> unnecessarily. Besides the Fixes tag, presumably 
-commit df1445598758 ("backlight: hp680_bl: Do not include <linux/fb.h>") 
-is involved as well. The hp680_bl backlight driver got <linux/io.h> via 
-<linux/fb.h> via <linux/backlight.h> before including <cpu/dac.h>. With 
-fb.h gone from backlight.h gone,  dac.h should best include its 
-dependencies. Hence the patch here.
+Adrian
 
-Best regards
-Thomas
-
-
-
->
-> Adrian
->
-
--- 
---
-Thomas Zimmermann
-Graphics Driver Developer
-SUSE Software Solutions Germany GmbH
-Frankenstr. 146, 90461 Nürnberg, Germany, www.suse.com
-GF: Jochen Jaser, Andrew McDonald, Werner Knoblich, (HRB 36809, AG Nürnberg)
-
-
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
