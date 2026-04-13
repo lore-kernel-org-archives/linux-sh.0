@@ -1,30 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D07635E93C;
-	Mon, 13 Apr 2026 10:46:55 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 34BA335E93C;
+	Mon, 13 Apr 2026 10:46:57 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776077215; cv=none; b=oYu6XvUhpZQukwCrQDO6xoXE544gw0cIn/BQLlCSZE0VFyyDrHQGZ9x8yoPPaFlk0mEC/tvzkJxLWPkyj659EGR7XyVTYwuVPLbWNir90q2dbI4i86zc7qJzm7UUABVqhy/kXPPWjqgbgXIvEMIkfDxqYCjocWfu1EL2xtOgQwg=
+	t=1776077218; cv=none; b=pNdjQ7duFyUpUYEiGH/gcFDUywNsXzc0P3ElYH5tBV2qX9GkRgWNw9G0oexZOAfFfn1FoX5Pu0ctf8VguKFeHMRdhvKNbA3QO9HZgks0caWaWIyHKsHjF8uRNft24YHD66JPtNe4ZPGWKtgWrA/631t+qVce2X66epsc8tgEHh8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776077215; c=relaxed/simple;
-	bh=EV5PQN4ZcY4YowILqRqfScomjrS3S5Dkp7GHlFqTkl8=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ODtEqMxsEsLOTZQiXUi9p79YgGUkswljXCmUCIxbwagEXyw/GTAnyW3qXQy1BYjVc1KIy/deymJeBbU6rheDP4ei7MorjtChitZfmZ4xnLbhWfE20tH4Lt0LTOAeRRzA6vKePJRKkhqU0k+nw4QO3fJjaN/0pRxG8IM0oFKrBaA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mGjnUYAV; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1776077218; c=relaxed/simple;
+	bh=o+bRmTWfQc+OTMbhFAbbaOgxp/R/J7MaFpD/5SmWYO0=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=lq1nCXlXOUTmoqXOel927hiIaDjSHyO56IiGa71ANfLCdBg6FfWTNAr+QhZqmS2wp/d0/QhdoGJtO5YZbU9Wf5meo/KOTer7jS19lT+s1NkoAYIdhtIFK3dVdJUCINV6/emULsGdLK9vgvYWlwYLNRiN2al9PALq8QX+fvTA8as=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=F1/t6hzl; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mGjnUYAV"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C7825C19421;
-	Mon, 13 Apr 2026 10:46:52 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="F1/t6hzl"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C6DEC19421;
+	Mon, 13 Apr 2026 10:46:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776077215;
-	bh=EV5PQN4ZcY4YowILqRqfScomjrS3S5Dkp7GHlFqTkl8=;
-	h=From:To:Cc:Subject:Date:From;
-	b=mGjnUYAVdAklmN+5BaaD9L66bnb0uI92gprtqyMm6V45B8YNGskuFNitZQLvqIGEV
-	 UMPapzH0LPv14vwdNpEtEHVw0QbFTf+s13E6ON062rKaHF2SBOGhtf+YJgz9OVjztD
-	 xtO4riwaKnxs8Bv7M1l+8Ykb4FsZi+dSFeANT1ygnFw7p+VyhVXwUxigQnV/4ZrL+V
-	 LtHvgwG/voxJs4qSTHor9TuydqmsOrbZMmBKTUpdf2ZNU8bSgRC5cdDbyPsfjQxy+I
-	 +ldlTC+idJ41ttw8V18RmJyjFkyP2vULUDw85Jn009X7k9jqEv8bNZBpu/K6Q4Oxi+
-	 aCHflwUP54brA==
+	s=k20201202; t=1776077217;
+	bh=o+bRmTWfQc+OTMbhFAbbaOgxp/R/J7MaFpD/5SmWYO0=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+	b=F1/t6hzls0Rjl3gyKupeUJWxd+mYvAWoin2QDRTaHfVaenGgwRweLoJiYCns/lygw
+	 1Npu61IKoodT/KgO0m/rQZlWyXp7jTbwDjBvhRO4o0A/WxeXzbXBoA0DUfo6bk+qeU
+	 oHbs4FKM8DiP9teJ+ampOxl/c+EHA8///3tykEWbkPEQOWxH/ELqGKqj/6nlr5BFUi
+	 eXSR09mkDRIk+tJrj1blBy5Pv8t2FkYR/UYyChOztnsz/T7uelXgUq/XgugVDRCa+Z
+	 +r6glmj5kvP723TA1I0Ul3blSZ4cP8Hv3BgstuCbTFQcMvEAxND3nN4I8+TaAiGHrf
+	 l5FEVSkpsHueg==
 From: Mike Rapoport <rppt@kernel.org>
 To: linux-sh@vger.kernel.org
 Cc: Andrew Morton <akpm@linux-foundation.org>,
@@ -35,10 +36,12 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
 	Yoshinori Sato <ysato@users.sourceforge.jp>,
 	linux-kernel@vger.kernel.org,
 	linux-mm@kvack.org
-Subject: [PATCH 00/10] sh: remove NUMA and SPARSEMEM support
-Date: Mon, 13 Apr 2026 13:46:38 +0300
-Message-ID: <20260413104649.852228-1-rppt@kernel.org>
+Subject: [PATCH 01/10] sh: remove CONFIG_NUMA and realted configuration options
+Date: Mon, 13 Apr 2026 13:46:39 +0300
+Message-ID: <20260413104649.852228-2-rppt@kernel.org>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <20260413104649.852228-1-rppt@kernel.org>
+References: <20260413104649.852228-1-rppt@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -48,8 +51,6 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
 From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-
-Hi,
 
 NUMA support for SuperH was introduced a long time ago by commit
 b241cb0c885e ("sh: Support for multiple nodes.")
@@ -71,52 +72,111 @@ because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
 those additional "nodes" could not be used by the core MM because the
 maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
 
-Mike Rapoport (Microsoft) (10):
-  sh: remove CONFIG_NUMA and realted configuration options
-  sh: mm: remove numa.c
-  sh: mm: drop allocate_pgdat()
-  sh: remove setup_bootmem_node() and plat_mem_setup()
-  sh: drop dead code guarded by #ifdef CONFIG_NUMA
-  sh: drop include/asm/mmzone.h
-  init/Kconfig: drop ARCH_WANT_NUMA_VARIABLE_LOCALITY
-  sh: init: remove call the memblock_set_node()
-  sh: remove SPARSEMEM related entries from Kconfig
-  sh: drop include/asm/sparsemem.h
+Start removing NUMA support on sh with removing CONFIG_NUMA and related
+configuration options in arch/sh/Kconfig and arch/sh/mm/Kconfig.
 
- arch/sh/Kconfig                        |  8 ----
- arch/sh/configs/migor_defconfig        |  1 -
- arch/sh/configs/sdk7786_defconfig      |  1 -
- arch/sh/configs/se7722_defconfig       |  1 -
- arch/sh/configs/shx3_defconfig         |  1 -
- arch/sh/configs/ul2_defconfig          |  1 -
- arch/sh/include/asm/mmu.h              |  2 +
- arch/sh/include/asm/mmzone.h           | 42 --------------------
- arch/sh/include/asm/setup.h            |  3 ++
- arch/sh/include/asm/sparsemem.h        | 12 ------
- arch/sh/include/asm/topology.h         | 13 -------
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  5 ---
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  7 ----
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  5 ---
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  7 ----
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  5 ---
- arch/sh/kernel/cpu/sh4a/setup-shx3.c   | 18 ---------
- arch/sh/kernel/setup.c                 |  7 ----
- arch/sh/kernel/topology.c              | 12 ------
- arch/sh/kernel/vmcore_info.c           |  4 --
- arch/sh/mm/Kconfig                     | 29 --------------
- arch/sh/mm/Makefile                    |  1 -
- arch/sh/mm/init.c                      | 24 ------------
- arch/sh/mm/numa.c                      | 53 --------------------------
- arch/sh/mm/sram.c                      |  3 +-
- init/Kconfig                           |  7 ----
- 28 files changed, 6 insertions(+), 268 deletions(-)
- delete mode 100644 arch/sh/include/asm/mmzone.h
- delete mode 100644 arch/sh/include/asm/sparsemem.h
- delete mode 100644 arch/sh/mm/numa.c
+Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+---
+ arch/sh/configs/migor_defconfig   |  1 -
+ arch/sh/configs/sdk7786_defconfig |  1 -
+ arch/sh/configs/se7722_defconfig  |  1 -
+ arch/sh/configs/shx3_defconfig    |  1 -
+ arch/sh/configs/ul2_defconfig     |  1 -
+ arch/sh/mm/Kconfig                | 19 -------------------
+ 6 files changed, 24 deletions(-)
 
-
-base-commit: 591cd656a1bf5ea94a222af5ef2ee76df029c1d2
---
+diff --git a/arch/sh/configs/migor_defconfig b/arch/sh/configs/migor_defconfig
+index 1d9d543eef4c..db993616f14e 100644
+--- a/arch/sh/configs/migor_defconfig
++++ b/arch/sh/configs/migor_defconfig
+@@ -9,7 +9,6 @@ CONFIG_MODULES=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SH7722=y
+ CONFIG_MEMORY_START=0x0c000000
+-CONFIG_NUMA=y
+ # CONFIG_MIGRATION is not set
+ CONFIG_SH_MIGOR=y
+ # CONFIG_SH_TIMER_CMT is not set
+diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
+index d6fa3a422e24..36e6dd0622f7 100644
+--- a/arch/sh/configs/sdk7786_defconfig
++++ b/arch/sh/configs/sdk7786_defconfig
+@@ -41,7 +41,6 @@ CONFIG_CPU_SUBTYPE_SH7786=y
+ CONFIG_MEMORY_START=0x40000000
+ CONFIG_MEMORY_SIZE=0x20000000
+ CONFIG_PMB=y
+-CONFIG_NUMA=y
+ CONFIG_HUGETLB_PAGE_SIZE_64MB=y
+ CONFIG_KSM=y
+ CONFIG_SH_STORE_QUEUES=y
+diff --git a/arch/sh/configs/se7722_defconfig b/arch/sh/configs/se7722_defconfig
+index 85b8eb013b79..2908611b118e 100644
+--- a/arch/sh/configs/se7722_defconfig
++++ b/arch/sh/configs/se7722_defconfig
+@@ -10,7 +10,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SH7722=y
+ CONFIG_MEMORY_START=0x0c000000
+-CONFIG_NUMA=y
+ CONFIG_SH_STORE_QUEUES=y
+ CONFIG_SH_7722_SOLUTION_ENGINE=y
+ # CONFIG_SH_TIMER_CMT is not set
+diff --git a/arch/sh/configs/shx3_defconfig b/arch/sh/configs/shx3_defconfig
+index 0cb69a0b92cb..22c242cf89f7 100644
+--- a/arch/sh/configs/shx3_defconfig
++++ b/arch/sh/configs/shx3_defconfig
+@@ -29,7 +29,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SHX3=y
+ CONFIG_MEMORY_START=0x0c000000
+-CONFIG_NUMA=y
+ CONFIG_PAGE_SIZE_64KB=y
+ CONFIG_SH_STORE_QUEUES=y
+ CONFIG_SH_X3PROTO=y
+diff --git a/arch/sh/configs/ul2_defconfig b/arch/sh/configs/ul2_defconfig
+index 0d1c858754db..ff15d68dd12d 100644
+--- a/arch/sh/configs/ul2_defconfig
++++ b/arch/sh/configs/ul2_defconfig
+@@ -10,7 +10,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SH7366=y
+ CONFIG_MEMORY_SIZE=0x01f00000
+-CONFIG_NUMA=y
+ # CONFIG_MIGRATION is not set
+ # CONFIG_SH_DSP is not set
+ # CONFIG_SH_TIMER_CMT is not set
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index 1862411665ab..71fecbbb080e 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -112,27 +112,8 @@ config VSYSCALL
+ 	  For systems with an MMU that can afford to give up a page,
+ 	  (the default value) say Y.
+ 
+-config NUMA
+-	bool "Non-Uniform Memory Access (NUMA) Support"
+-	depends on MMU && SYS_SUPPORTS_NUMA
+-	select ARCH_WANT_NUMA_VARIABLE_LOCALITY
+-	default n
+-	help
+-	  Some SH systems have many various memories scattered around
+-	  the address space, each with varying latencies. This enables
+-	  support for these blocks by binding them to nodes and allowing
+-	  memory policies to be used for prioritizing and controlling
+-	  allocation behaviour.
+-
+-config NODES_SHIFT
+-	int
+-	default "3" if CPU_SUBTYPE_SHX3
+-	default "1"
+-	depends on NUMA
+-
+ config ARCH_FLATMEM_ENABLE
+ 	def_bool y
+-	depends on !NUMA
+ 
+ config ARCH_SPARSEMEM_ENABLE
+ 	def_bool y
+-- 
 2.53.0
+
