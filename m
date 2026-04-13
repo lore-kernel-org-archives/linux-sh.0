@@ -1,114 +1,122 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 481352288CB
-	for <linux-sh@vger.kernel.org>; Mon, 13 Apr 2026 07:31:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D07635E93C;
+	Mon, 13 Apr 2026 10:46:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776065488; cv=none; b=IO79bm5TWUV5KAvwFn7h8yVuIQQew08PliX7NL1JgnAK1shAoep1UOjVTa3WI7ykm1nFxVoDbvvWTVCK8U0iIzQVw0av30hPScxW1thHhRjxGYiEjN+UmydZXp/0poj0TWjJUSKQCooqFWFsnPHM30zF3yPU6j6d10nJ4GZ54NI=
+	t=1776077215; cv=none; b=oYu6XvUhpZQukwCrQDO6xoXE544gw0cIn/BQLlCSZE0VFyyDrHQGZ9x8yoPPaFlk0mEC/tvzkJxLWPkyj659EGR7XyVTYwuVPLbWNir90q2dbI4i86zc7qJzm7UUABVqhy/kXPPWjqgbgXIvEMIkfDxqYCjocWfu1EL2xtOgQwg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776065488; c=relaxed/simple;
-	bh=KNkkABbndnxCNtVuXT6IkozEz0XVv0k+irch//1jJD4=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=pf2YVju0F1nwveKkpNaUfGsWYP0diIkkYU+jsMEBc4/6iMWq9oP9iwvOhlInHRcU5ZkYSbMTDyVuteumIoOJs9b8Judx/2G2wcyDhzytrnQJZg7R4heljkM/1YBbF3hM+ILB8rYd1y4qWMcp5iQA4ExIR8r1UaXV5oFwWx1AvRo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=ZUdSnY3f; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1776077215; c=relaxed/simple;
+	bh=EV5PQN4ZcY4YowILqRqfScomjrS3S5Dkp7GHlFqTkl8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ODtEqMxsEsLOTZQiXUi9p79YgGUkswljXCmUCIxbwagEXyw/GTAnyW3qXQy1BYjVc1KIy/deymJeBbU6rheDP4ei7MorjtChitZfmZ4xnLbhWfE20tH4Lt0LTOAeRRzA6vKePJRKkhqU0k+nw4QO3fJjaN/0pRxG8IM0oFKrBaA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mGjnUYAV; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="ZUdSnY3f"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=3NRKg+X70w+bs9dJtQxcBsh/42zOSg1VzH57lZOv+uE=; t=1776065486;
-	x=1776670286; b=ZUdSnY3flvdLkXdbqQkCt7VlBkV5gEFYM9/WUCWJ5frKz3DqGk6yhSuwSmfAE
-	6IpI2/LsGPTfoCY+GF1OTEk7CGqy14VnedfvWT96QYoTTnB/9Zftctuj0BbcBbkz3VE+3N5n2Vyst
-	63ruXM2ygAL7DVcEBqAezctpl2phEfk6HvJotONSZF7erSHyloM3WW71jHUAvvlwlfdayafSL6RiO
-	Zw8UQgC2/FEhBShu/nlM5FeBXqv977B+17OeNjDKDY1RfLS6WUoOz552e9ujPZVT+lyDzVIvFXnQK
-	46cfCco+o0EBaBEAq1KVIWijPWN+OIKmIW47n5Cn0bJGKgcdyg==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wCBlT-00000003jm6-47EX; Mon, 13 Apr 2026 09:31:24 +0200
-Received: from dynamic-093-128-043-080.93.128.pool.telefonica.de ([93.128.43.80] helo=[192.168.178.50])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wCBlT-00000001Bb2-3Am4; Mon, 13 Apr 2026 09:31:23 +0200
-Message-ID: <7f1993d2161dc50bbb5cf5c1d6db0aef0d5c4f1d.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] arch: sh: Include <linux/io.h> in dac.h
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Thomas Zimmermann <tzimmermann@suse.de>, ysato@users.sourceforge.jp, 
-	dalias@libc.org, lee@kernel.org, danielt@kernel.org, simona.vetter@ffwll.ch
-Cc: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, kernel test
- robot <lkp@intel.com>, Jingoo Han <jingoohan1@gmail.com>
-Date: Mon, 13 Apr 2026 09:31:23 +0200
-In-Reply-To: <20251028170913.16711-1-tzimmermann@suse.de>
-References: <20251028170913.16711-1-tzimmermann@suse.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.0 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mGjnUYAV"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C7825C19421;
+	Mon, 13 Apr 2026 10:46:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1776077215;
+	bh=EV5PQN4ZcY4YowILqRqfScomjrS3S5Dkp7GHlFqTkl8=;
+	h=From:To:Cc:Subject:Date:From;
+	b=mGjnUYAVdAklmN+5BaaD9L66bnb0uI92gprtqyMm6V45B8YNGskuFNitZQLvqIGEV
+	 UMPapzH0LPv14vwdNpEtEHVw0QbFTf+s13E6ON062rKaHF2SBOGhtf+YJgz9OVjztD
+	 xtO4riwaKnxs8Bv7M1l+8Ykb4FsZi+dSFeANT1ygnFw7p+VyhVXwUxigQnV/4ZrL+V
+	 LtHvgwG/voxJs4qSTHor9TuydqmsOrbZMmBKTUpdf2ZNU8bSgRC5cdDbyPsfjQxy+I
+	 +ldlTC+idJ41ttw8V18RmJyjFkyP2vULUDw85Jn009X7k9jqEv8bNZBpu/K6Q4Oxi+
+	 aCHflwUP54brA==
+From: Mike Rapoport <rppt@kernel.org>
+To: linux-sh@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Mike Rapoport <rppt@kernel.org>,
+	Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-kernel@vger.kernel.org,
+	linux-mm@kvack.org
+Subject: [PATCH 00/10] sh: remove NUMA and SPARSEMEM support
+Date: Mon, 13 Apr 2026 13:46:38 +0300
+Message-ID: <20260413104649.852228-1-rppt@kernel.org>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Transfer-Encoding: 8bit
 
-On Tue, 2025-10-28 at 18:07 +0100, Thomas Zimmermann wrote:
-> Include <linux/io.h> to avoid depending on <linux/backlight.h> for
-> including it. Declares __raw_readb() and __raw_writeb().
->=20
-> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-> Reported-by: kernel test robot <lkp@intel.com>
-> Closes: https://lore.kernel.org/oe-kbuild-all/202510282206.wI0HrqcK-lkp@i=
-ntel.com/
-> Fixes: 243ce64b2b37 ("backlight: Do not include <linux/fb.h> in header fi=
-le")
-> Cc: Thomas Zimmermann <tzimmermann@suse.de>
-> Cc: Daniel Thompson (RISCstar) <danielt@kernel.org>
-> Cc: Simona Vetter <simona.vetter@ffwll.ch>
-> Cc: Lee Jones <lee@kernel.org>
-> Cc: Daniel Thompson <danielt@kernel.org>
-> Cc: Jingoo Han <jingoohan1@gmail.com>
-> Cc: dri-devel@lists.freedesktop.org
-> ---
-> This is fallout from a recent cleanup of the backlight header file. I don=
-'t
-> have the option of building or testing this change, though.
-> ---
->  arch/sh/include/cpu-sh3/cpu/dac.h | 2 ++
->  1 file changed, 2 insertions(+)
->=20
-> diff --git a/arch/sh/include/cpu-sh3/cpu/dac.h b/arch/sh/include/cpu-sh3/=
-cpu/dac.h
-> index fd02331608a8..323ec8570bcd 100644
-> --- a/arch/sh/include/cpu-sh3/cpu/dac.h
-> +++ b/arch/sh/include/cpu-sh3/cpu/dac.h
-> @@ -2,6 +2,8 @@
->  #ifndef __ASM_CPU_SH3_DAC_H
->  #define __ASM_CPU_SH3_DAC_H
-> =20
-> +#include <linux/io.h>
-> +
->  /*
->   * Copyright (C) 2003  Andriy Skulysh
->   */
+From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Hi,
 
-Will pick this up today for v7.1.
+NUMA support for SuperH was introduced a long time ago by commit
+b241cb0c885e ("sh: Support for multiple nodes.")
 
-Adrian
+	"... for boards with many different memory blocks that are
+	 otherwise unused (SH7722/SH7785 URAM and so forth)"
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+In reality, this added 128K of memory on sh7722 and sh7785 and 256K on
+shx3 at the expense of all the NUMA related code in the kernel.
+
+For build of v7.0-rc7 with defconfig and the same configuration with
+CONFIG_NUMA disabled, bloat-o-meter reports difference of ~76k. Disabling
+CONFIG_SPARSMEM on top increases the difference to ~94k. And that's only
+overhead in code and static data that does not take into the account data
+structures allocated at run time.
+
+And all this overhead has been there for nothing for almost 8 years
+because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
+those additional "nodes" could not be used by the core MM because the
+maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
+
+Mike Rapoport (Microsoft) (10):
+  sh: remove CONFIG_NUMA and realted configuration options
+  sh: mm: remove numa.c
+  sh: mm: drop allocate_pgdat()
+  sh: remove setup_bootmem_node() and plat_mem_setup()
+  sh: drop dead code guarded by #ifdef CONFIG_NUMA
+  sh: drop include/asm/mmzone.h
+  init/Kconfig: drop ARCH_WANT_NUMA_VARIABLE_LOCALITY
+  sh: init: remove call the memblock_set_node()
+  sh: remove SPARSEMEM related entries from Kconfig
+  sh: drop include/asm/sparsemem.h
+
+ arch/sh/Kconfig                        |  8 ----
+ arch/sh/configs/migor_defconfig        |  1 -
+ arch/sh/configs/sdk7786_defconfig      |  1 -
+ arch/sh/configs/se7722_defconfig       |  1 -
+ arch/sh/configs/shx3_defconfig         |  1 -
+ arch/sh/configs/ul2_defconfig          |  1 -
+ arch/sh/include/asm/mmu.h              |  2 +
+ arch/sh/include/asm/mmzone.h           | 42 --------------------
+ arch/sh/include/asm/setup.h            |  3 ++
+ arch/sh/include/asm/sparsemem.h        | 12 ------
+ arch/sh/include/asm/topology.h         | 13 -------
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  5 ---
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  7 ----
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  5 ---
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  7 ----
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  5 ---
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   | 18 ---------
+ arch/sh/kernel/setup.c                 |  7 ----
+ arch/sh/kernel/topology.c              | 12 ------
+ arch/sh/kernel/vmcore_info.c           |  4 --
+ arch/sh/mm/Kconfig                     | 29 --------------
+ arch/sh/mm/Makefile                    |  1 -
+ arch/sh/mm/init.c                      | 24 ------------
+ arch/sh/mm/numa.c                      | 53 --------------------------
+ arch/sh/mm/sram.c                      |  3 +-
+ init/Kconfig                           |  7 ----
+ 28 files changed, 6 insertions(+), 268 deletions(-)
+ delete mode 100644 arch/sh/include/asm/mmzone.h
+ delete mode 100644 arch/sh/include/asm/sparsemem.h
+ delete mode 100644 arch/sh/mm/numa.c
+
+
+base-commit: 591cd656a1bf5ea94a222af5ef2ee76df029c1d2
+--
+2.53.0
