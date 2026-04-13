@@ -1,142 +1,123 @@
-Received: from fhigh-a4-smtp.messagingengine.com (fhigh-a4-smtp.messagingengine.com [103.168.172.155])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f177.google.com (mail-pg1-f177.google.com [209.85.215.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80669241690;
-	Mon, 13 Apr 2026 11:15:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.155
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9565E391518
+	for <linux-sh@vger.kernel.org>; Mon, 13 Apr 2026 11:54:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776078933; cv=none; b=k7dDYKjgNRofNfzIIyyysQ1mWEUg0VsijVNBHvVSwWxE6g/tiHxH6veKkHdoWXTuoegV7uLP46rpSePKkWEM+z0pr+J0gbBhwSCAefjLzZaxkXnFyXiBbVC5bs+Z1GrxdGXljXcgFZY2FZQF6C08w9dS6ak8u0KDQ7QiMDRMsUk=
+	t=1776081272; cv=none; b=P75hLA89It6mHXoXgACFTtumHFniKZlGF4TrIVn4OB9h3Xz6INP1WPaPdYka1LUv5ejsH6fDWbkmKPpBFL8trwbRkN2o1LV9vmTRUiW576KTcQxNS4exv1BIkJlKn+Z6byJtkEa4pTfx9AesKJFa5ps5pnUPC8le+0fgjmeDykg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776078933; c=relaxed/simple;
-	bh=aUdB7WjJ882hG2u9RqrsOQAs3Nk+sPvZ21NCMBdaIUo=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=USuDNP5RJwZKNkIeyQjJhWrqZauEtVC4QhubQrXXjhsfPXlnZoRC0J+rNQeW6VmvPkgD2UHElpPvJdG20PhyB1FU5UzFRhGaZEhdyf9DAFHvPCnQgIA0Te6c4wd6N++kS2LycYML6D88a0EWNR8tMKvRNe04YRf3HGOX19ljLIY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=BetPAMrh; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=YOXcQKcE; arc=none smtp.client-ip=103.168.172.155
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
+	s=arc-20240116; t=1776081272; c=relaxed/simple;
+	bh=DpIntkKN3iEhgCt9UIkBGF4XZ4jGPxiV3R2ublbIpVA=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=sP/EsvIPa4J3x96DYdmR7y1y2itpnm6bQPYzsYe3Vk3bVcoPY/e7N3JdMdrEbdfA9j8hSC/FB9AEW8V83XEaulj8EI2/z37hovNhKcYq4dkg5d4ur7TYA4PpigGziBebgDdJvs1JTgNc4v/TteaONdgVPIixQ/q9/NUOsp8ic2s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=HzlIKv1J; arc=none smtp.client-ip=209.85.215.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="BetPAMrh";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="YOXcQKcE"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id ABC14140017B;
-	Mon, 13 Apr 2026 07:15:30 -0400 (EDT)
-Received: from phl-imap-02 ([10.202.2.81])
-  by phl-compute-04.internal (MEProxy); Mon, 13 Apr 2026 07:15:30 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm1; t=1776078930;
-	 x=1776165330; bh=eTmL49YPBteRUcWblilZINYX2pjzGZzY0ltnNRpdVYU=; b=
-	BetPAMrh3TokbMEGjLXdAbvoda+xYNVb7jptloq6qf3qRxz85vzdHcORtEe8TXuP
-	dOV1MuYz9F4OX1S+K2yf80a9wZuLzFf7+e5jUjjNBoB33TIZmS/VyTipvbHlPQSz
-	5tVPVNwxOR7A52NoSBqrhSxqWSV05bpZC0NGdqEpInk63dWvXViCn06/JOQP36p7
-	4x7IHw7PQwleI52ytJcWug2sXxrp8h9qalAWX3JQ5GxNlGanUzjEBFfuseuJEVn7
-	OjW/9WWlfUdYC2iRFumbKaYZkfjjnrS34dNf9/R9AoAKJ6kcIx+7j/aERfxMqz2F
-	kx8bcLPnV0Dks0mv0amp3A==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1776078930; x=
-	1776165330; bh=eTmL49YPBteRUcWblilZINYX2pjzGZzY0ltnNRpdVYU=; b=Y
-	OXcQKcEX5tEk/wZEX8dbk21JFtetmgNCSyO5WlxHSRND3TtCzAkJ4ZsSonf2/HcA
-	KfGMWqi1kJWsWR+4Z5yQL52U3+kpbgOrfjiD/Vtk2kFccDPY+j5BCEHXxSnc9FAR
-	JZ2nqhKSREwSFyHvBcjfk7nfqzulatPjJp/lAACgl2ryiGrYoo544XKnYipG4uAE
-	mpXz9ZDevpUZnhOzveJSqEa3YzpkAiTZTdIpfBN1M9bdyRYTtvVpX/rkU2gGJAd7
-	99zQtiPydzQMu5APaYTAoWom4vXuhDo9pbsCIGREtmQAQfsdW9KfIdBRHDpfxfd5
-	GA7dV1rSy11emnqRAZSZg==
-X-ME-Sender: <xms:UtDcaYZ9Lj7eUioEjYGAs_F4D-XDMonTm9KEwN29pS75MLp2k0fztw>
-    <xme:UtDcaeOpqAWqWH5l9iimHatP93rKoI6x2GWYVl3svuNrZebzA5kBemlq7fKZKa029
-    P5PhPdtxFAJ4QqpFg04wSEk6pJIC-veFe5QSJSMQh4Qw_-4ZiZJLf0>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdefkedtkecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
-    hrpefoggffhffvvefkjghfufgtgfesthejredtredttdenucfhrhhomhepfdetrhhnugcu
-    uegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrghtthgvrh
-    hnpefhtdfhvddtfeehudekteeggffghfejgeegteefgffgvedugeduveelvdekhfdvieen
-    ucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegrrhhnug
-    esrghrnhgusgdruggvpdhnsggprhgtphhtthhopeekpdhmohguvgepshhmthhpohhuthdp
-    rhgtphhtthhopehrphhptheskhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugi
-    dqmhhmsehkvhgrtghkrdhorhhgpdhrtghpthhtohepuggrlhhirghssehlihgstgdrohhr
-    ghdprhgtphhtthhopegrkhhpmheslhhinhhugidqfhhouhhnuggrthhiohhnrdhorhhgpd
-    hrtghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinhdruggv
-    pdhrtghpthhtohephihsrghtohesuhhsvghrshdrshhouhhrtggvfhhorhhgvgdrjhhppd
-    hrtghpthhtoheplhhinhhugidqkhgvrhhnvghlsehvghgvrhdrkhgvrhhnvghlrdhorhhg
-    pdhrtghpthhtoheplhhinhhugidqshhhsehvghgvrhdrkhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:UtDcaTVhNnohniEpWSmvnWRVT09fC4MbQYw3OKQQKbx5Gkbst2Xo4A>
-    <xmx:UtDcaQi35YRxdd-eBug821sMGAnmxA88IjiZgna8jp7APSUWbAL0iw>
-    <xmx:UtDcaTpOICXGGe_7nFcnIuqavX2tXVzmrsTHz_qaGl9462ioCB6FHA>
-    <xmx:UtDcaeEgI1CA0ozWy8pYv6A3rwt8FqUQLFIqW94AzMx98eegKhAoOw>
-    <xmx:UtDcaV160YJtqTh9toAPDrp88_47LlPOCEB-oJpt0rD1QzX6hJHfAxMf>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 9C449700069; Mon, 13 Apr 2026 07:15:29 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HzlIKv1J"
+Received: by mail-pg1-f177.google.com with SMTP id 41be03b00d2f7-c76864f4e58so1263675a12.1
+        for <linux-sh@vger.kernel.org>; Mon, 13 Apr 2026 04:54:29 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1776081269; x=1776686069; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=Kbf6f/mBggx7CBkqLB4oD03Dp2SeRdAQ/IF7C0fyt8o=;
+        b=HzlIKv1JoAOpWUuWPf+XLcFzylORAsmEMu/fnvpQ641CWo3f7NM7UK9cY9i/xe/V1T
+         VbGcCq5tvok6A1AeiES6Z6KI2lcJBxEOuB6fdObr3ZA8vKB16Gh7Nxl1Q2qxbIRloISL
+         qx1eM3aVRbIzgPgAL9To/D8SoqLl6ULpwGELV4LUh2MeNtLKRcTVhXKqIcLNUSck8g8V
+         Z4XDT3nxVNeW7hJkYjttCldKvtn7wPn09N8qPslJCWtr4Dv30ZmXU+kvYcv6BuWyeMwy
+         pfkXDojDCy/J+CHN8ndnDBqc4Dk/qUwq5nQKoLGcmzTDcJv9NiikwPUU2BV1XMiDf7Nc
+         NKgg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1776081269; x=1776686069;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Kbf6f/mBggx7CBkqLB4oD03Dp2SeRdAQ/IF7C0fyt8o=;
+        b=BswCw0+WCXodiq8kapugyOSbELxJxvy0Rn9EldkN05z+UyslMYKz6NIZntaPc4+keQ
+         yIzmVWFevkTnnVxZMUoIq433n7S1yoYHD+gppVHagGr5d15ivQU3YDDNL0ecqvQGcV+d
+         QzzIm9BE3EGuCbHWVNaVTmjRuO+nQkrn3NtJBytn7ogcrSDuapdYXYLV8QhQaTY0BIXD
+         IVkNaRpL+f/8XRseUrhv4BSTC9t3pcYkfW9b7MmcqJnNnz762LOO96OdpXNR8cgwdHod
+         tQsBNfCyUedkzpBVxXU9YoDLSxQ/gNRNxEo14gPHNkyPe1RTtEYSQNbP8O8YRrLDYYZG
+         fCOA==
+X-Forwarded-Encrypted: i=1; AFNElJ/fmIgDqJRFEN4oo5boxtsVxs1QMLPx5aYmKL2tJPr7CDQ3eUd2qHXwob+2pMiObBVOe5CKMvNyrA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yxb0slHkaKb5DISFR2kuRGdSdH8fqZCGDZyTJBI5pauBOGB+oY0
+	3qmyF6gw+6AQoPenOR+bGvD+aqvn0hZkX6mvUWZkNPcKEKt9AZbPEgzk
+X-Gm-Gg: AeBDievqSwG0WFBrRyzaslw9xFe4DBw1uGf/PRQm1GWzaNn+OIkLIkz9+me1k8V1Un1
+	VOQe9jJfvt8MnPfeDwHIw24lu9v7/SJWZqBcmfbTasZJFpdehuVy/n7dVeaRSs17c2SySySyqyK
+	IOTZxEuQYhXsntwlKlAHkz/U96bv40Ko1fUVQkCOUXT6opJ0tV59hbQL9BL0kN51eEDZsXLxvzW
+	Nz6V4+epE0JsAJziEkICV9Nd1Blhx7DEucVx4adYDbkewPqw9FBbHV+PincBoW5wr91Zf+zre+S
+	+0a+UD5keIO4lKis+mmXPcKaipwprb0FREohZ8N9p6lwDBTSFr6YeFpk3mbcLUaPX5GBu+Eelf6
+	9dMMXrbYqSv8HtjqjHwjRVjWR7Ct2ODDGvYmdXrQcTmloYZ9xM6t6DWFFzE4TIuc4Gjd4s4zM3a
+	TbyecpDPj/OW+0dsMalMpj4jxHhL92fpEJNfCt7CNTUA==
+X-Received: by 2002:a17:90b:1a8f:b0:359:83d3:27d3 with SMTP id 98e67ed59e1d1-35e4274e363mr10973143a91.2.1776081268925;
+        Mon, 13 Apr 2026 04:54:28 -0700 (PDT)
+Received: from lgs.. ([2409:893d:1188:142d:db27:7a46:955d:48f7])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-35e34fdc4bcsm15474300a91.7.2026.04.13.04.54.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 13 Apr 2026 04:54:28 -0700 (PDT)
+From: Guangshuo Li <lgs201920130244@gmail.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Guangshuo Li <lgs201920130244@gmail.com>,
+	Adrian McMenamin <adrian@newgolddream.dyndns.info>,
+	Paul Mundt <lethal@linux-sh.org>,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Cc: stable@vger.kernel.org
+Subject: [PATCH v2] maple: Fix refcount leak in maple_attach_driver() error path
+Date: Mon, 13 Apr 2026 19:54:18 +0800
+Message-ID: <20260413115418.2780881-1-lgs201920130244@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-ThreadId: Ax9AE_gslVNw
-Date: Mon, 13 Apr 2026 13:14:49 +0200
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Mike Rapoport" <rppt@kernel.org>, linux-sh@vger.kernel.org
-Cc: "Andrew Morton" <akpm@linux-foundation.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "Rich Felker" <dalias@libc.org>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org,
- linux-mm@kvack.org
-Message-Id: <42a4c6c1-762f-449f-9d14-3eb0fa02b94f@app.fastmail.com>
-In-Reply-To: <20260413104649.852228-1-rppt@kernel.org>
-References: <20260413104649.852228-1-rppt@kernel.org>
-Subject: Re: [PATCH 00/10] sh: remove NUMA and SPARSEMEM support
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-On Mon, Apr 13, 2026, at 12:46, Mike Rapoport wrote:
->
-> NUMA support for SuperH was introduced a long time ago by commit
-> b241cb0c885e ("sh: Support for multiple nodes.")
->
-> 	"... for boards with many different memory blocks that are
-> 	 otherwise unused (SH7722/SH7785 URAM and so forth)"
->
-> In reality, this added 128K of memory on sh7722 and sh7785 and 256K on
-> shx3 at the expense of all the NUMA related code in the kernel.
->
-> For build of v7.0-rc7 with defconfig and the same configuration with
-> CONFIG_NUMA disabled, bloat-o-meter reports difference of ~76k. Disabling
-> CONFIG_SPARSMEM on top increases the difference to ~94k. And that's only
-> overhead in code and static data that does not take into the account data
-> structures allocated at run time.
->
-> And all this overhead has been there for nothing for almost 8 years
-> because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
-> those additional "nodes" could not be used by the core MM because the
-> maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
+As device_register() calls device_initialize() before device_add(), the
+failure path in maple_attach_driver() is reached after the embedded
+struct device has already been initialized and its lifetime is expected
+to be managed through the device core reference counting. However, that
+path frees mdev and its associated resources directly via
+maple_free_dev(), rather than releasing them through put_device() and
+the normal release path. This may leave the reference count of the
+embedded struct device unbalanced, resulting in a refcount leak and
+potentially leading to a use-after-free.
 
-I had looked at it when you asked me about it last year, and I can
-confirm that agree with all your findings and the resulting patches.
+The issue was identified by a static analysis tool I developed and
+confirmed by manual review.
 
-Whole series
+A possible fix would be to use put_device() in the error path and let
+maple_release_device() handle the final cleanup.
 
-Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+Fixes: b3c69e248176 ("maple: more robust device detection.")
+Cc: stable@vger.kernel.org
+Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
+---
+v2:
+  - note that the issue was identified by my static analysis tool
+  - and confirmed by manual review
 
-Two very minor points:
+ drivers/sh/maple/maple.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-* It looks like you left the 'config SYS_SUPPORTS_NUMA' symbol
-  in Kconfig, which no longer does anything, so this should probably
-  be removed in patch 9 along with the lines that select it.
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 6dc0549f7900..20b7c2cd852b 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -393,7 +393,7 @@ static void maple_attach_driver(struct maple_device *mdev)
+ 		dev_warn(&mdev->dev, "could not register device at"
+ 			" (%d, %d), with error 0x%X\n", mdev->unit,
+ 			mdev->port, error);
+-		maple_free_dev(mdev);
++		put_device(&mdev->dev);
+ 		mdev = NULL;
+ 		return;
+ 	}
+-- 
+2.43.0
 
-* It appears that after your series, RISC-V is the only remaining
-  architecture that supports NUMA in 32-bit mode, which I think
-  we should not allow as a configuration, given that this would
-  run into untested code and no hardware exists for it.
-  Apparently commit 4f0e8eef772e ("riscv: Add numa support for
-  riscv64 platform") intended this to only be for 64-bit targets
-  but did not add a Kconfig dependency for CONFIG_64BIT (or
-  CONFIG_SMP, which was added later).
-
-        Arnd
