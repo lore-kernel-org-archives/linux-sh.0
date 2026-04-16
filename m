@@ -1,147 +1,155 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C04C27281E;
-	Thu, 16 Apr 2026 11:42:14 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C69337C924;
+	Thu, 16 Apr 2026 12:25:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776339734; cv=none; b=sz7yX0cvR6W8IAONJt1poMwKDL+BaaopKmE6K+o9uJSQxBCGXijMl6U8bZxVUytUVovd7Hmy8kiaqSSW4+ReJxIH9xDLiS86ngznuv0uVgExh3seHIEl4g6984aj4p6Yf3oAJ9qTze6J1ZQghhzWnY07DnaIkKs5tCkqdmMqACk=
+	t=1776342318; cv=none; b=BxN9ADopjT0HG67ERqv27hTKoTqduufKYyqNQQVEskErZusc7h4cHqQrNDfWE/SFLyKX16g5jXT54Xde2HaMrxPV4Q6gUQOSGC3FPPnSWxfIbdpoGLYoNnXoowfaZAPpalMqUekDmhLyuprL40HoH41iMxukcXlhldI0BRF2E7s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776339734; c=relaxed/simple;
-	bh=45qgrqFScnEZlWgBNq5rpUzjALmjVlD3QYp2/Yd42dc=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ZwXq0hA99lXMiTNvJHyMVeRbCEWwof56HClmP35N3CPCn4NrMFHJ8adYd9RYfugp//7KjAZ5Ikqv8Bqr6J7wmmwoG6/ld+/tLGEddGS11/uNRN37WVPQrXQOutHqcNRsQaYFQGtYzOoru+avn9FjCHFwcdtRCAT4lNgEoQoZe9I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=bYNZeaA1; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1776342318; c=relaxed/simple;
+	bh=gECMS4EGrtN1lWkNcMdqV1cQaJPbxrgRQTXN3zouHSg=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Qdy/3MK0MwfEslDJpUvmQ3NbrxoYe4MuYEDd5I/0hg/Nklg/98f/WeraW+0hZjOYR3ll5HB/lln9Vf/aNZ/P5qvUZTryMZaQMBekQrlZ6d0uvRI+GqT9D3Ogs1R7/zYBLCu6V41SnsfnNkoGkdpGsPaklv/lrlL6JXwJhjAW5P8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GQGv29sX; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="bYNZeaA1"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0F174C2BCAF;
-	Thu, 16 Apr 2026 11:42:08 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GQGv29sX"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D4797C2BCB3;
+	Thu, 16 Apr 2026 12:25:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776339732;
-	bh=45qgrqFScnEZlWgBNq5rpUzjALmjVlD3QYp2/Yd42dc=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=bYNZeaA1ZUcDHIjq+0OqBy0LPmzNxX7Y7YB3UWtkVExrSUlrlDPM82HMre4S9yIGK
-	 nlJFZA+591IuaFjBEWT+zMPNPW2rkLStOcEJZbflAN3CwD9izDbDIABtU///SjzkE4
-	 B3vMVOdY52YYscNABm+7wnsN30m8y4PmkK1fJ4trJJOz0gBfnIC+U10hAXPay8VLQT
-	 hKxHc1cVl1IyLq5HBUUMZHcAE78NZYr2pHiltTjFl6HE7H0gBxgqZLWXAi1MQHULuB
-	 KcZvwP4OCZvhsKiNd0gRDyW1cognJw3KlimFEwpoZCsXV50WbUrcDfKprf5tuYHPwG
-	 93CRwWuA3ml6Q==
-Date: Thu, 16 Apr 2026 14:42:05 +0300
-From: Mike Rapoport <rppt@kernel.org>
-To: Thomas =?iso-8859-1?Q?Wei=DFschuh?= <thomas.weissschuh@linutronix.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	David Hildenbrand <david@kernel.org>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
-	Vlastimil Babka <vbabka@suse.cz>, linux-kernel@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-mm@kvack.org
-Subject: Re: [PATCH v3 3/4] arch, mm: consolidate empty_zero_page
-Message-ID: <aeDLDSJAwYfsj78A@kernel.org>
-References: <20260211103141.3215197-1-rppt@kernel.org>
- <20260211103141.3215197-4-rppt@kernel.org>
- <20260416100221-57063053-1c9e-4450-8b0c-d9783657fa47@linutronix.de>
- <aeDBw4O655-pXiHy@kernel.org>
- <20260416131914-f20c3a56-bddb-4488-b4bd-560e52ab9416@linutronix.de>
+	s=k20201202; t=1776342318;
+	bh=gECMS4EGrtN1lWkNcMdqV1cQaJPbxrgRQTXN3zouHSg=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=GQGv29sXj5S5z7UPKnXaUJAuD1qc92DQaWs8UXQ6wwBCK62RBOeMuB3RtNcxzLs+n
+	 PPcHL7L8pFqT/h2G0bvvPkUySB8nqp1hX+g8DsxNBEPpxoa8+yXm1bMdZVixBjqxgs
+	 n60V3osh+8lSW6pt2nDmsfqoDHDW6Auv9CDrXKgdtoPlM9Xla54AXl1OSAYSKpcXrA
+	 NmL+fSV7Qk/BTzx5WK8y+vV+U+fxOTS5SiuiemUg0UByoPARoWSlKdZYhXUYnMvTFf
+	 DgJsTYvf1ogHE4V/gC2FO90mA6aK9sVcz0Z1Cm9dDcGVpaCAj1nCKENYb7/YBcL1F4
+	 1oc9q29NjGBrg==
+Message-ID: <1fd72d1b-f5cd-447f-ae11-6f4d4426b8e8@kernel.org>
+Date: Thu, 16 Apr 2026 14:24:57 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20260416131914-f20c3a56-bddb-4488-b4bd-560e52ab9416@linutronix.de>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 55/61] interconnect: Prefer IS_ERR_OR_NULL over manual
+ NULL check
+To: Philipp Hahn <phahn-oss@avm.de>, amd-gfx@lists.freedesktop.org,
+ apparmor@lists.ubuntu.com, bpf@vger.kernel.org, ceph-devel@vger.kernel.org,
+ cocci@inria.fr, dm-devel@lists.linux.dev, dri-devel@lists.freedesktop.org,
+ gfs2@lists.linux.dev, intel-gfx@lists.freedesktop.org,
+ intel-wired-lan@lists.osuosl.org, iommu@lists.linux.dev,
+ kvm@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-block@vger.kernel.org, linux-bluetooth@vger.kernel.org,
+ linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
+ linux-clk@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+ linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-gpio@vger.kernel.org, linux-hyperv@vger.kernel.org,
+ linux-input@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-leds@vger.kernel.org, linux-media@vger.kernel.org,
+ linux-mips@vger.kernel.org, linux-mm@kvack.org,
+ linux-modules@vger.kernel.org, linux-mtd@lists.infradead.org,
+ linux-nfs@vger.kernel.org, linux-omap@vger.kernel.org,
+ linux-phy@lists.infradead.org, linux-pm@vger.kernel.org,
+ linux-rockchip@lists.infradead.org, linux-s390@vger.kernel.org,
+ linux-scsi@vger.kernel.org, linux-sctp@vger.kernel.org,
+ linux-security-module@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-sound@vger.kernel.org, linux-stm32@st-md-mailman.stormreply.com,
+ linux-trace-kernel@vger.kernel.org, linux-usb@vger.kernel.org,
+ linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
+ ntfs3@lists.linux.dev, samba-technical@lists.samba.org,
+ sched-ext@lists.linux.dev, target-devel@vger.kernel.org,
+ tipc-discussion@lists.sourceforge.net, v9fs@lists.linux.dev
+Cc: Georgi Djakov <djakov@kernel.org>
+References: <20260310-b4-is_err_or_null-v1-0-bd63b656022d@avm.de>
+ <20260310-b4-is_err_or_null-v1-55-bd63b656022d@avm.de>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Content-Language: en-US
+Autocrypt: addr=krzk@kernel.org; keydata=
+ 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 a/A=
+In-Reply-To: <20260310-b4-is_err_or_null-v1-55-bd63b656022d@avm.de>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Thu, Apr 16, 2026 at 01:20:17PM +0200, Thomas Weißschuh wrote:
-> On Thu, Apr 16, 2026 at 02:02:27PM +0300, Mike Rapoport wrote:
-> > On Thu, Apr 16, 2026 at 10:10:06AM +0200, Thomas Weißschuh wrote:
-> > > On Wed, Feb 11, 2026 at 12:31:40PM +0200, Mike Rapoport wrote:
-> > > > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-> > > > 
-> > > > Reduce 22 declarations of empty_zero_page to 3 and 23 declarations of
-> > > > ZERO_PAGE() to 4.
-> > > > 
-> > > > Every architecture defines empty_zero_page that way or another, but for the
-> > > > most of them it is always a page aligned page in BSS and most definitions
-> > > > of ZERO_PAGE do virt_to_page(empty_zero_page).
-> > > > 
-> > > > Move Linus vetted x86 definition of empty_zero_page and ZERO_PAGE() to the
-> > > > core MM and drop these definitions in architectures that do not implement
-> > > > colored zero page (MIPS and s390).
-> > > > 
-> > > > ZERO_PAGE() remains a macro because turning it to a wrapper for a static
-> > > > inline causes severe pain in header dependencies.
-> > > > 
-> > > > For the most part the change is mechanical, with these being noteworthy:
-> > > > 
-> > > > * alpha: aliased empty_zero_page with ZERO_PGE that was also used for boot
-> > > >   parameters. Switching to a generic empty_zero_page removes the aliasing
-> > > >   and keeps ZERO_PGE for boot parameters only
-> > > > * arm64: uses __pa_symbol() in ZERO_PAGE() so that definition of
-> > > >   ZERO_PAGE() is kept intact.
-> > > > * m68k/parisc/um: allocated empty_zero_page from memblock,
-> > > >   although they do not support zero page coloring and having it in BSS
-> > > >   will work fine.
-> > > > * sparc64 can have empty_zero_page in BSS rather allocate it, but it
-> > > >   can't use virt_to_page() for BSS. Keep it's definition of ZERO_PAGE()
-> > > >   but instead of allocating it, make mem_map_zero point to
-> > > >   empty_zero_page.
-> > > > * sh: used empty_zero_page for boot parameters at the very early boot.
-> > > >   Rename the parameters page to boot_params_page and let sh use the generic
-> > > >   empty_zero_page.
-> > > 
-> > > With this in mainline as commit 6215d9f4470f ("arch, mm: consolidate
-> > > empty_zero_page") booting sh on QEMU is now broken.
-> > > The machine hangs before any output.
-> > 
-> > Hmm, looks like sh does not like boot_param_page declared as unsigned char *
-> > This fixes the issue for me:
-> > 
-> > diff --git a/arch/sh/include/asm/setup.h b/arch/sh/include/asm/setup.h
-> > index 63c9efc06348..b7c4469cb61e 100644
-> > --- a/arch/sh/include/asm/setup.h
-> > +++ b/arch/sh/include/asm/setup.h
-> > @@ -3,12 +3,13 @@
-> >  #define _SH_SETUP_H
-> >  
-> >  #include <uapi/asm/setup.h>
-> > +#include <asm/page.h>
-> >  
-> >  /*
-> >   * This is set up by the setup-routine at boot-time
-> >   */
-> > -extern unsigned char *boot_params_page;
-> > -#define PARAM boot_params_page
-> > +extern unsigned long boot_params_page[PAGE_SIZE / sizeof(unsigned long)];
-> > +#define PARAM ((unsigned char *)boot_params_page)
-> >  
-> >  #define MOUNT_ROOT_RDONLY (*(unsigned long *) (PARAM+0x000))
-> >  #define RAMDISK_FLAGS (*(unsigned long *) (PARAM+0x004))
+On 10/03/2026 12:49, Philipp Hahn wrote:
+> Prefer using IS_ERR_OR_NULL() over using IS_ERR() and a manual NULL
+> check.
 > 
-> Seems weird but works.
+> Semantich change: Previously the code only printed the warning on error,
+> but not when the pointer was NULL. Now the warning is printed in both
+> cases!
 
-Seems like it's enough to declare boot_params_page as an array, this one
-also worked for me:
+NAK, read the code
 
-diff --git a/arch/sh/include/asm/setup.h b/arch/sh/include/asm/setup.h
-index 63c9efc06348..8488f76b48b4 100644
---- a/arch/sh/include/asm/setup.h
-+++ b/arch/sh/include/asm/setup.h
-@@ -7,7 +7,7 @@
- /*
-  * This is set up by the setup-routine at boot-time
-  */
--extern unsigned char *boot_params_page;
-+extern unsigned char boot_params_page[];
- #define PARAM boot_params_page
- 
- #define MOUNT_ROOT_RDONLY (*(unsigned long *) (PARAM+0x000))
- 
+> 
+> Change found with coccinelle.
+> 
+> To: Georgi Djakov <djakov@kernel.org>
+> Cc: linux-pm@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Signed-off-by: Philipp Hahn <phahn-oss@avm.de>
+> ---
+>  drivers/interconnect/core.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/interconnect/core.c b/drivers/interconnect/core.c
+> index 8569b78a18517b33abeafac091978b25cbc1acc7..22e92b30f73853d5bd2e05b4f52cb5aa22556468 100644
+> --- a/drivers/interconnect/core.c
+> +++ b/drivers/interconnect/core.c
+> @@ -790,7 +790,7 @@ void icc_put(struct icc_path *path)
+>  	size_t i;
+>  	int ret;
+>  
+> -	if (!path || WARN_ON(IS_ERR(path)))
+> +	if (WARN_ON(IS_ERR_OR_NULL(path)))
 
--- 
-Sincerely yours,
-Mike.
+IS_ERR_OR_NULL is simply discouraged, but beside of code preference, you
+just added bug here. This is clearly not equivalent and you emit warn on
+perfectly valid case!
+
+Best regards,
+Krzysztof
