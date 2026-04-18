@@ -1,157 +1,127 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1039632B981;
-	Fri, 17 Apr 2026 14:28:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 28E1F40DFC2;
+	Sat, 18 Apr 2026 08:34:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776436112; cv=none; b=sElcdgdSOyG8oCNDvTzR7GaEefgHZNN4RgH1c8QLQMCujdYYrFj5r6z7aa/VJEgdS5OlwpTnCVIuLB9z6kPXLIeIaBBn+K4IXxaW0NtxwAB0OP4aLmGSfLbQntjos+g2UF0FsjBSAAwUf9DM2vFO+MUztzjKRysUe/4enHGHSak=
+	t=1776501245; cv=none; b=d9ziotNB++51ZW+YzDWxZ1zDdQdvDQL75MxTk3vLPN8u0md46I8AS03LfDyx9hlleG6JkM4CxLJO0wUKocb2pF5pgxW69tw5QPpv105rNMDHv1+vi77oNi0BInrhV/8ag6cVPP1Jr3T0A7ggvED9MHLZCNyh71MdklF8TRMldhw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776436112; c=relaxed/simple;
-	bh=g8g8U+hODp4rdoTrKFuNG0e4pjJvL4uoK2fQGRbKWQ8=;
+	s=arc-20240116; t=1776501245; c=relaxed/simple;
+	bh=1Nmw5c4GNu1ryk7au6qvqN6WH2nV1Vi1Lzvr7TswnIQ=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=IXUI3ia91XbYFMplajJTbD2gUoblMLr8PkZggO6fsUd4p+KGeUi/gYvV3ylcjocOCyrlSa8OXt5J084CvKqFHq8dYTbhpnxxorhjehrkoNonDAnPte0ZIEQGcJsVxFJd2At0vzRpHff/V2ZJcwtOlONOZhGwGNOLNSKm3+s2p3E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LBCEfawz; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:MIME-Version; b=YdoyPAQ06v6Qluh9nvbNa8HWBiB9ruXA2AuKmKV5sp4E0tiWfvJy8KKrv6O5CoqgFvqMwOZdaaark3ehrVlvt6KYWqXOMBJ9mamBoSzC5Akcki7Yz1TY2u7Qoa0nYdfhL76DbF0hf2h65vk/Gxm+3PqyCizpJ89Tz00QEk1QMLc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=NXErdslv; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LBCEfawz"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6C90FC19425;
-	Fri, 17 Apr 2026 14:28:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776436111;
-	bh=g8g8U+hODp4rdoTrKFuNG0e4pjJvL4uoK2fQGRbKWQ8=;
-	h=Subject:From:To:Cc:Date:In-Reply-To:References:From;
-	b=LBCEfawzRaCBOnD6FArgWzD3C+m+mUtKenVsyDFOBxXUjhb6Pn8tVCOPVzmSNXecu
-	 S5qdzrCEg0ttG2iaj+fSkZT4QNEk55H8eL2N4MoKjSVgfTfxnmWW4ehxmC+4jLcVtw
-	 bB7aI7ClIVVVNZ+/7eCM0wV/FeZy/tCHz/7FA/Ncj4new/k0SegN0V/qkesOjvShfJ
-	 QDtF/p8iDozkCxrBiBsgWXBGOINny2dIC2VH7leOZF9BYwtllVfwOmIgohG60J5XUV
-	 5zoV5Jya+0x8Qzj7YS7i2wyEUo9O/zoupItvCYWJ8Nc2RbSghKhWpo86NA0gYpZbWl
-	 r6slv+9NAOBfQ==
-Message-ID: <69128c3b114098797f20094ff8d86524189491f5.camel@kernel.org>
-Subject: Re: [LSF/MM/BPF TOPIC] Should we make inode->i_ino a u64?
-From: Jeff Layton <jlayton@kernel.org>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	lsf-pc@lists.linux-foundation.org
-Cc: linux-fsdevel@vger.kernel.org, Christian Brauner <brauner@kernel.org>, 
- Christoph Hellwig	 <hch@lst.de>, Jan Kara <jack@suse.cz>, Al Viro
- <viro@zeniv.linux.org.uk>,  linux-m68k <linux-m68k@vger.kernel.org>,
- linux-sh <linux-sh@vger.kernel.org>
-Date: Fri, 17 Apr 2026 07:28:30 -0700
-In-Reply-To: <54b7990fc554ef446b094bf37b785d91ea68b075.camel@physik.fu-berlin.de>
-References: <08f8444c7237566ffb4ba8c9eb0ab4b4a5f14440.camel@kernel.org>
-			 <1b340c4e635dcab3bed8c52d6381b4c341c0741a.camel@physik.fu-berlin.de>
-		 <9d8eda244e79b3b1c43c45277f225b130e88fa70.camel@kernel.org>
-	 <54b7990fc554ef446b094bf37b785d91ea68b075.camel@physik.fu-berlin.de>
-Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
- keydata=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
- QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="NXErdslv"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=J27VbeVHIJ/gt0ysqOueAw6rEC/nLhjNKdvK07zPsp8=; t=1776501241;
+	x=1777106041; b=NXErdslv8fyVsAJslKqHpRYNgXOdUGB0n9yG6pOYAm/xCbe2ulNNitIgy7Va9
+	WVSotfn13ldSnV+qzu88YLpN9TQevIcGJZgyHQv64kC1vP+Xb/zGN6cxJCT22TBUx1lfGDmXyNqQX
+	9y8AlXxm/TJFA2kSs/zAKQ/CkJbFT1DizxGhPXXP9t4VFQlN6nFSlboqVU/cPCsKy4HofLpSWnfyF
+	EE8DIp2uHRsABQglN16r7z5dkeO2bFn3M1zp0TmTNxbv4/agfop4yf+N5u3Ea9aXP8JNpZU8JlW24
+	VxzAaHPmZWSdJm2uejR6bNiX7PstBOiu5DEFN3GbG9opzyEE7g==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1wE17l-00000002FzZ-0sFU; Sat, 18 Apr 2026 10:33:57 +0200
+Received: from dynamic-002-245-042-176.2.245.pool.telefonica.de ([2.245.42.176] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1wE17k-000000011AZ-4AG3; Sat, 18 Apr 2026 10:33:57 +0200
+Message-ID: <ef7d133aabff5ce58a91f0274f3ed05947c8aa48.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: fix fallout from ZERO_PAGE consolidation
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Mike Rapoport <rppt@kernel.org>, Andrew Morton
+ <akpm@linux-foundation.org>
+Cc: Rich Felker <dalias@libc.org>, Thomas Wei?schuh	
+ <thomas.weissschuh@linutronix.de>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, 	linux-kernel@vger.kernel.org,
+ linux-sh@vger.kernel.org
+Date: Sat, 18 Apr 2026 10:33:56 +0200
+In-Reply-To: <30ff5e1e6c0c3d4e0fb3b6f36a5372ed6bf45d19.camel@physik.fu-berlin.de>
+References: <20260417103208.1217010-1-rppt@kernel.org>
+	 <30ff5e1e6c0c3d4e0fb3b6f36a5372ed6bf45d19.camel@physik.fu-berlin.de>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.58.3 (3.58.3-1.fc43) 
+User-Agent: Evolution 3.60.0 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Fri, 2026-04-17 at 10:34 +0200, John Paul Adrian Glaubitz wrote:
-> > The reality is more complicated...
+Hi Mike,
+
+On Fri, 2026-04-17 at 12:56 +0200, John Paul Adrian Glaubitz wrote:
+> On Fri, 2026-04-17 at 13:32 +0300, Mike Rapoport wrote:
+> > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 > >=20
-> > struct inode is (almost) always embedded in another structure that
-> > contains the fs-specific fields for it. Many of those (nfs, xfs, etc.)
-> > have had to carry a separate 64 bit field to hold the "real" inode
-> > number since we couldn't count on i_ino being big enough on 32-bit
-> > arches.
+> > Consolidation of empty_zero_page declarations broke boot on sh.
 > >=20
-> > Those fields can now go away, and once they do, that will represent a
-> > 4-byte _reduction_ in size of the inode on those filesystems. So there
-> > are potential upsides here for 32-bit arches as well.
+> > sh stores its initial boot parameters in a page reserved in
+> > arch/sh/kernel/head_32.S. Before commit 6215d9f4470f ("arch, mm:
+> > consolidate empty_zero_page") this page was referenced in C code as an
+> > array and after that commit it is referenced as a pointer.
+> >=20
+> > This causes wrong code generation and boot hang.
+> >=20
+> > Declare boot_params_page as an array to fix the issue.
+> >=20
+> > Reported-by: Thomas Wei=C3=9Fschuh <thomas.weissschuh@linutronix.de>
+> > Tested-by: Thomas Wei=C3=9Fschuh <thomas.weissschuh@linutronix.de>
+> > Fixes: 6215d9f4470f ("arch, mm: consolidate empty_zero_page")
+> > Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> > ---
+> >  arch/sh/include/asm/setup.h | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> >=20
+> > diff --git a/arch/sh/include/asm/setup.h b/arch/sh/include/asm/setup.h
+> > index 63c9efc06348..8488f76b48b4 100644
+> > --- a/arch/sh/include/asm/setup.h
+> > +++ b/arch/sh/include/asm/setup.h
+> > @@ -7,7 +7,7 @@
+> >  /*
+> >   * This is set up by the setup-routine at boot-time
+> >   */
+> > -extern unsigned char *boot_params_page;
+> > +extern unsigned char boot_params_page[];
+> >  #define PARAM boot_params_page
+> > =20
+> >  #define MOUNT_ROOT_RDONLY (*(unsigned long *) (PARAM+0x000))
+> >=20
+> > base-commit: 43cfbdda5af60ffc6272a7b8c5c37d1d0a181ca9
 >=20
-> Then why not mention this? Why communicate a message that seems to imply
-> that performance will be degraded on 32-bit targets?
->=20
->=20
+> Thanks, I'll try to test this patch this weekend and will pick it up for =
+v7.1.
+> I have already collected a number of patches for v7.1 with my Reviewed-by=
+.
 
-Others have already addressed your other points, so I won't bother, but
-for this one...
+I just realized that this patch actually depends on 6215d9f4470f ("arch, mm=
+:
+consolidate empty_zero_page"), so I cannot take it directly into my tree no=
+w.
 
-At the time I was writing the patches, I was thinking mostly about the
-linux-fsdevel@ audience. Any change to the kernel _always_ comes with
-tradeoffs and I've found it's best to be straightforward about the
-potential downsides of any change.
+Shall we wait for v7.0-rc1 then, so I can pick it up as a regression fix?
 
-I probably should have made more clear that the potential downsides in
-this case were almost certainly not measurable. Mea culpa.
+Thanks,
+Adrian
+
 --=20
-Jeff Layton <jlayton@kernel.org>
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
