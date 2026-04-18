@@ -1,103 +1,97 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from relay2-d.mail.gandi.net (relay2-d.mail.gandi.net [217.70.183.194])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F1B68287E;
-	Sat, 18 Apr 2026 11:27:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0DBD322259F;
+	Sat, 18 Apr 2026 19:20:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.194
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776511622; cv=none; b=XKh1mPfNjmvUXOTUkJfxd1IqqniiM/yQz01tu++8DC/DF9+dzl1HIrtNNZyrEr+4/TDoT3uk4kdD4H7vz+t1qT11tcnTo4iHKmFpsggEmDkBxaMFzcvTbniMMhE7+NvsJtHtB7BYQUb65l2iHjetAInZmNIcyr1KuUBhV+PxeNg=
+	t=1776540029; cv=none; b=R3rqGsanm1z8z6x6C3FJLTGzt/oi/hyO8iMLt75i1hwQPiT68GltNj0mGml9cIzK+xCSpU/0ACo74ktZK/h5Xz22BGCHu4Irk4wDO7z3pc5xlWNjzRf8THiMEpT1SRpAGLNjAM3a5IOEzuIdLeD2Cgvj8reKC8BPdhLec/eDBp8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776511622; c=relaxed/simple;
-	bh=Fmiqm650w7WhKoxKFvWuvet+kZ3PS0N6KW0k6s0Duj4=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=BZYu8Yh5+6xc8QF9+ldPCVxQ4wnvGuErSe8sOZGBaVAPNvcY52+1RPf90kYW7id/NdLLxolAYpQDA5BfaxjeYjZQxxWnUmTkHdoy9BUZC0f5TqK2Q8gJeQbiCkrcxgJ6Ix2lC+KVIRuh06TLlByeWqhBDoeJT3wUxtRz072R2dU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=hUT54fQG; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="hUT54fQG"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=xoicl74O04B4uGIdkQcALoDdUhYvNm3feXrd0P/Qug0=; t=1776511620;
-	x=1777116420; b=hUT54fQGsXNKdxzIdyTqHu3N33D12QnKgrC/AlX2Kdj0udVlopsJPk9vp4BXW
-	pf3Mt5ET2rsAuWfyOaLgFo7Dg6DirfCTMBviAreY2jVqECJy7eMxEXByLy+QDb5u2oZSBH3/H0XsR
-	QAWtufcnvqUE+SJROypigM9SSvPonJeFrrgY7gfa+JvI3FQctgVfafNMYRDZT70P1UDfkuW8cHqqY
-	R5vZE4+CbIkQGcFiDHtWxxMNAF9uChvG84MXfHzs9q/9TF3Yn02dGHjIJgKRvtZcskrkajrgIP4OT
-	ANBmWBko4Sio7UiDEakJUJ6C4I2A8paEVQZLMyTB+YbgA92IUQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wE3p5-00000002r7Y-2IEL; Sat, 18 Apr 2026 13:26:51 +0200
-Received: from pd9f74830.dip0.t-ipconnect.de ([217.247.72.48] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wE3p5-00000001RrH-1KH5; Sat, 18 Apr 2026 13:26:51 +0200
-Message-ID: <92295dd525d946777e84269cff6e9a3f2f585286.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: fix fallout from ZERO_PAGE consolidation
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Rich Felker
- <dalias@libc.org>,  Thomas Wei?schuh <thomas.weissschuh@linutronix.de>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, 	linux-kernel@vger.kernel.org,
- linux-sh@vger.kernel.org
-Date: Sat, 18 Apr 2026 13:26:50 +0200
-In-Reply-To: <aeNeKYwMJA3JXO8d@kernel.org>
-References: <20260417103208.1217010-1-rppt@kernel.org>
-	 <30ff5e1e6c0c3d4e0fb3b6f36a5372ed6bf45d19.camel@physik.fu-berlin.de>
-	 <ef7d133aabff5ce58a91f0274f3ed05947c8aa48.camel@physik.fu-berlin.de>
-	 <aeNeKYwMJA3JXO8d@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.0 
+	s=arc-20240116; t=1776540029; c=relaxed/simple;
+	bh=3UvpCr9uXRdhVcZE7A5IjKKyyZk+lERIR3yucfOt5C4=;
+	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
+	 Message-ID:Content-Type; b=bqBzpBgOkAvDhzfQp51mfQNUDGExA9N/Aqlc8jIjn9b6Ikl4S9zMVdoxmoxLcZ/tnKHXj0OZadOv6GtGzalaJd4jETG0WgQg97MmjrFAAWOPjjXMAjgHnjNun4YV0QNrh5ps5kGXgxOlucMAdTFer8Oe6SOVm04lWYPctwSxnzo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.183.194
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
+Received: by mail.gandi.net (Postfix) with ESMTPSA id 20CF73EC1D;
+	Sat, 18 Apr 2026 19:20:16 +0000 (UTC)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Date: Sat, 18 Apr 2026 21:20:16 +0200
+From: Artur Rojek <contact@artur-rojek.eu>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: =?UTF-8?Q?Ahelenia_Ziemia=C5=84ska?=
+ <nabijaczleweli@nabijaczleweli.xyz>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Paul Mundt
+ <lethal@linux-sh.org>, Kristoffer Ericson <Kristoffer.Ericson@gmail.com>,
+ linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: hp6xx: unset apm_get_power_status on unload
+In-Reply-To: <01d0e84f80124c4ef358bfd1503475856d2aa789.camel@physik.fu-berlin.de>
+References: <ydtnrqqjuaz6uifqplujmqwdnpxoe7ma33d5hp4waavekerod2@tarta.nabijaczleweli.xyz>
+ <01d0e84f80124c4ef358bfd1503475856d2aa789.camel@physik.fu-berlin.de>
+Message-ID: <27022f75480a810a204be567b3607e40@artur-rojek.eu>
+X-Sender: contact@artur-rojek.eu
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Content-Transfer-Encoding: 8bit
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Cause: dmFkZTFB8FKVWWe+Q+567VoxGAB8FG91lduOXCHwA8H6vAnv3V7SqCHmkcQF+E/Coz000bMFm5h1JzH8RQlsQaudg1/kY1lYP5d/RL1/q1WIvnglCzqeklvjbWNedTNZqwEy11gRclTk+JZrJsc+R8ufOYUCMh0PhEYaI1NqSTMDP0wKCTxvnUCsP6GB7QDGcS3xi68TG1ncdEpdxhfEdaBRBBmGEpaarSVbI2EB5zHmlU9B1qitj1oNamIPI4jAKC2tvWfApJaNGFhd9shrNJ9LXOwKDY/C+01tsql5TYbUrrbmGNZtDT/7cZSZWw3Zg98cUM8mfj1duuHgwzqb2uTETlOGAUIzsH+OiHw3egq+2G7jPTyGw6kXZBNqIbS5siCXc2WDA9uKcy+feAz3VWz03sD2q8hTmbwKrtW8DL0K4uwyzgNbve204ueA/HTTqfuuulKAV1EZUQCN63+AKxdvn5IX5neGNefDmGshlOuBTWGT4NB39HZuxAdGNi0KmmmowwcKFHpn9u+G10U0bISlbkd9wUhKRQuxe/wZ+0IXPuoZ8JE8+xpjuR20+qZhvLaRf4gTrT4Dqcind53gYNeO4Rsb+MrzX3hYQm5OObXaz8ndaZf7YNnxoDf700AcD7QoqyxeF2uGoKE0feLmpncal9kIAYcQ7Yz2ZYv6d0c+FxHBvg
+X-GND-State: clean
+X-GND-Score: -100
 
-Hi Mike,
+On 2026-04-12 09:30, John Paul Adrian Glaubitz wrote:
+> Hi Ahelenia,
+> 
+> On Fri, 2025-10-17 at 00:05 +0200, Ahelenia Ziemiańska wrote:
+>> The API for apm_get_power_status is "call it if it isn't NULL".
+>> If the module is unloaded and it's not unset,
+>> reading /proc/apm will jump into unloaded kernel memory.
+>> 
+>> The first commit that added this incompletely refactored
+>> the assigned-to variable in __exit,
+>> the second deleted it instead of fixing it.
+>> 
+>> Unset it on unload like drivers/macintosh/apm_emu.c.
+>> 
+>> Fixes: 0a9b0db19262 ("[APM] SH: Convert to use shared APM emulation.")
+>> Fixes: 8c8ee8254767 ("sh: hp6xx: APM build fix and new battery 
+>> values.")
+>> Signed-off-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
+>> ---
+>>  arch/sh/boards/mach-hp6xx/hp6xx_apm.c | 3 +++
+>>  1 file changed, 3 insertions(+)
+>> 
+>> diff --git a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c 
+>> b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
+>> index e5c4c7d34139..089eca39c4e6 100644
+>> --- a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
+>> +++ b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
+>> @@ -98,6 +98,9 @@ static int __init hp6x0_apm_init(void)
+>> 
+>>  static void __exit hp6x0_apm_exit(void)
+>>  {
+>> +	if (apm_get_power_status == hp6x0_apm_get_power_status)
+>> +		apm_get_power_status = NULL;
+>> +
+>>  	free_irq(HP680_BTN_IRQ, 0);
+>>  }
+>> 
+> 
+> Let's CC Artur Rojek who has worked on the hp6xx code before and should 
+> give his ACK.
 
-On Sat, 2026-04-18 at 13:34 +0300, Mike Rapoport wrote:
-> Hi Adrian,
->=20
-> On Sat, Apr 18, 2026 at 10:33:56AM +0200, John Paul Adrian Glaubitz wrote=
-:
-> > On Fri, 2026-04-17 at 12:56 +0200, John Paul Adrian Glaubitz wrote:
-> > > >=20
-> > > > base-commit: 43cfbdda5af60ffc6272a7b8c5c37d1d0a181ca9
-> > >=20
-> > > Thanks, I'll try to test this patch this weekend and will pick it up =
-for v7.1.
-> > > I have already collected a number of patches for v7.1 with my Reviewe=
-d-by.
-> >=20
-> > I just realized that this patch actually depends on 6215d9f4470f ("arch=
-, mm:
-> > consolidate empty_zero_page"), so I cannot take it directly into my tre=
-e now.
-> >=20
-> > Shall we wait for v7.0-rc1 then, so I can pick it up as a regression fi=
-x?
-> =20
-> Or we can ask Andrew to pick it via mm tree.
+This driver can't be built as a module, so this code is never called.
+But since we can't get rid of module_exit(apm_exit):
 
-Let me take it for v7.0-rc2, so I can take more time for testing the patch.
+Acked-by: Artur Rojek <contact@artur-rojek.eu>
 
-Thanks,
-Adrian
+Cheers,
+Artur
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> 
+> Adrian
