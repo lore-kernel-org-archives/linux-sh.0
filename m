@@ -1,144 +1,114 @@
-Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from relay2-d.mail.gandi.net (relay2-d.mail.gandi.net [217.70.183.194])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82F612D1F40
-	for <linux-sh@vger.kernel.org>; Sun, 19 Apr 2026 16:29:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FF792DAFD7;
+	Sun, 19 Apr 2026 16:50:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.194
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776616155; cv=none; b=g1YEJO3dTc13nfqkpotGD5dlZHE+nHbZBGmm+zhTMH2N4PEQsPLvmXmkXCvyPNsyLXdAP4pKqBvdvzgTZS84TwU+WZHXRUWKW8zZVuY+SNB5+b/sM9RxSjiM6vATlk66obgfPjrsXI5MXos302GEkUzwfd8V85H7To/fIKxo18A=
+	t=1776617409; cv=none; b=pWJ7n8mAOIaKHAO0NMiaK35ZL8Sl/giHMYYw6vypfqF5VWigpwUIUMycmv2DcxnODwrC3pmqtXvETjt75HPOA1RRVeKkxE2ZyQ6BQUA3rW+UOTh3oj3Fwdc1LhMwBjMiGfZzjuzOM4Vb8wrfLcNC1+0EhFYefET0nfrMumz4SPo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776616155; c=relaxed/simple;
-	bh=/0TEkY+sxpaC0GlCPNbeaHDoXij7IeFeKG2B7njq+AQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=PWyMot0jKpJyt3Z4tG2hy7joXey8HQOCRDUYtpZUt4soNscidQVEQTMwRYN+HRktpa+zU0MKyi5FWyVGN144buP6WFb3hBgcSO6EJw15F4qYLV9bTjrhcK7o4EQcW7rxFsbvoUvmrnEpuBPvFkgojYp+0hn3vT4VDuh6/9nSYqs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=nh1UoKJ/; arc=none smtp.client-ip=209.85.221.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nh1UoKJ/"
-Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-43cff5dafc3so1836147f8f.1
-        for <linux-sh@vger.kernel.org>; Sun, 19 Apr 2026 09:29:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776616153; x=1777220953; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=CG0WEefAtVYQQDx1GALJY/zb5ptlk38Q48NQwoW8PzY=;
-        b=nh1UoKJ/VOa8G1i/gyBJpRmUqnOuMx2alI5jWvWvyY6lO14gWWaVcfgd0xdvDLx3f6
-         4c+I4E12dv4SOOk3aawG3NkJElWRs34cxuC0V2uOIGcrcypawfF+h+Qv8/H682YvKq60
-         8g9htjIxPTZmkU7aaIGobvzOl4pKndHtoK1hVxnotZSfSp3V/Hsd0gIDvy2DuYeEHVyq
-         wWJEJEdENgELpK+FbVTfqWlCD0q6DN6TxzNRXgHPsiMY/Uizth/nv4ObE+vDSbxVZ/e6
-         wfmjc2i0V80Hm6Voc3HC7mug2i39JrI/LuZNVS8QQFStd2Xvv43xZELVsMGmW545T09m
-         HQ0w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776616153; x=1777220953;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=CG0WEefAtVYQQDx1GALJY/zb5ptlk38Q48NQwoW8PzY=;
-        b=nQwB6luyXH66YBgxj6BA/uje2xK+4m1XCSmT2Hcyu1HO9TMKliOo6MKBOSbgPgldxa
-         kA+wcpeBstZlZAzMJcKWPJC09sRAF3lFLnBHc57mZeRcgNbeDgmAnuctFgSjsAN7KpMi
-         GFGdgePb7KPuSmPmpvX47ojaAnOhESccWKuBOp/ZURvv2nPjrv+wf4CIsTX2XAVrvfRM
-         B6VDn9hdlClRiMHCWpP32BsTI6E1PNGsyRenDiYGGZRsRr8uz1bL/EEy+MjvU6WMoZDq
-         rv2QS9lGftS7ZIE2+B/vMlWp9l4C1eCtC9HSPJKMXTim7cM6FCzMVMRz6dYL4y87Cp1Q
-         Q6Sw==
-X-Gm-Message-State: AOJu0YzXb+IO/Imy+uHSUFtl0AxtyeX56cXnrW4oeouVFHweVNscdLbT
-	EkP8CBImSdGM5H2Hk9GQaYKOXq9h9gihzgn0TfHJJh6KRCFiXkseenpy18XyqYc=
-X-Gm-Gg: AeBDievmqVpnV4q7dom7z2izy7UuLc8UBqWw55AF4i5AqQBGysTwwccMe/K4b3wKuOh
-	E83IxVRgLzmRoY5iAVYZKSWIhoNy0BhxvAwknHrSn25DMdvS8zNZQvfihaf1FhQyOur3l28zpWV
-	OzK1aYJ5jWB2CT9duphUD/zUiW1LGfWuLHgVrbzc6d9GRXDHC8dXm18qwlaGTN2rEa0KuvbwkvP
-	0tFb36KQ7rJfJ7dZBEOKeCMyv/DeM5yEv+7oJZ8FenRX7Urpnnq0jOaVIsbBNpVoAYpMIk8ORCt
-	WatEN21byOvhjMFZxLMUpJ+FTCQL5yYGcm2Dp/R0/1ebDDJmiG/oXLece2mHxJptyMTJAWR6rm7
-	6JRFFWy1h5PBLMkIowBFqjM1VHcsIiU7/ao5YC3GnsavefZ1sUT6lh/3DfXHpTbfetogDYQBIbL
-	f8DGdGXcj6AvDNWjeiY6Mwbd/FKBqdaGpEQ1ATaaaNM9m4YzFdpeKZByl9DMML8leKMpFA9XCli
-	7G41cjg7zVd3vVb2LI=
-X-Received: by 2002:a05:6000:2dc3:b0:439:b1c3:84c8 with SMTP id ffacd0b85a97d-43fe3de2bf5mr15121663f8f.21.1776616152477;
-        Sun, 19 Apr 2026 09:29:12 -0700 (PDT)
-Received: from localhost ([2a02:810d:4a94:b300:e7d2:9a54:d18c:d3f3])
-        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-43fe4e591cesm29467804f8f.36.2026.04.19.09.29.11
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 19 Apr 2026 09:29:11 -0700 (PDT)
-From: Florian Fuchs <fuchsfl@gmail.com>
-To: linux-sh@vger.kernel.org,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Artur Rojek <contact@artur-rojek.eu>
-Cc: Adrian McMenamin <adrianmcmenamin@gmail.com>,
-	linux-kernel@vger.kernel.org,
-	Florian Fuchs <fuchsfl@gmail.com>
-Subject: [PATCH v2 2/2] cdrom: gdrom: update gendisk capacity on open
-Date: Sun, 19 Apr 2026 18:28:23 +0200
-Message-ID: <20260419162823.2829286-3-fuchsfl@gmail.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260419162823.2829286-1-fuchsfl@gmail.com>
-References: <20260419162823.2829286-1-fuchsfl@gmail.com>
+	s=arc-20240116; t=1776617409; c=relaxed/simple;
+	bh=IjftfJZDIbaBY64oojVxcRkvZNBR0WngPDC8JXt4m5k=;
+	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
+	 Message-ID:Content-Type; b=UEALXOzo1bOBF3lGUkeqmN2TuqZ8I8McblURQGQqwWDTRsEB4x9bzlxHtuPm7Bo6TRUR7FkOD2xBYKR7Av5XUC5ntSJ41qTDqcQLsr1Nvq0VQZbpojZf2G8FW7P03m8M3ehBYYgud4BgWoI7c8uRYwj97L/XODw80z2q2UiYhng=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.183.194
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
+Received: by mail.gandi.net (Postfix) with ESMTPSA id C43E13ED36;
+	Sun, 19 Apr 2026 16:50:03 +0000 (UTC)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Date: Sun, 19 Apr 2026 18:50:03 +0200
+From: Artur Rojek <contact@artur-rojek.eu>
+To: Florian Fuchs <fuchsfl@gmail.com>
+Cc: linux-sh@vger.kernel.org, John Paul Adrian Glaubitz
+ <glaubitz@physik.fu-berlin.de>, Adrian McMenamin
+ <adrianmcmenamin@gmail.com>, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 1/2] cdrom: gdrom: replace port I/O with MMIO accessors
+In-Reply-To: <20260419162823.2829286-2-fuchsfl@gmail.com>
+References: <20260419162823.2829286-1-fuchsfl@gmail.com>
+ <20260419162823.2829286-2-fuchsfl@gmail.com>
+Message-ID: <b4aba43a43084ea2a5696c7eeed04b9f@artur-rojek.eu>
+X-Sender: contact@artur-rojek.eu
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Cause: dmFkZTF2KnxUzHQFoXNlDYbcqkoI6/6ke3wPi5j6XxvwUlvvg5tA5LFoXXqBKJ5ZbR4VfUVO5crthAIl5sNriAHe6Zdj12Jj+gkrQm+zutvMZGLj9CCRU4R4L6KGMjAgTRrOISH9X13OGSHTTAJIPcgVb15N8HDIjjyRtlp94/wqkI3oeog3JZ3NZlSaoJHQojbhex9nKEPi4VQHkQrLPRllawt4bg+gfzbq2chmgaVM4JRU8WCJxmgVaGD1eLOFsB1LkFuWbuqAicWZGUgYk0lUDFVZs2rmbNnpSdAumicWpGPn3s8gvsyiiWWvHj+OCGMW8RgBC0du4I5nWsgkB3Y1UO2AW35p4JHTumblodshTOf5KneqBMyavV5bWfvv24z/Tuv0EG0l/mhBOJJzzPyYUDv0QR/WkHXiJ4W6s2dj+8gljLkQ4ajSUlm9O8z8dIEg2tJDKVxmzjX1/qy5KgQG9HNMXlmOaT9bP4/95fWi1DcT3LG2ov0sZJJ2bkg5pzWTJplCdoOPLUn15qydVJTZmSGXAix3wQDabpUtHenTlpMw9LIXHmUrN6tf+QG5cNtjf2kw/FmSEvdLF8d8SqDb9sUAiLlyAogo6PWJz0pMndtJgNz3fk5/s2akDst8+br8uPvtuAVaEpDA0gg9es36a6V/hrlQGRoDwyWpWTdr2/1q8g
+X-GND-State: clean
+X-GND-Score: -100
 
-Update the gendisk capacity of the media. Without the capacity, the block
-reads fail before reaching the request queue, which prevented ISO9660
-mounts. Refresh the capacity from the TOC leadout in gdrom_bdops_open()
-so it checks the inserted media.
+On 2026-04-19 18:28, Florian Fuchs wrote:
+> GDROM_DATA_REG is a memory-mapped data register, but the driver uses
+> outsw() and insw() only for this register. Replace this with MMIO
+> accessors readsw() / writesw().
+> 
+> Before, it oopsed accessing the data register, as the io_port_base
+> P2SEG gets added to the argument in outsw() / insw(), which leads to an
+> unusable drive:
+> 
+>         BUG: unable to handle kernel paging request at 405f7080
+>         PC: [<8c28d5b4>] gdrom_spicommand+0x6c/0xb0
+> 
+> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
 
-Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
----
-v1->v2: no change for gdrom_update_capacity(), but for
-        gdrom_bdops_open(): handle the failure case when
-        gdrom_update_capacity() fails but previous cdrom_open() succeeded,
-        to cleanup the successful cdrom_open() with cdrom_release()
+Acked-by: Artur Rojek <contact@artur-rojek.eu>
 
-v1: https://lore.kernel.org/linux-sh/20260405082330.4104672-3-fuchsfl@gmail.com/
----
- drivers/cdrom/gdrom.c | 25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
-
-diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
-index 89938d9b2825..fb95288fad72 100644
---- a/drivers/cdrom/gdrom.c
-+++ b/drivers/cdrom/gdrom.c
-@@ -474,6 +474,25 @@ static const struct cdrom_device_ops gdrom_ops = {
- 				  CDC_RESET | CDC_DRIVE_STATUS | CDC_CD_R,
- };
- 
-+static int gdrom_update_capacity(void)
-+{
-+	sector_t cap;
-+	int ret;
-+
-+	if (gdrom_drivestatus(gd.cd_info, CDSL_CURRENT) != CDS_DISC_OK) {
-+		set_capacity(gd.disk, 0);
-+		return -ENOMEDIUM;
-+	}
-+	ret = gdrom_readtoc_cmd(gd.toc, 0);
-+	if (ret) {
-+		set_capacity(gd.disk, 0);
-+		return ret;
-+	}
-+	cap = (sector_t)get_entry_lba(gd.toc->leadout) * GD_TO_BLK;
-+	set_capacity(gd.disk, cap);
-+	return 0;
-+}
-+
- static int gdrom_bdops_open(struct gendisk *disk, blk_mode_t mode)
- {
- 	int ret;
-@@ -482,6 +501,12 @@ static int gdrom_bdops_open(struct gendisk *disk, blk_mode_t mode)
- 
- 	mutex_lock(&gdrom_mutex);
- 	ret = cdrom_open(gd.cd_info, mode);
-+	if (ret)
-+		goto out;
-+	ret = gdrom_update_capacity();
-+	if (ret)
-+		cdrom_release(gd.cd_info);
-+out:
- 	mutex_unlock(&gdrom_mutex);
- 	return ret;
- }
--- 
-2.43.0
-
+> ---
+> v1->v2: Don't use helper functions with io.*_rep(), but writesw() and
+>         readsw() local in the respective functions
+> 
+> v1: 
+> https://lore.kernel.org/linux-sh/20260405082330.4104672-2-fuchsfl@gmail.com/
+> ---
+>  drivers/cdrom/gdrom.c | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
+> 
+> diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
+> index 4ba4dd06cbf4..89938d9b2825 100644
+> --- a/drivers/cdrom/gdrom.c
+> +++ b/drivers/cdrom/gdrom.c
+> @@ -198,7 +198,7 @@ static void gdrom_spicommand(void *spi_string, int 
+> buflen)
+>  		gdrom_getsense(NULL);
+>  		return;
+>  	}
+> -	outsw(GDROM_DATA_REG, cmd, 6);
+> +	writesw((void __iomem *)GDROM_DATA_REG, cmd, 6);
+>  }
+> 
+> 
+> @@ -282,7 +282,7 @@ static int gdrom_readtoc_cmd(struct gdromtoc *toc, 
+> int session)
+>  		err = -EINVAL;
+>  		goto cleanup_readtoc;
+>  	}
+> -	insw(GDROM_DATA_REG, toc, tocsize/2);
+> +	readsw((void __iomem *)GDROM_DATA_REG, toc, tocsize / 2);
+>  	if (gd.status & 0x01)
+>  		err = -EINVAL;
+> 
+> @@ -433,7 +433,7 @@ static int gdrom_getsense(short *bufstring)
+>  		GDROM_DEFAULT_TIMEOUT);
+>  	if (gd.pending)
+>  		goto cleanup_sense;
+> -	insw(GDROM_DATA_REG, &sense, sense_command->buflen/2);
+> +	readsw((void __iomem *)GDROM_DATA_REG, &sense, sense_command->buflen 
+> / 2);
+>  	if (sense[1] & 40) {
+>  		pr_info("Drive not ready - command aborted\n");
+>  		goto cleanup_sense;
+> @@ -612,7 +612,7 @@ static blk_status_t gdrom_readdisk_dma(struct 
+> request *req)
+>  		cpu_relax();
+>  	gd.pending = 1;
+>  	gd.transfer = 1;
+> -	outsw(GDROM_DATA_REG, &read_command->cmd, 6);
+> +	writesw((void __iomem *)GDROM_DATA_REG, read_command->cmd, 6);
+>  	timeout = jiffies + HZ / 2;
+>  	/* Wait for any pending DMA to finish */
+>  	while (__raw_readb(GDROM_DMA_STATUS_REG) &&
