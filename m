@@ -1,139 +1,110 @@
-Received: from relay4-d.mail.gandi.net (relay4-d.mail.gandi.net [217.70.183.196])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C91A1A5B84;
-	Sat, 18 Apr 2026 20:15:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.196
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 88AFF29BDBB
+	for <linux-sh@vger.kernel.org>; Sun, 19 Apr 2026 16:29:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776543332; cv=none; b=kcTKyNZ+WYwhszbk/eIGRbTGfxV+Zu9B+oApDqpO3DIrBGSQhKyCc5IJWGy55q6WOkJy23jgpwRvlQ/m0OcUqfDxJCyyvZIYxoVfADaBnsDxl0l+54/2lDR+co/p2Eu8RaadjpmoPhNOR5GIeltGN6Zt1e1KCKFA44s5cLYYzDw=
+	t=1776616153; cv=none; b=PD5feQNVpmP/h9D92VWOHhr7g1AoVxaAPFzjVrwzVoOCXQ1W69QKODEyfRzcWL3ih7QUoLNYA7s6+puNP/aDW+PJgBm1TKXsDyJ3/yV+HEt8HWnoKEHTcwRXbijWbQK2m1ORoxmGbsQXpPst9fhaeOCDeLS8XzeGbTwxBjnQjfw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776543332; c=relaxed/simple;
-	bh=YRhlQFHk/avXKX5iKvlIOzSsSHjWJHdPa6oWegBuAdY=;
-	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
-	 Message-ID:Content-Type; b=kaxbVHYCqjdLAGU3YJiQhkQlvCvxb+OmZWVtPNTxVIXWozko0RSCXjvA9ZARzvRfTgVOQ6w2dWPZKADNpqhaUmbP0Fqpuq2lzc63Kfk3oQyJqPe0fNW+d191ZMTqaqEo7sB72+bIUiGDeEQW3AEhgwFhV3sETxbMxbma+UQeYEY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.183.196
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
-Received: by mail.gandi.net (Postfix) with ESMTPSA id 6DE053E9A8;
-	Sat, 18 Apr 2026 20:15:20 +0000 (UTC)
+	s=arc-20240116; t=1776616153; c=relaxed/simple;
+	bh=xOdVN/0EMkmXQwQWgtbNpl75ReFL2FTwywJIC/XOHlE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=lvLA1VsYemG9ckxbRt/Fr75sHr1iq8lhcvY3aYK49LOhuV68OJMjqOvEgSxpX9Xp95QUdPA+kZ9YQ+WHEk6QnRvyIIQoftrnyfjOM9dFwZmsmRtPAHLCeAUKgwYqU+zvFPl1LlqYdq1olPGBdwYCyrRBhCNqlfOfm+XLksH2w3I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=gv5mnyf/; arc=none smtp.client-ip=209.85.128.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gv5mnyf/"
+Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-48897fd88ebso23400715e9.2
+        for <linux-sh@vger.kernel.org>; Sun, 19 Apr 2026 09:29:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1776616150; x=1777220950; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=lw7gLEFgQPPa5Wc0Jw8A31UUBHFJTGmLpr+fXJ3IdcI=;
+        b=gv5mnyf/f0MI9ndGF0W0cUJRiv6wEYkdyb8nRGkvyCv35NcaEsnA8X6ucQa9/9zFxY
+         fdddRqUz/eKj4RXQxhrLQvCQrooY2euj6TwZtrr2gVvBnO6XRLD93VZWWgHcKOBVh1V0
+         ELjktwiWwFz/C+yqIbiaxZT8669Ei1MUyfvj2YCp6jhZnm+2Pjecqbiy6ygBN1yLENM4
+         EvZhDFKs3c0MpLHlGHxnMETi7AaC1f0xOye7NmLK4A0HsD3kAnuxd0rLPIew2hc5vToj
+         k5g2awHe1Fi3ZHJuyNOmB60itiljClhV8nHyz3zxpKhk8arVSaE3TyhsUaegtPGWU/cn
+         Sadw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1776616150; x=1777220950;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=lw7gLEFgQPPa5Wc0Jw8A31UUBHFJTGmLpr+fXJ3IdcI=;
+        b=ZALOcrNyM6Bwz8oZRPHeENCAJaj4rHKGmr+ndJy7RkmsnqPCWHDkX872AE4sQVF80h
+         X5nLvOZpZd/r2wceKxLrhD4w4Wn1BrbE9G2tRVZR2InKeAGXESG3bBt96WZnRRvilHdh
+         sNk8OFGLxr5FMqLsZK1s1k7VpeJo6ISKY45+hjpKgxCsd4GcaAbODoCqQ1x/55wd1Yv4
+         WKuDzVEgJVTS6PYyx93vdZsaosus4WrZXRVMeRnp7hDuvxkG+7veONCbiFHS+PpsYkJg
+         rzbyxzMY7Bm7m/Fz5EFiV2IF0npqlvlZ11ZcDDiEDgEE+uYjrr8g4u0PyOk16/koQOwq
+         VBpw==
+X-Gm-Message-State: AOJu0YwuT91+INPmaVrt4+iVE2bibREzU8OJwqV3fA1ll+PQp2j4Sq2p
+	mgESZxVd1fMruR5nnM/TI3wKY6ybLRreimzplsBfoM4EBXkvAI+CrrfHVHTPwzI=
+X-Gm-Gg: AeBDieuj5+F/ti38OBNutjITDFoXljXjl0sJ4BSKJbUIuldAZGwoDr3ovyjiXmaATC5
+	UpUdiOoybLIyldLByR5E6DdUCt/V1+YIEedtqXZVyorNf+b5MNrwfZgHuGv5goBLAq9NEJTZhuw
+	jC5ET6DATcH+FY4uNt1IQWs2D1k7m6gj1WfMkRuow7ZjOzIouoxooT6YneTXMn8E61Lo+3ioFOE
+	QwggTYl3BJAGphgdLILy9CqvTEaSCM20Nf3aRO3OuCrsoYlY07jxJFSld1L707DynA0tNmnJhbi
+	kPoDq2ASWM7wkPbrJqZ1uENgSleN8ORHXKfr5QNaVUac6lI3/65p1YG/9jBoolaKnaVak4OIrPb
+	5QIwTYHyMXsVene9v1PbbtW2W18Q81uJqDOxwZ/4651/blfbOtk+TT3NdTvPuQBjZdCayYDliec
+	oZ5K8BuJn9keIHgp18YR68c+jW3PvZLxtXXprt6zgJzSd81U1q/yrOZtRnxjPJXRymmW3JsLepx
+	uF3WtJN5MsJyT25ahQ=
+X-Received: by 2002:a05:600c:6296:b0:488:c40b:c8a4 with SMTP id 5b1f17b1804b1-488fb73d764mr148291265e9.1.1776616149505;
+        Sun, 19 Apr 2026 09:29:09 -0700 (PDT)
+Received: from localhost ([2a02:810d:4a94:b300:e7d2:9a54:d18c:d3f3])
+        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-488fb74c7a2sm69092445e9.1.2026.04.19.09.29.08
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 19 Apr 2026 09:29:08 -0700 (PDT)
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: linux-sh@vger.kernel.org,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Artur Rojek <contact@artur-rojek.eu>
+Cc: Adrian McMenamin <adrianmcmenamin@gmail.com>,
+	linux-kernel@vger.kernel.org,
+	Florian Fuchs <fuchsfl@gmail.com>
+Subject: [PATCH v2 0/2] cdrom: gdrom: fix block I/O and capacity setting
+Date: Sun, 19 Apr 2026 18:28:21 +0200
+Message-ID: <20260419162823.2829286-1-fuchsfl@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Sat, 18 Apr 2026 22:15:20 +0200
-From: Artur Rojek <contact@artur-rojek.eu>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: =?UTF-8?Q?Ahelenia_Ziemia=C5=84ska?=
- <nabijaczleweli@nabijaczleweli.xyz>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Paul Mundt
- <lethal@linux-sh.org>, Kristoffer Ericson <Kristoffer.Ericson@gmail.com>,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] sh: hp6xx: unset apm_get_power_status on unload
-In-Reply-To: <d87b5a92d172e94774284cd94d341521940eae1a.camel@physik.fu-berlin.de>
-References: <ydtnrqqjuaz6uifqplujmqwdnpxoe7ma33d5hp4waavekerod2@tarta.nabijaczleweli.xyz>
- <01d0e84f80124c4ef358bfd1503475856d2aa789.camel@physik.fu-berlin.de>
- <27022f75480a810a204be567b3607e40@artur-rojek.eu>
- <d87b5a92d172e94774284cd94d341521940eae1a.camel@physik.fu-berlin.de>
-Message-ID: <5bc1868ed4e745f3b9aa811ffa512aff@artur-rojek.eu>
-X-Sender: contact@artur-rojek.eu
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
 Content-Transfer-Encoding: 8bit
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-State: clean
-X-GND-Score: -100
-X-GND-Cause: dmFkZTGhmRgoI6oB0dHiGtHCFxcHZFicJkfm+6YMfR2ytb+r7REZtcRHi9IosP86A0Jr/C12A3o7pKlo82LPk4AFmAlF3rreFsT6HuanyKldTdgUOtggjXlTVXXYHJPlozIIjU2BC+gpTm9Q+PxGiX4THAvfmKWBvDw/QmrbwJCQHiECJnkcqsUy7f3VHKsyiBa2NloLECWVBCV/dLH75Hn/p6N6jq+aEjuGYYUPNheEtOl9NMwu7qJh6GC4PgW195USV11Nr5tUdx6J1juCOOF8jLh/dcK/wHMBt0+Jg/eku40/v2b8wMF+9meYc8z9DsQRg0enFi35MyzL3bTv4SeX0bGXoUiEy1saGBUKlF+CJFy7Ljn8k4OjXgGtCHEw4sUolQfYLH+KqriLTUduF4V9LBRRMeoNPn9M3FXNe88jh01ggGXbGsGNPFmzaHY7mfZUd0fjEpjKoWUXabOEyEsYMDztmtm8klHOgQ9eNCnghdGr1lS0kuk/TL1BXYR91MMn6dqhn6cXyYvzXXHFDqfRFQAQZoov/GCwSxUJdsulTmfVsMCO5R45NnjHDDFrDHI+FJ9iI0MRydGmOVgbP+xmMNg0RSTztxXQEaDGlATVmSL5b95sQpVtp2AB3Yoh/yuSojpGnpk2xiCJZe0dlrzKmuXgPbWmSuMSbzA8DVZHunakQA
 
-On 2026-04-18 21:43, John Paul Adrian Glaubitz wrote:
-> Hi Artur,
-> 
-> On Sat, 2026-04-18 at 21:20 +0200, Artur Rojek wrote:
->> On 2026-04-12 09:30, John Paul Adrian Glaubitz wrote:
->> > Hi Ahelenia,
->> >
->> > On Fri, 2025-10-17 at 00:05 +0200, Ahelenia Ziemiańska wrote:
->> > > The API for apm_get_power_status is "call it if it isn't NULL".
->> > > If the module is unloaded and it's not unset,
->> > > reading /proc/apm will jump into unloaded kernel memory.
->> > >
->> > > The first commit that added this incompletely refactored
->> > > the assigned-to variable in __exit,
->> > > the second deleted it instead of fixing it.
->> > >
->> > > Unset it on unload like drivers/macintosh/apm_emu.c.
->> > >
->> > > Fixes: 0a9b0db19262 ("[APM] SH: Convert to use shared APM emulation.")
->> > > Fixes: 8c8ee8254767 ("sh: hp6xx: APM build fix and new battery
->> > > values.")
->> > > Signed-off-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
->> > > ---
->> > >  arch/sh/boards/mach-hp6xx/hp6xx_apm.c | 3 +++
->> > >  1 file changed, 3 insertions(+)
->> > >
->> > > diff --git a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
->> > > b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
->> > > index e5c4c7d34139..089eca39c4e6 100644
->> > > --- a/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
->> > > +++ b/arch/sh/boards/mach-hp6xx/hp6xx_apm.c
->> > > @@ -98,6 +98,9 @@ static int __init hp6x0_apm_init(void)
->> > >
->> > >  static void __exit hp6x0_apm_exit(void)
->> > >  {
->> > > +	if (apm_get_power_status == hp6x0_apm_get_power_status)
->> > > +		apm_get_power_status = NULL;
->> > > +
->> > >  	free_irq(HP680_BTN_IRQ, 0);
->> > >  }
->> > >
->> >
->> > Let's CC Artur Rojek who has worked on the hp6xx code before and should
->> > give his ACK.
->> 
->> This driver can't be built as a module, so this code is never called.
->> But since we can't get rid of module_exit(apm_exit):
-> 
-> Isn't hp6x0_apm_exit() called when the device is being shutdown even 
-> when
-> it's not built as a module?
+Hi all,
 
-I went by suggestion found in the kernel docs [1], and after a quick
-glance over include/linux/module.h:
-> /**
->  * module_exit() - driver exit entry point
->  * @x: function to be run when driver is removed
->  *
->  * module_exit() will wrap the driver clean-up code
->  * with cleanup_module() when used with rmmod when
->  * the driver is a module.  If the driver is statically
->  * compiled into the kernel, module_exit() has no effect.
->  * There can only be one per module.
->  */
-> #define module_exit(x)	__exitcall(x);
+This series fixes a gdrom driver Oops due to bad MMIO register access and
+fixes the missing updates of the block layer gendisk capacity that
+prevented ISO9660 mounts from working.
 
-The symbol is certainly not eliminated at compilation time:
-> $ readelf -sW vmlinux | grep hp6x0_apm_exit
->  2586: 8d36b000    36 FUNC    LOCAL  DEFAULT   14 hp6x0_apm_exit
+The change was tested on real Sega Dreamcast devices (PAL-E, NTSC-J,
+NTSC-U) with physical CD-R discs and with GDEMU emulated discs. Before:
+Oops on mount and an unusable drive. After: Successfully able to mount
+and use the inserted medium.
 
-However, the section which should hold it does not exit:
-> #define __exitcall(fn)						\
-> 	static exitcall_t __exitcall_##fn __exit_call = fn
-> (...)
-> #define __exit_call	__used __section(".exitcall.exit")
+Thanks,
+Florian
+---
+v1->v2: for "cdrom: gdrom: replace port I/O with MMIO accessors": Don't
+	use helper functions with io.*_rep(), but writesw() and readsw()
+	local in the respective functions. Improved failure case of
+	gdrom_update_capacity() in gdrom_bdops_open().
 
-> $ readelf -S vmlinux | grep "exitcall\.exit"
-> $ echo $?
-> 1
+v1: https://lore.kernel.org/linux-sh/20260405082330.4104672-1-fuchsfl@gmail.com/
 
-I don't know what to make of it, but nevertheless, I am ok with merging
-the patch in question.
+Florian Fuchs (2):
+  cdrom: gdrom: replace port I/O with MMIO accessors
+  cdrom: gdrom: update gendisk capacity on open
 
-Cheers,
-Artur
+ drivers/cdrom/gdrom.c | 33 +++++++++++++++++++++++++++++----
+ 1 file changed, 29 insertions(+), 4 deletions(-)
 
-[1] 
-https://www.kernel.org/doc/html/latest/driver-api/basics.html#c.module_exit
 
-> 
-> Adrian
+base-commit: 6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f
+-- 
+2.43.0
+
