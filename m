@@ -1,99 +1,146 @@
-Received: from mail-ej1-f51.google.com (mail-ej1-f51.google.com [209.85.218.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 74C793A1682
-	for <linux-sh@vger.kernel.org>; Mon, 20 Apr 2026 12:29:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.51
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776688176; cv=pass; b=en3q+2/oqmurjztXW7lT1m9hgQpgSkWU4MPblpsDedO/Y1HACFN0iTbKQ/p1B1/qQyY4XUqLjmKOKWGJiyq9+sH5rQGNJqGSFafGx2AWKpuIw56UrbgmrtzzNM9y0T066goOow1hBzt5KiWlSBa7eaVvCy8qVyg6VpXePjS5h5k=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776688176; c=relaxed/simple;
-	bh=iRX9LnLt4l5zNmdZzU0XVrMpvF4zu4dRaargVib9eEY=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=tzfHT30y2tQxC6dxt83wzBANnD2TR1pVPU4KuM2wxIh1cpceIAhfEOW5Xp/CPWC6Zx2AVJ6gCSpVdKU0FzqM8NYtFMKNuvRkRbv1xZ99YICmiuyV6LT6eL6gEQcPCUFvwDXvKVYIdNu6v7mVMKzuiPOzKTa/R48L7b23kIMixJo=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=VDRHVWWk; arc=pass smtp.client-ip=209.85.218.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 84D8D3A0B2E;
+	Mon, 20 Apr 2026 12:57:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1776689860; cv=none; b=eglOYPxQmgeZZdhtaQx9AmjmWGrkHraoUTAmge/Shr5HXlz2L1p8soArCRMcbl0jr4oCNE4r68uHOyjX9VULgQJKvcESBV6PW6LCoY7yQ9xrzBpxeyRW7vvFbDrwjm/v10XiE7Jj004FOcxCRWHTClglTYZbvHLpGg+lF7c1r4g=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1776689860; c=relaxed/simple;
+	bh=Zjket3ohV83Rl+wEGw0FbgZm5yvBWMvRoUsi5ntbvLM=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=ovo6APkfjdj7bicFmz/bfVzYxl3lEE2lLdVd7WgDpc/Me0h6LnHgz3QPYj70dpq34PnM3xIrIfC3yZSgMdTMZ1/IGdtALi4osr8P986G1TFmUiFXrm/SnPIXhYUUBk0khAycwd6Cl3HOolfEYZ5WlbEj8MfbzgG0utNbdWrvs7U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=GPa0oC6h; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="VDRHVWWk"
-Received: by mail-ej1-f51.google.com with SMTP id a640c23a62f3a-b936331786dso372983266b.3
-        for <linux-sh@vger.kernel.org>; Mon, 20 Apr 2026 05:29:34 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1776688173; cv=none;
-        d=google.com; s=arc-20240605;
-        b=Q/DWXrfmtc8YO2XWPNN7jPIEbVr6gmcNQWTSTuGg23tJthr1jjEa98LVUAO8alkAej
-         VTZ3AfCMqDEPNzXMORf6pynPOT1qTLAsqg8pP96cM2p6mkTNzlmguz8w2E8dKX63MQoS
-         lFKi3yF/8MfX/8bj3Ag9ZSdeKZnpu2l+N3VzfQXjZSDvYsS+bz18vXwyEg82wW9qO4th
-         2WeW/zGltP23VwLLI3tUdXg5wM5rGhEWcmngpu/kaH+Byci1e6KIDIzf593oTbG1NtbA
-         5fni0m44Y6Z7y54SkVQpQP7cqc/ddr9U+EWJVzy2KH0Qh8gee31iXaVZJLTYfMxskH1X
-         TwcA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=iRX9LnLt4l5zNmdZzU0XVrMpvF4zu4dRaargVib9eEY=;
-        fh=T7yRQISD0yERY0gXvmjYvSbtZGnWtgsippBK2HCeEXc=;
-        b=S6QH5tOR5mcyLfrtc3UEZ4gMU5uvdVU0Mw9VjsmRVuqbCnNX6/5CeE7gTD7kYSTEWr
-         WukLnxhyuzn/u9dRG4BJHKnTxaMebMdF5xrW69l8QAjSARLKzKLlweurQhVl3+bKhwca
-         nwFkFqJqQ7xDky3LgFhgnIGmOcnQAQMBj4Gv3S2s3NCpk+gBaAqi9CvUkXEtYMdY37V4
-         Az+a7A2H1jBM8HlrSXVI8HhKJLvKZzxnHycJ/sX0Pe8XBZ89lJ0ChSxNqZcOjaMRHu2n
-         VRjOFDCicyq9DpBp/dIQ0OELOQBnZdBTkVzkF05BNhoHp4dRLggpaKFGB6isv6mVo4iG
-         0W0A==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776688173; x=1777292973; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=iRX9LnLt4l5zNmdZzU0XVrMpvF4zu4dRaargVib9eEY=;
-        b=VDRHVWWkgFLina+rkYh1Z43MgSVjyxNu/jE69miyd599ELmqBIEgGNsmAMWZJ4Mcf1
-         iWwPFO89s9Kc/6AxhUJGKtO99QBUr8zZjzboufFVub8eeBvSoXfzG7Hwk1M1AZFRhQVF
-         at0ZNF+7I8oAVdaa+XsN90la1kJrN9alw8XWOIAFyrPt1DxrMKmotHnRGf+RkC2vn/4e
-         7HZrm6T+qkWRy/zfT70mIpK0MH0s4gEG6k0SMX0MpWWHHdGL3enS8yEPQR2eqmJmGfeu
-         sP+xo/i81PiJoP3grYfQ3Kct978cNG9DpVvGeUZOq/MN8a/frQ5QYSvWIghAE8AZ8Zv5
-         8/gQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776688173; x=1777292973;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=iRX9LnLt4l5zNmdZzU0XVrMpvF4zu4dRaargVib9eEY=;
-        b=Mut1B07I88vCPZyITT0XIBU3lHpgMMc4QDPCE/fUp/dpDrZEMFv+pp6EJ04L6AF9TK
-         rKHBOr7ZS5wkHGx9fghXvMmSwlvNEkbdQn3Jrbouxho6LzVasR4jKPwl1V0NIfoRur1U
-         xHcKJ09AYPe6toYIA4TeSjnHCJ33EopdUMD3AzPaeUjVrTZKTB2SGCnTIo8OyA4IiG9X
-         a5jZhVdpWZllPUnsdkeb9vYADKYOoM/8oJ5FOV0gVTKZH9N0t7vNlpySGxH2lU2ZzOD2
-         aLf2PMz/SreWvs1G1lpKR/omdPrcJJ6uefVspGWMiHDpcvkGnvhZTbBA6N6yT2thTWSd
-         ToeQ==
-X-Gm-Message-State: AOJu0YydJTWucJPSzQo0qaoic66/JmAb5EU8rCsKjgGi5OXhrDQT/DlY
-	GoAUQs4/0Sb4zep8MjjkEEm3Nboes/MV9ZuPNcd1kmFtKmcu8GZPYSN4MQxmAtsXcY+0plIOgPF
-	dYMurT13xIqH1qOj3RGlGeGcuqkpLVdQ=
-X-Gm-Gg: AeBDiesFWAW1vNXKxQKaBpJ3JRsTDmeMtqG3S8krYnubCMYTVjLMUKlXlI8DR/jaZB8
-	IiRF1OeVyroEOcoO/tSVpdD5/w+O1d0AvP4f2wunXFN96Qt4Wm/7ZwpxvYr+FBxgyOtpb+aBwJ4
-	W3UsyIbsA0BXMUTI/GBZsplQ+15TXco6yU8WDLljKc26MMhw+0r57ep4xpzhIAxk1Shw+EL26oo
-	ITfYUHoh0oWtBEFpyQBuHAMhrwLmh1/NmNqqWPiPG8MH8xVnMPkx0qtdy7Ypu7gTxLTtXPlCADL
-	azcdwGQihWkeQfHtPuIZUKy/xVpPTUR6phuXarRjQ5eCo13Raiwm0D3lcSYtjfptDA==
-X-Received: by 2002:a17:907:86a1:b0:b8f:848b:4456 with SMTP id
- a640c23a62f3a-ba418e86492mr644581566b.13.1776688172413; Mon, 20 Apr 2026
- 05:29:32 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="GPa0oC6h"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:Date:Cc:To:From:Subject:Message-ID:From:Reply-To:Subject:Date:
+	Message-ID:To:Cc:MIME-Version:Content-Type:Content-Transfer-Encoding:
+	Content-ID:Content-Description:In-Reply-To:References;
+	bh=cdjRzU/Fwv8mMjWBkd52WYLa/rrNl9J1u0P7F5nouJU=; t=1776689855; x=1777294655; 
+	b=GPa0oC6h6BOxzxD0QK8ripJXlUMW5OYl2cEy60EOHfDkj+MDbXh+3q9JghsSva25F61YZVE6N7M
+	EQ8UZeK/dlBjTZQC7tdXqYAMAS7cMYbgrOHFZNcsx47k/kIB9/znIt3AVy4q9zQmFQH3ltDN8KIjL
+	CAOYhoN9ZHMpkELm1lu59hJ2S4djWPzryzivMYzuXiO+Hw6inbmZmXnUZZUcLLH52L/zrwThatveq
+	eDB5HL+VDA0jnmCyMI1LKxE+fis0q5V65zrdoPkpRoUIMEWqDmJm3GsCS+Yx/W9KXbYUXsNck5jmE
+	CV1sOJcDclZq9LcIHYIzZ5xCs/5uF1lwrcQg==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1wEoBv-00000000YQ7-1AdK; Mon, 20 Apr 2026 14:57:31 +0200
+Received: from dynamic-089-012-084-148.89.12.pool.telefonica.de ([89.12.84.148] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1wEoBv-00000002S8o-0F2d; Mon, 20 Apr 2026 14:57:31 +0200
+Message-ID: <6fd0b00bde4213ae0006a98f517212a7803f69fc.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v7.1
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Thomas Zimmermann <tzimmermann@suse.de>, Tim Bird <tim.bird@sony.com>, 
+ Thomas =?ISO-8859-1?Q?Wei=DFschuh?=
+	 <thomas.weissschuh@linutronix.de>, Rich Felker <dalias@libc.org>, 
+ "<ysato@users.osdn.me>"
+	 <ysato@users.osdn.me>, linux-sh <linux-sh@vger.kernel.org>, linux-kernel
+	 <linux-kernel@vger.kernel.org>
+Date: Mon, 20 Apr 2026 14:57:30 +0200
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.1 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260419162823.2829286-1-fuchsfl@gmail.com> <20260419162823.2829286-2-fuchsfl@gmail.com>
-In-Reply-To: <20260419162823.2829286-2-fuchsfl@gmail.com>
-From: Adrian McMenamin <adrianmcmenamin@gmail.com>
-Date: Mon, 20 Apr 2026 13:29:20 +0100
-X-Gm-Features: AQROBzAPMQWVv7OYLTIFl9mf0DsPBr8ecPvSSvDAWjBFFLgbsWn2dgdvBiqxn84
-Message-ID: <CACwZE5RhZ9COO=J=vix+k191OLGmS2YU=pUupL5nNUGJW=Dvhg@mail.gmail.com>
-Subject: Re: [PATCH v2 1/2] cdrom: gdrom: replace port I/O with MMIO accessors
-To: Florian Fuchs <fuchsfl@gmail.com>
-Cc: linux-sh@vger.kernel.org, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Artur Rojek <contact@artur-rojek.eu>, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Sun, 19 Apr 2026 at 17:29, Florian Fuchs <fuchsfl@gmail.com> wrote:
->
-This patch addresses the bug and is logically correct and so looks good to me.
+Hi Linus,
 
-Reviewed-by: Adrian McMenamin <adrianmcmenamin@gmail.com>
+after skipping some kernel releases, I'm back with a pull request for v7.1 =
+which contains
+four patches. Two patches from Thomas Zimmermann, one by Tim Bird and one b=
+y Thomas Wei=C3=9Fschuh.
+
+The first patch by Thomas Zimmermann adds a missing include in dac.h for SH=
+-3 which became
+necessary after 243ce64b2b37 ("backlight: Do not include <linux/fb.h> in he=
+ader file") which
+made __raw_readb() and __raw_writeb() inaccessible in dac.h. Thomas' second=
+ patch drops
+CONFIG_FIRMWARE_EDID for SH as it depends on X86 or EFI_GENERIC_STUB which =
+are not defined
+on SH for obvious reasons.
+
+The patch by Tim Bird fixes just a small typo in two SPDX ID lines which he=
+ stumbled over by
+accident.
+
+And, least but not last, the patch by Thomas Wei=C3=9Fschuh removes the CON=
+FIG_VSYSCALL reference from
+UAPI. This was necessary as the definition of AT_SYSINFO_EHDR was gated bet=
+ween CONFIG_VSYSCALL to
+avoid a default gate VMA to be created. However that default gate VMA was r=
+emoved entirely in commit
+a6c19dfe3994 ("arm64,ia64,ppc,s390,sh,tile,um,x86,mm: remove default gate a=
+rea").
+
+The following changes since commit 6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f=
+:
+
+  Linux 7.0-rc1 (2026-02-22 13:18:59 -0800)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
+sh-for-v7.1-tag1
+
+for you to fetch changes up to 647b43f65357673a9ee4fe8a99247a7549bdb368:
+
+  sh: Drop CONFIG_FIRMWARE_EDID from defconfig files (2026-04-18 10:23:23 +=
+0200)
+
+Thanks for pulling!
+
+Adrian
+
+----------------------------------------------------------------
+sh updates for v7.1
+
+- sh: Drop CONFIG_FIRMWARE_EDID from defconfig files
+- sh: Remove CONFIG_VSYSCALL reference from UAPI
+- sh: Fix typo in SPDX license ID lines
+- sh: Include <linux/io.h> in dac.h
+
+----------------------------------------------------------------
+Thomas Wei=C3=9Fschuh (1):
+      sh: Remove CONFIG_VSYSCALL reference from UAPI
+
+Thomas Zimmermann (2):
+      sh: Include <linux/io.h> in dac.h
+      sh: Drop CONFIG_FIRMWARE_EDID from defconfig files
+
+Tim Bird (1):
+      sh: Fix typo in SPDX license ID lines
+
+ arch/sh/configs/dreamcast_defconfig  | 1 -
+ arch/sh/configs/hp6xx_defconfig      | 1 -
+ arch/sh/configs/se7343_defconfig     | 1 -
+ arch/sh/configs/se7780_defconfig     | 1 -
+ arch/sh/drivers/platform_early.c     | 2 +-
+ arch/sh/include/asm/platform_early.h | 2 +-
+ arch/sh/include/cpu-sh3/cpu/dac.h    | 2 ++
+ arch/sh/include/uapi/asm/auxvec.h    | 6 +-----
+ 8 files changed, 5 insertions(+), 11 deletions(-)
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
