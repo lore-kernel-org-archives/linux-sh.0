@@ -1,92 +1,87 @@
-Received: from out-171.mta1.migadu.com (out-171.mta1.migadu.com [95.215.58.171])
+Received: from out-174.mta1.migadu.com (out-174.mta1.migadu.com [95.215.58.174])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BDFD2F83B5
-	for <linux-sh@vger.kernel.org>; Fri, 24 Apr 2026 12:10:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4F9533E355
+	for <linux-sh@vger.kernel.org>; Fri, 24 Apr 2026 17:11:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.174
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777032651; cv=none; b=fs/qwhW3bwjCaZ7dhPHm3hCycVMH/WAhvcHZZVgawgHFAW9bBNm9oJU1CCjpVVv65ds3XFGToLikEncF7saFZmvE6IRW0HYVCHDhg/U5VJewYgIXgKWGjFHY6q7LU7SK72fUpgDuioPY4MSUwwyTulrRcWDfJfjX8ICmjLs4oFA=
+	t=1777050662; cv=none; b=Djk84s1Er0TeNWuMmr9NHnQKwICWy+ZUxExGPs+yQuwiIb7naKXC7TuuvQfjYVmvqXd+4LDFsAQa8z8tyw+Y3tsb7Xg9QzbjP8n9lSgTE1Jj2FbHv80MQtaJ0IvvF0NyHhD2dU0X3qbxCuNos/u9VLqi3COclKZ8dOEMNrB7UMs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777032651; c=relaxed/simple;
-	bh=DiR2tchzpOBdmiVVmngjlOQAdil/y1mUp7govVD1Coo=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=UOwm96IGFtk2rHgQrP/F5KNHFrrJrPRwrmokNWtmavrQXEAT1dRwzSyY08bsr5rAUZo+NowczOgA58HJIaEw8WorYiP/8LID8pDxCxqrmg1nZfK9/REINocx1phqjQmFsje1IWQSWk3JWa94qOsJ1h8/71MN255cOcQ1vaNU1tw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=sZMmf/ha; arc=none smtp.client-ip=95.215.58.171
+	s=arc-20240116; t=1777050662; c=relaxed/simple;
+	bh=PqY0DlOc5QVxOpdkHP6Ci9tpZLb7pdcsY9EgYIDAcX4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=q7rq7PpWNDEn2DigDEwNdYlQLJ2BD/k9Zhm/rsc4KJYZ8ZCM43GYBNsIVv8SAS0C02Dv0SxwaAFmcZPRw9p5R5rr7pzseEDWJDe5MV20JbQU7ZBw6HkK5DPdJd2yRtVpF432+1nqZDVxCXlVCifEHRlONa5dxAecmYo7Rbd7Lrw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=j/K5AJsa; arc=none smtp.client-ip=95.215.58.174
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="sZMmf/ha"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="j/K5AJsa"
+Date: Fri, 24 Apr 2026 19:10:46 +0200
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1777032645;
+	t=1777050659;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=CIH7HpTRKnw3R/MixMxgYmi1vEGJhPiJs2BmonboIgU=;
-	b=sZMmf/haK9qM7UdywNhi0bgplrd8TVlBV+uMlYaRdHg9AfYmRDmmIROlVSLCFJN0xHXlpj
-	mYH/Kfv14tcMffZcVAGb4hyBJ1DlGjq6z5Q+nFWrWMdwfgbTzRREzhq5AWiAJ7ncdU06Ur
-	PIFvId+ddjng/f61Cn5caMNBHYdCDEw=
+	bh=HXLgGbrRDSqViLm3/46KWass2TEKy/mGXvR1+Wp8kWc=;
+	b=j/K5AJsa7v0oJXvIUy02/bj+vjwOEueV2gzu+u3PJAzInTCnpBj/Z6EzjwCeDgdkBPadjn
+	Rnera4h2B4iD6AdGql7Ni3BNpaYeHmJVEZTFz7Vwxb5YbHdl5GUNJVIbcCBPP76Q9t2+Aw
+	XzHV27gV8FGUHQQEw2rmOX8je777808=
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
 From: Thorsten Blum <thorsten.blum@linux.dev>
-To: Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Thorsten Blum <thorsten.blum@linux.dev>
-Subject: [PATCH 2/2] sh: sq: use sysfs_emit_at() in mapping_show
-Date: Fri, 24 Apr 2026 14:10:11 +0200
-Message-ID: <20260424121007.311797-6-thorsten.blum@linux.dev>
-In-Reply-To: <20260424121007.311797-4-thorsten.blum@linux.dev>
-References: <20260424121007.311797-4-thorsten.blum@linux.dev>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: use sizeof() in memchunk_cmdline_override
+Message-ID: <aeukFnPUqcm64-2_@linux.dev>
+References: <20260423120441.212278-3-thorsten.blum@linux.dev>
+ <CAMuHMdUzktvZ2x4yVvq6CDXCe8XJ49MAea2krQHGYPEVQ-sqPQ@mail.gmail.com>
+ <aetQv3emr_o8kK-h@linux.dev>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1442; i=thorsten.blum@linux.dev; h=from:subject; bh=DiR2tchzpOBdmiVVmngjlOQAdil/y1mUp7govVD1Coo=; b=owGbwMvMwCUWt7pQ4caZUj3G02pJDJmvYxdM1/pRNqFKdjPrhQo1wz9Os9QffJ4+adbalYJby 5t3aAqd6yhlYRDjYpAVU2R5MOvHDN/SmspNJhE7YeawMoEMYeDiFICJ3LvHyPBsfdW1V4GzVOLF O2yKZqnOD9Wb96Hg70Vbp+R1rvcSvm9i+J+eNO/gkYAdnmq58tsYsqKsjfg4jaT4Z351XhbGJCE RxQEA
-X-Developer-Key: i=thorsten.blum@linux.dev; a=openpgp; fpr=1D60735E8AEF3BE473B69D84733678FD8DFEEAD4
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <aetQv3emr_o8kK-h@linux.dev>
 X-Migadu-Flow: FLOW_OUT
 
-Replace sprintf() with sysfs_emit_at() in mapping_show().
-sysfs_emit_at() is preferred for formatting sysfs output because it
-provides safer bounds checking and avoids manual buffer size accounting.
+On Fri, Apr 24, 2026 at 01:15:20PM +0200, Thorsten Blum wrote:
+> On Fri, Apr 24, 2026 at 01:05:48PM +0200, Geert Uytterhoeven wrote:
+> > Hi Thorsten,
+> > 
+> > On Thu, 23 Apr 2026 at 14:10, Thorsten Blum <thorsten.blum@linux.dev> wrote:
+> > > Replace the hard-coded string length with 'sizeof("memchunk.") - 1' and
+> > > remove the comment.
+> > >
+> > > Signed-off-by: Thorsten Blum <thorsten.blum@linux.dev>
+> > 
+> > Thanks for your patch!
+> > 
+> > > --- a/arch/sh/mm/consistent.c
+> > > +++ b/arch/sh/mm/consistent.c
+> > > @@ -23,7 +23,7 @@ static void __init memchunk_cmdline_override(char *name, unsigned long *sizep)
+> > >         int k = strlen(name);
+> > >
+> > >         while ((p = strstr(p, "memchunk."))) {
+> > > -               p += 9; /* strlen("memchunk.") */
+> > > +               p += sizeof("memchunk.") - 1;
+> > 
+> > Can't you just use strlen() instead, i.e. won't the compiler optimize
+> > that into a constant?
+> 
+> That only works if ARCH_HAS_FORTIFY_SOURCE is selected, which is not the
+> case for arch/sh. Otherwise I would have used strlen().
 
-Signed-off-by: Thorsten Blum <thorsten.blum@linux.dev>
----
- arch/sh/kernel/cpu/sh4/sq.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+More concretely, because __HAVE_ARCH_STRLEN is set in
+arch/sh/include/asm/string_32.h, strlen() resolves to the arch-specific
+assembly implementation in arch/sh/lib/strlen.S.
 
-diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-index 908a8e09113b..50e7df13fcc2 100644
---- a/arch/sh/kernel/cpu/sh4/sq.c
-+++ b/arch/sh/kernel/cpu/sh4/sq.c
-@@ -14,6 +14,7 @@
- #include <linux/kernel.h>
- #include <linux/module.h>
- #include <linux/slab.h>
-+#include <linux/sysfs.h>
- #include <linux/vmalloc.h>
- #include <linux/mm.h>
- #include <linux/io.h>
-@@ -289,14 +290,14 @@ static ssize_t sq_sysfs_store(struct kobject *kobj, struct attribute *attr,
- static ssize_t mapping_show(char *buf)
- {
- 	struct sq_mapping **list, *entry;
--	char *p = buf;
-+	ssize_t len = 0;
- 
- 	for (list = &sq_mapping_list; (entry = *list); list = &entry->next)
--		p += sprintf(p, "%08lx-%08lx [%08lx]: %s\n",
--			     entry->sq_addr, entry->sq_addr + entry->size,
--			     entry->addr, entry->name);
-+		len += sysfs_emit_at(buf, len, "%08lx-%08lx [%08lx]: %s\n",
-+				entry->sq_addr, entry->sq_addr + entry->size,
-+				entry->addr, entry->name);
- 
--	return p - buf;
-+	return len;
- }
- 
- static ssize_t mapping_store(const char *buf, size_t count)
+However, constant folding is only guaranteed when calls go through
+__builtin_strlen(), e.g. via the wrapper in linux/fortify-string.h,
+which SH does not use with dreamcast_defconfig.
+
+I also checked the disassembly, and sh4-linux-gnu-gcc (Debian 14.2.0-19)
+did not optimize it into a constant.
