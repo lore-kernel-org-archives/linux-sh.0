@@ -1,93 +1,73 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from relay7-d.mail.gandi.net (relay7-d.mail.gandi.net [217.70.183.200])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 245A93EF0AD;
-	Fri, 24 Apr 2026 20:00:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4E272DD60E;
+	Fri, 24 Apr 2026 21:10:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.200
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777060804; cv=none; b=KxM14oRdxD9q0Qy3f8HCh2faiIuxurvy4WHAjCf7s3CLTbz1oh5abMGYakCxAOI5e3ygUFmDCnESvgOf1lxTzMqWpt8EkfgOFgFCgvtxJFsUAR3p7+Ggyj03/wVqdpoiyzAKrp2xrUucfbYBR4hhQzImhrBS/uwERS7Kr5TNNQg=
+	t=1777065006; cv=none; b=auqkfEPttpvZPgEMv3hRwc2lMWiQ6K3Ga/sBspdpJIpgG4xu0aFknKy4QDfDUTE2cUVVHCw/uu8PczdMD61oJe1gqyp3ui2FXMDgFs2s9CyZgKMJTYbZw01zHtuLYoIF36yZa7CRJlOCM+Yq/ExCDXacAVafFSkwfnoNaLMwecU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777060804; c=relaxed/simple;
-	bh=1PxuzsAetI3VwQEle0IpYULxi9Q1zJtXjwxlPOZ1ebM=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=GgEIl26C3AikjSo2mtV+j4pRWFx6oYLrY/vlENLQkC8fFAS6bXmSlT2mcOtCCAyR//mTjuaJ3MEnZZGPcUPuHXCLhZ1FNx0NJiJJrKNmL/BW6jLE49q0FIWpTUNzsMZdnuBd81rOEDTyut2khPVD1J7YuZYD3YsMukVJjwLzMZA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Wk1o669w; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Wk1o669w"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=QElOcqTGz1RW21C8WSZuxzMUPfytvHUMB+coL0YpqrA=; t=1777060801;
-	x=1777665601; b=Wk1o669wB19f9UBQ8vkNvrqjKe/wXSEuUgpigBZ65fl45Ym108NPbaCNdL5Lx
-	dnv+AuGMUah1q0TqvvdGLsiSXK2Z64kqEv1iGRdi25wUG1dD7mpR4tpL4v1z74rtqRj7xhcmqHlk4
-	n4phiC/YBVUYVMNXy4FLdWi7TRCC1O+vvW8PdxWXCJ0a5LzO2i7TEBkhVBP5h8m518KVCqCqtYGmY
-	Nokm96zQFGodDcKgpQPOgQ4fA8ypPDosv8nb/0V9UXy28FTJQQcpuYUEyMtXkELpbTRZ2Xt7+s8/w
-	MtJIeZZqLX84ARVX4KLub6Y+kBF+OynDdmYn9C6vUXWmB9bhBw==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wGMgu-00000001rjn-30Jq; Fri, 24 Apr 2026 21:59:56 +0200
-Received: from dynamic-002-242-158-062.2.242.pool.telefonica.de ([2.242.158.62] helo=[192.168.178.50])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wGMgu-00000000q14-268W; Fri, 24 Apr 2026 21:59:56 +0200
-Message-ID: <39b8846254ceebd7f4bee44c6348ef1f9802910d.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] maple: switch to dynamic root device
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Artur Rojek <contact@artur-rojek.eu>, Johan Hovold <johan@kernel.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>, 	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date: Fri, 24 Apr 2026 21:59:55 +0200
-In-Reply-To: <c67bd8df5fbfc357dc20ad7973eb5adb@artur-rojek.eu>
-References: <20260424104142.2617115-1-johan@kernel.org>
-	 <c67bd8df5fbfc357dc20ad7973eb5adb@artur-rojek.eu>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.1 
+	s=arc-20240116; t=1777065006; c=relaxed/simple;
+	bh=BK6VAgnfLmb7D6P4QXxUNpkyx0adFQfzIOqNQR3pUiY=;
+	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
+	 Message-ID:Content-Type; b=L5Qza7G8xOYyo4efDGHw0HAC3WcaQvu2cXJCrFzA5YIfCLRMmKRSFyOyD87JBsSywxZNzrGMrJZa9qXgU7spOixE0SH/8YFm3648GPct4O8OnJpk1O6EwUTIxHfvN3Wx9xjXs5nI8KR/b2VT+d4Ne8aYB2HEehRu/lfVRhj9RCk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.183.200
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
+Received: by mail.gandi.net (Postfix) with ESMTPSA id 10E0B3ED84;
+	Fri, 24 Apr 2026 21:09:54 +0000 (UTC)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Date: Fri, 24 Apr 2026 23:09:54 +0200
+From: Artur Rojek <contact@artur-rojek.eu>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Johan Hovold <johan@kernel.org>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] maple: switch to dynamic root device
+In-Reply-To: <39b8846254ceebd7f4bee44c6348ef1f9802910d.camel@physik.fu-berlin.de>
+References: <20260424104142.2617115-1-johan@kernel.org>
+ <c67bd8df5fbfc357dc20ad7973eb5adb@artur-rojek.eu>
+ <39b8846254ceebd7f4bee44c6348ef1f9802910d.camel@physik.fu-berlin.de>
+Message-ID: <858b0863309f308fb49a27911b22b17e@artur-rojek.eu>
+X-Sender: contact@artur-rojek.eu
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Score: -100
+X-GND-Cause: dmFkZTEQfa1Oc5JItPlPNz3wzGKSXFbRpuzT8AWDgq7eAKN7KRKbiWP8F3wSe6hPYhlr7Bb7FWq3rJTv2Mh8V0GCQpfGHFUdylNfYhxS1Kw0rKtGJ4i0rMPVmUZsdfwQ+z4/hA1VP9la4x7oducWXoIK2+OpinsFIJSZpNmhbGLFWrlsSqZxvRDWYUERv0/+EmBmaRcpTQefxkHZWfCGcVv/XVH8sGXGAkMAySF7Xt/4AYXozQ1Pz/Bhh5cjg5BBUj7788sHtzRPYe5fiAVXWX/2Pu3by1X5BEPGQgBQo5xE+szOSA6SorwHDTB4NZR0/9RVwA6zpXAkH/C+3GXh/Q4HFRbtEkoQO1ypnWNqoIcJEYsyb8PzNPnLcPuVCcwal702cABVXM9CvmXtFLsLhO8eA9Ls1PulxuOo2QIK9BIJlS6M+s969io+B2OQ5VOXjH1A84bMxA4b/AJCvylGD3VUk0Qxvy3E8gtJH0QzW7/1lCp+3EbcWEM6nfG8gy6mTfPXu+PpO2Gs9G/PawEe9TUjosvacn9VKg6yaZ9agegoT3CuZJSTwroSjA7rgYsRnnEWEqIS+D0WNx5zR/r8rQeP/pa+KlxVL8kNBipktLfsRqnCXpV6R05jlZhOS1zqB2MgNR916l1FaTb+bFEh8LVyIhWtuiLGAd0Kr64+LYFDLcRUgg
+X-GND-State: clean
 
-Hi Artur,
+On 2026-04-24 21:59, John Paul Adrian Glaubitz wrote:
+> Hi Artur,
+> 
+> On Fri, 2026-04-24 at 21:08 +0200, Artur Rojek wrote:
+>> On 2026-04-24 12:41, Johan Hovold wrote:
+>> > Driver core expects devices to be dynamically allocated and will, for
+>> > example, complain loudly when no release function has been provided.
+>> >
+>> > Use root_device_register() to allocate and register the root device
+>> > instead of open coding using a static device.
+>> >
+>> > Note that this also fixes a reference leak in case device_register()
+>> > fails which may be flagged by static checkers.
+>> >
+>> > Signed-off-by: Johan Hovold <johan@kernel.org>
+>> 
+>> Hi Johan,
+>> 
+>> thanks for the patch. Verified on real hardware. LGTM:
+>> 
+>> Acked-by: Artur Rojek <contact@artur-rojek.eu>
+> 
+> Maybe add a Tested-by as well.
 
-On Fri, 2026-04-24 at 21:08 +0200, Artur Rojek wrote:
-> On 2026-04-24 12:41, Johan Hovold wrote:
-> > Driver core expects devices to be dynamically allocated and will, for
-> > example, complain loudly when no release function has been provided.
-> >=20
-> > Use root_device_register() to allocate and register the root device
-> > instead of open coding using a static device.
-> >=20
-> > Note that this also fixes a reference leak in case device_register()
-> > fails which may be flagged by static checkers.
-> >=20
-> > Signed-off-by: Johan Hovold <johan@kernel.org>
->=20
-> Hi Johan,
->=20
-> thanks for the patch. Verified on real hardware. LGTM:
->=20
-> Acked-by: Artur Rojek <contact@artur-rojek.eu>
+Tested-by: Artur Rojek <contact@artur-rojek.eu>
 
-Maybe add a Tested-by as well.
-
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> 
+> Adrian
