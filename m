@@ -1,141 +1,93 @@
-Received: from mslow3.mail.gandi.net (mslow3.mail.gandi.net [217.70.178.249])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBDDA1DF261;
-	Fri, 24 Apr 2026 19:45:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.178.249
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 245A93EF0AD;
+	Fri, 24 Apr 2026 20:00:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777059952; cv=none; b=abkjdUyM9FHr36BSYTDHVpnK0/ss8Qanw8pFyh4ItiSX40+2rNALJToDsXL8S4II38SPQORuFc1udLHzs3Hm5okSEI8jpn6um/GVx3jiZ1V401tK7DtuJmoFUiO85DCpOa1c9jX+wvYYWdY+aKJzgAu6zhvhnBKlDlf+z4dzMOU=
+	t=1777060804; cv=none; b=KxM14oRdxD9q0Qy3f8HCh2faiIuxurvy4WHAjCf7s3CLTbz1oh5abMGYakCxAOI5e3ygUFmDCnESvgOf1lxTzMqWpt8EkfgOFgFCgvtxJFsUAR3p7+Ggyj03/wVqdpoiyzAKrp2xrUucfbYBR4hhQzImhrBS/uwERS7Kr5TNNQg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777059952; c=relaxed/simple;
-	bh=OzZRCHfU7XUp1cT9rAAmxP4KirMpHIuA97bcwWW/t/Y=;
-	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
-	 Message-ID:Content-Type; b=kI2datmFu/Nuf/OHjI0scAPAiMh+WhCG7n5X9waxoKmiLwLkc8BLCIPRStkS/7Z07fyA1bWag5XLA+MzWdBaI4irZJB9bf03YkD1pMUNVhpMOGtuyPK39Ycabx1CGrUftDBDPPerQ/L7qJT3+inlajDNhZmWJ+ZNxfGb6esDQ0E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.178.249
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
-Received: from relay6-d.mail.gandi.net (relay6-d.mail.gandi.net [IPv6:2001:4b98:dc4:8::226])
-	by mslow3.mail.gandi.net (Postfix) with ESMTP id E3906580332;
-	Fri, 24 Apr 2026 18:57:57 +0000 (UTC)
-Received: by mail.gandi.net (Postfix) with ESMTPSA id 1332A3ED27;
-	Fri, 24 Apr 2026 18:57:49 +0000 (UTC)
+	s=arc-20240116; t=1777060804; c=relaxed/simple;
+	bh=1PxuzsAetI3VwQEle0IpYULxi9Q1zJtXjwxlPOZ1ebM=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=GgEIl26C3AikjSo2mtV+j4pRWFx6oYLrY/vlENLQkC8fFAS6bXmSlT2mcOtCCAyR//mTjuaJ3MEnZZGPcUPuHXCLhZ1FNx0NJiJJrKNmL/BW6jLE49q0FIWpTUNzsMZdnuBd81rOEDTyut2khPVD1J7YuZYD3YsMukVJjwLzMZA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Wk1o669w; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Wk1o669w"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=QElOcqTGz1RW21C8WSZuxzMUPfytvHUMB+coL0YpqrA=; t=1777060801;
+	x=1777665601; b=Wk1o669wB19f9UBQ8vkNvrqjKe/wXSEuUgpigBZ65fl45Ym108NPbaCNdL5Lx
+	dnv+AuGMUah1q0TqvvdGLsiSXK2Z64kqEv1iGRdi25wUG1dD7mpR4tpL4v1z74rtqRj7xhcmqHlk4
+	n4phiC/YBVUYVMNXy4FLdWi7TRCC1O+vvW8PdxWXCJ0a5LzO2i7TEBkhVBP5h8m518KVCqCqtYGmY
+	Nokm96zQFGodDcKgpQPOgQ4fA8ypPDosv8nb/0V9UXy28FTJQQcpuYUEyMtXkELpbTRZ2Xt7+s8/w
+	MtJIeZZqLX84ARVX4KLub6Y+kBF+OynDdmYn9C6vUXWmB9bhBw==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1wGMgu-00000001rjn-30Jq; Fri, 24 Apr 2026 21:59:56 +0200
+Received: from dynamic-002-242-158-062.2.242.pool.telefonica.de ([2.242.158.62] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1wGMgu-00000000q14-268W; Fri, 24 Apr 2026 21:59:56 +0200
+Message-ID: <39b8846254ceebd7f4bee44c6348ef1f9802910d.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] maple: switch to dynamic root device
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Artur Rojek <contact@artur-rojek.eu>, Johan Hovold <johan@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
+ <dalias@libc.org>, 	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Fri, 24 Apr 2026 21:59:55 +0200
+In-Reply-To: <c67bd8df5fbfc357dc20ad7973eb5adb@artur-rojek.eu>
+References: <20260424104142.2617115-1-johan@kernel.org>
+	 <c67bd8df5fbfc357dc20ad7973eb5adb@artur-rojek.eu>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.1 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Fri, 24 Apr 2026 20:57:49 +0200
-From: Artur Rojek <contact@artur-rojek.eu>
-To: Florian Fuchs <fuchsfl@gmail.com>
-Cc: linux-sh@vger.kernel.org, John Paul Adrian Glaubitz
- <glaubitz@physik.fu-berlin.de>, Adrian McMenamin
- <adrianmcmenamin@gmail.com>, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v3 2/3] cdrom: gdrom: update gendisk capacity on open
-In-Reply-To: <20260423194132.693271-3-fuchsfl@gmail.com>
-References: <20260423194132.693271-1-fuchsfl@gmail.com>
- <20260423194132.693271-3-fuchsfl@gmail.com>
-Message-ID: <50ddbb7442b01eefdbdb7bd1f01327f1@artur-rojek.eu>
-X-Sender: contact@artur-rojek.eu
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Content-Transfer-Encoding: 7bit
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-State: clean
-X-GND-Score: -100
-X-GND-Cause: dmFkZTGTNHf/OU5iiaJ3Z8lbtBcSWiGaSwn2L4M5H269TaTujulHbn91BvBmJx0bUJ4BIJSa/JWZfDu97jHh41AJ8+ZpnrFOuVae0n+pVHzQE73/TfZ93y2DFSdiuR/STiK8KZH/gAS0BZNHm+C5XhnIEwS+5m0IK+Ai6DBA6z5y5vDeDQruG1dskfdHxaaCHFo5XviNQUmO5gn4wf05d+KhKWix6YfvkahM0IzMwKPvvRzD92KRUJ0HlzLmzGqWjy20LTFvKwuRsgXEPyoiGLymAcRJqtXIsTYL0zaG22Xd/OFdWG7mlkXveA2gUl/eKB1kJSaUwUPoh1RYLXpLko9Qo0ItIYpjTGLJE9nP5d6OZGUIgtAXq/VqmV7FGebPm0iGwNbRBKu7Y8VrNW4IdHE3PLA7ibHmvkKekOXwhRBOmBcfi6whSmabBIjtidojrrUxMQyspdfQe97QoCVSBJMOQfRM409UQlLVYac/Lr/KxcHovrAg7XpLk7g4k0btfyY/4CPY0femMT4tnRELmXhGWqef/G/iwMzJzOrflRaTjEoGwTEyKi+rIdpaHHwAYybHN4WoTy9uUCQ+ycczCTfnRHVZRvsf5W6o0hAYPV82avf2+0kcd9yltkboAvJJ+T99Mrv0vi0L2tW+WiJf2DoL+VNKC+BX5mQDkLH0YJCpyQkO7A
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On 2026-04-23 21:41, Florian Fuchs wrote:
-> Update the gendisk capacity of the media. Without the capacity, the 
-> block
-> reads fail before reaching the request queue, which prevented ISO9660
-> mounts. Refresh the capacity from the TOC leadout in gdrom_bdops_open()
-> so it checks the inserted media.
-> 
-> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+Hi Artur,
 
-Hey Florian,
-thanks for v3. Verified on real hardware.
+On Fri, 2026-04-24 at 21:08 +0200, Artur Rojek wrote:
+> On 2026-04-24 12:41, Johan Hovold wrote:
+> > Driver core expects devices to be dynamically allocated and will, for
+> > example, complain loudly when no release function has been provided.
+> >=20
+> > Use root_device_register() to allocate and register the root device
+> > instead of open coding using a static device.
+> >=20
+> > Note that this also fixes a reference leak in case device_register()
+> > fails which may be flagged by static checkers.
+> >=20
+> > Signed-off-by: Johan Hovold <johan@kernel.org>
+>=20
+> Hi Johan,
+>=20
+> thanks for the patch. Verified on real hardware. LGTM:
+>=20
+> Acked-by: Artur Rojek <contact@artur-rojek.eu>
 
-> ---
-> v2->v3: Also add quirk to handle proprietary GDROMs, using the same
->         mechanic like in gdrom_get_last_session() try session 1 first
-> 	for GDROM, then session 0 for CDROMs. Dropped Acked-By due to
-> 	code change.
-> v1->v2: no change for gdrom_update_capacity(), but for
->         gdrom_bdops_open(): handle the failure case when
->         gdrom_update_capacity() fails but previous cdrom_open() 
-> succeeded,
->         to cleanup the successful cdrom_open() with cdrom_release()
-> 
-> v2: 
-> https://lore.kernel.org/linux-sh/20260419162823.2829286-3-fuchsfl@gmail.com/
-> v1: 
-> https://lore.kernel.org/linux-sh/20260405082330.4104672-3-fuchsfl@gmail.com/
-> 
->  drivers/cdrom/gdrom.c | 27 +++++++++++++++++++++++++++
->  1 file changed, 27 insertions(+)
-> 
-> diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
-> index 094d55b2d004..1e73617b39ac 100644
-> --- a/drivers/cdrom/gdrom.c
-> +++ b/drivers/cdrom/gdrom.c
-> @@ -474,6 +474,27 @@ static const struct cdrom_device_ops gdrom_ops = {
->  				  CDC_RESET | CDC_DRIVE_STATUS | CDC_CD_R,
->  };
-> 
-> +static int gdrom_update_capacity(void)
-> +{
-> +	sector_t cap;
-> +	int ret;
-> +
-> +	if (gdrom_drivestatus(gd.cd_info, CDSL_CURRENT) != CDS_DISC_OK) {
-> +		set_capacity(gd.disk, 0);
-> +		return -ENOMEDIUM;
-> +	}
-> +	ret = gdrom_readtoc_cmd(gd.toc, 1);
-> +	if (ret)
-> +		ret = gdrom_readtoc_cmd(gd.toc, 0);
-> +	if (ret) {
-> +		set_capacity(gd.disk, 0);
-> +		return ret;
-> +	}
+Maybe add a Tested-by as well.
 
-Since you already clobber the return value of
-gdrom_readtoc_cmd(gd.toc, 1), then how about make it even simpler:
+Adrian
 
->        if (gdrom_readtoc_cmd(gd.toc, 1) && gdrom_readtoc_cmd(gd.toc, 
-> 0)) {
->                set_capacity(gd.disk, 0);
->                return -EINVAL;
->        }
-
-With or without the above change:
-
-Acked-by: Artur Rojek <contact@artur-rojek.eu>
-
-Cheers,
-Artur
-
-> +	cap = (sector_t)get_entry_lba(gd.toc->leadout) * GD_TO_BLK;
-> +	set_capacity(gd.disk, cap);
-> +	return 0;
-> +}
-> +
->  static int gdrom_bdops_open(struct gendisk *disk, blk_mode_t mode)
->  {
->  	int ret;
-> @@ -482,6 +503,12 @@ static int gdrom_bdops_open(struct gendisk *disk, 
-> blk_mode_t mode)
-> 
->  	mutex_lock(&gdrom_mutex);
->  	ret = cdrom_open(gd.cd_info, mode);
-> +	if (ret)
-> +		goto out;
-> +	ret = gdrom_update_capacity();
-> +	if (ret)
-> +		cdrom_release(gd.cd_info);
-> +out:
->  	mutex_unlock(&gdrom_mutex);
->  	return ret;
->  }
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
