@@ -1,167 +1,119 @@
-Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
+Received: from mail-ed1-f41.google.com (mail-ed1-f41.google.com [209.85.208.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC4AD36F41C
-	for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 21:38:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.44
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777325912; cv=pass; b=EoLkUv6RyNb8Yi9IZS+HpvIhK9Lcx86FYRp9GNHWd9FIqbys3Ib0IS1qzIFkqvN2Eqc++NksRmWaHFM9VWl8/qv+M6EAxj7JKa4fnTN9I4hIUVgtImaIi1J473oHBNZdKKpXddI0IKp8lU79ILOR9d3HmBaTZLpXW2XMsWYP310=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777325912; c=relaxed/simple;
-	bh=YGFUuabLhboE2TpWlFjYOpLZxbVhUV9ZG2G0W6iTEeA=;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EA5639447C
+	for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 21:47:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.41
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1777326447; cv=none; b=uel8Ii2f+JSXSf4yGSbM3z1aEZk69exOOoMZkVIJQpxEzfuynLlh8GJWl1YhE3Y0qLKliYIyefWr7fH4fdWaAwPSx2dMXQUftWWue8sji0pfLecAIwAUep4Gc/kKpOxplI0uoo/ZL2AZQlD5Ei/3/SxiUSW0mn5ayKi4o7b5+IU=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1777326447; c=relaxed/simple;
+	bh=i/k46YQbNxc6jmDhpSrBTZQploRe2hY24KQV/uGHVj8=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=o0XhhmKlZNObfC+rZeBJxE22GNPDfJ47tYInKp3ZhHKg/gx6OCFFfTQHjMEk//NiTZfbj8jGGL0f4kxUeMCnfuNyF0x8CPKA5CpzLOWuXJFfmsnpT4xR0BHYHxD9QrHYtDMlLNFtgoerFIw9tf+XrkdK3+5g09uRR2k2i2VQdYI=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=eZLAvI1O; arc=pass smtp.client-ip=209.85.128.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	 To:Cc:Content-Type; b=P5puet0AlQUkx29lQZ966MY6XwC4BDuwCXOecgaibc+dftU+mMZdFZ+mZFmk6v6GtXTzBYxC2YRRmb1r46qX8v+qdzdiVv0fTiUyrS9JrDMwgn1x/4NPzBCmad7HnTwOxTAweetJ92deAfy4OI1o+bkuZGTlh3R+6SiatN/ate8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=QzG4xnmw; arc=none smtp.client-ip=209.85.208.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eZLAvI1O"
-Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-488d2079582so126728825e9.2
-        for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 14:38:30 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1777325909; cv=none;
-        d=google.com; s=arc-20240605;
-        b=AzMFhbMNO7BASBeW6INPoms7XtXWWid5eoIX7eJO5xBEZiEhAaA6LsAKbHTeFM+yXm
-         GDQDX7SaKH5vZ0WAZwTx3mvxZtt6gSSx0PMNoOi8aL1qpH8VkAwvt2ZmzSFcuUSI/AaE
-         ZMD7Jl0sqgtDvRntg40eJxmyq6Aswg+qRn2gHRnGftiU5f7s2gOIBOkn44aqwXM66+Sb
-         w5IbObTzQt5yvTJPNZt9IN4xvy42YuzxpLq4Hn5prudWYUS3UppzxM1dbppIyAQ3iyRx
-         JlkdwyubSPXuM+yUcpoewiaAfBOZ3pFtWmdeUr84sF33dzrEwZYe1y+RuSMzvvjv4dg7
-         FjHA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=/TVU4nsu4bcRfWhQiDtREc5LpuHyEjGWAmgNF/qgKo0=;
-        fh=QZi2GUV2ZrtURReXYNd9g0tiAt6Sk9ci6SdPjEIGisg=;
-        b=fVQ2gY+hY+rKEIN64V9kBZSIVgzQOE20KSHWC/OhOjT3wWZDeNawzzgTfsXCnEMGUg
-         K0af//9LfrTFty86ZNiMRAN9NkNakEpLeP37FtHk0ERU9OE3Op58/2+GVXBSsgFzU0Ww
-         amGEf1aBZMBb9PR35M/6QtxuCUBrl+gA2T93M5Pjr43XnKiaHsYfHH9jAgBlZYEKZ2Ro
-         AtUopEsYo6OXWcYgTLanoTZnovv1NQ73iK0xUXuYX5EpHxGebmgIk2mlsO+h0o+0YJmC
-         FtQ0EruIkfPiPtxECODdxILkiqcmrP1VhVa0cxryPrFPrLWNquIrSgUFYPM5iSvot/MO
-         yMbw==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="QzG4xnmw"
+Received: by mail-ed1-f41.google.com with SMTP id 4fb4d7f45d1cf-678a526f374so6521386a12.0
+        for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 14:47:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1777325909; x=1777930709; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=/TVU4nsu4bcRfWhQiDtREc5LpuHyEjGWAmgNF/qgKo0=;
-        b=eZLAvI1Oq8CW2yG0+ocwCvLVIdwPDKW9ZY0JuD1AY86CkRPdPjbphpKp4UwgFM82+D
-         6cIWiv4zm4pueOyj/HMuMpJmZIqAAaR0HA1R05NCNIyKVNRPmsL3SEaeP4ZK/1mtDIyk
-         gRs+W8RXHm2/azXRk61wDBuNGjlm6rcT9DbM7CI29Dxtubc5ntjI+UxGv9gjKMXvIqI7
-         2tf2wyikZLTlrIDFY8ykAmWoymwwSdmZksTWonzJf9oWK2luSr5cLx3IiyL+VScrLWl+
-         CCi+I4VByR7rr8i8PQ1c19a7yz2HcNO+MeSpY0Dt767hR4PCJp4C7mhu8jH742T3ghKH
-         4fsA==
+        d=linux-foundation.org; s=google; t=1777326445; x=1777931245; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=DjF1Jdn4Kp6xFyaBmAP2391GfFF2q7kuOVlruTChM90=;
+        b=QzG4xnmwcN3HoxHNlgHvUqs5CoC7tNJmN45XymPrkmoT8Ic/Mjeg7/auZVke69+1i8
+         a5FnS33WFTG6H1yD0eg+y1I/wCbfNQyX+AlePnbDvN9DJHVxwu8WxN5FMr/1d4iq69GU
+         6bKkCQ4oasKV/42HP9/iB6N9Uwo0sh/OtBFtc=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777325909; x=1777930709;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=/TVU4nsu4bcRfWhQiDtREc5LpuHyEjGWAmgNF/qgKo0=;
-        b=OjMzznJr/rKg0mxkSeMP4qFSCLpK0DNJfSQsGPy2+ME2V9/pPZhQLOiKRMGi9MuZbM
-         WcOLDYpUZPXT0tdSJMt9WvCn1o1Atdj9CsQWLZsyF0E93gqB2W5gROJEsOz793OCIyaf
-         krggY0/xHpTcnORCG0f61ptCZnNkxjvoiJODRk4dnfdot48nNZB19/DYjZ0Fk239TjPx
-         6GLTtFoeLFGoIQliPnjjTYXKr0+6ZHF9p2CuWFebHh15LcYXW3/xilAJ504BM1HX2Xhk
-         qHf24arMghK9DwZ3uG0o+/GbJ6qVwavWCoGcPkiT9z/T95vnkTtdtstAkLBzFijT0y1t
-         pzUQ==
-X-Forwarded-Encrypted: i=1; AFNElJ95ng23e6AT+wj4ITAt+liBZYvEQSyK7xgNgCfzXB1Zlty/8+LAcUA/XTIvVQwz/IYpS9YEFI1ikw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyfDh2WNtOO4rGb1uXfVGV8Rwebjg0K6ZvaIhyAgftAI/kcQKWD
-	O2aM9dyYEp3q3iIpk0AcbefPa/d1UvenqtxPf93Y5F0tXHZfZ41Y+mCsprOijzUFx7HYpxRGSBl
-	eKgQBdEA6SLKc5kSvEw4LHuX8upokpBE=
-X-Gm-Gg: AeBDiethdL+3zhIiuRumLkN5cnmZxleWuztQDu3IPbfLY8l7iTsByCYMuQbr1nqSqtl
-	51IC6vqiw6N/3zBbcvx0ir5bAvDjMusjC6pKelcIK8L4TaoNqIwZTHAGUes/uTI5bxqSNbK2DIT
-	HuGakqee3UCl+EsBmYkA3he0NA8XVyajP71+Cl3rsPKx7phFTGgzShBPbxU1dQxupIZm4ZNTdut
-	+Rfaj/rtT2ARRYKUUWeKUv89MwFk8fG1cOckx0f8xG58hM3ABgRYV4dEfu7ImolgntG3X1jvMXW
-	YjP29zufmXtxIrpoatFEFVFnzyC9bGBOEmVuRDYMka2Tycuq4mZoWoyssf/reVA+StVmg4kZk/G
-	XQKo=
-X-Received: by 2002:a05:600c:34c6:b0:488:8840:e5ae with SMTP id
- 5b1f17b1804b1-48a77b25335mr5030135e9.24.1777325909037; Mon, 27 Apr 2026
- 14:38:29 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1777326445; x=1777931245;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=DjF1Jdn4Kp6xFyaBmAP2391GfFF2q7kuOVlruTChM90=;
+        b=BBtqibOdYJUWNTMLG0xLWXYQ/IJfEBmLAzFJC9NdrRGOHoBH/FDf/ueCiBdCVkgJDG
+         wGN2FRUlmgIwLfiyHFUiO8AzXTXWsJ2LWpNH/tynE3lucHvnAGxSR/WxV8d3ZWdyKz4E
+         qw3ohKEYHBYj9S2nDig7esvQL0UqkXnQHazg7uboty7DLLVm+NFDHhlvN+5bboHAbvXx
+         ZoGz/R2hCHRZA7DAEdNLSVxqDGqnF3KJIyC7gTpsK3qQdrYYAarccICRFHBiBa9Pcy8A
+         uqXquUPLKPxx31Cln+Q0u0EMS5QRVfWpFY9+mFTeSxd0/vOE+G9MeLDZH/DxSSE+5r4O
+         Yt4g==
+X-Forwarded-Encrypted: i=1; AFNElJ98/KqKUV/B2KALVh1XBWB8jrnQUQyeBQWBfgGJN4MKvys+B6NZv63T/3oJqdc1RK9NgW46VDHgsw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yymv50ja7kzL3M9NXOIVOlWeOUXeJ14FJFGhHupRNHHN8NIv6kr
+	+TLtXjQG39OY8wnIAEm+jcl0s8qWz+n1BsA1t9Hwy1epBbSfgqPol5iA1zzEoohQpZM8u9wApmF
+	IZJTTVogX1A==
+X-Gm-Gg: AeBDieuhv6I5HLaUluDSJZO5m2mgsa+9Rapo4Xs8K5baztsmdR68NcFk0g6G2RkN6ht
+	hrdGhfb/2YT20rNCyampRa7UbydfcaOFz98gc8YE8wN5GWzNadxA5qbm66kAVfoaLy/8cF/HAkY
+	vzCcC3PLrdvlCMK6QhujrkJ4GCCxDZZNJa6WlOpAtlZUq5N/UCyoF2Cc1OrVN/Y+ndNIWZ1tTo0
+	tZwM//6RCP5X+201+pVqYVmqjf7h7fUT4SWJwSqNfwtImQjtVHYybJSTGr4AV6qeYq4UR3LxDQw
+	Aot0E7XA5hu7ymu9uurtvVpWiSQVHvgOhAJgLEJqe8/Ldl3TmDo2GoTmB4z9CHfHXkWXSRaJyr9
+	QCpZHf+BwxXKMQK8k5K2x70FnRdDB1n/holor30tPYkXVhq1EtyKp9sfVEyIP4Vffk2kMyRvAnu
+	8p3HZmdGeFWTD2KeYZ8zPAhTzss46HwIuVpVQdO9BWy8CpyTn1V38KAAZbBLD7zwljZA8PFbxxX
+	BqoI7wgKCI=
+X-Received: by 2002:a05:6402:3593:b0:670:8bc2:7fc with SMTP id 4fb4d7f45d1cf-679bb04c0c0mr172723a12.2.1777326444841;
+        Mon, 27 Apr 2026 14:47:24 -0700 (PDT)
+Received: from mail-ej1-f41.google.com (mail-ej1-f41.google.com. [209.85.218.41])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-679b67d5c1csm158277a12.8.2026.04.27.14.47.24
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 27 Apr 2026 14:47:24 -0700 (PDT)
+Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-b9c01854477so696832266b.0
+        for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 14:47:24 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ8ewNHdTIqvJQ42dx4zXlX5eGqe3vsbVEaAIdD6cp7wkKd8fBPPML3HmA8zZnZEiCC6xjYGhGP/wA==@vger.kernel.org
+X-Received: by 2002:a05:6402:5216:b0:679:1f4f:9d30 with SMTP id
+ 4fb4d7f45d1cf-679bb04c1a2mr179970a12.4.1777325976937; Mon, 27 Apr 2026
+ 14:39:36 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260427-page_mapped-v1-0-e89c3592c74c@kernel.org> <97192ac3-643d-4393-87ef-53a9f3ddaf95@kernel.org>
-In-Reply-To: <97192ac3-643d-4393-87ef-53a9f3ddaf95@kernel.org>
-From: Alexei Starovoitov <alexei.starovoitov@gmail.com>
-Date: Mon, 27 Apr 2026 22:38:17 +0100
-X-Gm-Features: AVHnY4II_oIb8C3aVippcvmoyZheListN6_PokHgWDygL-8vIswX205VDGz9ilg
-Message-ID: <CAADnVQ+t549-aWEXq=ZUN79H-M=std3-Q8w3fU+dyNhF7mNjyA@mail.gmail.com>
-Subject: Re: [PATCH 0/3] mm: remove page_mapped()
-To: "David Hildenbrand (Arm)" <david@kernel.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Alexei Starovoitov <ast@kernel.org>, 
-	Daniel Borkmann <daniel@iogearbox.net>, Andrii Nakryiko <andrii@kernel.org>, 
-	Martin KaFai Lau <martin.lau@linux.dev>, Eduard Zingerman <eddyz87@gmail.com>, 
-	Kumar Kartikeya Dwivedi <memxor@gmail.com>, Song Liu <song@kernel.org>, 
-	Yonghong Song <yonghong.song@linux.dev>, Jiri Olsa <jolsa@kernel.org>, 
-	Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>, 
-	Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>, 
-	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Rik van Riel <riel@surriel.com>, 
-	Harry Yoo <harry@kernel.org>, Jann Horn <jannh@google.com>, 
-	Matthew Wilcox <willy@infradead.org>, "Liam R. Howlett" <liam@infradead.org>, linux-sh@vger.kernel.org, 
-	LKML <linux-kernel@vger.kernel.org>, bpf <bpf@vger.kernel.org>, 
-	linux-mm <linux-mm@kvack.org>
+References: <cover.1777306795.git.chleroy@kernel.org> <289b424e243ba2c4139ea04009cf8b9c448a87ff.1777306795.git.chleroy@kernel.org>
+ <CAHk-=whC1DZojwdMB1=sJWG2=dsCdfyU8N6tDE1qx50HRZ-WJQ@mail.gmail.com> <20260427222914.1cb2dd3b@pumpkin>
+In-Reply-To: <20260427222914.1cb2dd3b@pumpkin>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Mon, 27 Apr 2026 14:39:20 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wg0SGbRYhdZ1kvJUTv1HEvmRJyQauFtBGV_fMcZVF8UpQ@mail.gmail.com>
+X-Gm-Features: AVHnY4I-AxqvQRk42MegvhKMp_z4sSEpEzhzpgw2GyV2bV8dezSPoI0JTlwB18Y
+Message-ID: <CAHk-=wg0SGbRYhdZ1kvJUTv1HEvmRJyQauFtBGV_fMcZVF8UpQ@mail.gmail.com>
+Subject: Re: [RFC PATCH v1 5/9] uaccess: Switch to copy_{to/from}_user_partial()
+ when relevant
+To: David Laight <david.laight.linux@gmail.com>
+Cc: "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, Yury Norov <ynorov@nvidia.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, 
+	linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, 
+	linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	kvm@vger.kernel.org, linux-riscv@lists.infradead.org, 
+	linux-s390@vger.kernel.org, sparclinux@vger.kernel.org, 
+	linux-um@lists.infradead.org, dmaengine@vger.kernel.org, 
+	linux-efi@vger.kernel.org, linux-fsi@lists.ozlabs.org, 
+	amd-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org, 
+	intel-gfx@lists.freedesktop.org, linux-wpan@vger.kernel.org, 
+	netdev@vger.kernel.org, linux-wireless@vger.kernel.org, 
+	linux-spi@vger.kernel.org, linux-media@vger.kernel.org, 
+	linux-staging@lists.linux.dev, linux-serial@vger.kernel.org, 
+	linux-usb@vger.kernel.org, xen-devel@lists.xenproject.org, 
+	linux-fsdevel@vger.kernel.org, ocfs2-devel@lists.linux.dev, 
+	bpf@vger.kernel.org, kasan-dev@googlegroups.com, linux-mm@kvack.org, 
+	linux-x25@vger.kernel.org, rust-for-linux@vger.kernel.org, 
+	linux-sound@vger.kernel.org, sound-open-firmware@alsa-project.org, 
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, 
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, Apr 27, 2026 at 9:59=E2=80=AFPM David Hildenbrand (Arm)
-<david@kernel.org> wrote:
+On Mon, 27 Apr 2026 at 14:29, David Laight <david.laight.linux@gmail.com> wrote:
 >
-> On 4/27/26 13:43, David Hildenbrand (Arm) wrote:
-> > While preparing my slides for an LSF/MM talk, I realized that I did not
-> > yet remove page_mapped().
-> >
-> > So let's do that. In the BPF arena code it's unclear which memdesc we
-> > would want to allocate in the future: certainly something with a
-> > refcount, but likely none with a mapcount. So let's just rely on
-> > the page refcount instead to decide whether we want to try zapping the
-> > page from user page tables.
-> >
-> > Signed-off-by: David Hildenbrand (Arm) <david@kernel.org>
-> > ---
->
-> I scanned AI review and I think it founds something that is not related t=
-o this
-> patch.
->
-> We use the page_mapped()->page_ref_count() check as an optimization to av=
-oid
-> calling zap_vma_range(). We must be able to call it even without that opt=
-imization.
->
-> Just like the bulk zap call earlier
->
->         if (page_cnt > 1)
->                 /* bulk zap if multiple pages being freed */
->                 zap_pages(arena, full_uaddr, page_cnt);
->
-> It talks about concurrent "munmap(), unmap_region() executes unmap_vmas()=
-"
-> racing with our zap_vma_range().
->
-> Looking into the details, arena_map_mmap() calls remember_vma(). We rejec=
-t
-> mremap and VMA split. arena_vm_close() removes the VMA from the list. The
-> arena->lock protects our VMA list.
->
-> So in zap_pages, the VMA cannot go away. If we find a VMA, ->close could =
-not
-> have been called yet.
->
-> In vma.c, we call remove_vma() after vms_clear_pte(). So after unmapping =
-the
-> pages and freeing the page tables.
->
-> So munmap() can indeed race with zap_vma_range(), and the page_mapped() c=
-heck
-> would not have changed anything about that really.
->
->
-> @BPF folks: does BPF take anywhere the mmap lock in read mode before call=
-ing
-> zap_vma_range()? It should do that.
+> I think there is a slight difference in that the normal copy_to_user()
+> will determine the exact offset of the error by retrying with byte copies.
 
-Yes, but do NOT. As I explained to Andrew.
-It's a git mess. I don't want any more changes that cross trees.
+I have this dim memory that we decided that you can't reply on byte
+exactness anyway, because not all architectures gave that guarantee
+for the user copies.
+
+But that thing came up many years ago, I might mis-remember.
+
+            Linus
