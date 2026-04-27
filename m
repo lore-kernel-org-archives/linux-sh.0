@@ -1,153 +1,133 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6661E313E36;
-	Mon, 27 Apr 2026 11:43:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B953737AA66
+	for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 11:51:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777290233; cv=none; b=l7h9iIC9nDd1enxi/FgWaN5bw7tJL2iWvMU0Ykx31RnvndhIBO5abqIQkIrEHg9/CL41Zzy9g42qtuj8XLhhmXTbz8Yrsoj0oaIP5oViS18QmbUCB7PYX5rMswv3d6ZjYKNxTlZlCFw9bGTWw5zfywmJztPSCFJKhPuiEJxBKuc=
+	t=1777290678; cv=none; b=NiLiTj/D27dBT3RD0kIrI7wXK0ea5eObcj4Ee0aLCWJjsNwVWDvr+I1QP1vDTyf8R0+x6W5ZsPe9bmb6fiHNxNHMOJEBA5Q+TsQ5KUZZiN/KAW0b2UcrnPuUaZU6JfIinnNY+R4zcdKwlleWwPeIQgoWAqDSmKoMwBZta3uoBwc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777290233; c=relaxed/simple;
-	bh=pUuKH5IboberfrNDLhIOBfcC/4kG/ZkfQ05hwuIAsi0=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=DpmflXyEykROaRKPArtrZ0fl4MlKPO4iVPB4cvy44MluOI2ODiJQPjxdCyNm8Titc88u8O6gzneUhOzs9HcEDaq97CzjhLLqAoyKv5Mco9DmeQJl4CM9x/9U9keWI/Vg9jovNJBmcErbaohncts5VJyceb+ULs7usab/dXhHt78=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DQW9hfF6; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1777290678; c=relaxed/simple;
+	bh=aiD4s1L+z1/whHFiymkZK0Cz388Qnl9M8T5kOWqATIU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=raeU7lVYLNx0UtZQ/Uxegow9qHQ6uc2Wr0lgBQsP5+EQL7XtII7MisWxfSgFuK6aUgoC2Khe/VR/R67WDtuT8Owt0zzR7w1qJ15v4IUi7IxNrMaCP4idVk3+238oTGpDzzHqGWiWiHtO/lbmJ7JyzNJcXUFjsxV/qWDYqLiy+vo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=eBSH4Dho; arc=none smtp.client-ip=209.85.128.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DQW9hfF6"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B9269C2BCB4;
-	Mon, 27 Apr 2026 11:43:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777290232;
-	bh=pUuKH5IboberfrNDLhIOBfcC/4kG/ZkfQ05hwuIAsi0=;
-	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
-	b=DQW9hfF6jbPLDZeRU55aAhUUCT+ODmFhcz+2ZZizkNRvhXKvkqWrj2dXV0dCgyT6W
-	 WmHOUn7XStj9o+DVmnTv9Wt9Zuky4P03OyheRANyJvSyV6Nn0sfDb6nFmAY4pf7Vhs
-	 xdIH43SfcwV/iFb1pUqd3/tkCNUlwR1iB80R9wYWRb871lwJGAkb1nqcsYSU9PqGoS
-	 kDpNwk8LJ4Y7KiS5Lfaq7zig8wnCe9GcbvkfrYJ3OcafuKDgfhqvDU/R1HACev+TFT
-	 p8om3koW4hnwmMScX8R5DXYYF896On9OeeQBo8nKhJWIF0pdQjGYbiLfAKZrNXunWg
-	 RloiRLMR5QZQw==
-From: "David Hildenbrand (Arm)" <david@kernel.org>
-Date: Mon, 27 Apr 2026 13:43:16 +0200
-Subject: [PATCH 3/3] mm: remove page_mapped()
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eBSH4Dho"
+Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-4838c15e3cbso93709815e9.3
+        for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 04:51:16 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1777290675; x=1777895475; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=c9PGXNkAslwn5PF5hDFlY4Tr7da2SwHFO7xPTeUxuok=;
+        b=eBSH4Dho9t+u//1E5INuvxkWty9rpy3s3v04R8otiPTl34MEBnq7dPPuFNbig9p8/p
+         cWASibojNBGWu05nTziuSS1caI4zPNjWTsYxnGgrwh90b2e9RA8Gqv8Yso6DVbS3qb+U
+         kHFDQgHnAzENXt/U2jDDSlM0t8mp54P0CVhQm6r0ABLlfqPIMEzkfH4kDLyysyovWwLv
+         Qv5GKezIlJoaR19+1oMP5IbQ8D9aw26ixu6b8XdvmCU4qWVcORJHj57PEjFSwYVj5jRb
+         1rK05PXocLj1TwuZFQG+7geKR9XRSD7tTOD5eiWvEgogXcbl0wp28rlCsh/6lrHflpX2
+         op5A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777290675; x=1777895475;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=c9PGXNkAslwn5PF5hDFlY4Tr7da2SwHFO7xPTeUxuok=;
+        b=HMLNP+GWM9RFNmKpZHiWss77+e6CnnXvxnZQC7oBmqmTfTLOoXBwG9S7kYszng0Fx2
+         W1BiOXGa6kfrfkaj+5VG1zRGjNLIYpn+TulKgOdLcED+EA2rYBRlgKITlcItdgrf7P59
+         uxPgRCAJt5X25L7undTN55tYXHTHlPBi+33zvV9NFFG8QnNXUX2DaF6ay3z7ztpxxGfL
+         Ew5ScriWPRKz3SDi8rtIjhzngwbVTPZAQbdvTnQaFBHsZE+UsvMNbuVgHz9T+fzFV9V5
+         q6wwCRHPF5BHD9Et1PboeQtd3XrMJGO3VVfO6Tvw8fT28KV8UiNrdFZRwMYExy8RVoR1
+         p4vQ==
+X-Gm-Message-State: AOJu0YyqwEf9OAV9hhvAZ0grGTAf+csxF1QJBPhtP1FYtc5lgIXoMfiq
+	TAeDczYJ66kMN4NnQl86ZSaxWyzE9ToA+Bqa8yutFBwbO0z6hjW7nB0=
+X-Gm-Gg: AeBDievLJhUgJCyb80OcZ+Fhpg676HOq8ui97PeMQD+2OFy1bo+JTneIAGdCF7fZbLY
+	j7kTWguTd6ssUMjszeH5VQPqe5QmhwQ3T8OOt+DwG9WHclPqolgtO7HfwpBUtUJxFZOGpW2pXmb
+	Tvah5LzxgTbk9gk14pSPUG4FSsGbf8qbKj8EC0tga1lpouPLobKuU9haCZp4nOaJ3x/n9wRP0Rv
+	bO1DWLTwZgSRVjCrDbflvbh/6UjKaYCsqJFkhXIVfs/n46OqouaodNHtYIcunewXP9Z7SEZ55/F
+	gXcTQs9txLNSTIs1JNj4Htn2RUzgLLs8t3WermwJU9TrGaDn/38pdsf64Eta6P64YAf72fwhaL5
+	D5xadH5u/H/Wx4eKnp3XJRP+/MC2+eToybYWN/XfXdlwNv2QcDAP/0bU6s171kjQkD2X5YrXLqI
+	D+2B75BVKRAP2xKHJM5h6qOXntc8N8Sul7GG1NNuI3BgkxnsyBqyttTX65LqvAkaF610TI3Dbj3
+	02Xbay7L0GDqnusmNk=
+X-Received: by 2002:a05:600c:1f94:b0:489:1c2d:211e with SMTP id 5b1f17b1804b1-4891c2d2213mr476219715e9.5.1777290674926;
+        Mon, 27 Apr 2026 04:51:14 -0700 (PDT)
+Received: from localhost ([2a02:810d:4a94:b300:3c87:b0bc:8c35:1ba0])
+        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-43fe4c221cdsm81399615f8f.0.2026.04.27.04.51.13
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 27 Apr 2026 04:51:14 -0700 (PDT)
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: Miquel Raynal <miquel.raynal@bootlin.com>,
+	Richard Weinberger <richard@nod.at>,
+	Vignesh Raghavendra <vigneshr@ti.com>,
+	linux-mtd@lists.infradead.org
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Florian Fuchs <fuchsfl@gmail.com>,
+	Artur Rojek <contact@artur-rojek.eu>
+Subject: [PATCH v2 0/3] mtd: maps: vmu-flash: Fix build and runtime errors
+Date: Mon, 27 Apr 2026 13:47:47 +0200
+Message-ID: <20260427114750.2480900-1-fuchsfl@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260427-page_mapped-v1-3-e89c3592c74c@kernel.org>
-References: <20260427-page_mapped-v1-0-e89c3592c74c@kernel.org>
-In-Reply-To: <20260427-page_mapped-v1-0-e89c3592c74c@kernel.org>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, 
- Rich Felker <dalias@libc.org>, 
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
- Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, 
- Andrii Nakryiko <andrii@kernel.org>, 
- Martin KaFai Lau <martin.lau@linux.dev>, 
- Eduard Zingerman <eddyz87@gmail.com>, 
- Kumar Kartikeya Dwivedi <memxor@gmail.com>, Song Liu <song@kernel.org>, 
- Yonghong Song <yonghong.song@linux.dev>, Jiri Olsa <jolsa@kernel.org>, 
- Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>, 
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>, 
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, 
- Rik van Riel <riel@surriel.com>, Harry Yoo <harry@kernel.org>, 
- Jann Horn <jannh@google.com>, Matthew Wilcox <willy@infradead.org>, 
- "Liam R. Howlett" <liam@infradead.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
- bpf@vger.kernel.org, linux-mm@kvack.org, 
- "David Hildenbrand (Arm)" <david@kernel.org>
-X-Mailer: b4 0.13.0
+Content-Transfer-Encoding: 8bit
 
-Let's replace the last user of page_mapped() by folio_mapped() so we
-can get rid of page_mapped().
+Hi all,
 
-Replace the remaining occurrences of page_mapped() in rmap documentation
-by folio_mapped().
+This small series fixes build and runtime errors in the vmu-flash driver
+(enabled by CONFIG_MTD_VMU) and the included maple.h. These changes were
+verified on real Dreamcast hardware with a physical VMU. The VMU can now
+be successfully probed, read and written with MTD tools like mtdinfo and
+mtd_debug. Previously, the driver failed to build or crashed during
+probing.
 
-Signed-off-by: David Hildenbrand (Arm) <david@kernel.org>
+        bash-5.3# mtdinfo /dev/mtd0
+        mtd0
+        Name:                           vmu2.1.0
+        Type:                           mlc-nand
+        Eraseblock size:                512 bytes
+        Amount of eraseblocks:          256 (131072 bytes, 128.0 KiB)
+        Minimum input/output unit size: 512 bytes
+        Sub-page size:                  512 bytes                 
+        Character device major/minor:   90:0
+        Bad blocks are allowed:         true
+        Device is writable:             true
+                       
+Thanks,
+Florian
 ---
- include/linux/mm.h | 10 ----------
- mm/memory.c        |  2 +-
- mm/rmap.c          |  8 ++++----
- 3 files changed, 5 insertions(+), 15 deletions(-)
+v1->v2: Rebased patches and fixed the hotplug issues in other sh
+        patches.
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index af23453e9dbd..87fcd068303a 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1888,16 +1888,6 @@ static inline bool folio_mapped(const struct folio *folio)
- 	return folio_mapcount(folio) >= 1;
- }
+v1: https://lore.kernel.org/linux-mtd/20251117224408.498449-1-fuchsfl@gmail.com/
+   
+The original v1 was postponed to fix the hotplug issue and other runtime
+panics, that are fixed in the following patch:
+"[PATCH v2] sh: maple: fix empty port handling":
+https://lore.kernel.org/linux-sh/20260426212714.2286437-1-fuchsfl@gmail.com/
  
--/*
-- * Return true if this page is mapped into pagetables.
-- * For compound page it returns true if any sub-page of compound page is mapped,
-- * even if this particular sub-page is not itself mapped by any PTE or PMD.
-- */
--static inline bool page_mapped(const struct page *page)
--{
--	return folio_mapped(page_folio(page));
--}
--
- static inline struct page *virt_to_head_page(const void *x)
- {
- 	struct page *page = virt_to_page(x);
-diff --git a/mm/memory.c b/mm/memory.c
-index ea6568571131..99854e6a2793 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -5464,7 +5464,7 @@ static vm_fault_t __do_fault(struct vm_fault *vmf)
- 	if (unlikely(PageHWPoison(vmf->page))) {
- 		vm_fault_t poisonret = VM_FAULT_HWPOISON;
- 		if (ret & VM_FAULT_LOCKED) {
--			if (page_mapped(vmf->page))
-+			if (folio_mapped(folio))
- 				unmap_mapping_folio(folio);
- 			/* Retry if a clean folio was removed from the cache. */
- 			if (mapping_evict_folio(folio->mapping, folio))
-diff --git a/mm/rmap.c b/mm/rmap.c
-index 78b7fb5f367c..fb3c351f8c45 100644
---- a/mm/rmap.c
-+++ b/mm/rmap.c
-@@ -571,7 +571,7 @@ void __init anon_vma_init(void)
-  * In case it was remapped to a different anon_vma, the new anon_vma will be a
-  * child of the old anon_vma, and the anon_vma lifetime rules will therefore
-  * ensure that any anon_vma obtained from the page will still be valid for as
-- * long as we observe page_mapped() [ hence all those page_mapped() tests ].
-+ * long as we observe folio_mapped() [ hence all those folio_mapped() tests ].
-  *
-  * All users of this function must be very careful when walking the anon_vma
-  * chain and verify that the page in question is indeed mapped in it
-@@ -1999,7 +1999,7 @@ static bool try_to_unmap_one(struct folio *folio, struct vm_area_struct *vma,
- 	/*
- 	 * When racing against e.g. zap_pte_range() on another cpu,
- 	 * in between its ptep_get_and_clear_full() and folio_remove_rmap_*(),
--	 * try_to_unmap() may return before page_mapped() has become false,
-+	 * try_to_unmap() may return before folio_mapped() has become false,
- 	 * if page table locking is skipped: use TTU_SYNC to wait for that.
- 	 */
- 	if (flags & TTU_SYNC)
-@@ -2426,7 +2426,7 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
- 	/*
- 	 * When racing against e.g. zap_pte_range() on another cpu,
- 	 * in between its ptep_get_and_clear_full() and folio_remove_rmap_*(),
--	 * try_to_migrate() may return before page_mapped() has become false,
-+	 * try_to_migrate() may return before folio_mapped() has become false,
- 	 * if page table locking is skipped: use TTU_SYNC to wait for that.
- 	 */
- 	if (flags & TTU_SYNC)
-@@ -2927,7 +2927,7 @@ static struct anon_vma *rmap_walk_anon_lock(const struct folio *folio,
- 
- 	/*
- 	 * Note: remove_migration_ptes() cannot use folio_lock_anon_vma_read()
--	 * because that depends on page_mapped(); but not all its usages
-+	 * because that depends on folio_mapped(); but not all its usages
- 	 * are holding mmap_lock. Users without mmap_lock are required to
- 	 * take a reference count to prevent the anon_vma disappearing
- 	 */
+Note that in order to use the VMUs while there are empty ports, it
+requires the above patch.
 
+Florian Fuchs (3):
+  mtd: maps: vmu-flash: fix build error due to missing include of
+    linux/device.h
+  mtd: maps: vmu-flash: fix fault in unaligned fixup
+  mtd: maps: vmu-flash: Fix NULL pointer dereference in initialization
+
+ drivers/mtd/maps/vmu-flash.c | 7 ++++---
+ include/linux/maple.h        | 3 +--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+
+base-commit: 6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f
 -- 
 2.43.0
 
