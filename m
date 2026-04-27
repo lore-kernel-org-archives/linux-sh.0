@@ -1,87 +1,76 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from smtpout-02.galae.net (smtpout-02.galae.net [185.246.84.56])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E35A30EF9B;
-	Mon, 27 Apr 2026 12:17:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39F01384250
+	for <linux-sh@vger.kernel.org>; Mon, 27 Apr 2026 12:34:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.246.84.56
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777292280; cv=none; b=COPr6W5mXoH+QZEZ8iaQ0CGGlInmP1PxTc5XmYB8EoOLyiRTA6TFOY1bA4ZC01Qic3ErHSwl/3eG3yfDVwLz38LhnKUyIxFxRMGfDjcBIEliyeuzsOncmAdPkHL0Hax7EQrA2TSIzFN4Djis4xe9hmuKT3/Jyj6k0qjQPms8/gk=
+	t=1777293280; cv=none; b=WrXuykIXc/j2LtMKqg+dOxSch5mJ7e8aTjEHkQ9jlL0BP7IVRb7cohuopSlBRYJTpY0A/CSrU/Xu1AsI91bN3D0AbtwBhqT5CAKurh8xhfveGEAMX6jVOPB3tgiyQxvAt4x6sR3qdsQHarDkVvnGainQHJ7RAOKYI4LBLT0tspw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777292280; c=relaxed/simple;
-	bh=AQ4MxxuG0FLIcClDhsTCj2LB5MBEyzoHu1DSqDFxwmU=;
-	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
-	 Mime-Version:Content-Type; b=hkTu2Hw7hTSXtqfEvnLqR45Wgb0i0/XM4S2YGEnRTMrBguzm3F++RVPq0b+r0mXenY8JolCAlG9y6Lzj49a2KJNdvEUO5PZF9XrSOpUJmzZDV0IZHufFhc0K0vygNvgyPY0DZ/OMsht7Gdjc8u1xwVqsdqOLBK6RKqzDdpHtbG4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=fiFx94gu; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1777293280; c=relaxed/simple;
+	bh=jCxkAOBQczVa5vCrereqaQuzkFeKTL+bu3gajaEh6CA=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=tzrI4gnk1cmANA91cTjGfxFD/gND15Ohi4aFp1byRmjT/0UbAVV9DLjCbbQ24fuveVCg6007aPxshGmaZyg6aGHyuxaeIPkNQmRX6I4JIXQlBC+EWQEds4i/c82yx/T7ts5eHRsrUvh/SYUb3xlkuQ6TTSSYvWA3YNP/Z1Eif/Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=bootlin.com; spf=pass smtp.mailfrom=bootlin.com; dkim=pass (2048-bit key) header.d=bootlin.com header.i=@bootlin.com header.b=V4CIzrmN; arc=none smtp.client-ip=185.246.84.56
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=bootlin.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bootlin.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="fiFx94gu"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DB317C2BCB5;
-	Mon, 27 Apr 2026 12:17:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
-	s=korg; t=1777292279;
-	bh=AQ4MxxuG0FLIcClDhsTCj2LB5MBEyzoHu1DSqDFxwmU=;
-	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-	b=fiFx94gucSnLNgfPsXQ6PkeKXBxrZAes8+MyPSVTnQtSHgxCxOgepMVd9ezClmOYh
-	 661TwppiHatNg981pbUYr7Wx+07vpWIoXk5tf9119+sUPpC1tjtDHhvVEBFjVAwyyM
-	 z4FQvDG6nYl4yDFqyAfwe4QfcfJHlUUawc1seo6w=
-Date: Mon, 27 Apr 2026 05:17:58 -0700
-From: Andrew Morton <akpm@linux-foundation.org>
-To: "David Hildenbrand (Arm)" <david@kernel.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>, John Paul Adrian Glaubitz
- <glaubitz@physik.fu-berlin.de>, Alexei Starovoitov <ast@kernel.org>, Daniel
- Borkmann <daniel@iogearbox.net>, Andrii Nakryiko <andrii@kernel.org>,
- Martin KaFai Lau <martin.lau@linux.dev>, Eduard Zingerman
- <eddyz87@gmail.com>, Kumar Kartikeya Dwivedi <memxor@gmail.com>, Song Liu
- <song@kernel.org>, Yonghong Song <yonghong.song@linux.dev>, Jiri Olsa
- <jolsa@kernel.org>, Lorenzo Stoakes <ljs@kernel.org>, Vlastimil Babka
- <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>, Suren Baghdasaryan
- <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Rik van Riel
- <riel@surriel.com>, Harry Yoo <harry@kernel.org>, Jann Horn
- <jannh@google.com>, Matthew Wilcox <willy@infradead.org>, "Liam R. Howlett"
- <liam@infradead.org>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org, bpf@vger.kernel.org, linux-mm@kvack.org
-Subject: Re: [PATCH 2/3] bpf: arena: use page_ref_count() instead of
- page_mapped() in arena_free_pages()
-Message-Id: <20260427051758.e1b714a4b567917971920eaa@linux-foundation.org>
-In-Reply-To: <20260427-page_mapped-v1-2-e89c3592c74c@kernel.org>
-References: <20260427-page_mapped-v1-0-e89c3592c74c@kernel.org>
-	<20260427-page_mapped-v1-2-e89c3592c74c@kernel.org>
-X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	dkim=pass (2048-bit key) header.d=bootlin.com header.i=@bootlin.com header.b="V4CIzrmN"
+Received: from smtpout-01.galae.net (smtpout-01.galae.net [212.83.139.233])
+	by smtpout-02.galae.net (Postfix) with ESMTPS id C000A1A3442;
+	Mon, 27 Apr 2026 12:34:36 +0000 (UTC)
+Received: from mail.galae.net (mail.galae.net [212.83.136.155])
+	by smtpout-01.galae.net (Postfix) with ESMTPS id 8D1BD600D1;
+	Mon, 27 Apr 2026 12:34:36 +0000 (UTC)
+Received: from [127.0.0.1] (localhost [127.0.0.1]) by localhost (Mailerdaemon) with ESMTPSA id 8D3D51072806A;
+	Mon, 27 Apr 2026 14:34:33 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bootlin.com; s=dkim;
+	t=1777293276; h=from:subject:date:message-id:to:cc:mime-version:content-type:
+	 content-transfer-encoding:in-reply-to:references;
+	bh=jCxkAOBQczVa5vCrereqaQuzkFeKTL+bu3gajaEh6CA=;
+	b=V4CIzrmN9pFd3j7SEkG9OFQ0vIpI09scTnbE9VSkmXByNjy7mXrFik0BSx5UXrJ5fnhSeU
+	AXEhperFc3JOfVThM7o2HmQNv8MR3RNYBeVUFvMU0ElcjaiQSVMIOL5kWbeIEnh4LCqGhx
+	TGT44OnV7YPYydcpkYYmjQb/SNbWH2p3uHNKdp/qRd1fZO3FidxKdtAZNtfihIBakYQR5g
+	bgM53ehi+L4dJrfhVCfueIu6VupSTc78y3Mo8ToYmLCJNPL4RnO1BwO9wgMtM5E6soy78v
+	fFedLg2p/9TK/WIjX8UYfLT+vcrXvGm8r002oBHjTK61COZFFh8X7MldxqiLdA==
+From: Miquel Raynal <miquel.raynal@bootlin.com>
+To: Florian Fuchs <fuchsfl@gmail.com>
+Cc: Richard Weinberger <richard@nod.at>,  Vignesh Raghavendra
+ <vigneshr@ti.com>,  linux-mtd@lists.infradead.org,
+  linux-sh@vger.kernel.org,  linux-kernel@vger.kernel.org,  Rich Felker
+ <dalias@libc.org>,  John Paul Adrian Glaubitz
+ <glaubitz@physik.fu-berlin.de>,  Artur Rojek <contact@artur-rojek.eu>
+Subject: Re: [PATCH v2 2/3] mtd: maps: vmu-flash: fix fault in unaligned fixup
+In-Reply-To: <20260427114750.2480900-3-fuchsfl@gmail.com> (Florian Fuchs's
+	message of "Mon, 27 Apr 2026 13:47:49 +0200")
+References: <20260427114750.2480900-1-fuchsfl@gmail.com>
+	<20260427114750.2480900-3-fuchsfl@gmail.com>
+User-Agent: mu4e 1.12.7; emacs 30.2
+Date: Mon, 27 Apr 2026 14:34:35 +0200
+Message-ID: <874ikwintw.fsf@bootlin.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+X-Last-TLS-Session-Version: TLSv1.3
 
-On Mon, 27 Apr 2026 13:43:15 +0200 "David Hildenbrand (Arm)" <david@kernel.org> wrote:
+On 27/04/2026 at 13:47:49 +02, Florian Fuchs <fuchsfl@gmail.com> wrote:
 
-> Pages that BPF arena code maps are allocated through
-> bpf_map_alloc_pages(), which does not allocate folios but pages.
-> 
-> In the future, pages will not have a mapcount, only folios will.
-> Converting the code to use folios and rely on folio_mapped() sounds like
-> the wrong approach.
-> 
-> Should BPF arena code allocate folios and use folio_mapped() here? But
-> likely we would not want to use folios here longterm, as we don't really
-> need folio information.
-> 
-> Hard to tell. But in the meantime, we can simply use the page refcount
-> instead, as a heuristic whether the page might be mapped to user space
-> and we would want to try zapping it, so we can get rid of page_mapped().
-> 
-> Page allocation will give us a page with a refcount of 1. Any user space
-> mapping adds a page reference. While there can be references from other
-> subsystems (e.g., GUP), in the common case for this test here relying on
-> the page count is good enough.
-> 
-> Signed-off-by: David Hildenbrand (Arm) <david@kernel.org>
-> ---
->  kernel/bpf/arena.c | 2 +-
+> Use kzalloc_obj() / kzalloc_objs() to allocate the memcard structs,
+> instead of kmalloc_obj() / kmalloc_objs() to prevent access to
+> uninitialized data.
+>
+> Fixes runtime error: Fault in unaligned fixup: 0000 [#1] at
+> mtd_get_fact_prot_info.
 
-BPF maintainers will probably want to carry this in the BPF tree. 
-That's fine - please go ahead and add it.  I'll carry a duplicate in
-mm.git so it compiles.
+Shall this patch receive a Fixes tag if it actually fixes runtime
+behaviour?
+
+Also, please add the 'Cc: stable' line in your fixes.
+
+Thanks,
+Miqu=C3=A8l
