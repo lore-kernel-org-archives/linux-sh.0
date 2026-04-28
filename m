@@ -1,145 +1,144 @@
-Received: from mail-lf1-f49.google.com (mail-lf1-f49.google.com [209.85.167.49])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D055A2877F4
-	for <linux-sh@vger.kernel.org>; Tue, 28 Apr 2026 17:06:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.167.49
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777396011; cv=pass; b=ragz+45weQ6V5tdPfy6obqjtsJ37G7Pfrl4KRaOE8u7tuLvZ5sDhBg2C8JIp4ljNlHEc1b8FbgouAEe9mxU2+cRBRnbNDykp8FCqpLlMZYyYE90Sr7Gtp6zL/OftBl8boSJ0Suby20P1QCD/d/lYWttjFkZI04DFYiGywG6ZtpY=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777396011; c=relaxed/simple;
-	bh=etazECzktFD5luO5FCpZbqDqLccDsjg+sso+8AqETyg=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=e/gfrpQTylr/J0QBL1yOajilap0kLUOc+QaiMO7HeFz4cjs5MH2m/DgVgYGif1abhcF2y+fvKaR+ErcQkpISLgjp4Lc0AgBk24tt2vX6F2w/E9Tm5HQfqAEd8NRJ8Os400G0gy9d3fWSIXQXf1j6kMR49eoG+1wcqq2XRWBja+0=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=CWpFy0Oc; arc=pass smtp.client-ip=209.85.167.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 626BA37B03F;
+	Tue, 28 Apr 2026 19:38:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1777405093; cv=none; b=DSy2VunU98gAc+B9CV3R07s7l2kfe5E/siCUqFF3+h46Rs2ZnkTv+CwuluSWzSK2WIZixn5HMRiyvSx8/CvMNrD3DHBd+upX8OqpNWDGJ4JqT84M8DUA1UjG1ajHtmbaHf5boI11ZRYHwKKkAObFZPeX3mq0vUpMIFHSACg7WP4=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1777405093; c=relaxed/simple;
+	bh=EvIkYK52K0rLotm9PNd5ZD8pkIHIf0w1KVvAhcPh19Q=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Y2c2uEGtcrhgv+5so40WSjWpocfU2fTdZUhCeX6Y+FLgHBTa36zNVakHD2VZINZbV/UmDKOXp/siTxF6cqEloDeSsn1Z6YsQ5mm4k/E4RxhojYQ7GcbMz4KK4rZlpnRZn7hxm/+sTpNiTsdnwWXSsCi6POCNf2t9Jeu7sCTj9Kc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dZCd33P9; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CWpFy0Oc"
-Received: by mail-lf1-f49.google.com with SMTP id 2adb3069b0e04-5a2c9c5ff87so12151011e87.0
-        for <linux-sh@vger.kernel.org>; Tue, 28 Apr 2026 10:06:49 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1777396008; cv=none;
-        d=google.com; s=arc-20240605;
-        b=TG1zyws1KIzgVYI7w05CxmbOdPyHtg0oIkCMt8+vxV0RIwQcnS/O9lMGXLC62vaBkJ
-         ugvE3OBgwqRzNXKVU+wX88Rwdxw1N2kQgevew5avDVuk46/AQJirEOHo+8Wd8a/hb2Kz
-         ljG3jod1kKCP5TT6IAZE2EaSMJDKV/B0KKGWdhOK44Tnmh3ffYAJS9kaDoBU6mYcfRty
-         eLT0mJAj+zVal4ziWHQPDDzjSbKPMdDpmPgWFaWlweVJ9yDJCEuu36RTcHFDUdQ0RcR+
-         y9pdyG/mCcWX2t1N5HUtiCh0E/We6uGD0w3J4dLqmGW2v/oprhHwZz+Utf5sKeBZIod3
-         HZXw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=VK5ahICXkL0MctIkCl6eavo2XIzw7vhC4fPYDrQjJ7M=;
-        fh=1STlwzpj+FbkQuRWxX/6GAyOY52LCsdpEljce+5Jayc=;
-        b=fSmBraWyvBmrl0T7pCVyNJVJEdhwkkzPggRK9Z4+qDPZNtZUdJxqI5IfgUngyKNb6H
-         fsZF7UEALHHq/ibzPv3AtRtp07EqGhO8iIt6SDby2wFxc8pKCGiMKcz/18lfle23D9ZT
-         Nrg3p7wA7uNLMMhpaU0CU5B9qYiWa7DpY8f39o8BbZMZOE8Y98ZZBCD5YCLbbq62ooZs
-         627peGvvB6N1n6dqb78hdbW/eiLWjSLDVgiy+MD0Et4AVbxiVdahcRRA0Qdes2w2GzhI
-         1IKnjJFLmE5RTiARgjO3PhMl/31CensT8Odn7aImz+VALX0rH1KvdlvTl6We5FVlgRZN
-         P6kw==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1777396008; x=1778000808; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=VK5ahICXkL0MctIkCl6eavo2XIzw7vhC4fPYDrQjJ7M=;
-        b=CWpFy0OctxhLFQQv1UFd7bjLjWgAys3GujeGOY8gVBNKBK4PgcTqFMKxmpwyz3F+PQ
-         ktgUwLpZRp5KgZ30lYf+sHOzzyiu+z1VmrASCFBCpK20G/JYDwFAEiVTVBQroee/3G7a
-         HSg54MCx0fJu8oa6FQe3gJ0XTQzQdapKh1ToNx+vwDxvazSnpsrkD7UdQ4qrR6/LDxfx
-         uDcDBX940YGg5avTprSctzkbVxr/sPzSEB/nLYy/Es2gkNCSQk52Ojm3p1f5mo/4zFA3
-         viecmtxOZyd+p0PwK5VblGa6hG909udbRcCHskCWvu5iGm3x5FgtzE4y4JpeAe/ZDznH
-         izSw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777396008; x=1778000808;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=VK5ahICXkL0MctIkCl6eavo2XIzw7vhC4fPYDrQjJ7M=;
-        b=eo8Ydss+1c/s6jUh531m9vkA6o04Num49PQpF8H4O5rMVHTw7lV8w9mfGL8TucOWX/
-         zn6wn6rb4ELXIz9ov6l4L2bwijto8DlfrqLOh/QGOnlf1OUBHzGq4r1EwbZrZ6eBjRzd
-         F1Sf2PBcJIWNyLhWp6ZzYVlTGknRNsMe8Yc0+jYbA5uPbVAm3nCojksNG8t+OKddiDCD
-         B+3yRb68ibl8SJqqm7TjTTvPWDtmri2c9VyULEtg8DUQhhgiijxbkqC3PnBC9gp+WXFY
-         9U8G6a8kM0kp+rtHDDQ8snaXJfZIcRaoOiH5B/Py35OtXjSI6h7qcxAg3RpKLHnS8GDa
-         t1uA==
-X-Forwarded-Encrypted: i=1; AFNElJ9Oby0q3cuAf3BU1Jr5PFkloz/XURVdSqw5+g632JKAN1GvFxc3xq4IPLdGXfx6fEOrGTuR5aIZmg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yxp9aZNVbeflrBUdsXUKeksOXEutG68EF01LR9LgTmiI2SlA7QK
-	DxKxmpOBCFNllayNZJfD+rOb7Olu/CTl2B/1GosLW0tAfp+DLxsqquKFedHsPfStgkK8EBIDFyQ
-	0WTDFGp80NDoA37GnspxTIYn5uhI+V/+jill3acPJDg==
-X-Gm-Gg: AeBDieu12HjulP1e1MBVTguAFnSIiMB79VEFuBvPXcEEE2WAyndbwVtOQEBUHYi+/Ij
-	OCZBC9kZ6TUmk7sDd+brBMTbz/jB2Le5mw5XJLCo6lbCxa9mflJrMmDlvBCPFFxElJ7rhhgYQal
-	JTnv0kMXsc4nc2TTuuVoQnHukg4DRQG30uwQnYEz1I968F19/kfnBDsPYoZQBqUS55scOEYcbJS
-	d0Grcs+opna7rjpWROZc5tM344C2BomHErveR1fqLNo8uBv8XE0BW28/HemfrS9Q94egDbF4HYz
-	05PX6aNGSdqqpcvhYtxkcQVzOx9zj60jo7MCUnrB9wFTrAZaYjiA3Jx1kqOH/L18UjzttgLBJZd
-	/aAmw7Ah3YvfGWP+sRN4=
-X-Received: by 2002:a05:6000:40e0:b0:43d:7b23:bc99 with SMTP id
- ffacd0b85a97d-446489636b5mr6955778f8f.15.1777395553547; Tue, 28 Apr 2026
- 09:59:13 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dZCd33P9"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B5267C2BCAF;
+	Tue, 28 Apr 2026 19:38:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1777405093;
+	bh=EvIkYK52K0rLotm9PNd5ZD8pkIHIf0w1KVvAhcPh19Q=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=dZCd33P9zFZ/aTLdNx5zcMFUPzSh4b0lZ+a1mfBhbwCILbKGz0K2boJQfav48xKB/
+	 6F2nMJLICFuha/ubYI84SQoTqmNy2U5Vsi8qHMeHTBF39g/LWUAg17DOxRA1/b/RYu
+	 hBH7+wytalclrQx7utPSQ9NFAgEvOlFJzuQLW2Y7bXI9pMkHRJ8HtyFkCl6XRTsxu4
+	 iE/T1vbwocE0jkt5RM6PdmPGt7V0Ul0Ygifl4eNmAYI9JmOWhUsmfdcFwAFejg8Azg
+	 jcZZzPv9YeSd3h8L8UtNOjDjjaa9CkzBe6+BH6XW9ArW5MckWihBVWGU81rriLHhKY
+	 UTBdWnUm2HJ7w==
+Message-ID: <92d8f449-682b-441a-bb4d-4a2b9299a5a3@kernel.org>
+Date: Tue, 28 Apr 2026 21:38:01 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260427-page_mapped-v1-0-e89c3592c74c@kernel.org>
- <20260427-page_mapped-v1-2-e89c3592c74c@kernel.org> <20260427051758.e1b714a4b567917971920eaa@linux-foundation.org>
- <CAADnVQJ9JXrtAnFgE8UFK=W1GDeT6T6Wi5zB7g0AfRjU8M4=bQ@mail.gmail.com> <2b2eecf0-72f9-4959-9663-c80e3cd0c517@kernel.org>
-In-Reply-To: <2b2eecf0-72f9-4959-9663-c80e3cd0c517@kernel.org>
-From: Alexei Starovoitov <alexei.starovoitov@gmail.com>
-Date: Tue, 28 Apr 2026 17:58:59 +0100
-X-Gm-Features: AVHnY4I0TqqC4RFs8UKqyAoce0ZbMMM6zkhJo0hxpAv6LX8MTNNEkUpX04aH9bk
-Message-ID: <CAADnVQJp30BhhB6N3-GxtYmMpaMTaYvGcK9R5=8PxWD6qEXJhA@mail.gmail.com>
+User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH 2/3] bpf: arena: use page_ref_count() instead of
  page_mapped() in arena_free_pages()
-To: "David Hildenbrand (Arm)" <david@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, 
-	Andrii Nakryiko <andrii@kernel.org>, Martin KaFai Lau <martin.lau@linux.dev>, 
-	Eduard Zingerman <eddyz87@gmail.com>, Kumar Kartikeya Dwivedi <memxor@gmail.com>, Song Liu <song@kernel.org>, 
-	Yonghong Song <yonghong.song@linux.dev>, Jiri Olsa <jolsa@kernel.org>, 
-	Lorenzo Stoakes <ljs@kernel.org>, Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>, 
-	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Rik van Riel <riel@surriel.com>, 
-	Harry Yoo <harry@kernel.org>, Jann Horn <jannh@google.com>, 
-	Matthew Wilcox <willy@infradead.org>, "Liam R. Howlett" <liam@infradead.org>, linux-sh@vger.kernel.org, 
-	LKML <linux-kernel@vger.kernel.org>, bpf <bpf@vger.kernel.org>, 
-	linux-mm <linux-mm@kvack.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+To: Alexei Starovoitov <alexei.starovoitov@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>,
+ Andrii Nakryiko <andrii@kernel.org>, Martin KaFai Lau
+ <martin.lau@linux.dev>, Eduard Zingerman <eddyz87@gmail.com>,
+ Kumar Kartikeya Dwivedi <memxor@gmail.com>, Song Liu <song@kernel.org>,
+ Yonghong Song <yonghong.song@linux.dev>, Jiri Olsa <jolsa@kernel.org>,
+ Lorenzo Stoakes <ljs@kernel.org>, Vlastimil Babka <vbabka@kernel.org>,
+ Mike Rapoport <rppt@kernel.org>, Suren Baghdasaryan <surenb@google.com>,
+ Michal Hocko <mhocko@suse.com>, Rik van Riel <riel@surriel.com>,
+ Harry Yoo <harry@kernel.org>, Jann Horn <jannh@google.com>,
+ Matthew Wilcox <willy@infradead.org>, "Liam R. Howlett"
+ <liam@infradead.org>, linux-sh@vger.kernel.org,
+ LKML <linux-kernel@vger.kernel.org>, bpf <bpf@vger.kernel.org>,
+ linux-mm <linux-mm@kvack.org>
+References: <20260427-page_mapped-v1-0-e89c3592c74c@kernel.org>
+ <20260427-page_mapped-v1-2-e89c3592c74c@kernel.org>
+ <20260427051758.e1b714a4b567917971920eaa@linux-foundation.org>
+ <CAADnVQJ9JXrtAnFgE8UFK=W1GDeT6T6Wi5zB7g0AfRjU8M4=bQ@mail.gmail.com>
+ <2b2eecf0-72f9-4959-9663-c80e3cd0c517@kernel.org>
+ <CAADnVQJp30BhhB6N3-GxtYmMpaMTaYvGcK9R5=8PxWD6qEXJhA@mail.gmail.com>
+From: "David Hildenbrand (Arm)" <david@kernel.org>
+Content-Language: en-US
+Autocrypt: addr=david@kernel.org; keydata=
+ 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
+ qIws/H2t
+In-Reply-To: <CAADnVQJp30BhhB6N3-GxtYmMpaMTaYvGcK9R5=8PxWD6qEXJhA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On Tue, Apr 28, 2026 at 9:16=E2=80=AFAM David Hildenbrand (Arm)
-<david@kernel.org> wrote:
->
-> >>>
-> >>> Signed-off-by: David Hildenbrand (Arm) <david@kernel.org>
-> >>> ---
-> >>>  kernel/bpf/arena.c | 2 +-
-> >>
-> >> BPF maintainers will probably want to carry this in the BPF tree.
-> >> That's fine - please go ahead and add it.  I'll carry a duplicate in
-> >> mm.git so it compiles.
-> >
-> > We cannot carry the same patch in 2 trees.
-> > Sooner or later it will create problems for linux-next
-> > and issues during merge window if more changes
-> > are done in the same area.
-> > The only way to share a patch between trees is to
-> > create a stable branch and pull it into 2 trees
-> > then sha will be the same,
->
-> As lack of stable trees was raised a couple of times in the past, once we=
-'re
-> done with a transition to a fully git-based mm-next workflow [1], we shou=
-ld be
-> able to provide stable trees.
->
-> [1]
-> https://lore.kernel.org/r/20260421094216.8dfe14a8c62f2420fa5aace1@linux-f=
-oundation.org
+On 4/28/26 18:58, Alexei Starovoitov wrote:
+> On Tue, Apr 28, 2026 at 9:16 AM David Hildenbrand (Arm)
+> <david@kernel.org> wrote:
+>>
+>>>
+>>> We cannot carry the same patch in 2 trees.
+>>> Sooner or later it will create problems for linux-next
+>>> and issues during merge window if more changes
+>>> are done in the same area.
+>>> The only way to share a patch between trees is to
+>>> create a stable branch and pull it into 2 trees
+>>> then sha will be the same,
+>>
+>> As lack of stable trees was raised a couple of times in the past, once we're
+>> done with a transition to a fully git-based mm-next workflow [1], we should be
+>> able to provide stable trees.
+>>
+>> [1]
+>> https://lore.kernel.org/r/20260421094216.8dfe14a8c62f2420fa5aace1@linux-foundation.org
+> 
+> Ohh. Thanks for the link. Full git sounds great to me.
+> Reading the thread it sounds like you guys want to explore
+> your own way of managing the tree.
+> If there is interest we can share during lsfmm
+> how net and bpf trees are maintained from git pov.
 
-Ohh. Thanks for the link. Full git sounds great to me.
-Reading the thread it sounds like you guys want to explore
-your own way of managing the tree.
-If there is interest we can share during lsfmm
-how net and bpf trees are maintained from git pov.
+Yes, I was planning on reaching out either way, talking at lsf/mm would be great!
+
+-- 
+Cheers,
+
+David
