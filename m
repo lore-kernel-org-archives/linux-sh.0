@@ -1,108 +1,109 @@
-Received: from fhigh-a4-smtp.messagingengine.com (fhigh-a4-smtp.messagingengine.com [103.168.172.155])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC3B8379EE0;
-	Tue, 28 Apr 2026 16:24:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.155
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4CC99313E29;
+	Tue, 28 Apr 2026 16:34:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777393496; cv=none; b=ZWll6NG31Je2AGb6uv/0fINWurKf8ieC6nQCc+0bfy7symqBzy8VKG9BkGMjNqLZYvAExVFR2MzdqO+khjp3bT0w2ZzG+nJNTAZs7QjgFB0fih3ICVc16YxGpe5ep95F2LlVMHzDznYvs4Bwgz8/shmP9s4dH8Ij23IBtbv/4n0=
+	t=1777394078; cv=none; b=L/ovKAyQvJ4hD57M2Ackd2VudgCphk4X60UUc1/tCdSg7ufO+5beYVQycj/+wUPbpWG5dknAA8/BryK78CtGvnjJL+wMtJ2MVOZuqduB+rjeZDA5S0ljwM4MRmJLN9+SZsAm1x9z7lJKt0K2FDYidVA/FoMTcrstJ6PR0P3c3SU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777393496; c=relaxed/simple;
-	bh=/hlZ3CL15YhKohO8sPXh/S4gsytLOUouefAunH1BjjM=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=Yzf0CCqqknsgIVdZikBFWyE6MPQ8T9N6TlQE6wsI/m9KpYDOX+VrY26VILorMr1IvuCIfeDYjFlV0Zne7O4p5PeYyKfiQbtCzqtf9TGub3u+yfnN8+zqdClL1J9a3tZz8VoCKBxZjeqQsCcE8kR+nR/SSFRVySWRflSGidjr/5Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=d2a+5lXu; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Wa0Z9JpK; arc=none smtp.client-ip=103.168.172.155
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
+	s=arc-20240116; t=1777394078; c=relaxed/simple;
+	bh=SSGvX5eori06RTcAd+RFUFXSIFrU8pgQCr6sM0Zzku8=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=D0Vpjc0c+XeuUe54MLgdq22qy0tRbeLeZZb2otyMy6YzYMPXWFVJ/DvPYHuXAHUnDroXFawOEjiZxgv4/HdriWyInKds3je17WuUyO2T5ZnQXD2t92YbJsW6w0VxqV1M7nj5+X6WodjGlVCr0EeNx6ec+LX9k8+/W9xiEjCyGaM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kkXNWJ7/; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="d2a+5lXu";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Wa0Z9JpK"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 0781F1400074;
-	Tue, 28 Apr 2026 12:24:55 -0400 (EDT)
-Received: from phl-imap-02 ([10.202.2.81])
-  by phl-compute-04.internal (MEProxy); Tue, 28 Apr 2026 12:24:55 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1777393495;
-	 x=1777479895; bh=irc105uO1cybgeA/saKncpmZjelpNEHcYcoMOYqpIx4=; b=
-	d2a+5lXuAkobqaqiI4is1xb/ldvom8VJPfxThMf0AaPCYSqzvpl5JXoRmLKAeVRB
-	890ajlazYBrmJrr1xtRbK9rd/oiB9rL/OGyF7W5Gw9uC5wO4oClyfMgNDHmJXEr2
-	21HKY9cKwQwPToOtKmMeVdR60xp+axJdaW3LpPWmxZ/Q0uDx3WZT9/xQC1mde/Lu
-	HJCdBiN1eak2smY9hX6cetzTnawqiipiwRhU8zLFvmo47XXLl1fzfVrqPFEvsJTs
-	b5rarK1bAZyve7mcKTtL89RAiC/6/3oNyqGBjvhwELb6qXOhejPZRSYKg7ExT7S+
-	eiZlJbfza42Y7wKxvAOmOg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1777393495; x=
-	1777479895; bh=irc105uO1cybgeA/saKncpmZjelpNEHcYcoMOYqpIx4=; b=W
-	a0Z9JpKz6CImujwjUKNH25WC7kZwD7MLFaDSdA9B2OLJKnb0JNeKmSJ6Fvr/C6mU
-	nptbKlXFGeVqoau26D15WYVNyP3xvK/6Hr484UG7vXn1f2cUXWLoy4gLqToalKdI
-	r20KcQCrvw6LU3nz9HN+AtG0b8uUWbrTTYrTdcHHWv6/qeQwJl0JCJOokYxt3lmJ
-	8juTdadrOuEaovVUqJRqKNpznMEQ+YqG2rHBaLsPAzlfo1rgBgD1B3afZxMXsrUS
-	dXRchHLbN8zU8Gl/183Z28DmzEp3Ou8QP5zDwBTunXkVXI00/gCZmg2zmKdHwB5D
-	oUKWhQHXO0r4uI6Ocw7lw==
-X-ME-Sender: <xms:Vt_wae3FalrXxwOoJD9oNKmif3oQw7DWwJZBoeFdVczPLRUkPnl_3Q>
-    <xme:Vt_wab4HVEWDxUMRfGk8Gh6vvvWRPvexBdlNGBAKhsGzZmD0rOz7RuNkc-NYdbaU3
-    JHBRtGh-nN-dXweOBnI8quPnW0VCBkSNrG1tw_b0QliSowIJ7lwAlxk>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdekvddtfecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
-    hrpefoggffhffvvefkjghfufgtgfesthejredtredttdenucfhrhhomhepfdetrhhnugcu
-    uegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrghtthgvrh
-    hnpefhtdfhvddtfeehudekteeggffghfejgeegteefgffgvedugeduveelvdekhfdvieen
-    ucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegrrhhnug
-    esrghrnhgusgdruggvpdhnsggprhgtphhtthhopeejpdhmohguvgepshhmthhpohhuthdp
-    rhgtphhtthhopehrohhsthgvughtsehgohhoughmihhsrdhorhhgpdhrtghpthhtoheprg
-    hrnhgusehkvghrnhgvlhdrohhrghdprhgtphhtthhopegurghlihgrsheslhhisggtrdho
-    rhhgpdhrtghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinh
-    druggvpdhrtghpthhtohephihsrghtohesuhhsvghrshdrshhouhhrtggvfhhorhhgvgdr
-    jhhppdhrtghpthhtoheplhhinhhugidqkhgvrhhnvghlsehvghgvrhdrkhgvrhhnvghlrd
-    horhhgpdhrtghpthhtoheplhhinhhugidqshhhsehvghgvrhdrkhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:Vt_waaK1sJy8HvTm2y2p_iCyRfKOZbVHJokhnzDdCJvt8gbxrViQpA>
-    <xmx:Vt_wacL_rdxBq6jcPVJfxBdexuchRt9G4MwyWlpJJFTlAl3-8z5JHQ>
-    <xmx:Vt_waRXA9HSA0344c_HRwKo54R9VhS0qRWh4b0DxwcE2zVBCf4snLA>
-    <xmx:Vt_wadmk3NqJ5O_o8YU4JJ6k-2ZWC_10IK2GUFRZavIzSQoLQXDd_w>
-    <xmx:V9_waQUDZpHbVm7rtPjBAYbRfJZm4ytQCkjYkLOC3pmd9gn4_i1F6Rw5>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id B1433700065; Tue, 28 Apr 2026 12:24:54 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kkXNWJ7/"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E2DFBC2BCB5;
+	Tue, 28 Apr 2026 16:34:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1777394078;
+	bh=SSGvX5eori06RTcAd+RFUFXSIFrU8pgQCr6sM0Zzku8=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=kkXNWJ7/M92XbIIqnCuSwyLr03O6/AkVzdoi51qjOyTquwaczjPVNNy12MGWk6Spy
+	 u0ZCafMK5PDn2oPazYAk/LGZJybB3Bd/1QlSHWEnjdpDvRpFnj+Dlx6imHk6kmRj2W
+	 GmtdGnpMa40At7JPZUfzH5PbQeT8wxc5sijxivhr9ls2A3CGyX862g2P9luWNVByyz
+	 +vcqvRyI/R7zUU4xbykN0lMFXJwa/DBYQWMkhRzJ1Zz0ap1BJpPahRn8CylVj6ZKkJ
+	 oN1OFD/eEvVZqaAJtm/5BUCTOuAsmVApZyoJO+2mkrEd0UcXOPjvWARBVm4r3r7+li
+	 pSJVprhHvq2jw==
+Date: Tue, 28 Apr 2026 18:34:30 +0200
+From: Mike Rapoport <rppt@kernel.org>
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-kernel@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH 00/10] sh: remove NUMA and SPARSEMEM support
+Message-ID: <afDhluTA6ERvGugQ@kernel.org>
+References: <20260413104649.852228-1-rppt@kernel.org>
+ <42a4c6c1-762f-449f-9d14-3eb0fa02b94f@app.fastmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-ThreadId: AuXWUXY87igk
-Date: Tue, 28 Apr 2026 18:24:34 +0200
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "Arnd Bergmann" <arnd@kernel.org>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>,
- "Rich Felker" <dalias@libc.org>
-Cc: "Steven Rostedt" <rostedt@goodmis.org>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org
-Message-Id: <b45a2235-4249-406f-aef1-e54a05f0e401@app.fastmail.com>
-In-Reply-To: 
- <fdd60c87a0303a130b0ba28f3fe04b5ad27cf027.camel@physik.fu-berlin.de>
-References: <20260428155528.3218943-1-arnd@kernel.org>
- <716fb62be57fd01c68cfed9220da7ebddfa321ae.camel@physik.fu-berlin.de>
- <3529a6c7-401c-4ec3-a63c-5235416e52c5@app.fastmail.com>
- <fdd60c87a0303a130b0ba28f3fe04b5ad27cf027.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: select legacy gpiolib interface
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <42a4c6c1-762f-449f-9d14-3eb0fa02b94f@app.fastmail.com>
 
-On Tue, Apr 28, 2026, at 18:21, John Paul Adrian Glaubitz wrote:
->
-> Makes sense. I'll pick it up for v7.2 then unless you think it's urgent
-> enough to warrant another pull for v7.1.
+(oops, missed that earlier)
 
-7.2 is fine, thanks!
+On Mon, Apr 13, 2026 at 01:14:49PM +0200, Arnd Bergmann wrote:
+> On Mon, Apr 13, 2026, at 12:46, Mike Rapoport wrote:
+> >
+> > NUMA support for SuperH was introduced a long time ago by commit
+> > b241cb0c885e ("sh: Support for multiple nodes.")
+> >
+> > 	"... for boards with many different memory blocks that are
+> > 	 otherwise unused (SH7722/SH7785 URAM and so forth)"
+> >
+> > In reality, this added 128K of memory on sh7722 and sh7785 and 256K on
+> > shx3 at the expense of all the NUMA related code in the kernel.
+> >
+> > For build of v7.0-rc7 with defconfig and the same configuration with
+> > CONFIG_NUMA disabled, bloat-o-meter reports difference of ~76k. Disabling
+> > CONFIG_SPARSMEM on top increases the difference to ~94k. And that's only
+> > overhead in code and static data that does not take into the account data
+> > structures allocated at run time.
+> >
+> > And all this overhead has been there for nothing for almost 8 years
+> > because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
+> > those additional "nodes" could not be used by the core MM because the
+> > maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
+> 
+> I had looked at it when you asked me about it last year, and I can
+> confirm that agree with all your findings and the resulting patches.
+> 
+> Whole series
+> 
+> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
 
-     Arnd
+Thanks!
+ 
+> Two very minor points:
+> 
+> * It looks like you left the 'config SYS_SUPPORTS_NUMA' symbol
+>   in Kconfig, which no longer does anything, so this should probably
+>   be removed in patch 9 along with the lines that select it.
+
+I think it better fits patch 1 that removes CONFIG_NUMA, patch 9 is about
+SPARSEMEM.
+ 
+> * It appears that after your series, RISC-V is the only remaining
+>   architecture that supports NUMA in 32-bit mode, which I think
+>   we should not allow as a configuration, given that this would
+>   run into untested code and no hardware exists for it.
+>   Apparently commit 4f0e8eef772e ("riscv: Add numa support for
+>   riscv64 platform") intended this to only be for 64-bit targets
+>   but did not add a Kconfig dependency for CONFIG_64BIT (or
+>   CONFIG_SMP, which was added later).
+
+I can send a patch to RISC-V for it.
+ 
+>         Arnd
+
+-- 
+Sincerely yours,
+Mike.
