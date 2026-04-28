@@ -1,97 +1,108 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from fhigh-a4-smtp.messagingengine.com (fhigh-a4-smtp.messagingengine.com [103.168.172.155])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 87B86280A5A;
-	Tue, 28 Apr 2026 16:21:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC3B8379EE0;
+	Tue, 28 Apr 2026 16:24:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.155
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777393315; cv=none; b=KndBEy4s0TpuIMxu+TI36ZblsYetj8diV/ZuGh7EIbfoSG6QFZ4tCgK453u/5bjVHOLrEhffF+J6/LvHSX+D960Bl3SUyAqCWE3rNpkDcVZmaf01iTehDDOQDFm2TVu6RCuC3WWfUrblwMmaDr2g1fiHeV+Bfw1FfkN3OROv5f8=
+	t=1777393496; cv=none; b=ZWll6NG31Je2AGb6uv/0fINWurKf8ieC6nQCc+0bfy7symqBzy8VKG9BkGMjNqLZYvAExVFR2MzdqO+khjp3bT0w2ZzG+nJNTAZs7QjgFB0fih3ICVc16YxGpe5ep95F2LlVMHzDznYvs4Bwgz8/shmP9s4dH8Ij23IBtbv/4n0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777393315; c=relaxed/simple;
-	bh=V+wCgw22yJZSNsNEcAk/5z0cZvsWYi9rrVfMrdgTL6g=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=IwnIt1lFbGZ2c877ya4tvomZYQOrb9Scwb9/Gy9+oaXeh7ISYctkmAACGV8OiLdOWf0QV8H6i4UMbtS+r1JDwf/mESSs6Pwar0oupH9PIvJ6SJSEnLKb65o8FGTXMCc3eBgJdvWKvrMNUJIWFpEGniflHLp3g/vR770IFTLZkh4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=IIxN7Q2i; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1777393496; c=relaxed/simple;
+	bh=/hlZ3CL15YhKohO8sPXh/S4gsytLOUouefAunH1BjjM=;
+	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
+	 Subject:Content-Type; b=Yzf0CCqqknsgIVdZikBFWyE6MPQ8T9N6TlQE6wsI/m9KpYDOX+VrY26VILorMr1IvuCIfeDYjFlV0Zne7O4p5PeYyKfiQbtCzqtf9TGub3u+yfnN8+zqdClL1J9a3tZz8VoCKBxZjeqQsCcE8kR+nR/SSFRVySWRflSGidjr/5Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=d2a+5lXu; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Wa0Z9JpK; arc=none smtp.client-ip=103.168.172.155
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="IIxN7Q2i"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=Uj7Ufv6jzgwbIerot1ziZWk3Fpm48iGsMCxhlGn3OiI=; t=1777393313;
-	x=1777998113; b=IIxN7Q2iloQagmWWyGj7WoflhBCozivw1FgCz4QkRPT1MFlD7qPIZTNxwHIch
-	WaFyV+M8AGA7685UufL0FbEcDCtBJhStUCpPPxzunbtLtZcGfSs3RmSj3331UUrHlAOmiKVAE+0dB
-	psIyLAeOYLh8OVVIC+KlRZqQIOsiuJ6jzn4HblW4PLhsE9zxF1b52mw7TmCH3GOyayIM45az/q+EV
-	YfNl+zGo/Cir6cVFFVaw8dEaDtR77nWL7lcLAkJFd2LwgEA07CegJjHPGgRx6ZhmmYNSHgnswPXJ0
-	+llujbqdLjg//QTwoBwa9s7S4MCazCXoqxhQzhkp5P2i1naJ3w==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wHlC0-00000003pGU-3pZU; Tue, 28 Apr 2026 18:21:48 +0200
-Received: from p5dc559e1.dip0.t-ipconnect.de ([93.197.89.225] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wHlC0-00000001ngX-2ubo; Tue, 28 Apr 2026 18:21:48 +0200
-Message-ID: <fdd60c87a0303a130b0ba28f3fe04b5ad27cf027.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: select legacy gpiolib interface
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Arnd Bergmann <arnd@arndb.de>, Arnd Bergmann <arnd@kernel.org>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Steven Rostedt <rostedt@goodmis.org>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Date: Tue, 28 Apr 2026 18:21:47 +0200
-In-Reply-To: <3529a6c7-401c-4ec3-a63c-5235416e52c5@app.fastmail.com>
-References: <20260428155528.3218943-1-arnd@kernel.org>
-	 <716fb62be57fd01c68cfed9220da7ebddfa321ae.camel@physik.fu-berlin.de>
-	 <3529a6c7-401c-4ec3-a63c-5235416e52c5@app.fastmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.1 
+	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="d2a+5lXu";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Wa0Z9JpK"
+Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id 0781F1400074;
+	Tue, 28 Apr 2026 12:24:55 -0400 (EDT)
+Received: from phl-imap-02 ([10.202.2.81])
+  by phl-compute-04.internal (MEProxy); Tue, 28 Apr 2026 12:24:55 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+	:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to; s=fm2; t=1777393495;
+	 x=1777479895; bh=irc105uO1cybgeA/saKncpmZjelpNEHcYcoMOYqpIx4=; b=
+	d2a+5lXuAkobqaqiI4is1xb/ldvom8VJPfxThMf0AaPCYSqzvpl5JXoRmLKAeVRB
+	890ajlazYBrmJrr1xtRbK9rd/oiB9rL/OGyF7W5Gw9uC5wO4oClyfMgNDHmJXEr2
+	21HKY9cKwQwPToOtKmMeVdR60xp+axJdaW3LpPWmxZ/Q0uDx3WZT9/xQC1mde/Lu
+	HJCdBiN1eak2smY9hX6cetzTnawqiipiwRhU8zLFvmo47XXLl1fzfVrqPFEvsJTs
+	b5rarK1bAZyve7mcKTtL89RAiC/6/3oNyqGBjvhwELb6qXOhejPZRSYKg7ExT7S+
+	eiZlJbfza42Y7wKxvAOmOg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1777393495; x=
+	1777479895; bh=irc105uO1cybgeA/saKncpmZjelpNEHcYcoMOYqpIx4=; b=W
+	a0Z9JpKz6CImujwjUKNH25WC7kZwD7MLFaDSdA9B2OLJKnb0JNeKmSJ6Fvr/C6mU
+	nptbKlXFGeVqoau26D15WYVNyP3xvK/6Hr484UG7vXn1f2cUXWLoy4gLqToalKdI
+	r20KcQCrvw6LU3nz9HN+AtG0b8uUWbrTTYrTdcHHWv6/qeQwJl0JCJOokYxt3lmJ
+	8juTdadrOuEaovVUqJRqKNpznMEQ+YqG2rHBaLsPAzlfo1rgBgD1B3afZxMXsrUS
+	dXRchHLbN8zU8Gl/183Z28DmzEp3Ou8QP5zDwBTunXkVXI00/gCZmg2zmKdHwB5D
+	oUKWhQHXO0r4uI6Ocw7lw==
+X-ME-Sender: <xms:Vt_wae3FalrXxwOoJD9oNKmif3oQw7DWwJZBoeFdVczPLRUkPnl_3Q>
+    <xme:Vt_wab4HVEWDxUMRfGk8Gh6vvvWRPvexBdlNGBAKhsGzZmD0rOz7RuNkc-NYdbaU3
+    JHBRtGh-nN-dXweOBnI8quPnW0VCBkSNrG1tw_b0QliSowIJ7lwAlxk>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdekvddtfecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
+    hrpefoggffhffvvefkjghfufgtgfesthejredtredttdenucfhrhhomhepfdetrhhnugcu
+    uegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrghtthgvrh
+    hnpefhtdfhvddtfeehudekteeggffghfejgeegteefgffgvedugeduveelvdekhfdvieen
+    ucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegrrhhnug
+    esrghrnhgusgdruggvpdhnsggprhgtphhtthhopeejpdhmohguvgepshhmthhpohhuthdp
+    rhgtphhtthhopehrohhsthgvughtsehgohhoughmihhsrdhorhhgpdhrtghpthhtoheprg
+    hrnhgusehkvghrnhgvlhdrohhrghdprhgtphhtthhopegurghlihgrsheslhhisggtrdho
+    rhhgpdhrtghpthhtohepghhlrghusghithiisehphhihshhikhdrfhhuqdgsvghrlhhinh
+    druggvpdhrtghpthhtohephihsrghtohesuhhsvghrshdrshhouhhrtggvfhhorhhgvgdr
+    jhhppdhrtghpthhtoheplhhinhhugidqkhgvrhhnvghlsehvghgvrhdrkhgvrhhnvghlrd
+    horhhgpdhrtghpthhtoheplhhinhhugidqshhhsehvghgvrhdrkhgvrhhnvghlrdhorhhg
+X-ME-Proxy: <xmx:Vt_waaK1sJy8HvTm2y2p_iCyRfKOZbVHJokhnzDdCJvt8gbxrViQpA>
+    <xmx:Vt_wacL_rdxBq6jcPVJfxBdexuchRt9G4MwyWlpJJFTlAl3-8z5JHQ>
+    <xmx:Vt_waRXA9HSA0344c_HRwKo54R9VhS0qRWh4b0DxwcE2zVBCf4snLA>
+    <xmx:Vt_wadmk3NqJ5O_o8YU4JJ6k-2ZWC_10IK2GUFRZavIzSQoLQXDd_w>
+    <xmx:V9_waQUDZpHbVm7rtPjBAYbRfJZm4ytQCkjYkLOC3pmd9gn4_i1F6Rw5>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.phl.internal (Postfix, from userid 501)
+	id B1433700065; Tue, 28 Apr 2026 12:24:54 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+X-ThreadId: AuXWUXY87igk
+Date: Tue, 28 Apr 2026 18:24:34 +0200
+From: "Arnd Bergmann" <arnd@arndb.de>
+To: "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
+ "Arnd Bergmann" <arnd@kernel.org>,
+ "Yoshinori Sato" <ysato@users.sourceforge.jp>,
+ "Rich Felker" <dalias@libc.org>
+Cc: "Steven Rostedt" <rostedt@goodmis.org>, linux-sh@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+Message-Id: <b45a2235-4249-406f-aef1-e54a05f0e401@app.fastmail.com>
+In-Reply-To: 
+ <fdd60c87a0303a130b0ba28f3fe04b5ad27cf027.camel@physik.fu-berlin.de>
+References: <20260428155528.3218943-1-arnd@kernel.org>
+ <716fb62be57fd01c68cfed9220da7ebddfa321ae.camel@physik.fu-berlin.de>
+ <3529a6c7-401c-4ec3-a63c-5235416e52c5@app.fastmail.com>
+ <fdd60c87a0303a130b0ba28f3fe04b5ad27cf027.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: select legacy gpiolib interface
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 
-Hi Arnd,
+On Tue, Apr 28, 2026, at 18:21, John Paul Adrian Glaubitz wrote:
+>
+> Makes sense. I'll pick it up for v7.2 then unless you think it's urgent
+> enough to warrant another pull for v7.1.
 
-On Tue, 2026-04-28 at 18:20 +0200, Arnd Bergmann wrote:
-> On Tue, Apr 28, 2026, at 18:08, John Paul Adrian Glaubitz wrote:
-> > On Tue, 2026-04-28 at 17:55 +0200, Arnd Bergmann wrote:
->=20
-> > Thanks, this looks reasonable from what I can see. Most boards require =
-at least
-> > gpio_request() which is now guarded behind CONFIG_GPIOLIB_LEGACY.
-> >=20
-> > Does this maybe need a Fixes: tag to identify the commit which=20
-> > introduced the new
-> > config option CONFIG_GPIOLIB_LEGACY?
->=20
-> At the moment, CONFIG_GPIOLIB_LEGACY is still enabled
-> unconditionally, the idea being to change it to default-off
-> after all known users select it. This won't be for at
-> least another merged window, so I think you can just merge
-> the patch now without any other dependencies, but we can
-> also merge it through the gpio tree at the time of that other
-> patch.
+7.2 is fine, thanks!
 
-Makes sense. I'll pick it up for v7.2 then unless you think it's urgent
-enough to warrant another pull for v7.1.
-
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+     Arnd
