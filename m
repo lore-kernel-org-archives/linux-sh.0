@@ -1,75 +1,181 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 125EC3B7778;
-	Tue, 28 Apr 2026 15:01:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 752773BBA18;
+	Tue, 28 Apr 2026 15:55:33 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777388512; cv=none; b=nuspvf7J5J4KOhJQnGE7cT7RlIEaEaOOnmOVcj8mfMkumMERaBGx6L5UkArvN/xtfgCZBL0mf5+g+WGyDkRmavg9CATDP8hk5zH8di24XGaBEZl/cDL8matFExrdWAfJqbc2rF7Tn+jaZBvwga6KCdsg6wU8u+qtNWE+H3Wx++A=
+	t=1777391733; cv=none; b=G1G26V1KZzgtgGBzxlATM+sKIzLNO/EO5w3iTB15E0wRwYuD0o+PYC8Ul6sa2vAXlBB0M0I21FFydme5w2j4LZEDcNTV6OGhjXKczHfV3FTHXDr8nu+eC7W/0/KxCHBjpBAW/hZC/dWNoJCezTeeBwivzAntuFlbsi72ZTJejtw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777388512; c=relaxed/simple;
-	bh=9V1bLTn1vWOQVsqBgRHz2cCJNHH/Y3+OWVbtf5Gd5s4=;
-	h=Date:From:To:Cc:Subject:Message-Id:In-Reply-To:References:
-	 Mime-Version:Content-Type; b=bgj0mv3OxabWo3m7SGG8VVMI4FGhpjTmxABKnnifq/OnHlbcK2PnEmxg7W7fKetWUW5vHeE0805ko7Frnv6ZvnYSb+acS7V4NNbxcuQtt9RV9kpUT4zzLIUt87WCI8f1YF5mzLKcFK47VqlirsvSieMNX+K9rD6O5Bk6zGzc0ko=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=y0OPnVAw; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1777391733; c=relaxed/simple;
+	bh=75ld2ewRILgYi943fpVictpUlkWQ9Vf7v7jfrpBO0yM=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=qV3G424ekgPhhHFMVYaJP9eMci5tL6NpS7R4sNtWQezfoZg2oq+jP1ewa7B0s2hf1CWPBiW1KgbNLhlWqj5xTltu90/Mk2OpSPka8Mq83iZJiepI/yC6aojr92RH59HHFLnbHHo73d4zYM3Gk2BxLMw1EEIqcJkQ8hBq5HBQ9qQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Lc2Lv7JD; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="y0OPnVAw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 55643C2BCAF;
-	Tue, 28 Apr 2026 15:01:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
-	s=korg; t=1777388511;
-	bh=9V1bLTn1vWOQVsqBgRHz2cCJNHH/Y3+OWVbtf5Gd5s4=;
-	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-	b=y0OPnVAwlg4IcQzrn23U81NbTCK5jLokkm7KQkdWWkFvT+szYqryMFm9gI2WVEjOj
-	 0nXsA2Cl60vUigAjkzuJMh5rKc+/VnLM4I/90jw2XPEVyqo2cjg1AIteklB507M+En
-	 zd3OWP26e0Rzv4SznuG6hs8m2E9uSpt2X4t7kp1w=
-Date: Tue, 28 Apr 2026 08:01:50 -0700
-From: Andrew Morton <akpm@linux-foundation.org>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Mike Rapoport <rppt@kernel.org>, Rich Felker <dalias@libc.org>, Thomas
- Wei?schuh <thomas.weissschuh@linutronix.de>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org,
- linux-sh@vger.kernel.org
-Subject: Re: [PATCH] sh: fix fallout from ZERO_PAGE consolidation
-Message-Id: <20260428080150.d9c0a60947aa3db4a2b87071@linux-foundation.org>
-In-Reply-To: <99cdbec216d678e714ae14024e62d9ffcbab6d90.camel@physik.fu-berlin.de>
-References: <20260417103208.1217010-1-rppt@kernel.org>
-	<30ff5e1e6c0c3d4e0fb3b6f36a5372ed6bf45d19.camel@physik.fu-berlin.de>
-	<ef7d133aabff5ce58a91f0274f3ed05947c8aa48.camel@physik.fu-berlin.de>
-	<aeNeKYwMJA3JXO8d@kernel.org>
-	<92295dd525d946777e84269cff6e9a3f2f585286.camel@physik.fu-berlin.de>
-	<20260428055535.0daa3699bb6ff62f03ff1edb@linux-foundation.org>
-	<99cdbec216d678e714ae14024e62d9ffcbab6d90.camel@physik.fu-berlin.de>
-X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Lc2Lv7JD"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7D4F2C2BCB5;
+	Tue, 28 Apr 2026 15:55:31 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1777391733;
+	bh=75ld2ewRILgYi943fpVictpUlkWQ9Vf7v7jfrpBO0yM=;
+	h=From:To:Cc:Subject:Date:From;
+	b=Lc2Lv7JDbEQBaYT+EfFnJtYmJ0Jm3kW0CYw+LoekQtZqw4iUP22NbCVcLxtORYjIF
+	 qLKAlat20pypz4a6y7QCFyZefAFa7BUPGyc3jVWtO776GwUjJHupDMlGl6ze2iwXuo
+	 9eP1QN5EAQdqq6W9ZCzURtHVBrpf3MvhMAscGCjJ77TkNf73mKXsfqy1eWK3ffvkNQ
+	 xbVOtBqC1vC2pumSD/qMu5hAYxbn7Sopq0iPwmTla24lQz0Ia2fC1ZhuJXJyJwISYY
+	 WO5AQDKjldh8l5naAXhvpzQ286o5IscR91QnSG1SMK8GkMhk99/YiIkEMuPwqbty+5
+	 CwADS/rJsUWwA==
+From: Arnd Bergmann <arnd@kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Arnd Bergmann <arnd@arndb.de>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH] sh: select legacy gpiolib interface
+Date: Tue, 28 Apr 2026 17:55:19 +0200
+Message-Id: <20260428155528.3218943-1-arnd@kernel.org>
+X-Mailer: git-send-email 2.39.5
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On Tue, 28 Apr 2026 15:20:21 +0200 John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de> wrote:
+From: Arnd Bergmann <arnd@arndb.de>
 
-> On Tue, 2026-04-28 at 05:55 -0700, Andrew Morton wrote:
-> > On Sat, 18 Apr 2026 13:26:50 +0200 John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de> wrote:
-> > 
-> > > > > I just realized that this patch actually depends on 6215d9f4470f ("arch, mm:
-> > > > > consolidate empty_zero_page"), so I cannot take it directly into my tree now.
-> > > > > 
-> > > > > Shall we wait for v7.0-rc1 then, so I can pick it up as a regression fix?
-> > > >  
-> > > > Or we can ask Andrew to pick it via mm tree.
-> > > 
-> > > Let me take it for v7.0-rc2, so I can take more time for testing the patch.
-> > 
-> > I put a copy of this into mm.git, so it goes into linux-next.
-> 
-> Erhm, I wanted to merge it myself being the SH maintainer.
-> 
+Many board files on sh reference the legacy gpiolib interfaces that
+are becoming optional. To ensure the boards can keep building, select
+CONFIG_GPIOLIB_LEGACY on each of the boards that have one of the
+hardcoded calls.
 
-Yep, I saw that.  I wanted to unbreak linux-next.
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/sh/Kconfig                        | 1 +
+ arch/sh/boards/Kconfig                 | 8 ++++++++
+ arch/sh/boards/mach-highlander/Kconfig | 1 +
+ arch/sh/boards/mach-rsk/Kconfig        | 3 +++
+ 4 files changed, 13 insertions(+)
 
-If/when this turns up in -next I'll drop the mm.git copy.
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index d5795067befa..d60f1d5a94c0 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -462,6 +462,7 @@ config CPU_SUBTYPE_SHX3
+ 	select CPU_SHX3
+ 	select GENERIC_CLOCKEVENTS_BROADCAST if SMP
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select PINCTRL
+ 
+ # SH4AL-DSP Processor Support
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index 1af93be61b1f..d89b74177233 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -80,6 +80,7 @@ config SH_7724_SOLUTION_ENGINE
+ 	select SOLUTION_ENGINE
+ 	depends on CPU_SUBTYPE_SH7724
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	imply SND_SOC_AK4642 if SND_SIMPLE_CARD
+ 	help
+@@ -199,6 +200,7 @@ config SH_SH7757LCR
+ 	bool "SH7757LCR"
+ 	depends on CPU_SUBTYPE_SH7757
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ config SH_SH7785LCR
+@@ -226,6 +228,7 @@ config SH_URQUELL
+ 	bool "Urquell"
+ 	depends on CPU_SUBTYPE_SH7786
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select HAVE_PCI
+ 	select NO_IOPORT_MAP if !PCI
+ 
+@@ -233,6 +236,7 @@ config SH_MIGOR
+ 	bool "Migo-R"
+ 	depends on CPU_SUBTYPE_SH7722
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	help
+ 	  Select Migo-R if configuring for the SH7722 Migo-R platform
+@@ -242,6 +246,7 @@ config SH_AP325RXA
+ 	bool "AP-325RXA"
+ 	depends on CPU_SUBTYPE_SH7723
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	help
+ 	  Renesas "AP-325RXA" support.
+@@ -251,6 +256,7 @@ config SH_KFR2R09
+ 	bool "KFR2R09"
+ 	depends on CPU_SUBTYPE_SH7724
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	help
+ 	  "Kit For R2R for 2009" support.
+@@ -259,6 +265,7 @@ config SH_ECOVEC
+ 	bool "EcoVec"
+ 	depends on CPU_SUBTYPE_SH7724
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	imply SND_SOC_DA7210 if SND_SIMPLE_CARD
+ 	help
+@@ -329,6 +336,7 @@ config SH_MAGIC_PANEL_R2
+ 	bool "Magic Panel R2"
+ 	depends on CPU_SUBTYPE_SH7720
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	help
+ 	  Select Magic Panel R2 if configuring for Magic Panel R2.
+diff --git a/arch/sh/boards/mach-highlander/Kconfig b/arch/sh/boards/mach-highlander/Kconfig
+index b0abd03cac4e..cd3a553ce30c 100644
+--- a/arch/sh/boards/mach-highlander/Kconfig
++++ b/arch/sh/boards/mach-highlander/Kconfig
+@@ -20,6 +20,7 @@ config SH_R7785RP
+ 	bool "R7785RP board support"
+ 	depends on CPU_SUBTYPE_SH7785
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 
+ endchoice
+ 
+diff --git a/arch/sh/boards/mach-rsk/Kconfig b/arch/sh/boards/mach-rsk/Kconfig
+index f0299bc4416f..3810937aa5d4 100644
+--- a/arch/sh/boards/mach-rsk/Kconfig
++++ b/arch/sh/boards/mach-rsk/Kconfig
+@@ -12,16 +12,19 @@ config SH_RSK7201
+ config SH_RSK7203
+ 	bool "RSK7203"
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	depends on CPU_SUBTYPE_SH7203
+ 
+ config SH_RSK7264
+ 	bool "RSK2+SH7264"
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	depends on CPU_SUBTYPE_SH7264
+ 
+ config SH_RSK7269
+ 	bool "RSK2+SH7269"
+ 	select GPIOLIB
++	select GPIOLIB_LEGACY
+ 	depends on CPU_SUBTYPE_SH7269
+ 
+ endchoice
+-- 
+2.39.5
 
