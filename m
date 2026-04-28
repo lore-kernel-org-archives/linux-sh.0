@@ -1,92 +1,134 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4079033ADB9;
-	Tue, 28 Apr 2026 08:44:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A937B3A543A
+	for <linux-sh@vger.kernel.org>; Tue, 28 Apr 2026 09:31:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777365855; cv=none; b=i7QiY1ck98WOIm9fIBO5XjbPllFa9gLtiWiAwP1U8LQNJ+4YmK/Gc3yx32V7/L6ob6qrD6Fldr1tMeZhKz6QX1KKJQtl/HILOtpMVJ9BVSXYJzviCoDQSZJOySK0ElvADZ7/b3xlxY9ZtpxGkCS0yCTHecapCvnMIuylRJQDjQc=
+	t=1777368673; cv=none; b=Cd1XDHDv04ePh2geBrTcE8F48hh/SyvTW0hGCRDlBTH9JvIJdezgp9WKO2+VKwMr0SFiZWkosB7Gp5LV1n0UGKZNypsSxibAlFEX93KmFCZ8hr2r7mCogYIpA+GfR+8Sh7br9sGSTy/NXeGI8SfW6N3tNGfVeKG1hWH4eu/McCA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777365855; c=relaxed/simple;
-	bh=yMSXc7aH8lsOC9DhmK3iD6MCAykaqWenDw41A4QK+rc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=QXn8rBDyst1Lviv5veO38yQW05+4pGM75bBW+6twOwwahkEXDoAXvqCxMDdg+j+wCrmt0K1RM08z9+2GT/3IJTo/Sp9pB54a9Q02cJqum91V0nqQ469C0nCVtaQJBCW4i8eqvUL8QdBFsV8kZvdsnj2DrKDKQ7aaF3bMpH1wJUk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=L2Uwil36; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="L2Uwil36"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A3281C2BCAF;
-	Tue, 28 Apr 2026 08:44:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777365854;
-	bh=yMSXc7aH8lsOC9DhmK3iD6MCAykaqWenDw41A4QK+rc=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=L2Uwil3663RAVPzrHsG1iITO92pHRr0NbnlB8CCbCA1NWUA1xllzeBN1sNKNrcb9D
-	 YJPEaayeukzAMh0iX4cR2pCid+jxETJUrV/EZ4cT73E9ODzXtXqBpwST67/1zQz2Ve
-	 V+ezBwuEH4jhne7Zz6l5SidpD0jxAgY0n52iythXyWiKs98PSEsDlgyshSiTZ9izds
-	 QM8yTldC9W8tSy/8P9Lm0d1r557rD+i7cv0EPHQvEdPWH4RSwVfKbDdEeDl8nOdV0Z
-	 jIzKZ871PDXoBW1fSPbaQAN72yn5DnhTTVzjm9Y4hPJCrkn38ARi4/n4d9a7LY9gF7
-	 qtgZpYsfDFw0w==
-Message-ID: <9e2b2c8c-a03f-4c26-9039-ae64c848bc52@kernel.org>
-Date: Tue, 28 Apr 2026 10:44:07 +0200
+	s=arc-20240116; t=1777368673; c=relaxed/simple;
+	bh=WZ0dv++aH+AeLwkvbNXxLqu7wJ3mA6GpS63WG1N27Uc=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=GqSPzBQTu4OUFyGiKVvUxDTmx9CRcoRvcpceFJKrdo1eSAlrv3ygIVhNGPmRg51emfllG6GE9agyxil0q63vpApvWBGnqVBXUsZ842xdpYcxSvaSXiaQmoPRY+z5m9M36QSGaxrOGd/N2bv0zRpvAv4VBpQch7Xz9Ypuw2WVF4A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.218.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-bb3c4d8cc29so312011366b.1
+        for <linux-sh@vger.kernel.org>; Tue, 28 Apr 2026 02:31:11 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777368670; x=1777973470;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Al22kA6RCf7FSEzj29cZLSkjdM9EgXxihmBX7/SeSVI=;
+        b=TQI1m+xqYJrQHDG1XExVhF0CCgcE+CTQbjSj+z+5r39HTSYC+k2b+BpDmD0Amfy2qj
+         IshXBieRt+LfyL9lOHcoz+CQKgov00kUtV6+0/SRtcNO9jKRk2LDXFZAIY4V+IaTHeJw
+         H5iZNipEb+nrVEPkXq9hZaKLawsJ4DGgnvunneP5SXk3zc7lI9r5A8cZJWrE5tVL9+WE
+         DEclgpyxyhgAVsyFjxRuptP3V8GVJdKQ7E7CvgCYpEGKwj0kDB44XbrQgKHdaeeNVAEV
+         /MDzvIoHBTlHrwPgCUY1aMrW86YikOrpxzw+KwRAoKUFCZNuxz5U83ItX4q0BQveNKx0
+         221Q==
+X-Forwarded-Encrypted: i=1; AFNElJ8QAxWpiU1ls00SIaQzXQGU0wM/Li8AVVT4i57eIvAk1Zv0L7y/pwOL0ERugVZt+8NOuLkMXx4vAA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YytJZYCZ1F6/mshkdoO4vMrBmqC0LqJfHPxcJi+EYE5yb5OUHss
+	uo3rdqOPI/tAdMroe6oL28iH/omjkx74Trduq7NGJN0PX294CaqVNeGGPJO46gjE+d8=
+X-Gm-Gg: AeBDieucK+IpUzQOCHZJXF4pIKamdf3dDAm3QhAkHvGdAQyUZr3Bplqgdtdoz7VXztm
+	cxiSGV4PxWoVP0YTQOzDAP6uATgMyKaN2crhAOsxNbkJAazixc0k6cucCe9C0X6CHL0DfJ3Lfly
+	nKCs7CrlkpXUR7WpapE4ysGLXt87Zzk8vt5rI118PpyzEhTywtveEBRUdYcJWf9cMWNRgJY3iME
+	LAd53URNzyo4z31EZzGxSkhVXBReVAC434tVsrO3o0YX5oDZUK8pBYFZ+CnI+XD3p5pbw8On1PV
+	4EW9pvLrpozAlHwSfiAT0R0XTvCwL3arGL0qwY+o3QT/ggFZlbxE5EneLKmsy+ATeRNuYBkJIfF
+	W/T4RuxNZ3orddUPh8rnCJmyJMhd73JNtMnBU4oYoOeVPVcnEsS7xSnXy7FHQXfW+UU2B03kC+b
+	iXYJQQbBHX+ysOEeqS7cHM/F6t0HCIPKNwFc5zW9PSWJEZ5ZK0fEx9PuRkZ0mKlUo/pwQySQI=
+X-Received: by 2002:a17:907:8b95:b0:bad:667f:efa3 with SMTP id a640c23a62f3a-bb8026bcbb7mr100607366b.11.1777368669679;
+        Tue, 28 Apr 2026 02:31:09 -0700 (PDT)
+Received: from mail-ej1-f45.google.com (mail-ej1-f45.google.com. [209.85.218.45])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-bb80bba0addsm72110666b.50.2026.04.28.02.31.08
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 28 Apr 2026 02:31:09 -0700 (PDT)
+Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-bb3c4d8cc29so312005066b.1
+        for <linux-sh@vger.kernel.org>; Tue, 28 Apr 2026 02:31:08 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ89mWrEzKW524pp1kFZ9wyKkCabPGGBdwcz1hvmeJ5aXE0yp5wh7MIMfGHJWbl18LqmXEayRSALng==@vger.kernel.org
+X-Received: by 2002:a05:6402:5056:b0:676:d8a1:7a04 with SMTP id
+ 4fb4d7f45d1cf-679bb09a4admr915149a12.23.1777368324094; Tue, 28 Apr 2026
+ 02:25:24 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/3] bpf: arena: use page_ref_count() instead of
- page_mapped() in arena_free_pages()
-Content-Language: en-US
-To: Alexei Starovoitov <alexei.starovoitov@gmail.com>,
- Andrew Morton <akpm@linux-foundation.org>
-Cc: "David Hildenbrand (Arm)" <david@kernel.org>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>,
- Andrii Nakryiko <andrii@kernel.org>, Martin KaFai Lau
- <martin.lau@linux.dev>, Eduard Zingerman <eddyz87@gmail.com>,
- Kumar Kartikeya Dwivedi <memxor@gmail.com>, Song Liu <song@kernel.org>,
- Yonghong Song <yonghong.song@linux.dev>, Jiri Olsa <jolsa@kernel.org>,
- Lorenzo Stoakes <ljs@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Rik van Riel <riel@surriel.com>, Harry Yoo <harry@kernel.org>,
- Jann Horn <jannh@google.com>, Matthew Wilcox <willy@infradead.org>,
- "Liam R. Howlett" <liam@infradead.org>, linux-sh@vger.kernel.org,
- LKML <linux-kernel@vger.kernel.org>, bpf <bpf@vger.kernel.org>,
- linux-mm <linux-mm@kvack.org>
-References: <20260427-page_mapped-v1-0-e89c3592c74c@kernel.org>
- <20260427-page_mapped-v1-2-e89c3592c74c@kernel.org>
- <20260427051758.e1b714a4b567917971920eaa@linux-foundation.org>
- <CAADnVQJ9JXrtAnFgE8UFK=W1GDeT6T6Wi5zB7g0AfRjU8M4=bQ@mail.gmail.com>
-From: "Vlastimil Babka (SUSE)" <vbabka@kernel.org>
-In-Reply-To: <CAADnVQJ9JXrtAnFgE8UFK=W1GDeT6T6Wi5zB7g0AfRjU8M4=bQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+References: <cover.1777306795.git.chleroy@kernel.org> <c73b90236f2810edd47c84edd2a8d8e8e0c816da.1777306795.git.chleroy@kernel.org>
+In-Reply-To: <c73b90236f2810edd47c84edd2a8d8e8e0c816da.1777306795.git.chleroy@kernel.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 28 Apr 2026 11:25:11 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdUvTBWoDN_wUo2n8-gkoheJ+-rbwew53OvoAwo8G5n1qg@mail.gmail.com>
+X-Gm-Features: AVHnY4JEWBVPw4tSjHgbQTia8gZd2WGJ1sv6qLdKJbtvs4hms1blpvc35yb0VWw
+Message-ID: <CAMuHMdUvTBWoDN_wUo2n8-gkoheJ+-rbwew53OvoAwo8G5n1qg@mail.gmail.com>
+Subject: Re: [RFC PATCH v1 4/9] uaccess: Introduce copy_{to/from}_user_partial()
+To: "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>
+Cc: Yury Norov <ynorov@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>, 
+	Linus Torvalds <torvalds@linux-foundation.org>, David Laight <david.laight.linux@gmail.com>, 
+	Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, 
+	linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, 
+	linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org, 
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org, 
+	dmaengine@vger.kernel.org, linux-efi@vger.kernel.org, 
+	linux-fsi@lists.ozlabs.org, amd-gfx@lists.freedesktop.org, 
+	dri-devel@lists.freedesktop.org, intel-gfx@lists.freedesktop.org, 
+	linux-wpan@vger.kernel.org, netdev@vger.kernel.org, 
+	linux-wireless@vger.kernel.org, linux-spi@vger.kernel.org, 
+	linux-media@vger.kernel.org, linux-staging@lists.linux.dev, 
+	linux-serial@vger.kernel.org, linux-usb@vger.kernel.org, 
+	xen-devel@lists.xenproject.org, linux-fsdevel@vger.kernel.org, 
+	ocfs2-devel@lists.linux.dev, bpf@vger.kernel.org, kasan-dev@googlegroups.com, 
+	linux-mm@kvack.org, linux-x25@vger.kernel.org, rust-for-linux@vger.kernel.org, 
+	linux-sound@vger.kernel.org, sound-open-firmware@alsa-project.org, 
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, 
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On 4/27/26 17:00, Alexei Starovoitov wrote:
-> 
-> We cannot carry the same patch in 2 trees.
-> Sooner or later it will create problems for linux-next
-> and issues during merge window if more changes
-> are done in the same area.
+Hi Christophe,
 
-Agreed.
+Thanks for your patch!
 
-> The only way to share a patch between trees is to
-> create a stable branch and pull it into 2 trees
-> then sha will be the same,
+On Mon, 27 Apr 2026 at 19:18, Christophe Leroy (CS GROUP)
+<chleroy@kernel.org> wrote:
+> Today there are approximately 3000 calls for copy_to_user() and
+> 3000 calls to copy_from_user().
+>
+> The majority of callers of copy_{to/from}_user() don't care about the
+> return value, they only check whether it is 0 or not, and when it is
+> not 0 they handle it as a -EACCES.
 
-Yes, but...
+I think the "a" can be dropped.
 
-> but mm tree has its own way of doing things,
-> so this patch needs to stay in mm only and if no one
-> should be touching adjacent lines :(
+> In order to allow better optimisation of copy_{to/from}_user() when
+> the size of the copy is known at build time, create new fonctions
 
-... this should also be fine even if that happens. Mark knows how to resolve
-(and report) trivial conflicts in linux-next, and Linus AFAIK also prefers
-to resolve conflicts to other workarounds.
+functions
 
-The shared branch would IMHO only truly be necessary if bpf tree itself
-needed to base something off on this change; for resolving trivial conflicts
-it might be an overkill.
+> named copy_{to/from}_user_partial() to be used by the few callers
+> that are interested in partial copies and need to now how many
+
+know
+
+> bytes remain at the end of the copy.
+>
+> For the time being it is just the same as copy_{to/from}_user().
+>
+> Signed-off-by: Christophe Leroy (CS GROUP) <chleroy@kernel.org>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
