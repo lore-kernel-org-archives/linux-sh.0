@@ -1,109 +1,63 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E10123A562;
-	Sun,  3 May 2026 15:02:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17E541E1024;
+	Sun,  3 May 2026 17:00:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777820552; cv=none; b=MWCA/8hCNUe7B4rEJQSii3pACGlAodXPVN9pWWWCWqOm4eewbyzyDoRr7HmdLQwfY82jU3nH+74vcsi/jJAj/DxTTU/hkxM3KeZI6WjMjAfpz6SRxGQl/UQyNGDVoau6m+lM2xz9ZEEi4DmxV/zM22sTL5zbkDByii79WlkmpOA=
+	t=1777827626; cv=none; b=Q8MycOtMa57+jxmeUghhN7xto+CwfjbiAIQEcIhuPUGuhfLTw6toL0bp+uvPH5goVHMCcz1gVdOH9uE5xnrnpZ8QLdBSgKuZ6vMn6nZ6LrE+eXfkvVtCM5rlYKG1OLX01mD1X5k6W5Xqp0SqJJG+552LwVe3rLMbDSLcUC0fk0M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777820552; c=relaxed/simple;
-	bh=qMqFmwNYSnxXOE4/RBM3i2a4enFJvs56nQ219Js1i3E=;
-	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=M5/Vk8FrK/Rictatn5Tj4OAertwRdSBzehMK5ESY81p/U8ImbGRIZ8uoIX+kWTlWX5Kt/pOvlZWvG84sB4ykRCjXwMUEZqa2KJ9HA6j7KnenxixAYhg2tRczxv6VJ5/rijHiS9qvOLFjPsdioKtft1154pohqDqBf/hb58EumCo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=LX2ICIIV; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1777827626; c=relaxed/simple;
+	bh=C9H/xzG2QHqVjvvkJpOYE+v1OpxT4bukAI1pdvP8hO8=;
+	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=WOL8PhdP+Mje8CQ4ArC88S30ZhqWETSo1aBr34v3UpVyJ/X1n5x5fOMOFvwWB/RK6w4O8xvjOUn8AMTG5bsgorJqo2TbLkGo1zcXx6jSTxIBHNEPux8puqYM0OxbyZoEFrF/V6eHHFgiBwipGf4Z/X5ELvtt+htHLbvNt/EjDdM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ryf8h9MA; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="LX2ICIIV"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:Date:Cc:To:From:Subject:Message-ID:From:Reply-To:Subject:Date:
-	Message-ID:To:Cc:MIME-Version:Content-Type:Content-Transfer-Encoding:
-	Content-ID:Content-Description:In-Reply-To:References;
-	bh=w4+a3Jb0XFNGsLt0TQ+OJDaayqvEOWothhdFXA8orGQ=; t=1777820550; x=1778425350; 
-	b=LX2ICIIVBUH4+wRHqaj826jgOxgHRH8n3JtKqVzQCgiJgfkF8mxwjq7zYbiqR/2kPB0BqQvj9P1
-	0pGdhfR59PNnCbs2Pi8+rmVFHGz0bsb8H7MVBTR4CoUucUZKrCkSuACAF994nN0n1FmHt9/YwehQn
-	WtS3QbeFyVhypni1u3G1J9m4DRrSSdwQNKR9Et1yXJGTW74ngObxPTKJq36ALVIF0ypvRMwOVzyDJ
-	h/HbVOrHPGYJmnohKOzvj+OU2bqMrbPBnTqbtsksHwvQb16F3uPQap5jSC3Wy1rbrX2n3cYG8FUdH
-	ZUsQjuUMeXUtjSAAtuy6Gis/kmc8sj/CmkDQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wJYKy-00000002qFk-1LE4; Sun, 03 May 2026 17:02:28 +0200
-Received: from dynamic-077-183-073-066.77.183.pool.telefonica.de ([77.183.73.66] helo=[192.168.178.50])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wJYKy-00000003neT-0RXc; Sun, 03 May 2026 17:02:28 +0200
-Message-ID: <052fc1373d143466c745b01b4803cae950cca6af.camel@physik.fu-berlin.de>
-Subject: [GIT PULL] sh fixes for v7.1
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: "Mike Rapoport (Microsoft)" <rppt@kernel.org>, Rich Felker
- <dalias@libc.org>,  Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh
- <linux-sh@vger.kernel.org>, linux-kernel	 <linux-kernel@vger.kernel.org>
-Date: Sun, 03 May 2026 17:02:27 +0200
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.1 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ryf8h9MA"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5C696C2BCB4;
+	Sun,  3 May 2026 17:00:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1777827625;
+	bh=C9H/xzG2QHqVjvvkJpOYE+v1OpxT4bukAI1pdvP8hO8=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+	b=Ryf8h9MAzq76qmNNFhi6mDpYCiaXlXDIrMhsya2OC7ZjA7x8i3G++NinnCU9jD+um
+	 jrceWbPOl45Lw9hJ3J96qObNpWQSAeKTJ2Un6v01ZLays4kMidLuRVIeUSiKK9K4NF
+	 vGW257OKgaFzLKSXAW0kUVu+21yBb/RBy8VFaWU/6iUYjwPFEZzQPO/T3NcgAMgR24
+	 o/NwHvlhkTUCwymvk7OqW1dDb5MQ3Z5pbVbn5hjVL5/TIW2OFUbK17W6UzXEVKrqdu
+	 VATtAkHYdM1N+3tjBxitbSSrfdIDyVlZLCfZq0nAJznB/64ekwxM/IoezPRxlGWffi
+	 3p0Ufbb+zCzkw==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 40079392FFCA;
+	Sun,  3 May 2026 16:59:38 +0000 (UTC)
+Subject: Re: [GIT PULL] sh fixes for v7.1
+From: pr-tracker-bot@kernel.org
+In-Reply-To: <052fc1373d143466c745b01b4803cae950cca6af.camel@physik.fu-berlin.de>
+References: <052fc1373d143466c745b01b4803cae950cca6af.camel@physik.fu-berlin.de>
+X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
+X-PR-Tracked-Message-Id: <052fc1373d143466c745b01b4803cae950cca6af.camel@physik.fu-berlin.de>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v7.1-tag2
+X-PR-Tracked-Commit-Id: b0aa5e4b087b686575f1b31ce54048b4d059b7b8
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: f377d0025eb00c0590466f5be9f50decf9b9180e
+Message-Id: <177782757694.4174759.1535307208942829663.pr-tracker-bot@kernel.org>
+Date: Sun, 03 May 2026 16:59:36 +0000
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, "Mike Rapoport (Microsoft)" <rppt@kernel.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
 
-Hi Linus,
+The pull request you sent on Sun, 03 May 2026 17:02:27 +0200:
 
-the memory management changes in v7.1, in particular the ZERO_PAGE consolid=
-ation,
-introduced a regression on sh which made these systems unbootable. The prob=
-lem was
-that on sh, the initial boot parameters were previously referenced as an ar=
-ray and
-after 6215d9f4470f ("arch, mm: consolidate empty_zero_page"), they were ref=
-erenced
-as a pointer which caused wrong code generation and boot hang. The patch ch=
-anges the
-declaration back to being an array which fixes the boot hang.
+> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v7.1-tag2
 
-The following changes since commit 254f49634ee16a731174d2ae34bc50bd5f45e731=
-:
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/f377d0025eb00c0590466f5be9f50decf9b9180e
 
-  Linux 7.1-rc1 (2026-04-26 14:19:00 -0700)
+Thank you!
 
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
-sh-for-v7.1-tag2
-
-for you to fetch changes up to b0aa5e4b087b686575f1b31ce54048b4d059b7b8:
-
-  sh: Fix fallout from ZERO_PAGE consolidation (2026-05-03 16:35:40 +0200)
-
-Thanks for pulling!
-
-Adrian
-
-----------------------------------------------------------------
-sh fixes for v7.1
-
-- sh: Fix fallout from ZERO_PAGE consolidation
-
-----------------------------------------------------------------
-Mike Rapoport (Microsoft) (1):
-      sh: Fix fallout from ZERO_PAGE consolidation
-
- arch/sh/include/asm/setup.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html
