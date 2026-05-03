@@ -1,62 +1,56 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBF3A78F4F;
-	Sun,  3 May 2026 14:32:53 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE23F199931;
+	Sun,  3 May 2026 14:34:13 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777818777; cv=none; b=DUZkwCQ+kDVa1H3a4/4aTvrxAZSZlBiRYHdjj/7c1zP9PzjEzmyfE4yxQt1DhZgsSu334f0MoUppqfYweiMSIa1B64zsY4YWCMaly3/YNMcOXFeqgHDZ7N6YjzE6jXAViIfsT+TxX4Dk8PDLyK4iUZDk1xrMqo6aydiVc1BLGdE=
+	t=1777818856; cv=none; b=NxzIYd58owA4Njtvo0GlT0GCutaHA+rpv1Ig9OCUdtiyWvy0+8zotJyuCvtmuzcCUbR84oAiXH505uFJwmI+fAvmRLIeWEDyE5WRm+AbadKp/3QYqbNhNIXFS+cbj5Ra+8xMoT/iqDKJtkHkpacWAZX+CPCu3Fk4jILCdqx2Xxk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777818777; c=relaxed/simple;
-	bh=3AQVm8GzH6oppzwS2Il2bhBnIdkwIbe4WZacOq7XqrA=;
+	s=arc-20240116; t=1777818856; c=relaxed/simple;
+	bh=5mijpzeXUp0nARvDkmWxIPsvJT6UAdbGJmo7nJ3ANHA=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=J7OQM/Xi7bsoL12ErtL0hrvkoE3ZUhjpyazGdD1qrlQQvLnpQrgAM++daGoahkIRDcFDE9pVLi80WFLqGmCFTidsGsb9xC5XbAmoKCY+fRk8ClqZEjuRgPT+k6blDbuerTN/Xo8yJTNofpB4GiaN2Lrmd7B5AelWp6y/Vjvk4i0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=TeFQiDxU; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=QpkNfbvPS32Dqo62B9Td83Zt099cnv9jTVF36GvNLRlLIeZGwYc/UOWPR9x/hI9Zt8WeSY1mUtpQMAnx9myiaoO2HNB8YrUDn9dcDCR7kv9XNpz0Xo9l6qBZtEbq7qVkweKedZ/bMhbJ3Jx1iUTElGm4E5tPUkd4oeasfhUGLn8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=RapSNa8J; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="TeFQiDxU"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="RapSNa8J"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
 	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
 	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=vk2yC2jqfzlGFoHRDIOZ1Z1VJYGkp2/apvpI3jlwHk4=; t=1777818774;
-	x=1778423574; b=TeFQiDxUW2IuyhwXk1kdEvVmV2rnpXUaqZsTESmLU4v5LMe7y10Fz0VnnqjhG
-	UbyELss2UA7uXHWmx7DuFBGcUA5pkKiqh4PRWGDgTNlSkWpL0JLA7gtAd9FSU08lT3zqw8/D6iNKy
-	LoZPi3TvS6a+Y+mTnB9st08bJio79+JJ3A1gldaVfhtpgaUxVqew55tHEUqud3KzTg3TtGN1Nmq3C
-	LQq99JgZqy7XHQMoP7rMn/bW3oHTnQYpqzFflEQzM4ekkPrErCUFUQ1Gjb1UYvT2DC5E/IsxvLI2N
-	Gm62bY9KTSdsH0yE19HA3OMybyNAzOaGCJClkm89gWp6YDAJuA==;
+	References; bh=7P9KZV0Wb/AUHnKWYFgkpkhT1o2rfhdFuoqlUP8QvMU=; t=1777818853;
+	x=1778423653; b=RapSNa8Jno+HfsrT8vr+kXADzYnFkc1R7vWkjg7SjB/UQZSXScnGkV9RGtU5K
+	z0+1nzNWglmvdB7xMazCRfLqtco+mosqetw/N2932vdPLHY+XixhBu41xLaUIoCjrAuhv/wuiLJeU
+	NR0+1Hy2DSFskbpvKCLkDRl0JMf05L84ib1S7ODiwQPo4RdtQvWVDXmtU9TCKephJPhAVUVbl/PrY
+	cjwNimQU0v92dfPLlf/Ff1r36/u4q4IO/olKXayPZ21gSBpF15Gnau6roE3FIwWK1eK/74U4woC0j
+	Lil3TqH5xP7EuSKgm/aObMi87aXiA77kvpCZNi1mu5W7R5PuEA==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.99)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wJXs9-00000002jmL-1xam; Sun, 03 May 2026 16:32:41 +0200
+          id 1wJXta-00000002kDZ-3FBS; Sun, 03 May 2026 16:34:10 +0200
 Received: from dynamic-077-183-073-066.77.183.pool.telefonica.de ([77.183.73.66] helo=[192.168.178.50])
           by inpost2.zedat.fu-berlin.de (Exim 4.99)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wJXs9-00000003kE6-12xg; Sun, 03 May 2026 16:32:41 +0200
-Message-ID: <f18d87ac562cf8952e0edf48f94f8b3255d61ec8.camel@physik.fu-berlin.de>
+          id 1wJXta-00000003kPg-2K6v; Sun, 03 May 2026 16:34:10 +0200
+Message-ID: <d9fb7ed01fb79585f64f7f87f56f40290838f3ea.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] sh: fix fallout from ZERO_PAGE consolidation
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Mike Rapoport <rppt@kernel.org>, Rich Felker <dalias@libc.org>, Thomas
- Wei?schuh <thomas.weissschuh@linutronix.de>, Yoshinori Sato
+To: Mike Rapoport <rppt@kernel.org>, Andrew Morton
+ <akpm@linux-foundation.org>
+Cc: Rich Felker <dalias@libc.org>, Thomas Wei?schuh	
+ <thomas.weissschuh@linutronix.de>, Yoshinori Sato
  <ysato@users.sourceforge.jp>, 	linux-kernel@vger.kernel.org,
  linux-sh@vger.kernel.org
-Date: Sun, 03 May 2026 16:32:40 +0200
-In-Reply-To: <20260428080150.d9c0a60947aa3db4a2b87071@linux-foundation.org>
+Date: Sun, 03 May 2026 16:34:09 +0200
+In-Reply-To: <20260417103208.1217010-1-rppt@kernel.org>
 References: <20260417103208.1217010-1-rppt@kernel.org>
-		<30ff5e1e6c0c3d4e0fb3b6f36a5372ed6bf45d19.camel@physik.fu-berlin.de>
-		<ef7d133aabff5ce58a91f0274f3ed05947c8aa48.camel@physik.fu-berlin.de>
-		<aeNeKYwMJA3JXO8d@kernel.org>
-		<92295dd525d946777e84269cff6e9a3f2f585286.camel@physik.fu-berlin.de>
-		<20260428055535.0daa3699bb6ff62f03ff1edb@linux-foundation.org>
-		<99cdbec216d678e714ae14024e62d9ffcbab6d90.camel@physik.fu-berlin.de>
-	 <20260428080150.d9c0a60947aa3db4a2b87071@linux-foundation.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.60.1 
@@ -69,20 +63,53 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Andrew,
+Hi,
 
-On Tue, 2026-04-28 at 08:01 -0700, Andrew Morton wrote:
-> Yep, I saw that.  I wanted to unbreak linux-next.
+On Fri, 2026-04-17 at 13:32 +0300, Mike Rapoport wrote:
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 >=20
-> If/when this turns up in -next I'll drop the mm.git copy.
+> Consolidation of empty_zero_page declarations broke boot on sh.
+>=20
+> sh stores its initial boot parameters in a page reserved in
+> arch/sh/kernel/head_32.S. Before commit 6215d9f4470f ("arch, mm:
+> consolidate empty_zero_page") this page was referenced in C code as an
+> array and after that commit it is referenced as a pointer.
+>=20
+> This causes wrong code generation and boot hang.
+>=20
+> Declare boot_params_page as an array to fix the issue.
+>=20
+> Reported-by: Thomas Wei=C3=9Fschuh <thomas.weissschuh@linutronix.de>
+> Tested-by: Thomas Wei=C3=9Fschuh <thomas.weissschuh@linutronix.de>
+> Fixes: 6215d9f4470f ("arch, mm: consolidate empty_zero_page")
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> ---
+>  arch/sh/include/asm/setup.h | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/arch/sh/include/asm/setup.h b/arch/sh/include/asm/setup.h
+> index 63c9efc06348..8488f76b48b4 100644
+> --- a/arch/sh/include/asm/setup.h
+> +++ b/arch/sh/include/asm/setup.h
+> @@ -7,7 +7,7 @@
+>  /*
+>   * This is set up by the setup-routine at boot-time
+>   */
+> -extern unsigned char *boot_params_page;
+> +extern unsigned char boot_params_page[];
+>  #define PARAM boot_params_page
+> =20
+>  #define MOUNT_ROOT_RDONLY (*(unsigned long *) (PARAM+0x000))
+>=20
+> base-commit: 43cfbdda5af60ffc6272a7b8c5c37d1d0a181ca9
 
-Sorry for the late reply. I am currently having trouble building a kernel f=
-or
-my J-Core J2 board. My custom J2 toolchain is choking on the current kernel
-and I can't test the patch myself now.
+I can't test the patch myself now as my custom J2 toolchain is choking on b=
+uilding
+the latest kernel from git. But the change looks good to me, so I'm going t=
+o merge
+it now and send another PR to Linus.
 
-However, since Geert has confirmed that the patch works, I'm merging it now=
-.
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 Adrian
 
