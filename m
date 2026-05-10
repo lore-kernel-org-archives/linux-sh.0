@@ -1,112 +1,76 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from out-185.mta0.migadu.com (out-185.mta0.migadu.com [91.218.175.185])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 81FBE396B68;
-	Sun, 10 May 2026 13:56:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BED6635E922
+	for <linux-sh@vger.kernel.org>; Sun, 10 May 2026 16:11:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.185
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778421381; cv=none; b=puBWysRDNcki3rwtljG6QrsM8aj5Dq0EBKoXrh8CKNZZ3mazVB03JuXH/auCTiP6ae1EFmFJ1loJWyjyIjfJAGIG1t1dTUAcWlEg6WI9Y2pRnGgs9i0NkBNZsEAD5K2km2yJLiBU9jktlpVYVj+1Vpbe42KhWLpH5tDvLcbnNuo=
+	t=1778429493; cv=none; b=Z9m6UDNvWEvTASoyRBsGLmZ2wCX/l1gwEIci8V5WERRwksqeT8YcNVP46Zzxh0QWg62/SXXEle1ZVYNaBcckuHjvcBCp16J2Zm4Hh/4M7LsxlT8RQo1dDRZV+gJzrdjzqSgokLoHKVe5Qd+RB8nRZ5GrnA7ct/S3WyFHs1hOfVs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778421381; c=relaxed/simple;
-	bh=FmPjppYqmtQ/uCHJ2PqO1Z7RqOhpoVQASPz+LWTt2U4=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=qEKPANrDKIfQJtgsIuucuyJGQbp7mKQETotam6CxQIv1e8O+cFYPlfiM0hrkRUtxTrbKw3/3NrZkoGP925dGGzJPnWfNw7GPoceTsaKxK4j81oZ1gpjOpu/lptym5KI5pQmpdnJCZQh24c4JDBOdwYecxv+kqyIlO5BMjl5LfVw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Y9CIBPRs; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1778429493; c=relaxed/simple;
+	bh=VpyAswRNrKpzlIHyzQ9ryez1EEih2VW31tPTZt5Y6Ks=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=lO2QzHO1nlc/VDuoAgs6xVxTLe/DjZlx05cmbwDzLNzVXcA6rv4QrfktVFBiHJcZt7UMF1gmDObgcvBMfb3aod1IR7UtiFvDE9zlfEak91BvDWpnqsmnj1tp0r7GxPVFEABRgaQuhtRWuRxT9NFBd9ZGfKp79i1jbD5ajgaFkJc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=cW3/pW3g; arc=none smtp.client-ip=91.218.175.185
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Y9CIBPRs"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1BC5EC2BCB8;
-	Sun, 10 May 2026 13:56:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778421381;
-	bh=FmPjppYqmtQ/uCHJ2PqO1Z7RqOhpoVQASPz+LWTt2U4=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=Y9CIBPRsZwQvXiffEJfhuKEtVBvOPUiu+xxmZSpQoK2RCxhlOdidlPjYaH2ztd7u5
-	 KyX78ObrKB+rGxIqadOoTOVCkVEN/1PmRcQ4vWb8SHzANQKzON+YmsBOZQIpGVbMDt
-	 w79lF9elbmc2lpNeM9axwfznH2tej84bXIflsCl46luttE5qr4Ul22mGHi8miKHIV2
-	 eoluVt5KARwhPmLaJaAXB6tnQbWswiOkJNYLte4V5mBwd4+dAw7Ekd0uwip5XSj0bN
-	 NcBxOb1iKa2n8j0f+FYBkaH+UpYBoNUPp1NrJC1Z4UdY8GhWCN3paZ5B8dA1icDTTc
-	 seOWZKHxZa7dQ==
-From: Mike Rapoport <rppt@kernel.org>
-To: linux-sh@vger.kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Arnd Bergmann <arnd@arndb.de>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Mike Rapoport <rppt@kernel.org>,
-	Rich Felker <dalias@libc.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="cW3/pW3g"
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1778429479;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=B5O2D0CT4paGTJSdYTWUHa8jV0uQ6X+6YdoC97f8yJc=;
+	b=cW3/pW3gYHc3bm4wbc/koM0NzKgdf+kqJbzJNlp+WZ5Q3LGkTmbyQEQl/2V2ZXHMznm6uj
+	emJBupdXoIeuEaj9KA10YYIMCKKQSPTb9Kj7WFF+nloFb1A9b3Xf9GCDjhn2V2m862QWg9
+	uqEwvMaJzMPwc6fNfHauOBanIZ0IqmY=
+From: Thorsten Blum <thorsten.blum@linux.dev>
+To: Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	linux-mm@kvack.org
-Subject: [PATCH v2 10/10] sh: drop include/asm/sparsemem.h
-Date: Sun, 10 May 2026 16:55:46 +0300
-Message-ID: <20260510135546.13554-11-rppt@kernel.org>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <20260510135546.13554-1-rppt@kernel.org>
-References: <20260510135546.13554-1-rppt@kernel.org>
+	Thorsten Blum <thorsten.blum@linux.dev>
+Subject: [PATCH] sh: dma: use strscpy in register_dmac
+Date: Sun, 10 May 2026 18:10:14 +0200
+Message-ID: <20260510161012.108731-4-thorsten.blum@linux.dev>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+X-Developer-Signature: v=1; a=openpgp-sha256; l=983; i=thorsten.blum@linux.dev; h=from:subject; bh=EDeF8BLm2ABpziHqAng8eLQUqCfqSBG4zcHuaKEioOU=; b=owGbwMvMwCUWt7pQ4caZUj3G02pJDFkMa5/4RanGms7Z/lTMne8hZ1rc4ikb3zNNZ+V//C8n9 fri0P1+HaUsDGJcDLJiiiwPZv2Y4VtaU7nJJGInzBxWJpAhDFycAjAR6WSG/7HXWKfemCLrzrnE av9b0c+XLLon38mY7li8vizR3PSQ2EmG/3FvE1atiT3onqxffeubc0ggW/br5aceTj/CX3VATqz xPBcA
+X-Developer-Key: i=thorsten.blum@linux.dev; a=openpgp; fpr=1D60735E8AEF3BE473B69D84733678FD8DFEEAD4
 Content-Transfer-Encoding: 8bit
+X-Migadu-Flow: FLOW_OUT
 
-From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+Replace memcpy() and the hard-coded string length with strscpy() to
+improve register_dmac().
 
-Move MAX_PHYSMEM_BITS declaration to include/asm/mmu.h and drop now
-unneeded include/asm/sparsemem.h
-
-Reviewed-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+Signed-off-by: Thorsten Blum <thorsten.blum@linux.dev>
 ---
- arch/sh/include/asm/mmu.h       |  2 ++
- arch/sh/include/asm/sparsemem.h | 12 ------------
- arch/sh/kernel/setup.c          |  1 -
- 3 files changed, 2 insertions(+), 13 deletions(-)
- delete mode 100644 arch/sh/include/asm/sparsemem.h
+ arch/sh/drivers/dma/dma-api.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/mmu.h b/arch/sh/include/asm/mmu.h
-index b9c9f91e6616..def7c1edd605 100644
---- a/arch/sh/include/asm/mmu.h
-+++ b/arch/sh/include/asm/mmu.h
-@@ -2,6 +2,8 @@
- #ifndef __MMU_H
- #define __MMU_H
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index 87e5a8928873..31b614358270 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -16,6 +16,7 @@
+ #include <linux/mm.h>
+ #include <linux/sched.h>
+ #include <linux/slab.h>
++#include <linux/string.h>
+ #include <asm/dma.h>
  
-+#define MAX_PHYSMEM_BITS	32
-+
- /*
-  * Privileged Space Mapping Buffer (PMB) definitions
-  */
-diff --git a/arch/sh/include/asm/sparsemem.h b/arch/sh/include/asm/sparsemem.h
-deleted file mode 100644
-index 4703cbe23844..000000000000
---- a/arch/sh/include/asm/sparsemem.h
-+++ /dev/null
-@@ -1,12 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--#ifndef __ASM_SH_SPARSEMEM_H
--#define __ASM_SH_SPARSEMEM_H
--
--/*
-- * SECTION_SIZE_BITS		2^N: how big each section will be
-- * MAX_PHYSMEM_BITS		2^N: how much physical address space we have
-- */
--#define SECTION_SIZE_BITS	26
--#define MAX_PHYSMEM_BITS	32
--
--#endif /* __ASM_SH_SPARSEMEM_H */
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index 43d0f7b62b03..99f52d888aa3 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -41,7 +41,6 @@
- #include <asm/smp.h>
- #include <asm/mmu_context.h>
- #include <asm/processor.h>
--#include <asm/sparsemem.h>
- #include <asm/platform_early.h>
+ DEFINE_SPINLOCK(dma_spin_lock);
+@@ -232,7 +233,7 @@ int register_dmac(struct dma_info *info)
+ 		chan->chan  = info->first_channel_nr + i;
+ 		chan->vchan = info->first_channel_nr + i + total_channels;
  
- /*
--- 
-2.53.0
-
+-		memcpy(chan->dev_id, "Unused", 7);
++		strscpy(chan->dev_id, "Unused");
+ 
+ 		if (info->flags & DMAC_CHANNELS_TEI_CAPABLE)
+ 			chan->flags |= DMA_TEI_CAPABLE;
