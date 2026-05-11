@@ -1,91 +1,85 @@
-Received: from mail-vk1-f172.google.com (mail-vk1-f172.google.com [209.85.221.172])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5B577375AA8
-	for <linux-sh@vger.kernel.org>; Mon, 11 May 2026 11:29:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.172
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90F4F374187;
+	Mon, 11 May 2026 15:00:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778498998; cv=none; b=EOp9Eafj81g5VUFjh6U9Wi2nkRTpR0/d4ViRbvL5InMfEz2e7Ng1ioq1fPmBlXNk+9l+KCliuj90dTK3RfcclN8P0yoBPdox4G8iptSs5WUasqd2WWGKEzTgGXAjZFX3YR1rsz6e5vLrH33HotGNYK53Q64vDcCJ975h8imFbKA=
+	t=1778511603; cv=none; b=Jjy8td9BWiCACSQBkMAqvSIna516A7880Qbjs1rn2y044sOVqqkNnlwTqB20kqLxc+tzuREpz4b37Mvd41hJKgis+t3V43s2AercPCZw1FdXefAmu6AAxIk3f0qhADXu7Mvt0QcjcqNEBXZc+b3oTInUAudeCxyomRcSSIOImNc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778498998; c=relaxed/simple;
-	bh=qMKsZ0iVqwC4Sk4L8z7vxV/aAtOsy3b8hlm2mO9koYk=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=BYgW6Q7ONJTmU+tdYaMmIf7jJrz/b8gpernicy/H9DviQ+VUDDvvj9EqMnz9WUmLsdJE3UpFDoElmiiRmHeHTYUI9NKyGRD2LeYPcRiGsFxBzq4Pp60k8TLVdR0rY4dNiWkbWQocK1uWynj7eQknzRLmGTFZvtwndd2zB//Ung0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vk1-f172.google.com with SMTP id 71dfb90a1353d-56f72d27e7eso4552193e0c.0
-        for <linux-sh@vger.kernel.org>; Mon, 11 May 2026 04:29:56 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1778498995; x=1779103795;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=03+u/psjXBXb8DOEfOshJAGZI0gjXk+3GJfCuLxf8ME=;
-        b=jVjJsCOxV5IcExYTf5J3Yv4VW9LDRR+A6lUG3hg0hMeQr6pvjJ7DUNZmSDVNdKUjOx
-         bw9rNWCfz6TuGAMVZkjOa2pQxS9ophqwKuwCY3OlPtoViEb4L64FX8b/OttSTqGZT1c5
-         iUp629VrrAafGJsM/JximQRIsjH9fptAqlK+SbRwDlzjpvT8sCRM8bg6ET+N70l2pk3t
-         kNm/1saegNy19QbNep8N9vR5ZGlVVl7Ff961iUFL7+ZyGXL0tZ96rly3HyMRTBjKaIGa
-         tR5uDAqV3uYXNnAnfaI3AABjlmOtokhaL4hvJeN83x6ejlgVwdSs2f0dboBYoEyjZmMb
-         +oBA==
-X-Forwarded-Encrypted: i=1; AFNElJ8LJL9iMBthb1I605q2sFUUXNGD2DmdSF5Vff1nNeNnB22JaKYr39XJPbaQnwRJEfHUssVoX96QDw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyDfu2ZauRuC9LkaZMYvsGxzlmJ11nuStVlVoyiryLCInMqZI/e
-	8B4tYFmuwWcQD0Iz47pOIWM7u/Rmf4QynfyqtYlTX4BaHvkydDCL46yvGo/BS9WI
-X-Gm-Gg: Acq92OG7Yb5pTYzIJRDE+j/7xACQcc+7BAovZYCXJFRvovTcttazPgzhs8R1a9S53gR
-	HPhsydStPV3EW8Oo3dEI+xYROBdIl9hVjqxoacNUXSr9Gf3k9tUhX1C5NQAI4XB/ub7ifIoTp/u
-	seSJRR8z45z3gJ3nbcMnlpf+mpZ1LIpAsa2+wvtjGKk53ED1Vi+UpNXe1M+fQMmuFQjW05z6qNX
-	BGrTgRZHdEB2xSGaJnOxiAwh4QBvPq2sk641JgEdvL/QMb7O2CY8aNlCA5mIo2xVi768ze/DZLa
-	tmPlOJuTgmogPrkKquoTDoqBjLz6Mq1XnihR3dI3lLaX+B5wQLTJW7ajmIhdY0TgsKhCktABkXV
-	U2Pb3pIVPsdbAZdHBgI72XBdjV5q/00Jj6eAVpwguOhVVG0jzV0HJF2ZEL0+Hx0rN6OzlSKg1D+
-	oWak/y+gXShHdBMWuAVkUMDXQ4zoBXrshcZ+xfbygc0M9FMzy5OU/jZgxWVtF5Tz3EDgVAsgU=
-X-Received: by 2002:a05:6122:1ac3:b0:575:39bc:c6d9 with SMTP id 71dfb90a1353d-5757026674dmr6821603e0c.3.1778498995313;
-        Mon, 11 May 2026 04:29:55 -0700 (PDT)
-Received: from mail-vs1-f41.google.com (mail-vs1-f41.google.com. [209.85.217.41])
-        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-5752425a19csm15326454e0c.10.2026.05.11.04.29.54
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 11 May 2026 04:29:54 -0700 (PDT)
-Received: by mail-vs1-f41.google.com with SMTP id ada2fe7eead31-6312bdd281eso2827261137.0
-        for <linux-sh@vger.kernel.org>; Mon, 11 May 2026 04:29:54 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ/3TDFN9rv2B31U5r8kjRCrcgF8OFknXWrCT/VEzmwK484Qpvnu7TUUWySKreLTTE9QUPHMAH/ueQ==@vger.kernel.org
-X-Received: by 2002:a05:6102:511f:b0:631:a34d:b671 with SMTP id
- ada2fe7eead31-631a34de3dcmr2857599137.5.1778498994636; Mon, 11 May 2026
- 04:29:54 -0700 (PDT)
+	s=arc-20240116; t=1778511603; c=relaxed/simple;
+	bh=L7mGvX3leX4pM/6djYPLzb/k+tkJ1EJqE39VXKyY1HA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Ut0AtJVgqv+mSiA4zOMgayyY4ghK8JD5V8X3Kz7syTioPzNnxQwU7blzUYCpd7Y7G7dAfbY/yQAcBb4nHZHcQAy1Acvwmtq03NvNjMgVJQQXAwV1NAnuaLuFIBRVoWN6OeEGskDUxFBMhXYYZc4VumWWRxeud63FiejPg0p0mCw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b=C2X4XEE5; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="C2X4XEE5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B8199C2BCC9;
+	Mon, 11 May 2026 15:00:02 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+	s=korg; t=1778511603;
+	bh=L7mGvX3leX4pM/6djYPLzb/k+tkJ1EJqE39VXKyY1HA=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=C2X4XEE5SdK05Nd3MqXD1r60wfyOmRRa7UThkwZ4aHnQsLD5ZiMDeroV8Be7zCQ/H
+	 GDzIwQlLsF3rjN5RWi1QomZazqJ7flooxQlBgY30KG7HXFalJfyfXeGsPQs2lo+hRa
+	 PAJhLriIY+O+owuExl3l1Bj3BYTnY3sBE19vAAmA=
+Date: Mon, 11 May 2026 17:00:00 +0200
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To: John Ogness <john.ogness@linutronix.de>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
+	Jiri Slaby <jirislaby@kernel.org>,
+	Andy Shevchenko <andy.shevchenko@gmail.com>,
+	linux-kernel@vger.kernel.org, Biju Das <biju.das.jz@bp.renesas.com>,
+	Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
+	Thierry Bultel <thierry.bultel.yh@bp.renesas.com>,
+	linux-serial@vger.kernel.org,
+	Linux-sh list <linux-sh@vger.kernel.org>
+Subject: Re: [PATCH tty v4 3/6] serial: sh-sci: Avoid deprecated UPF_CONS_FLOW
+Message-ID: <2026051134-revisable-sherry-e5b5@gregkh>
+References: <20260506121606.5805-1-john.ogness@linutronix.de>
+ <20260506121606.5805-4-john.ogness@linutronix.de>
+ <CAMuHMdXs94k3-7YD-yO7p2=+u8waYGAz8mpP5LDbMf3szt4V-w@mail.gmail.com>
+ <87v7d08ztd.fsf@jogness.linutronix.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260510161012.108731-4-thorsten.blum@linux.dev>
-In-Reply-To: <20260510161012.108731-4-thorsten.blum@linux.dev>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 11 May 2026 13:29:42 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXGVNOindjH09KZ7h0jV0ct-gbG=pDA0Lko-jZRBv1fnQ@mail.gmail.com>
-X-Gm-Features: AVHnY4JL8s50LKs1VM7xn5qStkoaOfB_AEqGkZNsKGAk3CPJagLGhct1LTs5Bm4
-Message-ID: <CAMuHMdXGVNOindjH09KZ7h0jV0ct-gbG=pDA0Lko-jZRBv1fnQ@mail.gmail.com>
-Subject: Re: [PATCH] sh: dma: use strscpy in register_dmac
-To: Thorsten Blum <thorsten.blum@linux.dev>
-Cc: Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <87v7d08ztd.fsf@jogness.linutronix.de>
 
-On Sun, 10 May 2026 at 18:11, Thorsten Blum <thorsten.blum@linux.dev> wrote:
-> Replace memcpy() and the hard-coded string length with strscpy() to
-> improve register_dmac().
->
-> Signed-off-by: Thorsten Blum <thorsten.blum@linux.dev>
+On Wed, May 06, 2026 at 02:59:02PM +0206, John Ogness wrote:
+> Hi Geert,
+> 
+> On 2026-05-06, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> >> --- a/drivers/tty/serial/sh-sci.c
+> >> +++ b/drivers/tty/serial/sh-sci.c
+> >> @@ -3369,9 +3369,12 @@ static int sci_init_single(struct platform_device *dev,
+> >>         }
+> >>
+> >>         port->type              = SCI_PUBLIC_PORT_ID(p->type);
+> >> -       port->flags             = UPF_FIXED_PORT | UPF_BOOT_AUTOCONF | p->flags;
+> >> +       port->flags             = UPF_FIXED_PORT | UPF_BOOT_AUTOCONF |
+> >> +                                 (p->flags & ~UPF_CONS_FLOW);
+> >
+> > This seems over-cautious to me.
+> > The last setter of p->flags was removed in commit 37744feebc086908
+> > ("sh: remove sh5 support") in v5.8.  No platform data ever set the
+> > UPF_CONS_FLOW flag before.  I would rather remove plat_sci_port.flags
+> > and this "| p->flags", so we don't have to care about UPF_CONS_FLOW
+> > in this driver at all.
+> 
+> If there is a v5, I will drop this patch. If v4 is acceptable, the
+> maintainer can just drop this patch.
+> 
+> I will leave the plat_sci_port.flags removal as an excercise for the sh
+> folks.
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Ah, this is what confused me.  I've taken the first two patches here,
+can you respin the rest on my branch and resend them?
 
-Gr{oetje,eeting}s,
+thanks,
 
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+greg k-h
