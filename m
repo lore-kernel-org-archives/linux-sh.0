@@ -1,224 +1,158 @@
-Received: from serval.cherry.relay.mailchannels.net (serval.cherry.relay.mailchannels.net [23.83.223.163])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f54.google.com (mail-wr1-f54.google.com [209.85.221.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4539A37BE91
-	for <linux-sh@vger.kernel.org>; Wed, 13 May 2026 04:54:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.223.163
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778648045; cv=pass; b=YYEEiHqrP9KWpVcL8D3BAEBRtm8a9kGRiRCGWjJqwDW3WmqdDyYbH1FrTx8ZJsY3jJpii8ChNFXv5D/OzmOKFKJolmulG8fPOD9cC+ed+whtBqJffHXDB080tXVDEFbNKBeCiDOZzoAmcs/DkhlueqID/w6rQRQFyjbERZL71CY=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778648045; c=relaxed/simple;
-	bh=vDYXrWr5WuhgqeltFVhEaW/YEZfkgto7X0Tj6cby7QA=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=SgiqZ3angwgySA776PNHJMrQYU6QPYQq6E7zVAMWEI/+Nx3wF7rrcO0j87kmEdDXoXGea6qPo1s3hu3zroURiILAt/EVc4uQ8h77M2PqWYr/tp7fjowSYOFqOlmmYDsT+YwKflXCdx/fPqE4OrmmCi/n4uReDV4um34wuvLWxhQ=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=dviI4Qar; arc=pass smtp.client-ip=23.83.223.163
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2426D403150
+	for <linux-sh@vger.kernel.org>; Fri, 15 May 2026 18:16:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.54
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1778868969; cv=none; b=saw5VV6hyA2Vyv2MzHHFGcK7tbfrPnwV6MdUkhHwkSE01jdw7kPAuImrQ9OaPyYX65SPF3NZynYFpBfkzSVYZV9vmwtR7eAbZaGNVXLwLi1GSwz7R5KfV5NgtzTuWMszHUF/7/ORSuefRdfUtbSykvbZnpVrngn4Bs0qlKs/fQw=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1778868969; c=relaxed/simple;
+	bh=462IIuZWKSb2z2va0IZCI1UQVrUp+oQCeV2bIS5QOQ0=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=prFzpkwL1DAmrVzRmgiEA8s5fq8kx8okcluzW5c26OuigcpqqY2y+9q2hVCFrmAR0YeIz3kOIb2frvgQ9nD4ZxdgY8XEFqz1eiH/+k00lW0c5IrZ4zcIooUlXBLlxl2mrVLbxwTMjrD9+kkD0+nms3IcpaxcRAhql/KLUF06Yd4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=UBPO4rf8; arc=none smtp.client-ip=209.85.221.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="dviI4Qar"
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 96004461F42;
-	Wed, 13 May 2026 04:35:51 +0000 (UTC)
-Received: from pdx1-sub0-mail-a210.dreamhost.com (100-104-1-130.trex-nlb.outbound.svc.cluster.local [100.104.1.130])
-	(Authenticated sender: dreamhost)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 29E8E461F9D;
-	Wed, 13 May 2026 04:35:51 +0000 (UTC)
-ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1778646951;
-	b=VVvjQBq9Xl2S5v4dVaSeDEcE1P9grPSJzIcuVXdIrifO2GBcjMfzN7+ZzUhJusSge2YgB/
-	LJENJZuSAc59RVR6TYJBCcWGtuVgZDuZqhk1Obs+dtj2/TRJdBKEwyspSsIkSowX5JA+0I
-	m77BWmUBvry5ic8G25VyNa7xFUAR/ZjCVEQQ/wFOu/rVyuw2Qok3OAOBwqPC0dXI2GTcp/
-	RHYLQaMpHYJp6Jo4StzBjDwQ8qSErCjIM160JfsNbk5pf0f5CYZFg4usM+slUMpwBeuLeI
-	/dX49DevF3xfRbWoIBvwfm/6x9EknoXvbQQOP2oX9tcu1OCZ8klxAbA5WvBlNA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1778646951;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:dkim-signature;
-	bh=jwPUGJ3ErJ9cY2VWffWajpHwT3a1fnxUTCoWa50s8pM=;
-	b=LXrbpA6ErNUC5GaKCvf/d3YanmD5oyNQ1wmc1dKUuhQWGkZLmTPWKQ5MEHauDJrlpe8P+n
-	HQ/9w0hH/1KeRf2n9hpQ2a/pLzWaMjbQFPNuWmbfAhDCRJAaymdCSgk3YckG0Q4hp+vNJy
-	OFFviXHsv9/nUda8IVJMt1dXFBc0vlnvACpSJzC1x5EVIdpdtvbRk+9NuOoG2TC1eX62Ba
-	A3nGFAO9qnOpvMwHjmPIWbJqkfNWVPErrmGjts0ZC/JkX6qbjOTHgyIwcQ1KSIzZN3LroI
-	3/g6QZbdUvRdnAPu5Xp3wFEJ1nX6a6D4lvDxe/8J9lq4lo53ExSxpbgWXbkeSg==
-ARC-Authentication-Results: i=1;
-	rspamd-79cfc4d687-s757q;
-	auth=pass smtp.auth=dreamhost smtp.mailfrom=rob@landley.net
-X-Sender-Id: dreamhost|x-authsender|rob@landley.net
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
-X-MailChannels-Auth-Id: dreamhost
-X-Abortive-Stretch: 2fd9873b2cd101d7_1778646951424_788268069
-X-MC-Loop-Signature: 1778646951424:1194582918
-X-MC-Ingress-Time: 1778646951422
-Received: from pdx1-sub0-mail-a210.dreamhost.com (pop.dreamhost.com
- [64.90.62.162])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.104.1.130 (trex/7.1.5);
-	Wed, 13 May 2026 04:35:51 +0000
-Received: from [192.168.88.6] (unknown [209.81.127.98])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	(Authenticated sender: rob@landley.net)
-	by pdx1-sub0-mail-a210.dreamhost.com (Postfix) with ESMTPSA id 4gFgd24zLNzT2;
-	Tue, 12 May 2026 21:35:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
-	s=dreamhost; t=1778646951;
-	bh=jwPUGJ3ErJ9cY2VWffWajpHwT3a1fnxUTCoWa50s8pM=;
-	h=Date:Subject:From:To:Cc:Content-Type:Content-Transfer-Encoding;
-	b=dviI4QarLmTpfOQUecGdIqa6VNy/aIdE/lpA8TC0B/WIhUJeInhG3LONwBMTHVc8R
-	 VUbWx5MZu8Mh0+Mmzjsd7zSMhhMmprgLtEqGEINrbVaCdmkB3TQFYVDybW405pSPa/
-	 qX5FSmf/S73gkVr5nkmHNBIjFEoAuqqZUA04RToJNNC9Jk7+m8olqOOw5hzAssCTey
-	 0LE2/ug/c1ZPJhYIV4uzUWQUJf/OvDtZj/jexdveBkGdJV3iHMtlFW016setCWm4gL
-	 Q6ff65IzhFxMdiBTnpXBMKRt4kiqhlyHxIWw+1o3YvS4auOm9Xcm5cUvHSYeCHj+Ki
-	 X5yOoZ38TRhew==
-Message-ID: <9dd69630-cdcc-4708-b53f-8cd7c8a8e330@landley.net>
-Date: Tue, 12 May 2026 23:35:49 -0500
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="UBPO4rf8"
+Received: by mail-wr1-f54.google.com with SMTP id ffacd0b85a97d-45d96d21e82so35580f8f.0
+        for <linux-sh@vger.kernel.org>; Fri, 15 May 2026 11:16:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1778868966; x=1779473766; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=9KSj7BhGKMu4dEn7f6TZANHhuDLD6LpO6jlTgA6yCJg=;
+        b=UBPO4rf8vogPuOAI8AbjCohkWpm0XAg6srxM8hH17e0hdtMh5RrMNIqHoRVAf11Rtr
+         u7ajRpTeqBjN7xIcYwKqMZXYhSo36iMw38UZWcD16gMk+oVtOIEUhwNxAQkfl2sdoetP
+         mJFnKeb67rcOXFenZum1KP6BRUz2YzbEVv4GX414L4YIVYCjvcMDEoj1XuNLwU+6suly
+         ZO2/P/p5XUwCgkVM0ROmcs1bt+RnKW0IUhh8GhvOPM11vIJ38ksBAU/dbfRRPyBS+1ad
+         53U+90bAZhao+HrYlsQTHQvf/HzgUSJlMVm6aPczEMLTp6X1esSoyKGzAs0/81hSbiAP
+         rBDg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1778868966; x=1779473766;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=9KSj7BhGKMu4dEn7f6TZANHhuDLD6LpO6jlTgA6yCJg=;
+        b=HdOnXQ94u9nWl/G6obJyd8nNL4fbXra19AmmzqmksXWjEn+bhXTtp9QCrxrF0CIvbs
+         nnEsT9I44PJkNYmrR/HeIo+TMldv9PnBjMoB2Rz3RfHTThZnhak+d6RH2ig9Wo8vIYdf
+         09jRT9bOtMtwjqnrNspglcorWFHQVXVORh0xaBNy8QM24h6oyJ5evQu1DBeSFNLPrJc7
+         YJ4T8wmIBtrQXGO1Y1Rcl1rB8XkNSlbPx1JauDRbiLDO4vpak4pkLfIBNvuySoZ8kWXY
+         GgCpcLK5XFBn5ZPDNxdv6JflshCRpHMDj841S5jyGO59vQyf6JdHCeaWtZCH6GTU1tzc
+         8G4A==
+X-Gm-Message-State: AOJu0Yz6j5ary0AbJmVoZfQbjDem9qGUw/USGL2UeGtpQjsnyG14XNfW
+	COqCpACyfArNK5cRa88rqNtVItMABMNcA+sXMNg45tkLcaXt7Tld6e4/uIbjIGs=
+X-Gm-Gg: Acq92OFJumgp2T9B6sUqbK6lbnyFZSeYasgXPDx9Ch3cD+aXNc8CYAXwrTC47DsBhVq
+	M+73r3k4kfKjSyM/4sYOhN8NvlCaSKteW4X/EemZJC+5ZkZgyYRvH+x7ifoRs1LW12FJ7u0sjaF
+	/1NzBT6Nfw/1j0gNXS5PHQxhPotzkUbxYNKVUCCfcOUWKQ5moq6poElq+MUA4iE5f2GytU3sJDd
+	KsJWXaPyKtg4oSSMiJFS/0BpfVJbCmpQ5jDcQXaEsboOt+ZHOw96L7dLgI8p4E85HQHW2oKzQfM
+	A8Bcy9GpoQsDPjNn92KupDQWRErUA5o3PJEExzJat+1EWpVJ6tTVp3q3XVLwy8g6jSNDmj9q2Gq
+	xm0YuOmBCRjl1tODPRqlyVJyfMg8NBgxG3G9gq4zuMpkzkwqUXphU1ftSVRxXaduryvkqOhFV/J
+	prq4zD+lnSWTiM73dHJIrxXvh5AaXhMCJ1my/+BA0P0HJFVl9OZe5M8KpsLNSYerPfzvdb2LqTQ
+	ijqE8g=
+X-Received: by 2002:a5d:5d01:0:b0:43d:73d4:b34 with SMTP id ffacd0b85a97d-45e5c5a10b0mr7341877f8f.16.1778868966089;
+        Fri, 15 May 2026 11:16:06 -0700 (PDT)
+Received: from localhost ([2a02:810d:4a94:b300:fb24:41ce:1d7:fad9])
+        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-45d9ec39806sm16372821f8f.9.2026.05.15.11.16.04
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 15 May 2026 11:16:05 -0700 (PDT)
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: linux-sh@vger.kernel.org,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Rich Felker <dalias@libc.org>,
+	Artur Rojek <contact@artur-rojek.eu>
+Cc: linux-kernel@vger.kernel.org,
+	Florian Fuchs <fuchsfl@gmail.com>,
+	Adrian McMenamin <adrianmcmenamin@gmail.com>
+Subject: [PATCH v3] sh: maple: fix empty port handling
+Date: Fri, 15 May 2026 20:11:15 +0200
+Message-ID: <20260515181115.3244161-1-fuchsfl@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Toybox make root no longer works as expected
-From: Rob Landley <rob@landley.net>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- "D. Jeff Dionne" <djeffdionne@gmail.com>
-Cc: linux-sh <linux-sh@vger.kernel.org>,
- Geert Uytterhoeven <geert+renesas@glider.be>,
- "D. Jeff Dionne" <jeff@coresemi.io>
-References: <359d107fd9fe92a55e77be84c26d9ac86112fe13.camel@physik.fu-berlin.de>
- <71c6a925c748fb3c9c2af30362387f0e562c0f6f.camel@physik.fu-berlin.de>
- <55D40750-934F-4F70-A19C-11DC5F97A389@gmail.com>
- <15ca13ffdfa494b4d774f75d3daaee2ac7a8c93f.camel@physik.fu-berlin.de>
- <acc36891-6148-429c-aa99-3cf7c6681d6f@landley.net>
- <84b1391eb542b5cd6bcbecdfbc63124187265402.camel@physik.fu-berlin.de>
- <003c0770-c6f7-4fcf-b11e-74f42bfc14b8@landley.net>
- <6bd93131318b8e78d49fdc5f3e5fecc053f9c046.camel@physik.fu-berlin.de>
- <ef22a5de-d945-4080-9f4a-f5a1ab9de1dc@landley.net>
-Content-Language: en-US
-In-Reply-To: <ef22a5de-d945-4080-9f4a-f5a1ab9de1dc@landley.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-On 5/11/26 18:08, Rob Landley wrote:
-> The end of line not at end of file, missing operand, and invalid 
-> operands for opcode seem relevant, and the fact it's happening in the 
-> middle of a nested macro expansion implies that the code being fed into 
-> the actual compiler plumbing may be nuts here, but I'd have to cc -E and 
-> then cc -S the result to see what actually happens.
+Fix empty Maple port handling so the bus works with fewer than four
+populated ports and devices can be hot-plugged at runtime.
 
-The barfing compiler invocation is:
+Cast the response code to s8 so 0xff is handled as MAPLE_RESPONSE_NONE,
+continue scanning after empty ports, and process devinfo replies for
+empty unit-0 ports.
 
-sh2eb-linux-muslfdpic-gcc -nostdinc \
-   -I./arch/sh/include -I./arch/sh/include/generated -I./include 
--I./include -I./arch/sh/include/uapi -I./arch/sh/include/generated/uapi 
--I./include/uapi -I./include/generated/uapi -include 
-./include/linux/compiler-version.h -include ./include/linux/kconfig.h 
--include ./include/linux/compiler_types.h -D__KERNEL__ -I 
-./arch/sh/include/cpu-sh2 -I ./arch/sh/include/cpu-common -I 
-./arch/sh/include/mach-common \
-   -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE 
--fno-strict-aliasing -pipe -m2 -mj2 -mb -mno-fdpic -Wa,-isa=sh2-up 
--ffreestanding -fno-delete-null-pointer-checks -O2 
--fno-allow-store-data-races -fno-stack-protector -fomit-frame-pointer 
--fno-stack-clash-protection -fno-strict-overflow -fno-stack-check 
--fconserve-stack -fno-builtin-wcslen \
-   -Wall -Wextra -Wundef -Werror=implicit-function-declaration 
--Werror=implicit-int -Werror=return-type -Werror=strict-prototypes 
--Wno-format-security -Wno-trigraphs -Wno-frame-address 
--Wno-address-of-packed-member -Wmissing-declarations 
--Wmissing-prototypes -Wframe-larger-than=1024 -Wno-main 
--Wvla-larger-than=1 -Wno-pointer-sign -Wcast-function-type 
--Wno-array-bounds -Wno-stringop-overflow -Wno-alloc-size-larger-than 
--Wimplicit-fallthrough=5 -Werror=date-time 
--Werror=incompatible-pointer-types -Werror=designated-init 
--Wenum-conversion -Wunused -Wno-unused-but-set-variable 
--Wno-unused-const-variable -Wno-packed-not-aligned -Wno-format-overflow 
--Wno-format-truncation -Wno-stringop-truncation -Wno-override-init 
--Wno-missing-field-initializers -Wno-type-limits 
--Wno-shift-negative-value -Wno-maybe-uninitialized -Wno-sign-compare 
--Wno-unused-parameter \
-   -DKBUILD_MODFILE='"kernel/nstree"' -DKBUILD_BASENAME='"nstree"' 
--DKBUILD_MODNAME='"nstree"' -D__KBUILD_MODNAME=kmod_nstree \
-   -c -o kernel/nstree.o kernel/nstree.c
+Tested-by: Artur Rojek <contact@artur-rojek.eu>
+Acked-by: Artur Rojek <contact@artur-rojek.eu>
+Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+---
+v2->v3: No functional change. Condense commit message and add Tested-by,
+        Acked-by tags. 
+v1->v2: Don't break hot-plugging of new devices to empty ports.
+        Explicitly cast the response code to s8 to use the existing
+        logic, that relies on signed chars. In the case of 0xff (all 1s,
+        DCs TIMEOUT response) that was interpreted as 255 unknown response
+        code, which blocked the maple bus, as busy was never reset. Add
+        condition to maple_response_devinfo() to process the devinfo
+        for currently empty ports.
 
-I turned the -c into a -E to get a preprocessed file, and since -E ate 
-all the -I and -D you compile THAT with just:
+v2: https://lore.kernel.org/all/20260426212714.2286437-1-fuchsfl@gmail.com/
+v1: https://lore.kernel.org/all/20251112190444.3631533-1-fuchsfl@gmail.com/
 
-sh2eb-linux-muslfdpic-cc -std=gnu11 -fshort-wchar -funsigned-char 
--fno-common -fno-PIE -fno-strict-aliasing -pipe -m2 -mj2 -mb -mno-fdpic 
--Wa,-isa=sh2-up -ffreestanding -fno-delete-null-pointer-checks -O2 
--fno-allow-store-data-races -fno-stack-protector -fomit-frame-pointer 
--fno-stack-clash-protection -fno-strict-overflow -fno-stack-check 
--fconserve-stack -fno-builtin-wcslen -c nstree-pre.c nstree.o
+ drivers/sh/maple/maple.c | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-And even though that says it's barfing on line 1640, which is the 
-declaration of raw_atomic_sub_return_relaxed, if you delete all the 
-functions after that in the file it doesn't fail. In fact, if I delete 
-JUST the last function from the file, it succeeds.
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index 5585f220e495..8e7bb42aef07 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -445,7 +445,7 @@ static int setup_maple_commands(struct device *device, void *ignored)
+ /* VBLANK bottom half - implemented via workqueue */
+ static void maple_vblank_handler(struct work_struct *work)
+ {
+-	int x, locking;
++	int x;
+ 	struct maple_device *mdev;
+ 
+ 	if (!maple_dma_done())
+@@ -474,13 +474,10 @@ static void maple_vblank_handler(struct work_struct *work)
+ 				if (!mdev)
+ 					break;
+ 				atomic_set(&mdev->busy, 1);
+-				locking = maple_add_packet(mdev, 0,
++				maple_add_packet(mdev, 0,
+ 					MAPLE_COMMAND_DEVINFO, 0, NULL);
+-				if (!locking)
+-					break;
+-				}
+ 			}
+-
++		}
+ 		maple_pnp_time = jiffies + MAPLE_PNP_INTERVAL;
+ 	}
+ 
+@@ -578,7 +575,8 @@ static void maple_response_devinfo(struct maple_device *mdev,
+ 				   char *recvbuf)
+ {
+ 	char submask;
+-	if (!started || (scanning == 2) || !fullscan) {
++	if (!started || (scanning == 2) || !fullscan ||
++	    ((mdev->unit == 0) && empty[mdev->port])) {
+ 		if ((mdev->unit == 0) && (checked[mdev->port] == false)) {
+ 			checked[mdev->port] = true;
+ 			maple_attach_driver(mdev);
+@@ -644,7 +642,7 @@ static void maple_dma_handler(struct work_struct *work)
+ 			recvbuf = mq->recvbuf->buf;
+ 			__flush_invalidate_region(sh_cacheop_vaddr(recvbuf),
+ 					0x400);
+-			code = recvbuf[0];
++			code = (s8)recvbuf[0];
+ 			kfree(mq->sendbuf);
+ 			list_del_init(&mq->list);
+ 			switch (code) {
 
-Let's try ripping out some of the decorators:
+base-commit: 6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f
+-- 
+2.43.0
 
-sed -i -E 
-'s/__attribute__\(\(__(always_inline|unused|gnu_inline|no_instrument_function|always_inline|warn_unused_result)__\)\)//g' 
-nstree-pre2.c
-
-Still dies.
-
-sed -i 's/static inline/static/g' nstree-pre2.c
-
-Still dies.
-
-Hmmm, still a 2.1 megabyte file, bit much to attach here. Let's see...
-
-I switched to -S instead of -c and got
-
-during RTL pass: final
-kernel/nstree.c: In function '__se_sys_listns':
-kernel/nstree.c:729:3236: internal compiler error: in change_address_1, 
-at emit-rtl.c:2275
-   729 | SYSCALL_DEFINE4(listns, const struct ns_id_req __user *, req,
-       |
-
-Which is because all those "# 123" lines in the -E output, lemme strip 
-those and...
-
-nstree-pre2.c:62345:8: warning: 'sys_listns' alias between functions of 
-incompatible types 'long int(const struct ns_id_req *, u64 *, size_t, 
-unsigned int)' {aka 'long int(const struct ns_id_req *, long long 
-unsigned int *, unsigned int,  unsigned int)'} and 'long int(long int, 
-long int,  long int,  long int)' [-Wattribute-alias=]
-
-Huh? (I mean it's been doing a lot of warnings because I dropped the 
--Wno-gnu-stupid section, but now we're down to one and it seems 
-potentially relevant? Anyway...
-
-during RTL pass: final
-nstree-pre2.c: In function '__se_sys_listns':
-nstree-pre2.c:62345:3236: internal compiler error: in change_address_1, 
-at emit-rtl.c:2275
-62345 | d int) > sizeof(long)" " is true");})); do { } while (0); return 
-ret; }
-       |
-
-3236 is the closing curly bracket on giant line. And again, if I delete 
-everyting AFTER that line it works. Stick in a newline at each semicolon 
-(and zap the silly #pragma gnu debug pop whatever that is) and... It 
-complains that the last curly bracket of the file is the problem now.
-
-I think maybe it's trying to inline __do_sys_listns() into sys_listns() 
-but, sticking __attribute__((noinline)) on both the declaration and the 
-definition changed nothing. :(
-
-What does kernel/nstree.c do, anyway? It's a large lump of added code 
-making the kernel bigger, but there's no config symbol I can switch off 
-to remove it (kernel/Makefile has it in obj-y unconditionally). But 
-that's modern Linux for you. Bigger and bigger...
-
-Rob
