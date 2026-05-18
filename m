@@ -1,63 +1,63 @@
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 306933F7870
-	for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 11:47:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8BF453F86E1
+	for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 11:47:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779104834; cv=none; b=exb2tc3CV2FSqHOG8xtsgdTJU88tfZV2nl2z35akKE+VVJkzw+JW4rgNCRoYMtFLLL5sQ3I5LQVzr/jnrtvNOuPk7G3hCVRT3/4j5zYDb29CAPjSWEzQ+LTz3KyLrGo2yQNBK264cvRCBoktOcqBKETtul96074crhuMrIudc3c=
+	t=1779104836; cv=none; b=ZGmFb+OY5Je7w+zZRYzoPa3uT4Ggwdb6+3t6Ksc6mL3U22FB+EGLNLQcZOpSARixTK8Rw/dNAnh4kwvKclOe4o2j+Aq1Pb0EbToGm+shrjpSwN2gfEPRktnizhnZ+QOzMuRKjvzOJTY728Bf/Q4PKi3nTNfn1nPgt0zZ7sPN+UA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779104834; c=relaxed/simple;
-	bh=5agnIUk6zVfimPSXwREgWs2+7BJvB3+u1r1/4XX7nYM=;
+	s=arc-20240116; t=1779104836; c=relaxed/simple;
+	bh=1GKxGECc+cPoJ1DVleU9/qymiUPEf3nJCKu1WV+4Q5o=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Y7V/9HdoWo3YleaGO5Q4qy9YaULLToiImGCcvYv6AWCFBAxercGDg6iXMjKYGbZvY9Qnwd9iovBcTRS8dVOIsR2al3uyFq3ajqaqHBwlet8BpAhwmurpJzQsUiYDDR/T13YI2FCnqs094O/bnLiPydppl+m+D1m85Pkvu9otK7U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=rjgYfL5F; arc=none smtp.client-ip=209.85.128.46
+	 MIME-Version; b=bYWLjjalxxRZV5jtgFW/viITL2YxVSch7f44v0gl44+SV+bPGBL/Bl7hjPaCtn9CU6sor4ayguHpVm0tyq+BSSWet3pwDuo7YmS5NGMNPAz7EzfC5Dq/JWzYac9lmIomTB4Q09CTDFaUaVgkVLOdolthGDP94NfTWpOsi18jnMY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=h7ic0r9A; arc=none smtp.client-ip=209.85.128.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="rjgYfL5F"
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4891b0786beso15512515e9.1
-        for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 04:47:13 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="h7ic0r9A"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-48ff4f8ef0dso24869095e9.3
+        for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 04:47:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779104832; x=1779709632; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1779104833; x=1779709633; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=1ud+sEG7q0wP0zBzQht1NZnMd2Z7mvrdCEOMs+je9r8=;
-        b=rjgYfL5FT8Y1o3u0yih69Pwfleg9GBjPpfmtxGux1Cvq1QoWkOGqFThwh7BKJxVn05
-         DOlyeMbO2coGZV38L6a5jnlD44UXWIK4H4yEj/GZloVa8y9RcwYSe6HZl9PRzb+fBtNl
-         07zapUG5OZR+5muwvt4y9WyDOEMxOHVY/F7CLXIF3grK++weOyONBSvDbozwN+Md4fet
-         ln0Az2uMRqVvg+BIY0hrCC43ZBNkEq3D/ywshjCfMeKggTHkfEOgIgRMDslVNXuqLhRx
-         bPB3YtCZiUv9wImDzCM/Kjdd+4M+Uns+Hbib6vzD5iiWOSG2W4yDWx8I9PTWv+nVp24S
-         NxQw==
+        bh=ezhWSslS+RucQI+0tAHxOGAEb51o6QdhaggvM2yWnxk=;
+        b=h7ic0r9ASC0r1avqvot7zv7rlYcs9qDWIm6KxIcdRGqncy3/dmuY/MPlT+zWJrHcMM
+         dPQI3pYQpmBVKtPHZMyGGnwp/O6XPbz0uQYWVgKA/MYK/eZAttWBoaGX3dnff67WdMlA
+         ZbcD1pfv8hnZjDm2sp8Ywi51sjznizFk9RqidOm/fcxYEoGjzbZHuWQ90DPkQ4m/Sprz
+         sgeHp8ys+dnB45+AHSLuGQaCBi4GSxHZ8rgHfNtLEiewzOrvP61pQ3bruo2QxxBbh+Bh
+         mNLpmJEGWVJM0B61NDh7cU8m3PePQi7IYUqdL4scQqIRYk720KwWV7HkI4HwjMkjoXve
+         o+jg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779104832; x=1779709632;
+        d=1e100.net; s=20251104; t=1779104833; x=1779709633;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=1ud+sEG7q0wP0zBzQht1NZnMd2Z7mvrdCEOMs+je9r8=;
-        b=c7e5TTqlosEnJB6JNHpu/yA3+4Kts2v3EKMuvw0HhNCrbQ29xzw3j2PkPnA/HAyNiL
-         52PeSwXNwS+5UcprSuLbMl9x2H2/x9vffqZYFADj30Nz7nqPgbf6Y9l106aLZoAmhVVm
-         75cA88b8VMxQRufunypuquGkjo4bRxtq6/6kRnriOi5v6rkqCN7Ew7d8cjSjzaAK699a
-         7n2hkSn7HcqwYVbyZkUnvlO206iUkuW5sUzl5rkUKNe1x7wODKFt4Svql08+8cxvZ7nj
-         faBtlRoU7YyMSpXWgAgUgQ4NSsHefebpNZ8ly0o6wiCLj92N4poE0AbNtVMJwwMLfc9L
-         U1+A==
-X-Gm-Message-State: AOJu0YzfWfLYkSUCHuABL+hxqgMnXMAjK0Nazhts1MPA6QaKoOz/pR90
-	ohvEIWUJK74SvEHC6E+EQ57SslMK+H0R12Qc6KwAU1/7iriDN4aL8BM=
-X-Gm-Gg: Acq92OG+hhuG3sWd6LXbi26IyiyeVMMpn7Kjzu7+DG/XcFJ2X8WzZUbX4L8cvUTdpT5
-	TApcw53yy4r+WbK83rK8trBDqgohJrt1pBjgG5ASll1ziigeq4YYX2Inc0B6zvnUFhAEyIGXMJO
-	2L7dYF2F5xN0OHYUsLF6n8Vi9s5i7WNZNIo4VvOcFbzSLcJ5n37mM1J0N50nvjbKT1KVWrYuBrQ
-	a6Nj+u3bDME0rHibHOUyCejJiNoI4i+vNt9aaVdRS5j6K7nRhQFVdjXRQVf5K3PYd8m/ztYog+b
-	8YELhlEWkEOWwLcJGf9tNXn73nIBm2g+joofy53YWjZ9jIbDMw0XMEiWd92xi05jVv7HpqmvGd7
-	QN6HtfPiyuzFMhjvKv9Yv02qBCJqjaQqgMLL4LIT2oVQNiHxt1WI74iJ7ZgjOjT4pRD/PKKoEAV
-	mND8yUbeX3bxj2yA/w5GJDd9GnVHXYuJfmj09hWo9WEdL/QsvcAULTdaSPRl2ddxefaZr6IBtxE
-	vlQquHI/0hbEuuGz4/3Q7pLYLAg7Q==
-X-Received: by 2002:a05:600c:3f1b:b0:48a:7965:b943 with SMTP id 5b1f17b1804b1-48fe661db6dmr224835215e9.29.1779104831563;
-        Mon, 18 May 2026 04:47:11 -0700 (PDT)
+        bh=ezhWSslS+RucQI+0tAHxOGAEb51o6QdhaggvM2yWnxk=;
+        b=Ufy6+G9/jXUDMND5XaFUEfVoU4NfZJO/hFufeErwE0uwKLkCP4scseB/fm7vs2cOK3
+         7Rz7eg7bwghG9JMwGnAS2YbL/LYEHsaOfkMgEYCupkEMKlUk5HdwCzGO+fI/U5ghNRST
+         8Q2Jm/sxEvgtjPJ2r9qSIpO+6ghsn56k+srLSgFFungJSJYgxSY6gNAzR2xgODrCr5Vb
+         CsZ3rbqAhT4Oc4GPSK92z7aH5zOnaZKNpzTYOunSztD9f8wxhGG0aS9kjktxNBIqAYsa
+         8xwltF7wcPf7hPaqXugMVoiMftwfL1NY6UD3JpTl43AE1wO8KTfSjmCffKNG9+UmCYEL
+         HCkg==
+X-Gm-Message-State: AOJu0Ywpc6KkZRgwEQyJEvpwHqwsLHCZZOxM3Qze/3V8CLofqYjTRkhu
+	PZojrv00ldWI0atV5nOfHe93oFwAAP1pZYnJC3lvhUQG3Na6C7tj5ZSTJmYAYi4=
+X-Gm-Gg: Acq92OE6rdqMoCDJaWJ0mDhtDVTc9QG+enW6RuylxyEoUjKFlZeV1ezqfOPnqgkz3PR
+	tKlwzf5oEAMu+cuu0VjLq+pPhPiwtMxIYjyIb6PfxKcvdvqB5zg8i6FF42jNLoeDPM1/mIrH/3l
+	xbQmRUiNOOVfKcbvlgR/jrfsHeq9SmRrbbm6Zvm2YeEcmFT86S3ADm/RtJ0+QqXi8bhDQXQ7tEQ
+	+fk4aJOoZPG/rwkP+R5Bo5OhI+Geq9BP0cVhnN1hvj7sQ24PUbdfvh3yA/o7Ii3G2LVE58Vf0E0
+	QT0A8F7bXtI9AqTElxuye2bPqS9URXIiPuhbxzdfsVjAoG2RPsiD5N85d7w5SiH9yOSYn7gtg2f
+	0hJUwlU5lHCzEfIl6TVI1LkACej4D9bin8TozUqFMYXIKoPt8aHPmHa0ukq3vi0buk2oUIgU62Q
+	5XGshB3Yg4dzFASNf6lrEt1e5HOdiQCsRhAZGxQ/8G/GLkruOGs5MVMlLyxhPh0biD6dJZWhBVH
+	kXqmsOG
+X-Received: by 2002:a05:600c:4e87:b0:487:21c7:2885 with SMTP id 5b1f17b1804b1-48fe60e142emr233996405e9.5.1779104832846;
+        Mon, 18 May 2026 04:47:12 -0700 (PDT)
 Received: from localhost ([2a02:810d:4a94:b300:f15c:fd38:3fe1:9653])
-        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-48febe585absm82341205e9.19.2026.05.18.04.47.10
+        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-48fe53ab671sm250281165e9.1.2026.05.18.04.47.12
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 18 May 2026 04:47:11 -0700 (PDT)
+        Mon, 18 May 2026 04:47:12 -0700 (PDT)
 From: Florian Fuchs <fuchsfl@gmail.com>
 To: Miquel Raynal <miquel.raynal@bootlin.com>,
 	Richard Weinberger <richard@nod.at>,
@@ -70,9 +70,9 @@ Cc: linux-sh@vger.kernel.org,
 	Adrian McMenamin <adrian@newgolddream.dyndns.info>,
 	Florian Fuchs <fuchsfl@gmail.com>,
 	Artur Rojek <contact@artur-rojek.eu>
-Subject: [PATCH v3 2/3] mtd: maps: vmu-flash: fix fault in unaligned fixup
-Date: Mon, 18 May 2026 13:45:20 +0200
-Message-ID: <20260518114521.81564-3-fuchsfl@gmail.com>
+Subject: [PATCH v3 3/3] mtd: maps: vmu-flash: fix NULL pointer dereference in initialization
+Date: Mon, 18 May 2026 13:45:21 +0200
+Message-ID: <20260518114521.81564-4-fuchsfl@gmail.com>
 X-Mailer: git-send-email 2.43.0
 In-Reply-To: <20260518114521.81564-1-fuchsfl@gmail.com>
 References: <20260518114521.81564-1-fuchsfl@gmail.com>
@@ -84,55 +84,35 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Use kzalloc_obj() / kzalloc_objs() to allocate the memcard structs,
-instead of kmalloc_obj() / kmalloc_objs() to prevent access to
-uninitialized data.
-
-Fixes runtime error: Fault in unaligned fixup: 0000 [#1] at
-mtd_get_fact_prot_info.
+The mtd_info contains a struct device, which must be linked to its
+parent. Without this, the initialization of the MTD fails with a NULL
+pointer dereference.
 
 Fixes: 47a72688fae7 ("mtd: flash mapping support for Dreamcast VMU.")
 Cc: stable@vger.kernel.org
 Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
 ---
-v2->v3: no functional change, add Fixes, Cc tag according to feedback
-v1->v2: no functional change, just rebased.
+v2->v3: no functional change, added Fixes, Cc tag according to feedback
+v1->v2: no functional change
 
-v2: https://lore.kernel.org/lkml/20260427114750.2480900-3-fuchsfl@gmail.com/
-v1: https://lore.kernel.org/lkml/20251117224408.498449-3-fuchsfl@gmail.com/
+v2: https://lore.kernel.org/lkml/20260427114750.2480900-4-fuchsfl@gmail.com/
+v1: https://lore.kernel.org/lkml/20251117224408.498449-4-fuchsfl@gmail.com/
 
- drivers/mtd/maps/vmu-flash.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/mtd/maps/vmu-flash.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/drivers/mtd/maps/vmu-flash.c b/drivers/mtd/maps/vmu-flash.c
-index 75e06d249ce9..b76d0609d1b7 100644
+index b76d0609d1b7..10244e6731d0 100644
 --- a/drivers/mtd/maps/vmu-flash.c
 +++ b/drivers/mtd/maps/vmu-flash.c
-@@ -609,7 +609,7 @@ static int vmu_connect(struct maple_device *mdev)
+@@ -547,6 +547,7 @@ static void vmu_queryblocks(struct mapleq *mq)
+ 	mpart->partition = card->partition;
+ 	mtd_cur->priv = mpart;
+ 	mtd_cur->owner = THIS_MODULE;
++	mtd_cur->dev.parent = &mdev->dev;
  
- 	basic_flash_data = be32_to_cpu(mdev->devinfo.function_data[c - 1]);
- 
--	card = kmalloc_obj(struct memcard);
-+	card = kzalloc_obj(struct memcard);
- 	if (!card) {
- 		error = -ENOMEM;
- 		goto fail_nomem;
-@@ -627,13 +627,13 @@ static int vmu_connect(struct maple_device *mdev)
- 	* Not sure there are actually any multi-partition devices in the
- 	* real world, but the hardware supports them, so, so will we
- 	*/
--	card->parts = kmalloc_objs(struct vmupart, card->partitions);
-+	card->parts = kzalloc_objs(struct vmupart, card->partitions);
- 	if (!card->parts) {
- 		error = -ENOMEM;
- 		goto fail_partitions;
- 	}
- 
--	card->mtd = kmalloc_objs(struct mtd_info, card->partitions);
-+	card->mtd = kzalloc_objs(struct mtd_info, card->partitions);
- 	if (!card->mtd) {
- 		error = -ENOMEM;
- 		goto fail_mtd_info;
+ 	pcache = kzalloc_obj(struct vmu_cache);
+ 	if (!pcache)
 -- 
 2.43.0
 
