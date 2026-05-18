@@ -1,137 +1,135 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97C4A350A18;
-	Mon, 18 May 2026 11:43:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE3213E1D1C
+	for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 11:47:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779104613; cv=none; b=Ukrm1rUZbcBWR0c3fRwHHA6WssRpywWOWUkrYtsNn+aJTMvC0jJY0NC93db8mu5rMsn1x7O0SgIQ4oVSGv6ymrhOVcV24wmWb1jEAb1MAyQ9PFrPBOYwac66K4w7FPZEZAA4hCirESA9fsJV5ixJB7heiqXnUU8dRq5utK2Bhkk=
+	t=1779104832; cv=none; b=NAfU7J9ZPuG5ryoBnncmAUvtF5QVziv4XfG23lvVshjEJRH6U+INdfjVkb7zwfhx7XJj59Ess58CvefvqEv4aLS965w4a13Ds1E+LAcWVX31D9iQvkAs46hNmbeKHWh73fbyaRSfRzNnoqxrJ8yenH/t3kx/ChHVRyMEiGGOnvw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779104613; c=relaxed/simple;
-	bh=NwRHLAJsOaN4Dj+muAR6EQyF5lPlAIab8xZkaoNQArs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=JwQpf1KbWHPZTkTIB8hI3tyt3Gezwm7YJ0z/dfOrh9qxCTndYYSZlsANfndkQR+CZt225AdieiSfhKWfUYjKil5Zf91Mn9zlDA6pUoCIFfAtT9y0/blX3MfeG1sleWP/P5aEn9cQuVQ0nT96bXvWhyOjrMUycuoq3adtqksW4i4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FPJTLxZg; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1779104832; c=relaxed/simple;
+	bh=youasXlMRX9ful6QDGAzpUrQ9X92iBZf9ThkyrDCVjM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=KnoI2E7XOe0b2S2RuhCqWn6ybhfs2eQ64gmCpD+4J/0qsYq4Fz9w2CMvD68IqZi/nDEp8aP17mX9QQzXiPDsZ3HzpQ9rWnI807oiSGTLf/zUWs4qgtSx/7LDDXkKSVjMZiCpW7v2Fycgxgkz24bHh/RFaQzaVkGsXDCYGE0zWms=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=qvd3Flxm; arc=none smtp.client-ip=209.85.128.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FPJTLxZg"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 64987C2BCB7;
-	Mon, 18 May 2026 11:43:30 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1779104613;
-	bh=NwRHLAJsOaN4Dj+muAR6EQyF5lPlAIab8xZkaoNQArs=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=FPJTLxZg5YCe0QNfd49BMjmAxKT9sopqbynLQlobYFv5iz0hapCYXxrE3+nOeMvbf
-	 THbg/Uu529siYkaBgQMfeEiAjMFRQzHvyQbZXX647k0NXtL8W5i1K94MH8d8G5DzhD
-	 b+yyyQoZvQePkAVg6riNbFOherT0VXl8SuuzgViWkzkAwQdF9jSpymnJ2u1FRi16rx
-	 mp2GBvD9pUOWyfXePS6dFLhnCFir5AXOu83JQand5+rLVGEcOTAA+u4CfGlBugKvDw
-	 F6ot2fPHvk7giHcUz+0iky3F3DTv2KJ01QzDcu116hKPO7ftPek5nLOGHdVhTbfN11
-	 94i3E8GCW5UTA==
-Date: Mon, 18 May 2026 14:43:26 +0300
-From: Mike Rapoport <rppt@kernel.org>
-To: linux-sh@vger.kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Arnd Bergmann <arnd@arndb.de>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="qvd3Flxm"
+Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-488ff90d6c7so15877925e9.2
+        for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 04:47:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1779104829; x=1779709629; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=HP1FkQP3upUXw27uw6hA2g2czB6GYP9RbzsbFRYmzIQ=;
+        b=qvd3FlxmKmYpnDsB8SP4FymgVwHw54GhRCok9iHeFZzfOP8T3xaigVjywKcD+MdC6Q
+         ehDJPMFMEYQSi3A2S/pb2WOh79MbDYvMIyY1zHSTIZSH4xEakTm5yNWiOwUEIhA8g1Gb
+         7jCtDgBScxY0lO3K9gVf0/DzNcbBTGaw+kX70Q7jt1DPvvk3rl8r3piKbptjF+RGC2F+
+         fH70d40ET0Nxbh7o9FiaRuMPlIKoBzRTnFxdRKjd+62pzv4plJ5klietqYQYtcMeuOQN
+         3tIFx2nkUmQSj5Ed5Vd+x4jbwH3aS6Hfkf2Gy0s0AVijKxNhrkU0jgQ0E6Ly7S7XsV0s
+         1v5Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1779104829; x=1779709629;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=HP1FkQP3upUXw27uw6hA2g2czB6GYP9RbzsbFRYmzIQ=;
+        b=Tyay+XrbeIBmP+mHonIc9iMmgkreYDD+6VZ8EtsMShqquOlTV8NzarlCCm39Ek2F1K
+         lbCIR3NeD6QzqVoOHo1BEGa+/JGa40sc6SgXxK67IsGce+B2tNy9vOQL1qFY5ohSqmU1
+         kEkNHuyBZYBRpM9IKAG+8iUIcREl6pOzTrPr2c3i4braweMGnYg8yywx7A6Hytwvzt+i
+         emq1g+ExpT/6wPcc2gpHYF9lNDexoC2hsoXSwSfohoWwdJqJ2wROLQ/jArVLGmc6hoIL
+         TcgX8AdjjP23yEkL0UGbXGj8N7bAhHnj9G9ty19xPivYv/dVLzF4B9WJpBnbzto1Hvgq
+         YHjQ==
+X-Gm-Message-State: AOJu0Yy9JPACcV+fJUOo6YnjmwYfle37Sy9PUGOgiykdWZMyIqhtaN8n
+	SCO2DgqPBWvLb6sBnnuqRBvRsOI4Tvn2uyg+iwk0M3oxpGKdtLy0qqc=
+X-Gm-Gg: Acq92OHtnnpBhW0rpUzsrnTyXxUX8Mj05FY3vjoEzMVdAt9NjpY7V+mAyofvggs9GHL
+	mvZyGM1jMxZi9FiN0ck1quHwTBL1mpIo4OLGA7atQMnMfOX8H4Se0apuHYp7opXJVGYKjNKdEFL
+	aJXUK4AZgF+ca2gzYSrj0qtEs+DMsMMVToYEeRAl/E4YNJ3mSW7P3Rl0JvVAAHu3Bh1SuwsVYYq
+	qGpLCMtwRKGQtwvLCNvRRdRgTNsQcO8TrKy0q51GTVAB+l8xe6lGZl2zQmaL+kgV0oIgOdKXZdB
+	C+ILrUr6BljTayTaqI9wbXg3owiey3zqxOpJHJm9lmBcdFCyXVKloMWvAAFsM7uAtQUvOmsSfZB
+	HmYekXvpArFtIYO0xW1h7Olv44P2wzN7QItUIf5fC64gZkeVClgUz86EWqW/fifbeU9ceHLOaZg
+	cIaAxwQ/aODYoNMhjwiXX/525cHu1LbTP3gGzj52juocUtyLMwcaDwcve2lj9fE7zdoyn8ZAT1y
+	Rgym8pi
+X-Received: by 2002:a05:600c:3f0f:b0:48f:99a9:bbcc with SMTP id 5b1f17b1804b1-48fe60ecb9cmr207456935e9.10.1779104829093;
+        Mon, 18 May 2026 04:47:09 -0700 (PDT)
+Received: from localhost ([2a02:810d:4a94:b300:f15c:fd38:3fe1:9653])
+        by smtp.gmail.com with UTF8SMTPSA id ffacd0b85a97d-45d9e767d0bsm35203411f8f.3.2026.05.18.04.47.08
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 18 May 2026 04:47:08 -0700 (PDT)
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: Miquel Raynal <miquel.raynal@bootlin.com>,
+	Richard Weinberger <richard@nod.at>,
+	Vignesh Raghavendra <vigneshr@ti.com>,
+	linux-mtd@lists.infradead.org
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
 	Rich Felker <dalias@libc.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	linux-kernel@vger.kernel.org, linux-mm@kvack.org
-Subject: Re: [PATCH v2 00/10] sh: remove NUMA and SPARSEMEM support
-Message-ID: <agr7XvoWn_-axX1-@kernel.org>
-References: <20260510135546.13554-1-rppt@kernel.org>
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Adrian McMenamin <adrian@newgolddream.dyndns.info>,
+	Florian Fuchs <fuchsfl@gmail.com>,
+	Artur Rojek <contact@artur-rojek.eu>
+Subject: [PATCH v3 0/3] mtd: maps: vmu-flash: Fix build and runtime errors
+Date: Mon, 18 May 2026 13:45:18 +0200
+Message-ID: <20260518114521.81564-1-fuchsfl@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260510135546.13554-1-rppt@kernel.org>
+Content-Transfer-Encoding: 8bit
 
-Gentle ping?
+Hi all,
 
-On Sun, May 10, 2026 at 04:55:36PM +0300, Mike Rapoport wrote:
-> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-> 
-> Hi,
-> 
-> NUMA support for SuperH was introduced a long time ago by commit
-> b241cb0c885e ("sh: Support for multiple nodes.")
-> 
-> 	"... for boards with many different memory blocks that are
-> 	 otherwise unused (SH7722/SH7785 URAM and so forth)"
-> 
-> In reality, this added 128K of memory on sh7722 and sh7785 and 256K on
-> shx3 at the expense of all the NUMA related code in the kernel.
-> 
-> For build of v7.0-rc7 with defconfig and the same configuration with
-> CONFIG_NUMA disabled, bloat-o-meter reports difference of ~76k. Disabling
-> CONFIG_SPARSMEM on top increases the difference to ~94k. And that's only
-> overhead in code and static data that does not take into the account data
-> structures allocated at run time.
-> 
-> And all this overhead has been there for nothing for almost 8 years
-> because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
-> those additional "nodes" could not be used by the core MM because the
-> maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
-> 
-> v2 changes:
-> * remove stale SYS_SUPPORTS_NUMA
-> * add Arnd's Reviewed-by
-> 
-> v1: https://lore.kernel.org/all/20260413104649.852228-1-rppt@kernel.org
-> 
-> Mike Rapoport (Microsoft) (10):
->   sh: remove CONFIG_NUMA and realted configuration options
->   sh: mm: remove numa.c
->   sh: mm: drop allocate_pgdat()
->   sh: remove setup_bootmem_node() and plat_mem_setup()
->   sh: drop dead code guarded by #ifdef CONFIG_NUMA
->   sh: drop include/asm/mmzone.h
->   init/Kconfig: drop ARCH_WANT_NUMA_VARIABLE_LOCALITY
->   sh: init: remove call the memblock_set_node()
->   sh: remove SPARSEMEM related entries from Kconfig
->   sh: drop include/asm/sparsemem.h
-> 
->  arch/sh/Kconfig                        | 12 ------
->  arch/sh/configs/migor_defconfig        |  1 -
->  arch/sh/configs/sdk7786_defconfig      |  1 -
->  arch/sh/configs/se7722_defconfig       |  1 -
->  arch/sh/configs/shx3_defconfig         |  1 -
->  arch/sh/configs/ul2_defconfig          |  1 -
->  arch/sh/include/asm/mmu.h              |  2 +
->  arch/sh/include/asm/mmzone.h           | 42 --------------------
->  arch/sh/include/asm/setup.h            |  3 ++
->  arch/sh/include/asm/sparsemem.h        | 12 ------
->  arch/sh/include/asm/topology.h         | 13 -------
->  arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  5 ---
->  arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  7 ----
->  arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  1 -
->  arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  1 -
->  arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  5 ---
->  arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  7 ----
->  arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  5 ---
->  arch/sh/kernel/cpu/sh4a/setup-shx3.c   | 18 ---------
->  arch/sh/kernel/setup.c                 |  7 ----
->  arch/sh/kernel/topology.c              | 12 ------
->  arch/sh/kernel/vmcore_info.c           |  4 --
->  arch/sh/mm/Kconfig                     | 29 --------------
->  arch/sh/mm/Makefile                    |  1 -
->  arch/sh/mm/init.c                      | 24 ------------
->  arch/sh/mm/numa.c                      | 53 --------------------------
->  arch/sh/mm/sram.c                      |  3 +-
->  init/Kconfig                           |  7 ----
->  28 files changed, 6 insertions(+), 272 deletions(-)
->  delete mode 100644 arch/sh/include/asm/mmzone.h
->  delete mode 100644 arch/sh/include/asm/sparsemem.h
->  delete mode 100644 arch/sh/mm/numa.c
-> 
-> 
-> base-commit: 254f49634ee16a731174d2ae34bc50bd5f45e731
-> -- 
-> 2.53.0
-> 
+This small series fixes build and runtime errors in the vmu-flash driver
+(enabled by CONFIG_MTD_VMU) and the related maple.h. These changes were
+verified on real Dreamcast hardware with a physical VMU. The VMU can now
+be successfully probed, read and written with MTD tools like mtdinfo and
+mtd_debug. Previously, the driver failed to build or crashed during
+probing.
 
+        bash-5.3# mtdinfo /dev/mtd0
+        mtd0
+        Name:                           vmu2.1.0
+        Type:                           mlc-nand
+        Eraseblock size:                512 bytes
+        Amount of eraseblocks:          256 (131072 bytes, 128.0 KiB)
+        Minimum input/output unit size: 512 bytes
+        Sub-page size:                  512 bytes
+        Character device major/minor:   90:0
+        Bad blocks are allowed:         true
+        Device is writable:             true
+
+Thanks,
+Florian
+---
+v2->v3: Add Fixes tag to respective patches, fix subject to previous
+        commits
+v1->v2: Rebased patches and fixed the hotplug issues in other sh
+        patches.
+
+v2: https://lore.kernel.org/lkml/20260427114750.2480900-1-fuchsfl@gmail.com/
+v1: https://lore.kernel.org/lkml/20251117224408.498449-1-fuchsfl@gmail.com/
+
+The original v1 was postponed until the hotplug issue and other runtime
+panics were fixed by the following patch:
+"[PATCH v3] sh: maple: fix empty port handling":
+https://lore.kernel.org/linux-sh/20260515181115.3244161-1-fuchsfl@gmail.com/
+
+Using VMUs while some ports are empty requires the above patch.
+
+Florian Fuchs (3):
+  maple: fix build error due to missing include of linux/device.h
+  mtd: maps: vmu-flash: fix fault in unaligned fixup
+  mtd: maps: vmu-flash: fix NULL pointer dereference in initialization
+
+ drivers/mtd/maps/vmu-flash.c | 7 ++++---
+ include/linux/maple.h        | 3 +--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+
+base-commit: 254f49634ee16a731174d2ae34bc50bd5f45e731
 -- 
-Sincerely yours,
-Mike.
+2.43.0
+
