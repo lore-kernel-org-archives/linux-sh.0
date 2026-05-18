@@ -1,79 +1,127 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from out-180.mta1.migadu.com (out-180.mta1.migadu.com [95.215.58.180])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 04A9A3FD153;
-	Mon, 18 May 2026 12:11:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5B16E2989BC
+	for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 16:53:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.180
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779106266; cv=none; b=pPc2gSGpZwWuab0f/rNwVKQOHQ4ulRem3hB028f56w9WyxGCCvRIYK8nKZyUaJvAdTCOMuvmbUMZMN3gwfLzuIYlxzx5zYtktiRDVIe5FkU4GNnsZd/tBuBs8mgplAa3Yt1+29UrlqOUmky1ky9wkadjF5MvHzY/SPtWuR26vE0=
+	t=1779123233; cv=none; b=YCnMruwJcH0tNQiL2Ex26XkaujG/9+Dt5n9PqSCtLPoNbjALLLyk5/JmIP5Ske40yhonWSN0giPaG5+IhbnapgmXnh6WyabLHurHvdKLMihdETS2iQnx2CT8P0+o1zLip9m8mvuUuo4DecOv2OYQ6c/MyOr1O40HWIJCtcPojno=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779106266; c=relaxed/simple;
-	bh=MMW8Xcy0ozejOhRJ6CyedjM8bREYY/A/20+GskGmUKM=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=OQjgsV6/IqtZaVGqBEaVQwFPHrV2K+/UBCu4iTkeb01L9wxmjBJPdqWdZMLC/VAWAkQWPOowDOlFaG7DuYDocVLICueBtW6/GIDv4uDmFPmMUgR7at6XGe4XPG72SJokTaTahS/cp4qCAS03YTgksbHmfQmDdbv+4rebxblzBfE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=MMe0mM3G; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1779123233; c=relaxed/simple;
+	bh=WnJ4gWii6vGIYcblvWHBrztcZBFygJX95R92ZbX9gzU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=qGhJmP1RyuQfwy6kRHXzy/XnSOlwdzCDpaRqyGUx83FPnzQdA/JID+JKQuEt6J/VR1HYplMP4Tj4PiZOwb8xAVfOhsR/pAIc0KCLN/V995Ma5kdxcm/1rPSIiStVIkV1g/Yi79RfxWqKKP1IH14rwxJlawttwjhq+wlnESlt4KU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=Rmdk40dc; arc=none smtp.client-ip=95.215.58.180
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="MMe0mM3G"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=SXw+Y9FPLLLVyXTKHpJPROy78RD4gYIyHyZ6bURXx1I=; t=1779106263;
-	x=1779711063; b=MMe0mM3GI5xUqj7eemGUl0OB/V8jI95SwFSqHqcZJ6M8ePtfGTk5j7KuO25mD
-	P47V1472QZs4sxPED/gSwBiHPZtrFuC56eiPo3Xuhqjjcs7Us/RmQIfwfqrWHVaCnnKOPCBui5Dz+
-	4oXRVWxEjm2+dGHojbmnRaVuayvpDrOulVA2U1j3nHXynyLjE6SBYe+cyRiqmCKO9utdDiiqQyjuQ
-	EhwPu/B44q9S2vYOGtJeq2Bm6W4dBIi0xg9muSJwpyATwqfNxZXTjv2DLhceqeF7P/pt2aw5r9wwr
-	N8QsKsYBcYN2SSw5XTseCYRHlGYYriW53A5K22Phs4ECkPyDCA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wOwj6-00000002a3Q-3bjt; Mon, 18 May 2026 14:05:40 +0200
-Received: from p5b13a134.dip0.t-ipconnect.de ([91.19.161.52] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wOwj6-00000003CzN-2BzF; Mon, 18 May 2026 14:05:40 +0200
-Message-ID: <adb1db8d1fbb9d219fa041776ae863aa2fc09270.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2 00/10] sh: remove NUMA and SPARSEMEM support
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Mike Rapoport <rppt@kernel.org>, linux-sh@vger.kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann
- <arnd@arndb.de>,  Rich Felker <dalias@libc.org>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, 
-	linux-mm@kvack.org
-Date: Mon, 18 May 2026 14:05:39 +0200
-In-Reply-To: <agr7XvoWn_-axX1-@kernel.org>
-References: <20260510135546.13554-1-rppt@kernel.org>
-	 <agr7XvoWn_-axX1-@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.1 
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="Rmdk40dc"
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1779123218;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=dTW70Khpmv4Wv56aPG+Rcr4F5EYvZo6qHkg+0Adldi0=;
+	b=Rmdk40dc5ZaNPRkaQongReyUZboX6Q7x5ZV+6QkCCv+2zKgBu7gaw3/yaK2b6pbtPXlhHX
+	SHQSr0g2fsR5QRlML3addZ9FiRVL5cfGtyslAvtdW6KepIbI7nx9yqnBibef/PiqOjHrQe
+	N1Zq8Firy88d8ikzCmFEhveJ4ui7ST0=
+From: Thorsten Blum <thorsten.blum@linux.dev>
+To: Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Thorsten Blum <thorsten.blum@linux.dev>,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH RESEND] sh: machvec: clean up and use strscpy in early_parse_mv
+Date: Mon, 18 May 2026 18:53:25 +0200
+Message-ID: <20260518165326.81412-2-thorsten.blum@linux.dev>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+X-Developer-Signature: v=1; a=openpgp-sha256; l=2508; i=thorsten.blum@linux.dev; h=from:subject; bh=WnJ4gWii6vGIYcblvWHBrztcZBFygJX95R92ZbX9gzU=; b=owGbwMvMwCUWt7pQ4caZUj3G02pJDFncLmxRT2V6xaeGmH9ZdovV+E7/sY2bQ4sYbz3Qnv1/q v1vaQWnjlIWBjEuBlkxRZYHs37M8C2tqdxkErETZg4rE8gQBi5OAZiIcwXDP81vH4xcHv47ocYf e+rWJTUG13kvdziYmP4wCWVsvWv2rZyRoV/y1sqp2y2n9Bz0+rzXrY5hG7e+H9+S93L5Ll4NEk/ j+QA=
+X-Developer-Key: i=thorsten.blum@linux.dev; a=openpgp; fpr=1D60735E8AEF3BE473B69D84733678FD8DFEEAD4
+Content-Transfer-Encoding: 8bit
+X-Migadu-Flow: FLOW_OUT
 
-Hi Mike,
+Use strscpy() to copy the NUL-terminated early parameter to the
+destination buffer instead of using memcpy() followed by a manual NUL
+termination. If the early parameter contains a space, use min() to copy
+only up to that delimiter, otherwise copy the entire string. Drop the
+now unused mv_len variable.
 
-On Mon, 2026-05-18 at 14:43 +0300, Mike Rapoport wrote:
-> Gentle ping?
+Remove the redundant mv_name initialization because it is immediately
+populated by strscpy(). Drop mv_comma, which has been unused since
+commit 9655ad03af2d ("sh: Fixup machvec support."), and remove the dead
+from = mv_end assignment. And since panic() is a __noreturn function,
+remove the else branch as well.
 
-It's on my TODO list for this week!
+Change machvec_selected from unsigned int to bool and move __initdata
+after the variable name to silence a checkpatch warning.
 
-Adrian
+Signed-off-by: Thorsten Blum <thorsten.blum@linux.dev>
+---
+ arch/sh/kernel/machvec.c | 27 ++++++++++-----------------
+ 1 file changed, 10 insertions(+), 17 deletions(-)
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+diff --git a/arch/sh/kernel/machvec.c b/arch/sh/kernel/machvec.c
+index 57efaf5b82ae..d737a5a560cd 100644
+--- a/arch/sh/kernel/machvec.c
++++ b/arch/sh/kernel/machvec.c
+@@ -8,6 +8,7 @@
+  *  Copyright (C) 2002 - 2007 Paul Mundt
+  */
+ #include <linux/init.h>
++#include <linux/minmax.h>
+ #include <linux/string.h>
+ #include <asm/machvec.h>
+ #include <asm/sections.h>
+@@ -35,29 +36,21 @@ static struct sh_machine_vector * __init get_mv_byname(const char *name)
+ 	return NULL;
+ }
+ 
+-static unsigned int __initdata machvec_selected;
++static bool machvec_selected __initdata;
+ 
+ static int __init early_parse_mv(char *from)
+ {
+-	char mv_name[MV_NAME_SIZE] = "";
++	char mv_name[MV_NAME_SIZE];
+ 	char *mv_end;
+-	char *mv_comma;
+-	int mv_len;
+ 	struct sh_machine_vector *mvp;
+ 
+ 	mv_end = strchr(from, ' ');
+-	if (mv_end == NULL)
+-		mv_end = from + strlen(from);
++	if (mv_end)
++		strscpy(mv_name, from, min(mv_end - from + 1, MV_NAME_SIZE));
++	else
++		strscpy(mv_name, from);
+ 
+-	mv_comma = strchr(from, ',');
+-	mv_len = mv_end - from;
+-	if (mv_len > (MV_NAME_SIZE-1))
+-		mv_len = MV_NAME_SIZE-1;
+-	memcpy(mv_name, from, mv_len);
+-	mv_name[mv_len] = '\0';
+-	from = mv_end;
+-
+-	machvec_selected = 1;
++	machvec_selected = true;
+ 
+ 	/* Boot with the generic vector */
+ 	if (strcmp(mv_name, "generic") == 0)
+@@ -71,8 +64,8 @@ static int __init early_parse_mv(char *from)
+ 		pr_cont("\n\n");
+ 		panic("Failed to select machvec '%s' -- halting.\n",
+ 		      mv_name);
+-	} else
+-		sh_mv = *mvp;
++	}
++	sh_mv = *mvp;
+ 
+ 	return 0;
+ }
