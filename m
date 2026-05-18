@@ -1,153 +1,137 @@
-Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5664430C150
-	for <linux-sh@vger.kernel.org>; Fri, 15 May 2026 19:52:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97C4A350A18;
+	Mon, 18 May 2026 11:43:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778874741; cv=none; b=ffXnVIPMHv3ZWqZ+kwskr2E2zPQVXUZFbcq4cohAmcJ7WimDupid8X5mCOfMo+JUnMy4tTkwc+gUJ1BazcxrAFEmv1Eqp/i2tpifIIzkumeZZEBZ3nj7HzHHBdpaHVffg+j4BFeqIchId7oo/TOzeDM8C3SVGX608BgsOcnxi+I=
+	t=1779104613; cv=none; b=Ukrm1rUZbcBWR0c3fRwHHA6WssRpywWOWUkrYtsNn+aJTMvC0jJY0NC93db8mu5rMsn1x7O0SgIQ4oVSGv6ymrhOVcV24wmWb1jEAb1MAyQ9PFrPBOYwac66K4w7FPZEZAA4hCirESA9fsJV5ixJB7heiqXnUU8dRq5utK2Bhkk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778874741; c=relaxed/simple;
-	bh=6Ha/PEb51xP7chSZP65EQUMcHr107gh+nEamCTAJ2vo=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=gQMd//mIJ8qYaAJzPgw4y5CQNVgMTHJhZik5i8eoP/LPP2ese7IReCrut4u2nNmFskuMmWIfqmuhntc6Pl63P1R/3ZQI3sZ0jPq7BqCPoVfD+Bn6pfOC71Sm98kVrA3lHWnfglOssEMNM58Xv3ei6yy0qS7PfQxZsVdluNtwtIk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=LOBMPq/H; arc=none smtp.client-ip=209.85.128.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1779104613; c=relaxed/simple;
+	bh=NwRHLAJsOaN4Dj+muAR6EQyF5lPlAIab8xZkaoNQArs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=JwQpf1KbWHPZTkTIB8hI3tyt3Gezwm7YJ0z/dfOrh9qxCTndYYSZlsANfndkQR+CZt225AdieiSfhKWfUYjKil5Zf91Mn9zlDA6pUoCIFfAtT9y0/blX3MfeG1sleWP/P5aEn9cQuVQ0nT96bXvWhyOjrMUycuoq3adtqksW4i4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FPJTLxZg; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LOBMPq/H"
-Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-48e82c23840so1287495e9.3
-        for <linux-sh@vger.kernel.org>; Fri, 15 May 2026 12:52:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1778874738; x=1779479538; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=SPTAPHrOG00PlZmvn0SKpT8YOBlYRF/erWrb3+8AUB0=;
-        b=LOBMPq/HMEYT8MzaR0H9FQWzyMZqVFaqDz1iaEI7Ssai0dDOXF21Lllmg4L2sQ9HRr
-         Nw2jvqyAV8Ksh7XpfLMYSvXba/TYfqzZBy82WtFmuOHqLE6EJWVaYcmW9j1FC0V9OHgl
-         xbfY0bAf/Noe2KUIhN4084Ym2DW/zr9Y5CLfXkjCSPWBcbcjlX8RbiZjCzteOHX6ZKe9
-         1tpkTcQv1S6pts65YjyFW2mHHoDoXHnO1wkSLiM+5iPWCkSZsPtAkAdbFgnFgdlXPWkp
-         CaVArR6xFtm/X2RjMMLUHFaOxn2YjR63uY76gWpsi0uxUoGKb9S57xzq4jtV/rroBVWJ
-         iHsA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1778874738; x=1779479538;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=SPTAPHrOG00PlZmvn0SKpT8YOBlYRF/erWrb3+8AUB0=;
-        b=cKHq68/7VVtF6V2X2jLk9kaiVzAJzCl8lVMzl1xyljdVJAWIlDu4Zz9tR1Cnjwtb36
-         ReG7U7mKzKjH8XSALQ4N3woK3VQZUgpBm4Uc0J/A/hVDxKqaF21+PKajYbwkTMHhO85u
-         gLi5SFqpYy8dgIHlQERvjOHfMJ0T4nIDLp9ydHOEiA60pgx/cE3SEmKuG0G+ttt7Sq7z
-         CgaFciKyEXK3HekDjYwKPOxdjWfLnANg/qBXvPOQ5l1ylmDAA+coAxeG5aEnzOnNYqTg
-         YreFG+RyuSRC7msHxL4JgR086exnvmrRNF/4SgmhJHEcmaLqL0JOuaVX4Gzh4dy/xK3f
-         Aimw==
-X-Gm-Message-State: AOJu0YxU9c2akwAyuE7ht6PS3AFrwUPe8WDwkKoUKqV7t8IbXy4mhAvM
-	irlzKoUmw+pv7VmEYJhvcoKecbTeFJhsag/QIhSbxDdbag+XBFnDJ+eec8XkrHc=
-X-Gm-Gg: Acq92OF+ppe9KyuzXCKYHYnmN5zAsbTzaeb/10NXHcOSsj1mnmdpLNMJ4OhUxL6c4pD
-	EbENLboNbw6VFRcGwcwoXxc2zMxnWZvw6YLjIosR/I9YnW96HHZ1m7zygJTIY3hNJNnFuvQQyIO
-	9MOYhCs7oJOmqZSBEuMSpZbTiODCtQvl+nPNzKFe7cbfkcoLYx5uVZxGGLnVy2uJv6nOgQawLmr
-	n7km4iNwOvJGbPyqoVsvQba7S68zutLHApNXktjmHOblrVcO5QIQ1vrzHIM+P21wbkZi7PI6HRc
-	NHGC1esbI0ZI9CJnoOSBSjdMQqji2Wvk0mylU2iesn9SX1OrxyKWtGO8PGnYSVXvcSwDV49apWJ
-	vva9hGlh08ZlFzQm8ML8ClZHraiCDbdT17Ii7dl9KtTOAibhqSBS/Zjf+Dk0oIFLpw1R0Vcppvb
-	UDXpcEaVm7qbIpYmKaPDMXJBJTqTintFftRMXvx7Gm84NhIindsLYJdKlKd8/c+1GsZc9cG4Ouz
-	QknzSI=
-X-Received: by 2002:a05:600c:8189:b0:48e:89f9:9408 with SMTP id 5b1f17b1804b1-48fe632374fmr82858405e9.20.1778874737711;
-        Fri, 15 May 2026 12:52:17 -0700 (PDT)
-Received: from localhost ([2a02:810d:4a94:b300:fb24:41ce:1d7:fad9])
-        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-48febe81b2dsm20062395e9.34.2026.05.15.12.52.17
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 15 May 2026 12:52:17 -0700 (PDT)
-From: Florian Fuchs <fuchsfl@gmail.com>
-To: linux-sh@vger.kernel.org,
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FPJTLxZg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 64987C2BCB7;
+	Mon, 18 May 2026 11:43:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1779104613;
+	bh=NwRHLAJsOaN4Dj+muAR6EQyF5lPlAIab8xZkaoNQArs=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=FPJTLxZg5YCe0QNfd49BMjmAxKT9sopqbynLQlobYFv5iz0hapCYXxrE3+nOeMvbf
+	 THbg/Uu529siYkaBgQMfeEiAjMFRQzHvyQbZXX647k0NXtL8W5i1K94MH8d8G5DzhD
+	 b+yyyQoZvQePkAVg6riNbFOherT0VXl8SuuzgViWkzkAwQdF9jSpymnJ2u1FRi16rx
+	 mp2GBvD9pUOWyfXePS6dFLhnCFir5AXOu83JQand5+rLVGEcOTAA+u4CfGlBugKvDw
+	 F6ot2fPHvk7giHcUz+0iky3F3DTv2KJ01QzDcu116hKPO7ftPek5nLOGHdVhTbfN11
+	 94i3E8GCW5UTA==
+Date: Mon, 18 May 2026 14:43:26 +0300
+From: Mike Rapoport <rppt@kernel.org>
+To: linux-sh@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Artur Rojek <contact@artur-rojek.eu>
-Cc: linux-kernel@vger.kernel.org,
-	Florian Fuchs <fuchsfl@gmail.com>,
-	Adrian McMenamin <adrianmcmenamin@gmail.com>
-Subject: [PATCH v4 3/3] cdrom: gdrom: verify device access after disc swap
-Date: Fri, 15 May 2026 21:51:11 +0200
-Message-ID: <20260515195111.3295031-4-fuchsfl@gmail.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260515195111.3295031-1-fuchsfl@gmail.com>
-References: <20260515195111.3295031-1-fuchsfl@gmail.com>
+	Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-kernel@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH v2 00/10] sh: remove NUMA and SPARSEMEM support
+Message-ID: <agr7XvoWn_-axX1-@kernel.org>
+References: <20260510135546.13554-1-rppt@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260510135546.13554-1-rppt@kernel.org>
 
-From: Artur Rojek <contact@artur-rojek.eu>
+Gentle ping?
 
-To ready the drive for cdrom_open(), this driver sends a spin disc
-command. However, if the cd lid has been opened and the disc de-spinned,
-the very next SPI command will return UNIT_ATTENTION sense error,
-resulting in a failure to mount the disc.
+On Sun, May 10, 2026 at 04:55:36PM +0300, Mike Rapoport wrote:
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+> 
+> Hi,
+> 
+> NUMA support for SuperH was introduced a long time ago by commit
+> b241cb0c885e ("sh: Support for multiple nodes.")
+> 
+> 	"... for boards with many different memory blocks that are
+> 	 otherwise unused (SH7722/SH7785 URAM and so forth)"
+> 
+> In reality, this added 128K of memory on sh7722 and sh7785 and 256K on
+> shx3 at the expense of all the NUMA related code in the kernel.
+> 
+> For build of v7.0-rc7 with defconfig and the same configuration with
+> CONFIG_NUMA disabled, bloat-o-meter reports difference of ~76k. Disabling
+> CONFIG_SPARSMEM on top increases the difference to ~94k. And that's only
+> overhead in code and static data that does not take into the account data
+> structures allocated at run time.
+> 
+> And all this overhead has been there for nothing for almost 8 years
+> because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
+> those additional "nodes" could not be used by the core MM because the
+> maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
+> 
+> v2 changes:
+> * remove stale SYS_SUPPORTS_NUMA
+> * add Arnd's Reviewed-by
+> 
+> v1: https://lore.kernel.org/all/20260413104649.852228-1-rppt@kernel.org
+> 
+> Mike Rapoport (Microsoft) (10):
+>   sh: remove CONFIG_NUMA and realted configuration options
+>   sh: mm: remove numa.c
+>   sh: mm: drop allocate_pgdat()
+>   sh: remove setup_bootmem_node() and plat_mem_setup()
+>   sh: drop dead code guarded by #ifdef CONFIG_NUMA
+>   sh: drop include/asm/mmzone.h
+>   init/Kconfig: drop ARCH_WANT_NUMA_VARIABLE_LOCALITY
+>   sh: init: remove call the memblock_set_node()
+>   sh: remove SPARSEMEM related entries from Kconfig
+>   sh: drop include/asm/sparsemem.h
+> 
+>  arch/sh/Kconfig                        | 12 ------
+>  arch/sh/configs/migor_defconfig        |  1 -
+>  arch/sh/configs/sdk7786_defconfig      |  1 -
+>  arch/sh/configs/se7722_defconfig       |  1 -
+>  arch/sh/configs/shx3_defconfig         |  1 -
+>  arch/sh/configs/ul2_defconfig          |  1 -
+>  arch/sh/include/asm/mmu.h              |  2 +
+>  arch/sh/include/asm/mmzone.h           | 42 --------------------
+>  arch/sh/include/asm/setup.h            |  3 ++
+>  arch/sh/include/asm/sparsemem.h        | 12 ------
+>  arch/sh/include/asm/topology.h         | 13 -------
+>  arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  5 ---
+>  arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  7 ----
+>  arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  1 -
+>  arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  1 -
+>  arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  5 ---
+>  arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  7 ----
+>  arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  5 ---
+>  arch/sh/kernel/cpu/sh4a/setup-shx3.c   | 18 ---------
+>  arch/sh/kernel/setup.c                 |  7 ----
+>  arch/sh/kernel/topology.c              | 12 ------
+>  arch/sh/kernel/vmcore_info.c           |  4 --
+>  arch/sh/mm/Kconfig                     | 29 --------------
+>  arch/sh/mm/Makefile                    |  1 -
+>  arch/sh/mm/init.c                      | 24 ------------
+>  arch/sh/mm/numa.c                      | 53 --------------------------
+>  arch/sh/mm/sram.c                      |  3 +-
+>  init/Kconfig                           |  7 ----
+>  28 files changed, 6 insertions(+), 272 deletions(-)
+>  delete mode 100644 arch/sh/include/asm/mmzone.h
+>  delete mode 100644 arch/sh/include/asm/sparsemem.h
+>  delete mode 100644 arch/sh/mm/numa.c
+> 
+> 
+> base-commit: 254f49634ee16a731174d2ae34bc50bd5f45e731
+> -- 
+> 2.53.0
+> 
 
-Fix this by sending a dummy TEST_UNIT command, which will catch the
-above error, and allow subsequent commands to execute correctly.
-
-Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
-Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
----
-v3->v4: no change
-v3: new patch added from Artur Rojek and also verified that it works.
-
-v3: https://lore.kernel.org/linux-sh/20260423194132.693271-4-fuchsfl@gmail.com/
-
- drivers/cdrom/gdrom.c | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
-
-diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
-index 603429756a34..0827f4f0344d 100644
---- a/drivers/cdrom/gdrom.c
-+++ b/drivers/cdrom/gdrom.c
-@@ -219,6 +219,33 @@ static char gdrom_execute_diagnostic(void)
- 	return __raw_readb(GDROM_ERROR_REG);
- }
- 
-+/*
-+ * Test unit command
-+ * byte 0 = 0x0
-+ *
-+ * This command verifies whether device can be accessed.
-+ *
-+ * -EIO indicates that device is not ready for operation.
-+ */
-+static int gdrom_test_unit_cmd(void)
-+{
-+	struct packet_command *test_command;
-+
-+	test_command = kzalloc_obj(struct packet_command);
-+	if (!test_command)
-+		return -ENOMEM;
-+	test_command->cmd[0] = 0x0;
-+	test_command->buflen = 0;
-+	gd.pending = 1;
-+	gdrom_packetcommand(gd.cd_info, test_command);
-+	wait_event_interruptible_timeout(command_queue, gd.pending == 0,
-+					 GDROM_DEFAULT_TIMEOUT);
-+	gd.pending = 0;
-+	kfree(test_command);
-+
-+	return gd.status & 0x1 ? -EIO : 0;
-+}
-+
- /*
-  * Prepare disk command
-  * byte 0 = 0x70
-@@ -353,6 +380,9 @@ static int gdrom_get_last_session(struct cdrom_device_info *cd_info,
- 
- static int gdrom_open(struct cdrom_device_info *cd_info, int purpose)
- {
-+	/* Sink pending UNIT_ATTENTION sense error after a disc swap. */
-+	(void)gdrom_test_unit_cmd();
-+
- 	/* spin up the disk */
- 	return gdrom_preparedisk_cmd();
- }
 -- 
-2.43.0
-
+Sincerely yours,
+Mike.
