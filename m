@@ -1,94 +1,317 @@
-Received: from out-186.mta1.migadu.com (out-186.mta1.migadu.com [95.215.58.186])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-dy1-f193.google.com (mail-dy1-f193.google.com [74.125.82.193])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78A5724293C
-	for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 17:20:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.186
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 459B421D3CC
+	for <linux-sh@vger.kernel.org>; Tue, 19 May 2026 01:19:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.193
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779124813; cv=none; b=ph4SH9HrPA6CTPu60te4f9ObqHPT2/zRNWVgp/oWdiCH1YzTrHAnEH1/uJw+a95ybBy8NzQXoYv7+SrugM0slL9aIpLf5MZERlkwp6fOW7FBh09hE7NLQFH4yEFdgqu3VWCRVDSCtm7uWja0Urd95Lz8YWN0QQJERyJWpkt/zjU=
+	t=1779153601; cv=none; b=mrviPiwjCG6TDNIQnl7xHs0CYrnr+b6HF1kcJCfdSz12kWif2reZXLTAnG8PtlZlRMkZdEN5U+aX1MXqVYKAUBp4mMgH+bKRPcTiUyjZcdC4/uh/tV7tMKFxGlMSt/AILjnihesQMnafoKMuI7Qp+oNVRkFuatB2+5EfL22M/lE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779124813; c=relaxed/simple;
-	bh=joOFwQZdtduKZdlq6bev0GjTxohlZ1Vf9Dm+tbDszJY=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=esaNHOg/+C0B7f/GDF443wWNmYcS4g6foET1qzgmG38sbn8+VgbuBIuLTu5G5YERelyY3HWuPHPC0JvK1HGCu5oa+GrZusp5UcRzw2SAskUNAPETkgr5tTY1GM+4hgJquA2C+RaFiqICB9efVjajJCOxbZtVdPZx+sEaIVkE/qQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=vpY7YDcl; arc=none smtp.client-ip=95.215.58.186
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1779153601; c=relaxed/simple;
+	bh=uC/YTHZQN/5OVj8zrqwkRVYTiYsHlJGxeqoHIVP2gds=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=os0mqWc+aZNC5+bPNivVy7O1TP1a0qW+NVdtxNfcBIuKNh3x2br5HZKPma8g2eJmmCZK/nDtNc7qgi47vfBAtmwbJskdM3hvSEOjzZGwUcL1RnS6F5jC9W4n09jyGSUba/o90p1fyIdeeJjguP7j9318cS4s904fFKeKc4elcm8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Gnq9KH6L; arc=none smtp.client-ip=74.125.82.193
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="vpY7YDcl"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1779124810;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=2PARzt8Z+JF0o/40UZ5y9n9W0bAsMFPKTctZlcMXSGU=;
-	b=vpY7YDcl7mIKYy7FolEpQUz+O7es4w1OdLQPVN52UG+NYDPFBmDtShlTJGEFSftDCuYTHN
-	2c5Co4U9HmEG6pLLE8OQPPXnYwlcPxthT4/cS4ZCo7H34+0ZzFAqWaJmY3K5wE2B9qNeLy
-	tXUiolrfmS5Yi7Pp8wM7rvxPHiB+QGo=
-From: Thorsten Blum <thorsten.blum@linux.dev>
-To: Kees Cook <kees@kernel.org>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Thorsten Blum <thorsten.blum@linux.dev>,
-	Artur Rojek <contact@artur-rojek.eu>,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Gnq9KH6L"
+Received: by mail-dy1-f193.google.com with SMTP id 5a478bee46e88-2bdcf5970cdso1885422eec.0
+        for <linux-sh@vger.kernel.org>; Mon, 18 May 2026 18:19:59 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1779153598; x=1779758398; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=61IH/1X9bdUpbndRHMPT6pWv81GYEfTAPjpqMU4gh2E=;
+        b=Gnq9KH6LWICcWk7JWuKm/yO7WrEL8YdF16tJOwwX6ldJtlzHzg3BPOJ5xEFqBZtB+Y
+         tRPoXh2UKPZykIPBQ1B2NCVcMrXZd4p2O71mHDrUTiQ+Mu9SheWOXy+e0EKwgA1J5sn+
+         kJLd+JOHTDf3Ubb8ibtuh5QOvXaRY74iKP49OIXMtqOTVTBJmIx97QXFq072WIaI7g9/
+         EqFGjQzC2UkprAahERIuFlfyxObO3ZWMcnoqPZl/kh6sFUXla246l8PpDSAmOSh/7Pc7
+         r98KsIGUv5IXvdjaAonGlfTxKVzsGZJB0DFMy0ttEpIU4Sly8j8QLk36NAPTHdOAAe2N
+         AkdQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1779153598; x=1779758398;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=61IH/1X9bdUpbndRHMPT6pWv81GYEfTAPjpqMU4gh2E=;
+        b=F+ca0aAkM/72EP2gl3fyEvqRAcuykr2fVN9Ewcs8pMt5abXyUXxWAMNxMfKwFscZDJ
+         8WRo6f2gaDEF8Y48l6EvkiJcGsnHsjKWbYwuUIMvpu7OoR5A1Kn90SPR2Xl46dYW3LMy
+         yRUyOEWI+Xsm3OOS31H5g0tNioudws1+f3yZ30FtGaaOQDKOmQ5shMKBMWiD7A1buCY4
+         NmMxsorwHy/SN56IoU07rTo7rEVAQSqjYio1jkbOtaAWcLchhDEiTme6MGesan8FZVkX
+         H50rA4Asy18+FfaWBdJD6+OG/GH0/cxgIGRycNfy/Jel910cUC+iG5LfUHBGXkk1sqm7
+         OpUA==
+X-Forwarded-Encrypted: i=1; AFNElJ9eZmJasqA/thk2Az1Y9ClpkD+0HnGkxwOhr6q8hUzWQRtefrvEqwqv9F+z04s7CEu4v4sajyc3DA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxIcW1HXp6kNN3U2BnDOaYXXcOOSBJCsHx+BwkME4yBJPShaXOA
+	Cq8GQ+szqJ7KHTvZu4A6aDlBsRxHcU28VBcXDoLGaQp9BjWvbK1/inSk
+X-Gm-Gg: Acq92OEl2VGRth4LaujY57Tq+E4SZX5S6TnYl1wlEYxrxF4NGDeY4xxOJrd041nzLiV
+	6N7IdMAxKtq/NYawukY5cjwO5B2S6kX6MFOa0Kfgrn+MeZWT16hXDHYqk6wcRr0LvBw7DoAi4Wh
+	E+eXi2/D9waXe3iDpghQw0eF75Rt+I4DsX5joQXuhYtT50rpWxkzOe9NKd5QqiKUDRPYWowmSsZ
+	A6hzA+SvgQHKfI07MM9Tcnf+zb/09IZXSXamJ47rH9joP3OEyrPGgQnrQIyIWQao1QIJJcIVNS1
+	lLk3TT/4IKxLQVznIpIlIWiABsAx/wTZcEWo9/K2GDep7FVjWwhznDflt7/x41CvtagGQ0kdV7T
+	1YAqeg91MbjFSYtkw2ibEBrof6Dazm5yBel8M1jFGKkBp8recSH2LGdy8trLMj5IMpPHnQsgJzr
+	4/cwPkZfdcmJXNCu1kO4SJz6ugpWHP49TQd9WEKIOqNRtdf0zx8fxM7ib54lSImU6ib/yzlLTRh
+	tHsaNLCuXZZKovquXiCVMMOQ2F/35f0HK4WGR03rhYbdDtEcwTHf43DK82NI0EGlq1JEE93fAVv
+	aE3W7oo0KJiMIpE48A==
+X-Received: by 2002:a05:7300:ec07:b0:302:b44b:b64a with SMTP id 5a478bee46e88-3039785c81fmr7064800eec.1.1779153598298;
+        Mon, 18 May 2026 18:19:58 -0700 (PDT)
+Received: from ethan-latitude5420.. (host-127-24.cafrjco.fresno.ca.us.clients.pavlovmedia.net. [68.180.127.24])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30296dcb6adsm17034305eec.15.2026.05.18.18.19.56
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 18 May 2026 18:19:57 -0700 (PDT)
+From: Ethan Nelson-Moore <enelsonmoore@gmail.com>
+To: linux-kernel@vger.kernel.org,
+	linux-hexagon@vger.kernel.org,
+	linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
 	linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH RESEND] gdrom: use strscpy in probe_gdrom_{setupcd,setupdisk}
-Date: Mon, 18 May 2026 19:19:42 +0200
-Message-ID: <20260518171940.83077-3-thorsten.blum@linux.dev>
+	sparclinux@vger.kernel.org,
+	linux-arch@vger.kernel.org
+Cc: Ethan Nelson-Moore <enelsonmoore@gmail.com>,
+	Vineet Gupta <vgupta@kernel.org>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>,
+	Brian Cain <bcain@kernel.org>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Michal Simek <monstr@monstr.eu>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Jonas Bonn <jonas@southpole.se>,
+	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+	Stafford Horne <shorne@gmail.com>,
+	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+	Helge Deller <deller@gmx.de>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Paul Walmsley <pjw@kernel.org>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>,
+	Alexandre Ghiti <alex@ghiti.fr>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Thomas Gleixner <tglx@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Chris Zankel <chris@zankel.net>,
+	Max Filippov <jcmvbkbc@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>
+Subject: [PATCH] Generate <asm/asm-offsets.h> and remove identical copies in all architectures
+Date: Mon, 18 May 2026 18:18:41 -0700
+Message-ID: <20260519011928.78398-1-enelsonmoore@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1507; i=thorsten.blum@linux.dev; h=from:subject; bh=joOFwQZdtduKZdlq6bev0GjTxohlZ1Vf9Dm+tbDszJY=; b=owGbwMvMwCUWt7pQ4caZUj3G02pJDFncXjrMq7c36rqc9F3Doay/ZzO384sSs5Dob+98nMMm/ vxxuWpnRykLgxgXg6yYIsuDWT9m+JbWVG4yidgJM4eVCWQIAxenAEyEfwMjw+qeyof1My9L3kuS P3LwfnXMh6tupk0L6hWcDq/57V79QY+R4f4Skyfcm9YIyN0/altrfi6r5cnszT125r1h77ILEk7 78QIA
-X-Developer-Key: i=thorsten.blum@linux.dev; a=openpgp; fpr=1D60735E8AEF3BE473B69D84733678FD8DFEEAD4
 Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
 
-strcpy() has been deprecated [1] because it performs no bounds checking
-on the destination buffer, which can lead to buffer overflows.
+Every architecture supported by the kernel has a functionally identical
+copy of <asm/asm-offsets.h> which simply includes
+<generated/asm-offsets.h>, even though it is also present in
+asm-generic. Eliminate this unnecessary complexity by adding
+<asm/asm-offsets.h> to the list of mandatory asm headers, which causes
+a copy of it that includes <asm-generic/asm-offsets.h> to be generated
+automatically.
 
-While the current code works correctly, replace strcpy() with the safer
-strscpy() to follow secure coding best practices.
-
-[1] https://www.kernel.org/doc/html/latest/process/deprecated.html#strcpy
-
-Acked-by: Artur Rojek <contact@artur-rojek.eu>
-Signed-off-by: Thorsten Blum <thorsten.blum@linux.dev>
+Signed-off-by: Ethan Nelson-Moore <enelsonmoore@gmail.com>
 ---
- drivers/cdrom/gdrom.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ arch/arc/include/asm/asm-offsets.h        | 6 ------
+ arch/arm/include/asm/asm-offsets.h        | 1 -
+ arch/arm64/include/asm/asm-offsets.h      | 1 -
+ arch/hexagon/include/asm/asm-offsets.h    | 1 -
+ arch/loongarch/include/asm/asm-offsets.h  | 5 -----
+ arch/m68k/include/asm/asm-offsets.h       | 1 -
+ arch/microblaze/include/asm/asm-offsets.h | 1 -
+ arch/mips/include/asm/asm-offsets.h       | 1 -
+ arch/nios2/include/asm/asm-offsets.h      | 7 -------
+ arch/openrisc/include/asm/asm-offsets.h   | 1 -
+ arch/parisc/include/asm/asm-offsets.h     | 1 -
+ arch/powerpc/include/asm/asm-offsets.h    | 1 -
+ arch/riscv/include/asm/asm-offsets.h      | 1 -
+ arch/sh/include/asm/asm-offsets.h         | 2 --
+ arch/sparc/include/asm/asm-offsets.h      | 1 -
+ arch/x86/include/asm/asm-offsets.h        | 1 -
+ arch/xtensa/include/asm/asm-offsets.h     | 1 -
+ include/asm-generic/Kbuild                | 1 +
+ 18 files changed, 1 insertion(+), 33 deletions(-)
+ delete mode 100644 arch/arc/include/asm/asm-offsets.h
+ delete mode 100644 arch/arm/include/asm/asm-offsets.h
+ delete mode 100644 arch/arm64/include/asm/asm-offsets.h
+ delete mode 100644 arch/hexagon/include/asm/asm-offsets.h
+ delete mode 100644 arch/loongarch/include/asm/asm-offsets.h
+ delete mode 100644 arch/m68k/include/asm/asm-offsets.h
+ delete mode 100644 arch/microblaze/include/asm/asm-offsets.h
+ delete mode 100644 arch/mips/include/asm/asm-offsets.h
+ delete mode 100644 arch/nios2/include/asm/asm-offsets.h
+ delete mode 100644 arch/openrisc/include/asm/asm-offsets.h
+ delete mode 100644 arch/parisc/include/asm/asm-offsets.h
+ delete mode 100644 arch/powerpc/include/asm/asm-offsets.h
+ delete mode 100644 arch/riscv/include/asm/asm-offsets.h
+ delete mode 100644 arch/sh/include/asm/asm-offsets.h
+ delete mode 100644 arch/sparc/include/asm/asm-offsets.h
+ delete mode 100644 arch/x86/include/asm/asm-offsets.h
+ delete mode 100644 arch/xtensa/include/asm/asm-offsets.h
 
-diff --git a/drivers/cdrom/gdrom.c b/drivers/cdrom/gdrom.c
-index 4ba4dd06cbf4..5768dc1aebc0 100644
---- a/drivers/cdrom/gdrom.c
-+++ b/drivers/cdrom/gdrom.c
-@@ -13,6 +13,7 @@
- #include <linux/kernel.h>
- #include <linux/list.h>
- #include <linux/slab.h>
-+#include <linux/string.h>
- #include <linux/dma-mapping.h>
- #include <linux/cdrom.h>
- #include <linux/bio.h>
-@@ -708,7 +709,7 @@ static void probe_gdrom_setupcd(void)
- {
- 	gd.cd_info->ops = &gdrom_ops;
- 	gd.cd_info->capacity = 1;
--	strcpy(gd.cd_info->name, GDROM_DEV_NAME);
-+	strscpy(gd.cd_info->name, GDROM_DEV_NAME);
- 	gd.cd_info->mask = CDC_CLOSE_TRAY|CDC_OPEN_TRAY|CDC_LOCK|
- 		CDC_SELECT_DISC;
- }
-@@ -719,7 +720,7 @@ static void probe_gdrom_setupdisk(void)
- 	gd.disk->first_minor = 1;
- 	gd.disk->minors = 1;
- 	gd.disk->flags |= GENHD_FL_NO_PART;
--	strcpy(gd.disk->disk_name, GDROM_DEV_NAME);
-+	strscpy(gd.disk->disk_name, GDROM_DEV_NAME);
- }
+diff --git a/arch/arc/include/asm/asm-offsets.h b/arch/arc/include/asm/asm-offsets.h
+deleted file mode 100644
+index 32a1d3d518dc..000000000000
+--- a/arch/arc/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1,6 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-only */
+-/*
+- * Copyright (C) 2004, 2007-2010, 2011-2012 Synopsys, Inc. (www.synopsys.com)
+- */
+-
+-#include <generated/asm-offsets.h>
+diff --git a/arch/arm/include/asm/asm-offsets.h b/arch/arm/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/arm/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/arm64/include/asm/asm-offsets.h b/arch/arm64/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/arm64/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/hexagon/include/asm/asm-offsets.h b/arch/hexagon/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/hexagon/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/loongarch/include/asm/asm-offsets.h b/arch/loongarch/include/asm/asm-offsets.h
+deleted file mode 100644
+index d9ad88d293e7..000000000000
+--- a/arch/loongarch/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1,5 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-/*
+- * Copyright (C) 2020-2022 Loongson Technology Corporation Limited
+- */
+-#include <generated/asm-offsets.h>
+diff --git a/arch/m68k/include/asm/asm-offsets.h b/arch/m68k/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/m68k/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/microblaze/include/asm/asm-offsets.h b/arch/microblaze/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/microblaze/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/mips/include/asm/asm-offsets.h b/arch/mips/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/mips/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/nios2/include/asm/asm-offsets.h b/arch/nios2/include/asm/asm-offsets.h
+deleted file mode 100644
+index e51465213b53..000000000000
+--- a/arch/nios2/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-or-later */
+-/*
+- *  Copyright (C) 2010 Tobias Klauser <tklauser@distanz.ch>
+- *  Copyright (C) 2009 Thomas Chou <thomas@wytron.com.tw>
+- */
+-
+-#include <generated/asm-offsets.h>
+diff --git a/arch/openrisc/include/asm/asm-offsets.h b/arch/openrisc/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/openrisc/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/parisc/include/asm/asm-offsets.h b/arch/parisc/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/parisc/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/powerpc/include/asm/asm-offsets.h b/arch/powerpc/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/powerpc/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/riscv/include/asm/asm-offsets.h b/arch/riscv/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/riscv/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/sh/include/asm/asm-offsets.h b/arch/sh/include/asm/asm-offsets.h
+deleted file mode 100644
+index 9f8535716392..000000000000
+--- a/arch/sh/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1,2 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#include <generated/asm-offsets.h>
+diff --git a/arch/sparc/include/asm/asm-offsets.h b/arch/sparc/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/sparc/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/x86/include/asm/asm-offsets.h b/arch/x86/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/x86/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/arch/xtensa/include/asm/asm-offsets.h b/arch/xtensa/include/asm/asm-offsets.h
+deleted file mode 100644
+index d370ee36a182..000000000000
+--- a/arch/xtensa/include/asm/asm-offsets.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <generated/asm-offsets.h>
+diff --git a/include/asm-generic/Kbuild b/include/asm-generic/Kbuild
+index 2c53a1e0b760..9879bba63a38 100644
+--- a/include/asm-generic/Kbuild
++++ b/include/asm-generic/Kbuild
+@@ -6,6 +6,7 @@
  
- static int probe_gdrom_setupqueue(void)
+ mandatory-y += atomic.h
+ mandatory-y += archrandom.h
++mandatory-y += asm-offsets.h
+ mandatory-y += barrier.h
+ mandatory-y += bitops.h
+ mandatory-y += bug.h
+-- 
+2.43.0
+
