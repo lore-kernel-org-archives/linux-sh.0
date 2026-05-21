@@ -1,67 +1,68 @@
-Received: from mail-dl1-f49.google.com (mail-dl1-f49.google.com [74.125.82.49])
+Received: from mail-dl1-f54.google.com (mail-dl1-f54.google.com [74.125.82.54])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66C0935201E
-	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 05:13:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DC2333F8B4
+	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 05:13:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779340425; cv=none; b=fYGcdKas7c5/h+PmSr+h8gxmizw16tRi4n77mZ/5/Grcju2cRMDrTrErFwfBwx5WIIs8OzuzxVz7sFtCfUB1fcNLB2H8Z1XWs5KrRWs3pR4kiZS81JZsLWdTzj7kTKuzAVXP6wMAsVOGrvlt3yy28seP0Dmi4R4i6mv4c+LXv4A=
+	t=1779340429; cv=none; b=A57nCicfVUx0N3cvzaBiUlsxPW3CQRCZYUW1pBWJDL+zcgxzC0/QnfQwZjgxEnxrqk/P3abJ7E3fQxMOBwrWKI+DhECjqphCWb0IDodO6hAYNYETIGE5EoAEAaZMNRMUTINT3FIL0Z73+Zyujw23xMXB6jBHKTlvPHThlSDy4WA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779340425; c=relaxed/simple;
-	bh=an2XKnw/6oNRYjivHk/fQLnrkcFYlk+CGyiYpwsGnhE=;
+	s=arc-20240116; t=1779340429; c=relaxed/simple;
+	bh=a7LlH6SOmxH0p4iNAX3qrUusbYFuA/lKO8UCM5Mh+y0=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=RlhSW8yYjlx2uoqqM8p+R+mhAJhm4Fnglf3BCdoHMjA9XlHy9P9FMf3J4v/u6WlUrqXgkREQmoT8pjKRC2+9hO5bzhdsyntfNeD/HLVsnXkmtiVO/VlJta9nCWsdjKlPUpCjPnxwy1rGS11JfSHG5V5WpvFl3oodn8Vpl8fQYbM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=KezolyL+; arc=none smtp.client-ip=74.125.82.49
+	 In-Reply-To:To:Cc; b=N39k9tYFHERPBVOTa1YLj9je/3Iy3nY2K4XegYAaqB44OosvL51LPsKLm2fJ907tcFd0/s4e49yj4sZWo9te6GYeG4/ExhSQVS9kEqLM7wLr1hXYR2cONTvG/HyrKSZq9zeqD6PNlFDx3bX58/KPUCEu18tMLtBZcJKOfI+glzE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=AKhrjeO3; arc=none smtp.client-ip=74.125.82.54
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KezolyL+"
-Received: by mail-dl1-f49.google.com with SMTP id a92af1059eb24-135e88b8e55so5933616c88.0
-        for <linux-sh@vger.kernel.org>; Wed, 20 May 2026 22:13:44 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AKhrjeO3"
+Received: by mail-dl1-f54.google.com with SMTP id a92af1059eb24-1331e851faaso2979511c88.1
+        for <linux-sh@vger.kernel.org>; Wed, 20 May 2026 22:13:47 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779340423; x=1779945223; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1779340427; x=1779945227; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=pXtisoK8i0cyvAoaHE4OQcmxs5XHz2jUEn0crM4CfGY=;
-        b=KezolyL+vcKcS0eaIMl9nVTayU0vlKDWYQzWJSUqrlkQYefXHEWVu6Az4W+gq2njSz
-         E+mK3BZA9DLp+bpJg+AbWc7o82rCzuIkoNrj3RtaMm0Yp753kn0XJ3DFsdVTj8Hw+e7z
-         n4Vd8T7kZC89snFgCjMtiNrnk644CM1gf7WWPI4yvs+VVkNiF3t/biR7Rbozw0EaHNfz
-         Ge7aWvxCiViZLkKOafU5ZZHLWfuGIuqsVvFuDdMN6oCYo8QMPRoeJCPlzr+FvRRyahEp
-         lBEKI5YoUyncn3q+QE0h9NeVdtCIQy7NkimmBT6lK3KzN/9H0jBYqZtxEsAYOvY9s3mS
-         o/Mg==
+        bh=7YPZxWestxZ6ZeoppNL4aB518UjR8C+o/ws24cKnfpM=;
+        b=AKhrjeO3oWo3pW7+XGNc8WEgP/k6/fsJlceeHmT0JIHBANdMvdcP+6fa1aUfysrC9J
+         wGdddDCExUc58mZV41UnZXpzz0k7DySu8idWofIDSS9LYgAd/6VOO9YW6ho9jI15i4hO
+         XCkwZDvGFJGzOGYyUmmXCrG4fKn1QsQkeHparjLgXEgsc7jAg00ulnkbeYn+YPRdc0K5
+         UF8Rq2m9TNDbv6DoqXf0To4Y4E9HFa+BaCrHlDVsp8ihqicQyYpeKwd/tod+krYIpW+A
+         dDb/VsCFSbgO5PQCovYI+0/rD5CUYRxjNb24bK5K9nR8gjVfpKUkS4rTsy7MMkY834SA
+         nIxw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779340423; x=1779945223;
+        d=1e100.net; s=20251104; t=1779340427; x=1779945227;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
          :cc:subject:date:message-id:reply-to;
-        bh=pXtisoK8i0cyvAoaHE4OQcmxs5XHz2jUEn0crM4CfGY=;
-        b=L3I4oWyo0Cx3B+R3kE0k/0lr9NhiXGfLiAuDcMuGKyoSFYikozzVxvEa5THtM6QV0p
-         dqUQVvo8PtDFDmiX+Fxuj8SFXM7TxKze9cvYuiaq4wjpfSTYrKrTbyXuq6DEyCpe1jv2
-         xEP5CXvZjw/yyUOUkYVqKfVkOfZ/oLaFPZT58Y/EEc+twn/bUyP9V2PEgwq6B8hHCmeY
-         NHUPpR9psxv67/InaX1ggs/fF+01m9IVuTvlwvVxTaSxUB4jxuKLwyTTz+SqiUcS7zr1
-         zn2FwhxgBsNWQPddPwJ8jLgG1NUjyOfcjt9otOln8bv1N+zmcz+lNgKwCLqMrxMpvG1c
-         /Klg==
-X-Forwarded-Encrypted: i=1; AFNElJ+UcyS3acRwR7DjERCOx2KG7sjMSSkMz9wG38y2nktF0dmVCIjXQ3lQHOfOYQEVXr/l0J+pYzn4Bg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YytsVv+RxIwFU8xQj5pZdGwZy+qfS1mlHBBJHzLdDSiqRvSt8zD
-	9AoGnBKCj+E0PDFLPaFw3jN4vxb4av6Cktou9Ava/KrfES3XRBePM5Ce
-X-Gm-Gg: Acq92OEzDXERIQFvztB6MNeNLcb5xUYflsIaJ2jpbrYJ7Q80ktDfac95HGSfgw4HYcq
-	GfCgH9XbjpYXzecdxRlTlSFzmJVfpPU2Lsjgh2miEfvRY6TdL6b/tQtuk1UOoFbDqRSxx7wXK2l
-	MQCTDCCRna/vSl6uROa95Xg9LP1MmVS7db7gxKCeGhdF+WnsMS4n5hWvtDR6vsqHdGg7c9zH6oq
-	eIJFc/eJ1ebiRRjk+eZyzcpFUUGaMfyT0uUFnl2mRpPnyRdGBhcFL9SKw5koWh0jnsb6HNHNTTa
-	1js0mQ69cFhAfqdIQ7C4pz99gPVpFJelBBPJ2TzyYUzXHMLEHV4CTBfrmzU/MzlYRMMz1EKTbYM
-	5bRbL39HZmtjvZx/KE3YrAoOnw3qzjHOyQCeidiNUBGkD50Ov6s4recDkbgxrTxoJ5pJjTIlNJk
-	yvSxGtFFltOLCun7j2VP17tCRmQgKctSBYkcssikiwTxT0NP3AxCJZcUm+bbjLDeYX+ttR3Aqm5
-	Rpi0WxCyTnSuw==
-X-Received: by 2002:a05:7022:61a1:b0:12d:b26f:cafd with SMTP id a92af1059eb24-13632a02cf3mr857042c88.5.1779340423478;
-        Wed, 20 May 2026 22:13:43 -0700 (PDT)
+        bh=7YPZxWestxZ6ZeoppNL4aB518UjR8C+o/ws24cKnfpM=;
+        b=jWr3UuBCEvlrlfKhoEfrKj+BSnl9rZh6VqpqeJ+0+HZLcct2hgGOs1bX9sIg+MbgWQ
+         aQ8MjZUOQo7RB2OYsjxzKAQqfSZBVEbuLZrXZvcz6WSL0J34RbtcHvpRhmef88GN83GS
+         GY8X6BmL5SoMbzEXca/Oef6WD/OetDbKTYWgwh5aqHsT91SiWLi1mfuDcauyyCqe9ovZ
+         fmW9a/Xz0LY1eBdrsf7DXxLZwlxWfswrdQ8FbNRP8JhtLIrGgb3ZVCazMnasxc4+cRNn
+         DaAs2vRInbKYsGXBF2RERvvvDInyI2O3KT1uAcere7RxJ8/yTXlOgbmaO8QCjHnXSefS
+         fj4A==
+X-Forwarded-Encrypted: i=1; AFNElJ+p0b9bfY4ahU9ALKpkiQLQiI4C+t2HSldnrnDzIfW7wvEowqkJ9Bns4wrCmwcA2OKV2Xd0UOPAFw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzYNRfTYsLtJ6z2kNq5OsBn9Ln1kCdOWWM3BK23LVnU3YJRwU0I
+	+pXY8JjsMp4ztqEIJoz0QW0U9uZfkkBjmj5QwE4nPrnj3G8S3kF5hoWj
+X-Gm-Gg: Acq92OE0Zk8SBqvdQxEzLzYAPrn8MdgJ5kcQXtf4V77plozcbUCtR21hOBqsoGkrgtd
+	XTGGbFve8+3aGzTAV78xhSL6RWPaTzHrcrAVZQG8K/1Z3ucyjbOqMFOrVtUPbf89EzkJ0Q1/Om9
+	LNnoQ3X6nyFNe37NCI8Yd2xlkKBujYI0GI3KflweCCVFYlTPq9G+6yMB0DSdnT7B76MTnUMxzxS
+	h4wgXfpx6k2J1KxVJqcxiE69BkHyI/h5ywgkxS60j3zFp/Wdaj4AN1sYm8w0NW+142Slhq2Twep
+	xRZJnQvWLMrIJScs54czcrAU58teWSW/kw1I5Qzwbq8dKRoXv6oOoJQQ7rBKa/zoyjTO+bIppAA
+	RMzIhubx8xgMuTjxsdjaUuO8zyO5laYEyWsejYIsLUtcW1PCMjGyxJN/GZW1BWgy6cA3oTqUG4s
+	mdgsH+gjH2NzpjDc+nqCbqclViXrY0n6WFvfDMP3kER/CE2vKHA/WIv8vHCrsWsjZ2cRF622Aps
+	HgXHRLKOWelcAp0rra6Xj/P
+X-Received: by 2002:a05:7022:f91:b0:129:1d25:f1da with SMTP id a92af1059eb24-13633a69b63mr617788c88.3.1779340426708;
+        Wed, 20 May 2026 22:13:46 -0700 (PDT)
 Received: from dtor-ws.sjc.corp.google.com ([2a00:79e0:2ebe:8:d457:597:d576:1eb8])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-135e5c0a918sm6231360c88.14.2026.05.20.22.13.42
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-135e5c0a918sm6231360c88.14.2026.05.20.22.13.45
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 20 May 2026 22:13:42 -0700 (PDT)
+        Wed, 20 May 2026 22:13:45 -0700 (PDT)
 From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Wed, 20 May 2026 22:13:18 -0700
-Subject: [PATCH v2 2/5] sh: pfc: attach software node to the GPIO chip
+Date: Wed, 20 May 2026 22:13:20 -0700
+Subject: [PATCH v2 4/5] pinctrl: renesas: gpio: support software nodes for
+ function GPIOs
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -70,7 +71,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260520-rsk7203-properties-v2-2-465f3308021b@gmail.com>
+Message-Id: <20260520-rsk7203-properties-v2-4-465f3308021b@gmail.com>
 References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com>
 In-Reply-To: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com>
 To: Rich Felker <dalias@libc.org>, 
@@ -84,73 +85,71 @@ Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
  linux-gpio@vger.kernel.org
 X-Mailer: b4 0.16-dev-6911d
 
-With commit e5d527be7e69 ("gpio: swnode: don't use the swnode's name as
-the key for GPIO lookup") gpiolib requires that firmware nodes from the
-GPIO references to match firmware node in gpiochip structure.
+This patch extends the sh-pfc GPIO driver to support software-node-based
+configuration for the secondary 'function' GPIO chip.
 
-Define a software node for the pfc gpiochip so that it can be referenced
-by boards using static device properties.
+While the primary GPIO chip typically uses the firmware node attached to
+the parent platform device, the secondary chip should target a specific
+child node to avoid ambiguity when defining GPIO hogs or properties.
 
+Update gpio_function_setup() to look for a child node named 'functions',
+but only when the parent is a software node. This ensures the behavior
+is restricted to legacy platforms being migrated to software nodes.
+
+Assisted-by: Gemini:gemini-3.1-pro
 Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 ---
- arch/sh/include/cpu-common/cpu/pfc.h |  3 +++
- arch/sh/kernel/cpu/pfc.c             | 20 ++++++++++++++------
- 2 files changed, 17 insertions(+), 6 deletions(-)
+ drivers/pinctrl/renesas/gpio.c | 28 +++++++++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
-index 879d2c9da537..d57e38c05bdb 100644
---- a/arch/sh/include/cpu-common/cpu/pfc.h
-+++ b/arch/sh/include/cpu-common/cpu/pfc.h
-@@ -11,6 +11,9 @@
- #include <linux/types.h>
- 
- struct resource;
-+struct software_node;
-+
-+extern const struct software_node pfc_gpiochip_node;
- 
- int sh_pfc_register(const char *name,
- 		    struct resource *resource, u32 num_resources);
-diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
-index 062056ede88d..5a8d804d607b 100644
---- a/arch/sh/kernel/cpu/pfc.c
-+++ b/arch/sh/kernel/cpu/pfc.c
-@@ -5,21 +5,29 @@
-  * Copyright (C) 2012  Renesas Solutions Corp.
-  */
- 
-+#include <linux/err.h>
- #include <linux/init.h>
- #include <linux/platform_device.h>
-+#include <linux/property.h>
- 
- #include <cpu/pfc.h>
- 
--static struct platform_device sh_pfc_device = {
--	.id		= -1,
-+const struct software_node pfc_gpiochip_node = {
-+	.name = "sh-pfc",
- };
- 
- int __init sh_pfc_register(const char *name,
- 			   struct resource *resource, u32 num_resources)
- {
--	sh_pfc_device.name = name;
--	sh_pfc_device.num_resources = num_resources;
--	sh_pfc_device.resource = resource;
-+	struct platform_device_info pdev_info = {
-+		.name		= name,
-+		.id		= PLATFORM_DEVID_NONE,
-+		.res		= resource,
-+		.num_res	= num_resources,
-+		.swnode		= &pfc_gpiochip_node,
-+	};
-+	struct platform_device *pdev;
- 
--	return platform_device_register(&sh_pfc_device);
-+	pdev = platform_device_register_full(&pdev_info);
-+	return PTR_ERR_OR_ZERO(pdev);
+diff --git a/drivers/pinctrl/renesas/gpio.c b/drivers/pinctrl/renesas/gpio.c
+index 4e59dadb7364..b49a3e14da91 100644
+--- a/drivers/pinctrl/renesas/gpio.c
++++ b/drivers/pinctrl/renesas/gpio.c
+@@ -271,18 +271,40 @@ static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
+ 	return ret;
  }
+ 
++static void sh_pfc_fwnode_put(void *data)
++{
++	fwnode_handle_put(data);
++}
++
+ static int gpio_function_setup(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+ 	struct gpio_chip *gc = &chip->gpio_chip;
++	struct fwnode_handle *fwnode = dev_fwnode(pfc->dev);
+ 
+ 	gc->request = gpio_function_request;
+ 
++	if (is_software_node(fwnode)) {
++		fwnode = fwnode_get_named_child_node(fwnode, "functions");
++		if (fwnode) {
++			int ret;
++
++			ret = devm_add_action_or_reset(pfc->dev,
++						       sh_pfc_fwnode_put,
++						       fwnode);
++			if (ret)
++				return ret;
++
++			gc->fwnode = fwnode;
++		}
++	}
++
+ 	/*
+-	 * Explicitly mask the parent's fwnode to prevent gpiolib from
+-	 * reusing it for function GPIOs.
++	 * If we did not find 'functions' node, explicitly mask the parent's
++	 * fwnode to prevent gpiolib from reusing it for function GPIOs.
+ 	 */
+-	gc->fwnode = ERR_PTR(-ENODEV);
++	if (!gc->fwnode)
++		gc->fwnode = ERR_PTR(-ENODEV);
+ 
+ 	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
 
 -- 
 2.54.0.669.g59709faab0-goog
