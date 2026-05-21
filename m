@@ -1,59 +1,59 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1AFF7362152
-	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 09:13:50 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FEDE36B076
+	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 09:14:34 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779354832; cv=none; b=JfZSTHfiEw4yfqtUG/oP81CPTlb9IozzQmOoazVMnKAmcP2LIU5D4qMfzHtTTuDu0OIMaNEhkeRTDiNf7Q+A8YIGIuRBN2BGMW0Ia6FIwOC7A5LPis/DJHB764sGP+Y6SEPoXGrUqOpCaAqWioRlAvIPI3hOYbPzEWcFB/0cjIg=
+	t=1779354875; cv=none; b=kIa0/M49v4JIFTXW3kyL15Z8HVAUUJrVjpO0BhN9pk+mq1p39zf2SeBwCg5X/pofS9wa0L1Oj4EcTMlCIJSmuXyg4Nyoi0mA2nusl8JHH9mqOacuxmJ51IgkAFXBxYid43P7fW3TZB+L7t7+GM3tmTJ5APKUjHsZPQmD7egNSJw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779354832; c=relaxed/simple;
-	bh=0vBPw7VjKlz+RexFcUPzVoxGG58YG7pfMZS145Qmrc0=;
+	s=arc-20240116; t=1779354875; c=relaxed/simple;
+	bh=jNuoxjZvMo6Jgup5tnUJClP0fblgmtv3uErnOkOncoM=;
 	h=From:In-Reply-To:MIME-Version:References:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=myXkt93F0KQzS2j5g864FWh3I9zUjjY0UEgXKuGvtlxLIJXnerzYa68dBttwG/1zPD0D6NiN8uyk3xF/745FJtcdFlM/WVTX2n088LFqW4IecMUDv2d3brqhJP7pukB7LWabDEADZhhsGAJKP2OBTyzbZ7hZopQEw4ozeg2fW4I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=I4LePJCp; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=O+9zOUotu3v6VGTclNybJjjjEych8xD2KkECVjJ97tm62cgmsj4t18tpzCDKdCqrUBoRt2kqJ4GCzMvMBH6AZj3KsJzCfXsfVrUL+xLQPnfeHqMgPauXA17M4O0d0yweT+0rJsaHEa74kqcYEoIQXqjSQ+s01Zqe5Vrh6/t6Mtg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WLEdXnq4; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="I4LePJCp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 607881F01560
-	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 09:13:50 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WLEdXnq4"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0D2511F00A3C
+	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 09:14:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1779354830;
-	bh=0vBPw7VjKlz+RexFcUPzVoxGG58YG7pfMZS145Qmrc0=;
+	s=k20260515; t=1779354874;
+	bh=jNuoxjZvMo6Jgup5tnUJClP0fblgmtv3uErnOkOncoM=;
 	h=From:In-Reply-To:References:Date:Subject:To:Cc;
-	b=I4LePJCpmSpxLP+QSZzZtWGYMLO2XpjTx2AWROM284hAgNMgZY7zSpiIHSSn8Y+88
-	 wuj4SqKvulvrIIS7f+W7wu268Fr7mnNi+DWID1KW1kKNlLqToMahogYnf0dQt25CY0
-	 Sn/xHyigx3dejaubNMEOpWgo44+jh6fYKMNxgluEB6ZKx31j7rnb5cPFQFqnrwAHDk
-	 Iww4hAXBZC8irijXzDnM/hBzrdrdqdgn7nE6SJZ6v/gYdhj6qt5KT9C19dToJKwTxa
-	 7espEeLWNxENt/K/9IbAt5Vyeo0nAEn4MhqDQA6mUDMMNJvM2M2mZ30fXRneqev+uF
-	 /Em1NEiArNA+Q==
-Received: by mail-dl1-f49.google.com with SMTP id a92af1059eb24-1357c851a48so6608094c88.1
-        for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 02:13:50 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ/czT3b7RuwoCLnM2drAwL6fzwttAeTkdiBGxzZrAnRQu1r+cdbz8FYSOZwfa9MlerOdMCzNNupMA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy0xmqMHN2m8Eo0LzRsqGaj0zRrUtMPEKY7Eao3AFWBvKc0BA58
-	hYKwa5E3bk9spTA7nibnfHRst/V65p8uN6NZbNu5XMO/yuy18U8gosaFJP6Z8Xkoj2rRUIPXVoi
-	alJ2okGnS0fiGYkr7bQkiy6Wy3ohRCKLYFFZgBqXFGA==
-X-Received: by 2002:a05:7022:ecc:b0:130:5c90:5a22 with SMTP id
- a92af1059eb24-13632d46078mr839041c88.42.1779354829751; Thu, 21 May 2026
- 02:13:49 -0700 (PDT)
+	b=WLEdXnq4LDRPugD2bO0y7jP15932dsl0wpWEzrHK9+asoVQIKjkdvkJwK7eDdpw+4
+	 9gF0yqHeQLcxxiv3BLmznHzy3QDiweMQsl67zZA28nwjS/ORK49XaFrf5OmVrr+z+5
+	 azBY4KAri4Jek1mA8U4b02oGvACYCJ8D2PA9/EKJAem+IYPXcyIYiNqLZOMpe5z/Vs
+	 5JTntsoHApwaTO2ge1XUb4COaO2cuNIEj5HzIDt7mwBF0/foWm5rlO6+4gt0xs8Ppf
+	 KAgCmFKA96VX0tMyqGBJ1/SapbBAvmFao2c8T8ueDw8CCdu7zDLwn2+tJ6/MckoZeI
+	 SdD+qSTUAs9MQ==
+Received: by mail-dl1-f54.google.com with SMTP id a92af1059eb24-1329fc4bf77so2887787c88.1
+        for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 02:14:34 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ8zYB8Un1w0pSjSfVvTWSOb8zxSd6o0yd1ELPv6ZMFr0cvFB6KtC6A1QElhe3PaUYtO8vHJOTv07Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yw586q8+gvs7Qp2lQSOrtoLB2Z85CDAdxyC7eFgjq77LiwCMsu6
+	PQCzEPHKgq6KiS1KrDCpqFf4WLkxhf+SlcdAzs/LejzsIRKkt0DhNlieb7++4HGqJswwlSqKgkF
+	lPM9a0AdSEuaErnNh0WWvloRAqTNS3JUVyRygaoKCmg==
+X-Received: by 2002:a05:7022:f312:b0:12b:fc21:874d with SMTP id
+ a92af1059eb24-13632d44123mr623001c88.19.1779354873386; Thu, 21 May 2026
+ 02:14:33 -0700 (PDT)
 Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Thu, 21 May 2026 04:13:47 -0500
+ HTTPREST; Thu, 21 May 2026 09:14:27 +0000
 Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Thu, 21 May 2026 04:13:47 -0500
+ HTTPREST; Thu, 21 May 2026 09:14:27 +0000
 From: Bartosz Golaszewski <brgl@kernel.org>
-In-Reply-To: <20260520-rsk7203-properties-v2-4-465f3308021b@gmail.com>
+In-Reply-To: <20260520-rsk7203-properties-v2-5-465f3308021b@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com> <20260520-rsk7203-properties-v2-4-465f3308021b@gmail.com>
-Date: Thu, 21 May 2026 04:13:47 -0500
-X-Gmail-Original-Message-ID: <CAMRc=Mc=vRLNyWwzmERjXNuFmi-LFfwLJd7aG6ZM2RTi=Sr03A@mail.gmail.com>
-X-Gm-Features: AVHnY4IfLFZw7KJUVevq8YdpY49HKtSOEdxQcctWDLoc_Mgggt3xtpZpTVf3yw8
-Message-ID: <CAMRc=Mc=vRLNyWwzmERjXNuFmi-LFfwLJd7aG6ZM2RTi=Sr03A@mail.gmail.com>
-Subject: Re: [PATCH v2 4/5] pinctrl: renesas: gpio: support software nodes for
- function GPIOs
+References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com> <20260520-rsk7203-properties-v2-5-465f3308021b@gmail.com>
+Date: Thu, 21 May 2026 09:14:27 +0000
+X-Gmail-Original-Message-ID: <CAMRc=MfFDeFqo2n44VLZEEFhFOzfKX0bdO3DR08uiNC8LBZLXw@mail.gmail.com>
+X-Gm-Features: AVHnY4LoATEnodB_zt-b1si7q7FaQdB8dn4GF6c9ZIQaby5NHH8SRjLCl2kmz7M
+Message-ID: <CAMRc=MfFDeFqo2n44VLZEEFhFOzfKX0bdO3DR08uiNC8LBZLXw@mail.gmail.com>
+Subject: Re: [PATCH v2 5/5] sh: mach-rsk: rsk7203: convert pin configuration
+ to using software nodes
 To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
 	Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linusw@kernel.org>, 
@@ -63,18 +63,13 @@ Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Content-Type: text/plain; charset="UTF-8"
 
-On Thu, 21 May 2026 07:13:20 +0200, Dmitry Torokhov
+On Thu, 21 May 2026 07:13:21 +0200, Dmitry Torokhov
 <dmitry.torokhov@gmail.com> said:
-> This patch extends the sh-pfc GPIO driver to support software-node-based
-> configuration for the secondary 'function' GPIO chip.
->
-> While the primary GPIO chip typically uses the firmware node attached to
-> the parent platform device, the secondary chip should target a specific
-> child node to avoid ambiguity when defining GPIO hogs or properties.
->
-> Update gpio_function_setup() to look for a child node named 'functions',
-> but only when the parent is a software node. This ensures the behavior
-> is restricted to legacy platforms being migrated to software nodes.
+> Replace legacy gpio_request() calls used to configure function pins
+> (SCIF0 TXD/RXD and LAN9118 IRQ) with software nodes describing GPIO
+> hogs. These hogs are attached to the PFC gpiochip node, allowing the
+> GPIO subsystem to automatically configure these pins when the driver is
+> registered.
 >
 > Assisted-by: Gemini:gemini-3.1-pro
 > Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
