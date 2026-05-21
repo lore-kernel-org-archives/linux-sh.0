@@ -1,78 +1,108 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f73.google.com (mail-wr1-f73.google.com [209.85.221.73])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FEDE36B076
-	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 09:14:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2168B3BBA01
+	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 12:32:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.73
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779354875; cv=none; b=kIa0/M49v4JIFTXW3kyL15Z8HVAUUJrVjpO0BhN9pk+mq1p39zf2SeBwCg5X/pofS9wa0L1Oj4EcTMlCIJSmuXyg4Nyoi0mA2nusl8JHH9mqOacuxmJ51IgkAFXBxYid43P7fW3TZB+L7t7+GM3tmTJ5APKUjHsZPQmD7egNSJw=
+	t=1779366733; cv=none; b=t+4yMpbemPQRvducRkQi+nc1J+XR7/eeqUAba6syJabKcxcNLL8tVBJ4HvQy0vFAOp8/0m0pIeP9cJ2Y9tQiy9UVc/wNYXkr3NklHKsmvbx3j7r+dikvlA9Ij8mtmdy8DEdLNdmelFuXAz6x6eGOTQtMXzuBgJMIpA2WQHIJF1c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779354875; c=relaxed/simple;
-	bh=jNuoxjZvMo6Jgup5tnUJClP0fblgmtv3uErnOkOncoM=;
-	h=From:In-Reply-To:MIME-Version:References:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=O+9zOUotu3v6VGTclNybJjjjEych8xD2KkECVjJ97tm62cgmsj4t18tpzCDKdCqrUBoRt2kqJ4GCzMvMBH6AZj3KsJzCfXsfVrUL+xLQPnfeHqMgPauXA17M4O0d0yweT+0rJsaHEa74kqcYEoIQXqjSQ+s01Zqe5Vrh6/t6Mtg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WLEdXnq4; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1779366733; c=relaxed/simple;
+	bh=jQnNgu0j4tUSjBrg581qH4wjHjeo2hEWtOuwpKYpmJc=;
+	h=Date:Mime-Version:Message-ID:Subject:From:To:Cc:Content-Type; b=WiP8/E+hPppfe4QqlnD6MK/Ziqn5oy953IUzI6HOH7BVFZWE4idbZ6QiL+u0ZpyGpU0nAK7c8Us36x2WjjWhbS3fzNENwaCGhBc+S5xwfMoGKE7ArdMtoXS3pQ5P3bSOVVzBwxNCxYuKc+YiOCbbJsxCFAToVLVtnW16QDJJGHA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--elver.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=Fk7b/WH+; arc=none smtp.client-ip=209.85.221.73
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--elver.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WLEdXnq4"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0D2511F00A3C
-	for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 09:14:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1779354874;
-	bh=jNuoxjZvMo6Jgup5tnUJClP0fblgmtv3uErnOkOncoM=;
-	h=From:In-Reply-To:References:Date:Subject:To:Cc;
-	b=WLEdXnq4LDRPugD2bO0y7jP15932dsl0wpWEzrHK9+asoVQIKjkdvkJwK7eDdpw+4
-	 9gF0yqHeQLcxxiv3BLmznHzy3QDiweMQsl67zZA28nwjS/ORK49XaFrf5OmVrr+z+5
-	 azBY4KAri4Jek1mA8U4b02oGvACYCJ8D2PA9/EKJAem+IYPXcyIYiNqLZOMpe5z/Vs
-	 5JTntsoHApwaTO2ge1XUb4COaO2cuNIEj5HzIDt7mwBF0/foWm5rlO6+4gt0xs8Ppf
-	 KAgCmFKA96VX0tMyqGBJ1/SapbBAvmFao2c8T8ueDw8CCdu7zDLwn2+tJ6/MckoZeI
-	 SdD+qSTUAs9MQ==
-Received: by mail-dl1-f54.google.com with SMTP id a92af1059eb24-1329fc4bf77so2887787c88.1
-        for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 02:14:34 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ8zYB8Un1w0pSjSfVvTWSOb8zxSd6o0yd1ELPv6ZMFr0cvFB6KtC6A1QElhe3PaUYtO8vHJOTv07Q==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw586q8+gvs7Qp2lQSOrtoLB2Z85CDAdxyC7eFgjq77LiwCMsu6
-	PQCzEPHKgq6KiS1KrDCpqFf4WLkxhf+SlcdAzs/LejzsIRKkt0DhNlieb7++4HGqJswwlSqKgkF
-	lPM9a0AdSEuaErnNh0WWvloRAqTNS3JUVyRygaoKCmg==
-X-Received: by 2002:a05:7022:f312:b0:12b:fc21:874d with SMTP id
- a92af1059eb24-13632d44123mr623001c88.19.1779354873386; Thu, 21 May 2026
- 02:14:33 -0700 (PDT)
-Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Thu, 21 May 2026 09:14:27 +0000
-Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Thu, 21 May 2026 09:14:27 +0000
-From: Bartosz Golaszewski <brgl@kernel.org>
-In-Reply-To: <20260520-rsk7203-properties-v2-5-465f3308021b@gmail.com>
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="Fk7b/WH+"
+Received: by mail-wr1-f73.google.com with SMTP id ffacd0b85a97d-44d79da8cf7so4948209f8f.2
+        for <linux-sh@vger.kernel.org>; Thu, 21 May 2026 05:32:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20251104; t=1779366730; x=1779971530; darn=vger.kernel.org;
+        h=cc:to:from:subject:message-id:mime-version:date:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=o9Wpk0SWOqreAi0uU9R/bjkVXMMr/Jb9mNXoYTqNDRk=;
+        b=Fk7b/WH+5G271T4kqifXk6JdHXqWMc+WLpObJnKNeeaH+ealzYK/8g0fZ0uLUU6SXI
+         BukxXPseK28k5CjE2YnE25ZZZ7YsPprU/HE8G+QDKiYqCbHvU5tHdU5fENMVW6tdjTer
+         YGVH/q6XNX9zYDriKpuoFPuALf3Y9mFKp6NT+EYqNKf1AuQ7pBcLHrRON4MndZi74U36
+         UU6xBnPJYqJizVj4e234XafLPeII5AS/KhWIOKUsroi/kg4BJt7pnCuXJ+ux582URBo4
+         +Ux052unD/6mHf2e/grJHcTEXU2UH1L91wXTpV2xw4R4+qsCjwLsgmnVIlke81+Pp4uR
+         NaNA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1779366730; x=1779971530;
+        h=cc:to:from:subject:message-id:mime-version:date:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=o9Wpk0SWOqreAi0uU9R/bjkVXMMr/Jb9mNXoYTqNDRk=;
+        b=p5lQsUAx1fRhRPHUlS62GyFXteW1tWU6QGyLD7DIAemOYzhgy9e6UT+H/kEZSS8PbD
+         Lx6kZaoQk2xftmxg3fGPwru8iitegFfjqYe6Q8Lw+AumfQLYbTrkADLjqW/RIpn+jwSx
+         YeAG4FJUpao+qVbjUt31isiDf5VvBRORrTE+gblVtxLeAGrYmewv0KrBX6UjjgE9pg9B
+         XuFSC4pEde1TJJtyAs7gi9z/SXqNL+FE2+scmqP0uenHlErxuCkVREPzO+pruiMx2Hyn
+         q89MGezQJkOqI3Rd/uMN34SVd5fQuZb/zpBbe2P1/dLqvikMv/41nduTJl4m5WgkQjzS
+         b9AA==
+X-Forwarded-Encrypted: i=1; AFNElJ/3C5o62ksHEtAbWUfZJpzjqj3WrSkrwRse6YS+3FA65TnXxlUcU5SwAqOCRmBQn6pyQCRXvg2UAA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx5qr63JJqqW1PnUqUZyxN2iqqkvKNerlCmOFpwzFrvL4ira8NG
+	suPgVgU4dk7ri5fd5KoirfOzYV3wZiwOyfSt9b5eGuWWtj3LyZ49B0hh+2hPyLyXHmGHzqDOLSr
+	Pfg==
+X-Received: from wmqo22.prod.google.com ([2002:a05:600c:4fd6:b0:48a:6051:b5af])
+ (user=elver job=prod-delivery.src-stubby-dispatcher) by 2002:a05:600c:a04:b0:48a:97b6:7420
+ with SMTP id 5b1f17b1804b1-490360e46d3mr36961525e9.24.1779366729894; Thu, 21
+ May 2026 05:32:09 -0700 (PDT)
+Date: Thu, 21 May 2026 14:31:58 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com> <20260520-rsk7203-properties-v2-5-465f3308021b@gmail.com>
-Date: Thu, 21 May 2026 09:14:27 +0000
-X-Gmail-Original-Message-ID: <CAMRc=MfFDeFqo2n44VLZEEFhFOzfKX0bdO3DR08uiNC8LBZLXw@mail.gmail.com>
-X-Gm-Features: AVHnY4LoATEnodB_zt-b1si7q7FaQdB8dn4GF6c9ZIQaby5NHH8SRjLCl2kmz7M
-Message-ID: <CAMRc=MfFDeFqo2n44VLZEEFhFOzfKX0bdO3DR08uiNC8LBZLXw@mail.gmail.com>
-Subject: Re: [PATCH v2 5/5] sh: mach-rsk: rsk7203: convert pin configuration
- to using software nodes
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linusw@kernel.org>, 
-	Bartosz Golaszewski <brgl@kernel.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, 
-	Arnd Bergmann <arnd@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.54.0.746.g67dd491aae-goog
+Message-ID: <20260521123205.146268-1-elver@google.com>
+Subject: [PATCH] sh: Implement _THIS_IP_ using inline asm
+From: Marco Elver <elver@google.com>
+To: elver@google.com
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, kasan-dev@googlegroups.com
 Content-Type: text/plain; charset="UTF-8"
 
-On Thu, 21 May 2026 07:13:21 +0200, Dmitry Torokhov
-<dmitry.torokhov@gmail.com> said:
-> Replace legacy gpio_request() calls used to configure function pins
-> (SCIF0 TXD/RXD and LAN9118 IRQ) with software nodes describing GPIO
-> hogs. These hogs are attached to the PFC gpiochip node, allowing the
-> GPIO subsystem to automatically configure these pins when the driver is
-> registered.
->
-> Assisted-by: Gemini:gemini-3.1-pro
-> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> ---
+Both GCC [1] and Clang [2] consider the generic version of _THIS_IP_ to
+be broken:
 
-Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+        #define _THIS_IP_  ({ __label__ __here; __here: (unsigned long)&&__here; })
+
+In particular, the address of a label is only expected to be used with a
+computed goto.
+
+While the generic version more or less works today, it is known to be
+brittle and may break with current and future optimizations. For
+example, Clang -O2 always returns 1 when this function is inlined:
+
+        static inline unsigned long get_ip(void)
+        { return ({ __label__ __here; __here: (unsigned long)&&__here; }); }
+
+Fix it by overriding _THIS_IP_ in <asm/linkage.h> (which is included by
+<linux/instruction_pointer.h>) using an architecture-specific inline asm
+version. Additionally, avoiding taking the address of a label prevents
+compilers from emitting spurious indirect branch targets (e.g. ENDBR or
+BTI) under control-flow integrity schemes.
+
+Link: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=120071 [1]
+Link: https://github.com/llvm/llvm-project/issues/138272 [2]
+Signed-off-by: Marco Elver <elver@google.com>
+---
+ arch/sh/include/asm/linkage.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/sh/include/asm/linkage.h b/arch/sh/include/asm/linkage.h
+index 7c2fa27a43f8..af56b38b6001 100644
+--- a/arch/sh/include/asm/linkage.h
++++ b/arch/sh/include/asm/linkage.h
+@@ -5,4 +5,6 @@
+ #define __ALIGN .balign 4
+ #define __ALIGN_STR ".balign 4"
+ 
++#define _THIS_IP_ ({ unsigned long __ip; asm volatile("mova 1f, %0\n1:" : "=z" (__ip)); __ip; })
++
+ #endif
+-- 
+2.54.0.746.g67dd491aae-goog
+
