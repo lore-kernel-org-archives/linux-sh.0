@@ -1,144 +1,74 @@
-Received: from mail-lf1-f50.google.com (mail-lf1-f50.google.com [209.85.167.50])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC2D481ACA
-	for <linux-sh@vger.kernel.org>; Fri, 22 May 2026 12:45:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 64FF93E3DBE
+	for <linux-sh@vger.kernel.org>; Mon, 25 May 2026 08:56:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779453932; cv=none; b=ToxOQdgAcsAGaJA4Pv5kjWQd4w13IKv5tWZ+tbAvNl7aMXg2LX80BJAQsJikWFnvgCxy3EuNuNacFvSxKgsFWnHgz0nLbMOBk9H9qQShcauL5nTSkDUxk9asfYXYc1gFaY1X/bo1nNGDV2LDclModz9I/rzvs64uLSMN0a0KceE=
+	t=1779699419; cv=none; b=PCxtbEmRXE61OSkt7xpmfKO3NnAtFuyJ5Ust/Fh7SqD4TWXvGyy1IV6k3je2JupxkOsy3fYceaVw/ZwZIetQIQlncOnmJDGBKQ5Vs9S446kZdpzWwR8AONoFYQLJllRsZ/9tpzb3NLqbEgybdwqX/qcJzUDYXosV4ROMEcYBojk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779453932; c=relaxed/simple;
-	bh=B6Wrx8wptznPEXE7GgI4oCIpRWZlbijf1SHKh604G6I=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=eWShlf7r/PNNUJnARAucr86B2+cdFPVGkfMDW/GWHBz/z16c/5d86Cjs7M7ONuL6NfuZS5YyoWWM1YC176iFloLmJa1GCj31uIfFBIqkH6inbY6lJ0z7lX99at60jihtwmZwU54Ar23KFdf2CKjKNaKfUe4yaqV+sIEdrz7gmdE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=S9TdA1s9; arc=none smtp.client-ip=209.85.167.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1779699419; c=relaxed/simple;
+	bh=7PvwyQllz/pjQymDAzG0DdH6jfnX3fKrrEx3IT04oDo=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=KqJDfXsrVyMUqNuFfZjTJrZqidwWgJOWWsFCAvNtz7N+2pV6TRuiIuTrGEWgSeD6NeYuO660IW/okR6dOCtgr7NDYau4ssbMlXU3pbms6ttwwGJ5AgYSiv80cRRJeOIXD3lV0VRV6r3enyAZGOyCdNQvBKXxyEfCquPTvxZKd7E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=afX2nWbi; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="S9TdA1s9"
-Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5a85b30dd54so7840501e87.2
-        for <linux-sh@vger.kernel.org>; Fri, 22 May 2026 05:45:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779453928; x=1780058728; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=jEx08WhtJbuH9Jvv5ffuVG6XRuDs6AIyFWz3HRiJmYw=;
-        b=S9TdA1s9sU06k7pAAsQhZgPt6Jm2cy1jpfHiVjy/+4+phsKTB39AbQjFrUaHHvTuHa
-         7xcha/kC9qOvlrvOc+x2JTP+jZxZ/e3H1ei/X60CDqJpjGmR8Nzbf9OwEeh6jXSYmMe6
-         1lqGhLX9WLcsDUNoRDwB8RN2/7jcZGUB/8QVzZr9eANTujcgTuVz1xsDUvY1h5CzWkhw
-         CjjnUJzTgxZB4Xvh+ERZIfoeKsbVY7GHoFXwuSABK574IaI9xqc2uETLj3zU1ZFqV2YS
-         GuqN5wtrNjE3MnCX7eUhhI4j839ntAaSS2DRdL1e8/Q6vQSCXDKpTqbm32FekGdEJyes
-         Fk2g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779453928; x=1780058728;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=jEx08WhtJbuH9Jvv5ffuVG6XRuDs6AIyFWz3HRiJmYw=;
-        b=WGoObuGPDu1y8FiFQlcktBuM51bLjURYh7h6Dw6Ysx2A6/Gj5iNZWIUxNlMIlWPkcd
-         JmOdu8EybqQIqruS6jBZcyCxC8B6nqmTuvN2tQCpWhJv2LLT0SA0qtq27XibmDkQQNsk
-         BNuMqN1UBTdw3Z49yTnS9qmmjvaBmhtfUgIfJZO/Vezwx1R5D6EAzqoe7HDV7C53J5EW
-         5W2x7K2VREHn5oRwNTJapVqjehyHrNVeM6E2Z38noYKdAifOcP5hU0YoBvax95AsAXzC
-         gJTDeGDo4lbZKP/2KzDzM4DsjMkG2V1OcIM8ZYzyyR2tttlapanQGybMRrlaZ9asQ1P1
-         MMEg==
-X-Forwarded-Encrypted: i=1; AFNElJ+ZgV8sQ2Hjdv0Aqef+DPifC7O+gkNADSNIu/rXCtfCQGdqkqBtvKz1M10cBI8s4EyVWXt7SqOFsw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxKOqvbFraVRu5x3uhW2QIlYZkn/MZWtZD1EneAijrBuNMIROyz
-	9bAg91lMz4WmDCt2lCk6yADbeTCChOYvipOVqz24ZDYep4W0kB9ZxO5F
-X-Gm-Gg: Acq92OGWdLHICnfIB0VUoBbvEBbcZ8+YgqgwBAuK25LhG5p9Dcsd9xkVb4BdO4/LZW6
-	vbWyR0RH1MQk4nVVeI4aK3Yb/DtHAuAjeHXyE4Qfxh8fSIypfd1orbrK02OmnkjBgyveW1Pt8Um
-	42gokGnQaeVhe43ZuhMxhcbPZ/PYl1RZalFjcklt74u5id38/q/5zbRaJeydIduHN5wxQu0zwws
-	pIVKWXRkBXV8dX5zFMnX8HvJj/EUup9q5Lv0w35vOrOo/4Dvl9IQsE35A42MCTuhRHPVcZteHx2
-	RMhWACe1Ws4DoUFk+oq6qlvo45nOQqC1BOCfKBywujBugIo+rYe1TUOmXmBinbcKOnEKdb6k9OB
-	Dx2GyJJXwOnpAQI228q8swvkZ7v6gVdAmcYcDNFddECq+FqehvfiP10TvMKp9CN7NWWc2rd0L6p
-	D/irR+8ePGVZ1iuzh74lYapsBp3BeAaQJNvlgxeiGZted8YP5Vo9Li0XVi4yKzwYzFSW/06RyJ+
-	CN2IsYW
-X-Received: by 2002:a05:6512:33c9:b0:5a8:64c4:38c4 with SMTP id 2adb3069b0e04-5aa32314258mr1031399e87.8.1779453927777;
-        Fri, 22 May 2026 05:45:27 -0700 (PDT)
-Received: from ?IPV6:2a10:a5c0:800d:dd00:8fdf:935a:2c85:d703? ([2a10:a5c0:800d:dd00:8fdf:935a:2c85:d703])
-        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5aa32cb37bfsm401018e87.11.2026.05.22.05.45.26
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 22 May 2026 05:45:27 -0700 (PDT)
-Message-ID: <55c36da0-6cc4-4c95-88ef-3dd5b2181b0d@gmail.com>
-Date: Fri, 22 May 2026 15:45:25 +0300
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="afX2nWbi"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1FFDE1F00ADB
+	for <linux-sh@vger.kernel.org>; Mon, 25 May 2026 08:56:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1779699418;
+	bh=7PvwyQllz/pjQymDAzG0DdH6jfnX3fKrrEx3IT04oDo=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=afX2nWbiFCbDz6PnnrS4+QAZf0GARg6ufmCva7Lo1C1L8uxDo/U/sJ0K+011DdNyl
+	 xtlG2dpEeMpaUokvP/LNucXbYmuCGBDW+uy0xdcLkPCBPH56sYMzfB9STwCeTdTtSW
+	 T2h1S6Ypb5QJNIwUtJBfC0S/ybri9K/YoiYpZ8VoMzQqFX6WKcSZcDmE09gGCGv4WL
+	 1omYkY6UbeHiOg3pF1kiSSjbyCQcvc/qd37DYtGqG12maVHnWzOQmk4q+rUzoIDjU6
+	 2Qhzu49q6owNlWwlMzuKaYl7YYK0gIpule4vfv6GfzL6+buWvIRQZcSQDYCeYsfPOz
+	 yOQHVl3YLg5pQ==
+Received: by mail-ot1-f43.google.com with SMTP id 46e09a7af769-7e5fe62fc87so2615832a34.1
+        for <linux-sh@vger.kernel.org>; Mon, 25 May 2026 01:56:58 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ82PCFjY8YV8G0dsDSJkXxULC35Jclv3QnVmiBD7hfQ3W/eTlxGUzeRbWiT8YQJ5tPzZUHZ49P1Kg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxU7IPXxlyUdhSVg/w2GfRzmQGg1Xp5hyEY2XLbfP5X+9WTCjeF
+	9BvTmnCn3TyoBg1VQJP63EbVD8+BGcpgoFUPrZi1phyRfRZ0qQvl34q5l5WWzVL8/8++RwxNwAJ
+	6AdzDVS2o8KyJxrLVWSf/Tle/6CGt4pU=
+X-Received: by 2002:a05:6830:67eb:b0:7e3:d199:3164 with SMTP id
+ 46e09a7af769-7e5fedf1913mr9444576a34.11.1779699417451; Mon, 25 May 2026
+ 01:56:57 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 02/10] [v3] input: gpio-keys: make legacy gpiolib optional
-To: Arnd Bergmann <arnd@arndb.de>, Arnd Bergmann <arnd@kernel.org>,
- "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>
-Cc: linux-kernel@vger.kernel.org,
- Christian Lamparter <chunkeey@googlemail.com>,
- Johannes Berg <johannes@sipsolutions.net>,
- Aaro Koskinen <aaro.koskinen@iki.fi>, Andreas Kemnade
- <andreas@kemnade.info>, Kevin Hilman <khilman@baylibre.com>,
- Roger Quadros <rogerq@kernel.org>, Tony Lindgren <tony@atomide.com>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
- Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>,
- x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
- Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>,
- Dmitry Torokhov <dmitry.torokhov@gmail.com>, Lee Jones <lee@kernel.org>,
- Pavel Machek <pavel@kernel.org>,
- Florian Fainelli <florian.fainelli@broadcom.com>,
- Jonas Gorski <jonas.gorski@gmail.com>, Andrew Lunn <andrew@lunn.ch>,
- Vladimir Oltean <olteanv@gmail.com>, "David S . Miller"
- <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>,
- Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
- linux-wireless@vger.kernel.org, Linux-OMAP <linux-omap@vger.kernel.org>,
- linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
- linux-sh@vger.kernel.org, linux-input@vger.kernel.org,
- linux-leds@vger.kernel.org, Netdev <netdev@vger.kernel.org>
-References: <20260520183815.2510387-1-arnd@kernel.org>
- <20260520183815.2510387-3-arnd@kernel.org>
- <b79d8ad9-f36e-4769-9dc2-58baefe23000@gmail.com>
- <681f328c-bc8a-4410-b876-f8c5f116325d@app.fastmail.com>
-Content-Language: en-US, en-AU, en-GB, en-BW
-From: Matti Vaittinen <mazziesaccount@gmail.com>
-In-Reply-To: <681f328c-bc8a-4410-b876-f8c5f116325d@app.fastmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com>
+In-Reply-To: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com>
+From: Linus Walleij <linusw@kernel.org>
+Date: Mon, 25 May 2026 10:56:38 +0200
+X-Gmail-Original-Message-ID: <CAD++jLn5VCye-B7hFj2O+w4v2fJ+Anv20AXNpi6+gnetQ0z76g@mail.gmail.com>
+X-Gm-Features: AVHnY4KcQDk0adPJPzy4UzxdMwWacFrk2st2duRbr0oE9NOwculfoeTBCKJMzrs
+Message-ID: <CAD++jLn5VCye-B7hFj2O+w4v2fJ+Anv20AXNpi6+gnetQ0z76g@mail.gmail.com>
+Subject: Re: [PATCH v2 0/5] rsk7203: switch to using static device property,
+ drop legacy gpio API
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Geert Uytterhoeven <geert+renesas@glider.be>, Bartosz Golaszewski <brgl@kernel.org>, 
+	Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Arnd Bergmann <arnd@kernel.org>, 
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 22/05/2026 11:28, Arnd Bergmann wrote:
-> On Fri, May 22, 2026, at 06:55, Matti Vaittinen wrote:
->> On 20/05/2026 21:38, Arnd Bergmann wrote:
->>> From: Arnd Bergmann <arnd@arndb.de>
->>>
->>> The two Rohm PMIC drivers use a gpio-keys device without an actual GPIO,
->>> passing an IRQ number instead. In order to keep this working both with
->>> and with CONFIG_GPIOLIB_LEGACY, change the gpio-keys driver to ignore
->>> the gpio number if an IRQ is passed.
->>>
->>
->> I am (still) all fine with this, even though I like Dmitry's set. I
->> suppose you already have a plan for merging this, but I still have to
->> ask - why the MFD changes aren't in own patch? I feel it would have
->> simplified merging, backporting, reviewing and reverting if needed.
-> 
-> Splitting it out would break bisection: The gpio-leds change without
-> the mfd change causes a build failure when assigning the .gpio
-> field, and the reverse causes a runtime failure when .gpio=0 is
-> a valid line.
+On Thu, May 21, 2026 at 7:13=E2=80=AFAM Dmitry Torokhov
+<dmitry.torokhov@gmail.com> wrote:
 
-Ah, yes. Thanks for explanation. (I feel a bit [a lot] stupid, as I 
-somehow missed the problem of .gpio = 0 being valid. That even though I 
-had it explicitly set to -1 myself :rolleyes: ).
+> This series of patches converts rsk7203 to use static device properties
+> for its devices, including gpio-keys and gpio-leds, and removing
+> dependency on legacy gpio API (in favor of gpiod API).
 
-No further questions ;)
+The series:
+Reviewed-by: Linus Walleij <linusw@kernel.org>
 
 Yours,
-	-- Matti
-
--- 
----
-Matti Vaittinen
-Linux kernel developer at ROHM Semiconductors
-Oulu Finland
-
-~~ When things go utterly wrong vim users can always type :help! ~~
+Linus Walleij
