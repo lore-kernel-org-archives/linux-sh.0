@@ -1,90 +1,86 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtpout-03.galae.net (smtpout-03.galae.net [185.246.85.4])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4FDC43B83FB;
-	Wed, 27 May 2026 07:27:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42DEA396573;
+	Wed, 27 May 2026 09:08:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.246.85.4
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779866838; cv=none; b=Zy9xm+GEi5iTuKYY/+2yPyeyV6b0Fut/+y8tXo17D2Ljoju/506Q/oTAhHjYCfb7KdEX9hNgQrth7eiaGQegusmVgDiDlnosP6oyU3w++1KmwDA4FdY6X7QtKyLtsZ4DJZB/Jsu4GYTRksQdjWuSuFAzjA+H9bUvjEFcZAZexew=
+	t=1779872896; cv=none; b=dCuGsFgjOSvUK67shcQONJleqd8hv0icrcAKIKhUTwAsoNOiMJdcbLLC+w+EZl/TfHUQgcBG9tVmOo4q76GvcVO6JhWSz2oFm/6KaJciUsfMce7iVkpOtFKhy8us2I1Y50nKvFSWoTaV4qkui1gPXB4z4HSbOeQqOHEcWP7g6Jw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779866838; c=relaxed/simple;
-	bh=Y2A3B3ypeaC2SunWs93jCADZV/Bq7TXZWi4vlWi7dqw=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=FxC1kpRKIytjsipOSc/tDwgIZqh64DzWZ7WkJYPmP3Y4Ae1PTYoWKKaKhZPBQWAICeRaQdQiII2CSju9Ca3NRZMqRzDmVWX4qourbH+K2Z11+KFTV6Ue5VXhyxmxzUVlku00y5tuUfI8wYNrhY0OSQxqJmJ03+4XY0p7te3VNH8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=SpZV3CHv; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1779872896; c=relaxed/simple;
+	bh=yGB4Pnsh6y/n7VuGcmXB+c+INnnsRFuGZCwCmF3fXjw=;
+	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
+	 MIME-Version:Content-Type; b=ofEQu0zqT4GxhEPMF2yGwwm3IscEX/hWmdESVTC+Wfj0Hv6YhvSxEGRFQBGsjar9qhO1/8r13sFdrQxcLiZWHK60wMCoyYIUkwnUcackdJD3z42L26uKiaKXX88zHjpOKCaCPJ/67GbYiLyGk3DWXFXQJrreC60fIPIrZDDV5nc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=bootlin.com; spf=pass smtp.mailfrom=bootlin.com; dkim=pass (2048-bit key) header.d=bootlin.com header.i=@bootlin.com header.b=I6SVVkiO; arc=none smtp.client-ip=185.246.85.4
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=bootlin.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bootlin.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="SpZV3CHv"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=qNrsF495IfivakQmGDbAXyK215MsZVkAtP1UMTpyiqE=; t=1779866835;
-	x=1780471635; b=SpZV3CHv56NXm12YHD79dDqVqNxnsKG648fTpVs0gibH6dIwRSCW8emOr4WNC
-	zRlrD/5FJBCjWi3y97v1fUltA45be+2ZqTAIb8wqsnSHSPpCB8hmccZL8YohLNiowkHel1FOxaT7j
-	8H2Ny5Kz1veVmsgMhCVEOO/Rhtmq+2jjpF2CzQ4iOzuFEflEAfWGa3IRXLFNp/xoBt9D3zJ433TbJ
-	0G0uVOU2TsirGXL02AG3CRcyYU4Iv27QT/zDyiUMudRzV40IvQo2vqzd6bIYhFsq+FZzwSFHTJGs5
-	Kqu2qoOVjGo8svx2mO3LIEzbplVXHxV/8SLvzbHIJuPIILAaqA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wS8fM-00000000pQ7-3P1K; Wed, 27 May 2026 09:27:00 +0200
-Received: from p57bd94c1.dip0.t-ipconnect.de ([87.189.148.193] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wS8fM-00000003FQw-2Ph3; Wed, 27 May 2026 09:27:00 +0200
-Message-ID: <07dc3a3a89cc4426955820a39c2b59c20995ab2e.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 1/3] sh: ecovec24: remove FSI/DA7210/Simple-Audio-Card
- support
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Bartosz
- Golaszewski	 <brgl@kernel.org>, Geert Uytterhoeven
- <geert+renesas@glider.be>, Jaroslav Kysela <perex@perex.cz>, Liam Girdwood
- <lgirdwood@gmail.com>, Linus Walleij <linusw@kernel.org>,  Mark Brown
- <broonie@kernel.org>, Rich Felker <dalias@libc.org>, Takashi Iwai
- <tiwai@suse.com>,  Yoshinori Sato <ysato@users.sourceforge.jp>,
- linux-sh@vger.kernel.org, linux-sound@vger.kernel.org
-Date: Wed, 27 May 2026 09:26:59 +0200
-In-Reply-To: <87y0h5e4ff.wl-kuninori.morimoto.gx@renesas.com>
-References: <87zf1le4fu.wl-kuninori.morimoto.gx@renesas.com>
-	 <87y0h5e4ff.wl-kuninori.morimoto.gx@renesas.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.1 
+	dkim=pass (2048-bit key) header.d=bootlin.com header.i=@bootlin.com header.b="I6SVVkiO"
+Received: from smtpout-01.galae.net (smtpout-01.galae.net [212.83.139.233])
+	by smtpout-03.galae.net (Postfix) with ESMTPS id B9B084E42D19;
+	Wed, 27 May 2026 09:08:13 +0000 (UTC)
+Received: from mail.galae.net (mail.galae.net [212.83.136.155])
+	by smtpout-01.galae.net (Postfix) with ESMTPS id 8C0B1601A1;
+	Wed, 27 May 2026 09:08:13 +0000 (UTC)
+Received: from [127.0.0.1] (localhost [127.0.0.1]) by localhost (Mailerdaemon) with ESMTPSA id 37E9410888BA2;
+	Wed, 27 May 2026 11:08:10 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bootlin.com; s=dkim;
+	t=1779872893; h=from:subject:date:message-id:to:cc:mime-version:content-type:
+	 content-transfer-encoding:in-reply-to:references;
+	bh=kK4DTYkH4mVqwbeUHZEIbZsf6OS+5cQBMBpoc2DcWR8=;
+	b=I6SVVkiOFww4QVTTTD7F7O1TYjm+ySSBsQfX6Y8/mfPsdhbzIkTo3Gsn2+jPEsG73kI9Xf
+	zws+RC/t3v8l2NQgg/kDgN2g8Las5DBzhE1WmzZIj8TkkVKoTFuf7K7ttWTG8c4n5aKNHc
+	W7PwTT0/MR7498W1CGFyHhYduvN66YAF+PctgU0zUDl5RlczG6MucMRePGOSwdQ/wlDUS/
+	VIx+d9mXKXH6n4dxKLH0LB5HFTajOvUh6OyPzq88WBmJsBAUTINdVjzlThwEsq/z3hJq4V
+	1MnYpnvnw12nbHO+Y67l43wR+OhWjHa0VDDX3obB4kvgpnJ5OVh1wHdbZxnXOw==
+From: Miquel Raynal <miquel.raynal@bootlin.com>
+To: Richard Weinberger <richard@nod.at>, 
+ Vignesh Raghavendra <vigneshr@ti.com>, linux-mtd@lists.infradead.org, 
+ Florian Fuchs <fuchsfl@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ Adrian McMenamin <adrian@newgolddream.dyndns.info>, 
+ Artur Rojek <contact@artur-rojek.eu>
+In-Reply-To: <20260518114521.81564-1-fuchsfl@gmail.com>
+References: <20260518114521.81564-1-fuchsfl@gmail.com>
+Subject: Re: [PATCH v3 0/3] mtd: maps: vmu-flash: Fix build and runtime
+ errors
+Message-Id: <177987289003.3980206.15138963212721838518.b4-ty@bootlin.com>
+Date: Wed, 27 May 2026 11:08:10 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+X-Mailer: b4 0.14.3
+X-Last-TLS-Session-Version: TLSv1.3
 
-Hi Kuninori,
+On Mon, 18 May 2026 13:45:18 +0200, Florian Fuchs wrote:
+> This small series fixes build and runtime errors in the vmu-flash driver
+> (enabled by CONFIG_MTD_VMU) and the related maple.h. These changes were
+> verified on real Dreamcast hardware with a physical VMU. The VMU can now
+> be successfully probed, read and written with MTD tools like mtdinfo and
+> mtd_debug. Previously, the driver failed to build or crashed during
+> probing.
+> 
+> [...]
 
-On Wed, 2026-05-27 at 06:45 +0000, Kuninori Morimoto wrote:
-> Ecovec24 is using Simple-Audio-Card with "platform data" style
-> (which is mainly supporting "DT style" today), but "platform data"
-> style is not working correctly working during almost 10 years.
+Applied to mtd/next, thanks!
 
-We have an out-of-tree patch series by Yoshinori Sato to convert SH to
-using device tree but the patches still need some work, see [1].
+[1/3] maple: fix build error due to missing include of linux/device.h
+      (no commit info)
+[2/3] mtd: maps: vmu-flash: fix fault in unaligned fixup
+      commit: 79d1661502c6e4b6f626185cef72cf2fa78116e1
+[3/3] mtd: maps: vmu-flash: fix NULL pointer dereference in initialization
+      commit: 357e3b8e3a8769ba36eb8ec5e053e4825f1a9329
 
-Do you think we could save the drivers when switching SH to device tree?
+Patche(s) should be available on mtd/linux.git and will be
+part of the next PR (provided that no robot complains by then).
 
-Adrian
+Kind regards,
+Miquèl
 
-> [1] https://lore.kernel.org/all/cover.1716965617.git.ysato@users.sourcefo=
-rge.jp/
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
