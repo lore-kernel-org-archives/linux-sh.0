@@ -1,33 +1,33 @@
 Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 8B3F82DEA89;
-	Fri, 29 May 2026 08:27:47 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 54C9938D400;
+	Fri, 29 May 2026 08:28:39 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780043268; cv=none; b=jIxxzcjYnoc1bQJ2pdV1T1XY/BI2sBQe4E5fALz3V/6QoPf50tV0qdrNvSS7Jg8d5qA1Rwh4HaxVPinx0i15mi0TLBzQMJrvP+8JVsV5zn4sKcQK5oKozHblQThxcF4l+9F8U7+GXfHByXUnw0ChnMNw3/NBfPoQYdBMojncmFc=
+	t=1780043321; cv=none; b=ehoQjjmffWo0Kw9kIl/vBMUdM/beVjPwANWSKkMvQD2uHy+4VZcrbKwuhlF8ACkNZ6qSt/L8GGfrUnzVaR+1bQwSgmyII1DJHXsSY3kx/aQ2y0LvmmQdXc8kE9N6c6+7DF/RnnFz8oXTTDyn2m1V5UWunHuyrS5QO0FI6hsRP+k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780043268; c=relaxed/simple;
-	bh=vGqKwtowp8PNMRvBO7niOdxzr80Af+Ycpil33LSytq8=;
+	s=arc-20240116; t=1780043321; c=relaxed/simple;
+	bh=HxDE/v275kzieWm+smiZqa4yjNgD7FuY1p40zCPFJh8=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=jaUGM2gwtG1Dv19CxjSjHMpITtqBI+JjHCjK8BfY+QCOYcdbFGX83kpukRNo6Sy+xB07ybP476TS4ljSIhYOEDp3UIqaanVcGsGh//yAjy1Z5NLcZf2JJ5ZikbRdhTzLoGsfYVa7qoyj/x/hjkLA5WV/LLcL8ely/Z4jYgMekWw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b=sZLc3D9c; arc=none smtp.client-ip=217.140.110.172
+	 In-Reply-To:Content-Type; b=UtPiEe0Wfn9qboK7iNm8pdql3luZWgIKjalrTVzRkmC7g3aIqhqHkzIBSIgvp1uuD8vRmLyo9U4RY4Yo0XjVN1jphR6OOFhlhMfACaZK/EwydpYoIO6AuIZURUXnm5YFaSMtn0dZWgSv7pCWyeWdu9wh8OnMcvYSf94oUZ7w7OY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b=XYY9kB9G; arc=none smtp.client-ip=217.140.110.172
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b="sZLc3D9c"
+	dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b="XYY9kB9G"
 Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id B2265201B;
-	Fri, 29 May 2026 01:27:41 -0700 (PDT)
+	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id A19FE201B;
+	Fri, 29 May 2026 01:28:33 -0700 (PDT)
 Received: from [10.57.91.162] (unknown [10.57.91.162])
-	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 2F36E3F632;
-	Fri, 29 May 2026 01:27:40 -0700 (PDT)
+	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 51F163F632;
+	Fri, 29 May 2026 01:28:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=arm.com; s=foss;
-	t=1780043266; bh=vGqKwtowp8PNMRvBO7niOdxzr80Af+Ycpil33LSytq8=;
+	t=1780043318; bh=HxDE/v275kzieWm+smiZqa4yjNgD7FuY1p40zCPFJh8=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=sZLc3D9chfT7SLPciBg3CzU4tEgQd2MgnitSwynPVzMJkASztCzaS8U6eG48NlXUj
-	 NjlYJAnCst9GC7POcH6vB4eJQPJcLzWDvzqPHQrCfUmthlePWs5wgYHTV4sko2IV+Z
-	 aIr2mh8cXNbx5h2aQZIulPua6F09KFpwA+oUzHNk=
-Message-ID: <2a6f9f05-ac57-4ef8-9328-74cc8ccfea16@arm.com>
-Date: Fri, 29 May 2026 10:27:37 +0200
+	b=XYY9kB9GX0DEWsQN+Oj7ZxBosVWDp3/KI3Y5O5DSe8+4geNHXgkk8LulhMaD4MsWA
+	 Nccb5VsdP0UL8JIjPxBgRordOXz3Gl/86u7LQqEBCbv412ByXijVU4uD+broFZMSHy
+	 cGpZhrwOcstLiYiLOi2GfzJ7aoGgzXegNpL7uRks=
+Message-ID: <87ed7239-1622-4cb3-af04-2390f2b549e3@arm.com>
+Date: Fri, 29 May 2026 10:28:31 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v6 09/15] arm64: Move fixmap and kasan page tables to end
- of kernel image
+Subject: Re: [PATCH v6 10/15] arm64: mm: Don't abuse memblock NOMAP to check
+ for overlaps
 To: Ard Biesheuvel <ardb+git@google.com>, linux-arm-kernel@lists.infradead.org
 Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com,
  mark.rutland@arm.com, Ard Biesheuvel <ardb@kernel.org>,
@@ -49,102 +49,81 @@ Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com,
  linux-mm@kvack.org, linux-hardening@vger.kernel.org,
  linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
 References: <20260526175846.2694125-17-ardb+git@google.com>
- <20260526175846.2694125-26-ardb+git@google.com>
+ <20260526175846.2694125-27-ardb+git@google.com>
 From: Kevin Brodsky <kevin.brodsky@arm.com>
 Content-Language: en-GB
-In-Reply-To: <20260526175846.2694125-26-ardb+git@google.com>
+In-Reply-To: <20260526175846.2694125-27-ardb+git@google.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 26/05/2026 19:58, Ard Biesheuvel wrote:
 > From: Ard Biesheuvel <ardb@kernel.org>
 >
-> Move the fixmap and kasan page tables out of the BSS section, and place
-> them at the end of the image, right before the init_pg_dir section where
-> some of the other statically allocated page tables live.
+> Now that the linear region mapping routines respect existing table
+> mappings and contiguous block and page mappings, it is no longer needed
+> to fiddle with the memblock tables to set and clear the NOMAP attribute
+> in order to omit text and rodata when creating the linear map.
 >
-> These page tables are currently the only data objects in vmlinux that
-> are meant to be accessed via the kernel image's linear alias, and so
-> placing them together allows the remainder of the data/bss section to be
-> remapped read-only or unmapped entirely.
+> Instead, map the kernel text and rodata alias first with the desired
+> initial attributes and granularity, so that the loop iterating over the
+> memblocks will not remap it in a manner that prevents it from being
+> remapped with updated attributes later.
 >
-> Reviewed-by: Kevin Brodsky <kevin.brodsky@arm.com>
 > Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
 > ---
->  arch/arm64/include/asm/mmu.h    | 2 ++
->  arch/arm64/kernel/vmlinux.lds.S | 8 +++++++-
->  arch/arm64/mm/fixmap.c          | 6 +++---
->  arch/arm64/mm/kasan_init.c      | 2 +-
->  4 files changed, 13 insertions(+), 5 deletions(-)
+>  arch/arm64/mm/mmu.c | 23 ++++++--------------
+>  1 file changed, 7 insertions(+), 16 deletions(-)
 >
-> diff --git a/arch/arm64/include/asm/mmu.h b/arch/arm64/include/asm/mmu.h
-> index 5e1211c540ab..fb95754f2876 100644
-> --- a/arch/arm64/include/asm/mmu.h
-> +++ b/arch/arm64/include/asm/mmu.h
-> @@ -13,6 +13,8 @@
+> diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
+> index 04cc579c7a15..b20c76b8381d 100644
+> --- a/arch/arm64/mm/mmu.c
+> +++ b/arch/arm64/mm/mmu.c
+> @@ -1164,12 +1164,14 @@ static void __init map_mem(void)
+>  		flags |= NO_BLOCK_MAPPINGS | NO_CONT_MAPPINGS;
 >  
->  #ifndef __ASSEMBLER__
->  
-> +#define __pgtbl_bss __section(".pgdir.bss") __aligned(PAGE_SIZE)
-> +
->  #include <linux/refcount.h>
->  #include <asm/cpufeature.h>
->  
-> diff --git a/arch/arm64/kernel/vmlinux.lds.S b/arch/arm64/kernel/vmlinux.lds.S
-> index e1ac876200a3..2b0ebfb30c63 100644
-> --- a/arch/arm64/kernel/vmlinux.lds.S
-> +++ b/arch/arm64/kernel/vmlinux.lds.S
-> @@ -349,9 +349,15 @@ SECTIONS
->  	_edata = .;
->  
->  	/* start of zero-init region */
-> -	BSS_SECTION(SBSS_ALIGN, 0, 0)
-> +	BSS_SECTION(SBSS_ALIGN, 0, PAGE_SIZE)
->  	__pi___bss_start = __bss_start;
->  
-> +	/* fixmap BSS starts here - preceding data/BSS is omitted from the linear map */
-> +	.pgdir.bss (NOLOAD) : ALIGN(PAGE_SIZE) {
+>  	/*
+> -	 * Take care not to create a writable alias for the
+> -	 * read-only text and rodata sections of the kernel image.
+> -	 * So temporarily mark them as NOMAP to skip mappings in
+> -	 * the following for-loop
+> +	 * Map the linear alias of the [_text, __init_begin) interval
+> +	 * as non-executable now, and remove the write permission in
+> +	 * mark_linear_text_alias_ro() above (which will be called after
+> +	 * alternative patching has completed). This makes the contents
+> +	 * of the region accessible to subsystems such as hibernate,
+> +	 * but protects it from inadvertent modification or execution.
+>  	 */
+> -	memblock_mark_nomap(kernel_start, kernel_end - kernel_start);
+> +	__map_memblock(kernel_start, kernel_end, PAGE_KERNEL, flags);
 
-Do we actually need the NOLOAD type here?
+Isn't the loop going to remap the range as pgprot_tagged(PAGE_KERNEL)?
+Maybe better to use that here as well just to make it look more consistent.
 
-Aside from that:
+If my understanding is correct, we should also amend the comment to
+avoid implying that the permissions we're passing to __map_memblock()
+here matter - the linear alias is going to be non-executable regardless
+because of the loop below mapping everything RW.
 
-Reviewed-by: Kevin Brodsky <kevin.brodsky@arm.com>
+- Kevin
 
-> +		*(.pgdir.bss)
-> +	}
-> +	ASSERT(ADDR(.pgdir.bss) == __bss_stop, ".pgdir.bss must follow BSS")
-> +
->  	. = ALIGN(PAGE_SIZE);
->  	__pi_init_pg_dir = .;
->  	. += INIT_DIR_SIZE;
-> diff --git a/arch/arm64/mm/fixmap.c b/arch/arm64/mm/fixmap.c
-> index c5c5425791da..1a3bbd67dd76 100644
-> --- a/arch/arm64/mm/fixmap.c
-> +++ b/arch/arm64/mm/fixmap.c
-> @@ -31,9 +31,9 @@ static_assert(NR_BM_PMD_TABLES == 1);
 >  
->  #define BM_PTE_TABLE_IDX(addr)	__BM_TABLE_IDX(addr, PMD_SHIFT)
+>  	/* map all the memory banks */
+>  	for_each_mem_range(i, &start, &end) {
+> @@ -1181,17 +1183,6 @@ static void __init map_mem(void)
+>  		__map_memblock(start, end, pgprot_tagged(PAGE_KERNEL),
+>  			       flags);
+>  	}
+> -
+> -	/*
+> -	 * Map the linear alias of the [_text, __init_begin) interval
+> -	 * as non-executable now, and remove the write permission in
+> -	 * mark_linear_text_alias_ro() below (which will be called after
+> -	 * alternative patching has completed). This makes the contents
+> -	 * of the region accessible to subsystems such as hibernate,
+> -	 * but protects it from inadvertent modification or execution.
+> -	 */
+> -	__map_memblock(kernel_start, kernel_end, PAGE_KERNEL, 0);
+> -	memblock_clear_nomap(kernel_start, kernel_end - kernel_start);
+>  }
 >  
-> -static pte_t bm_pte[NR_BM_PTE_TABLES][PTRS_PER_PTE] __page_aligned_bss;
-> -static pmd_t bm_pmd[PTRS_PER_PMD] __page_aligned_bss __maybe_unused;
-> -static pud_t bm_pud[PTRS_PER_PUD] __page_aligned_bss __maybe_unused;
-> +static pte_t bm_pte[NR_BM_PTE_TABLES][PTRS_PER_PTE] __pgtbl_bss;
-> +static pmd_t bm_pmd[PTRS_PER_PMD] __pgtbl_bss __maybe_unused;
-> +static pud_t bm_pud[PTRS_PER_PUD] __pgtbl_bss __maybe_unused;
->  
->  static inline pte_t *fixmap_pte(unsigned long addr)
->  {
-> diff --git a/arch/arm64/mm/kasan_init.c b/arch/arm64/mm/kasan_init.c
-> index abeb81bf6ebd..dbf22cae82ee 100644
-> --- a/arch/arm64/mm/kasan_init.c
-> +++ b/arch/arm64/mm/kasan_init.c
-> @@ -214,7 +214,7 @@ asmlinkage void __init kasan_early_init(void)
->  		 * shadow pud_t[]/p4d_t[], which could end up getting corrupted
->  		 * when the linear region is mapped.
->  		 */
-> -		static pte_t tbl[PTRS_PER_PTE] __page_aligned_bss;
-> +		static pte_t tbl[PTRS_PER_PTE] __pgtbl_bss;
->  		pgd_t *pgdp = pgd_offset_k(KASAN_SHADOW_START);
->  
->  		set_pgd(pgdp, __pgd(__pa_symbol(tbl) | PGD_TYPE_TABLE));
+>  void mark_rodata_ro(void)
