@@ -1,154 +1,212 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f74.google.com (mail-ej1-f74.google.com [209.85.218.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42B683CF05E;
-	Fri, 29 May 2026 14:48:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC71F3F1656
+	for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 15:02:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780066099; cv=none; b=qVNCD+0fF+Smzx0zgp/oQTk1cQZApN2F3oO9x7yWNI2oGBp2nbtiTf2T1PGt8wL/Nc7Km6bl7PZUxdgchAc8DlB6aKe8aiOQPbsFaEq5px3L7mP0iSh78S1GQ/xxnwJEL3wAamGzTSqs8GHScinl4QXrUxsPD1tNLJw0+kB4hnY=
+	t=1780066940; cv=none; b=Tt1Cod6lyO0UcyJ+nIUQRKnE8ffQHRlXcwat9rv+XK4b1Dq57Be0FN0+aMz5AAbMNwGpcmkg8UAsYivoibfc3YT//rWPr4qX2l39AuQME1cYiv/qfoI4fcC3jwIL3BVgnUDskz+mhcMXLMQWSifWzl9kQge7B4iqVBkKgMTmMec=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780066099; c=relaxed/simple;
-	bh=Vt4dJgQnYhshfJc1Hy1ScnUQdOl8XkansT2PFgaL1M8=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=BpPNXFyYiSDvrR/oMuPZZDwSxQRBLa/X6VbD612xRfM76Hg5IdeaqqoiPLBGhVIP+Z8rMfy50uJsLoDTDzAwjPw5uInLnXsYfsIAA/YoUD+xh/4vioKVa3jIbY4o2Li/IU1fehInDtuTzK4qWlEtSBY3K5T6XLUHdPZtsURsa7U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=B/D6PTyn; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1780066940; c=relaxed/simple;
+	bh=uxAZDqEtvqzwdBVS8pfgqbMrELB3mHJCts2Qh9zIXVc=;
+	h=Date:Mime-Version:Message-ID:Subject:From:To:Cc:Content-Type; b=itcomy0IiWYCxsISx9gjayjrhBKkrGOEAJa6aXTskagQ287xYyKmfv4jN2gsX/d+vO0f+FV3uKNrcyvNaX70CYIShRLvht3C6uoVyalY+A2w/cwk1S3MDzKENTv2nB3GCU8cD2cx0jq6lrs8fVyvuG+xK0GWKDHkxcO509vS8e8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=UxCUe8OF; arc=none smtp.client-ip=209.85.218.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="B/D6PTyn"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 68C111F00898;
-	Fri, 29 May 2026 14:48:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780066096;
-	bh=rDYAlmQq2lyT0mKI/5jPVDdXiqH331Ok6KPFJGIkolA=;
-	h=Date:From:To:Cc:In-Reply-To:References:Subject;
-	b=B/D6PTynJnQoiv5UGY84Nxeys2XekviBCPy1tBM1oZoNcAiD64YXYcPbgM6mQ8r6j
-	 Ju1Yszpm1IU+sDUTCsAHUupVz3c6LFjjSOxh6ZgC+NNKAcUYs7+WXyb6WLpp38882V
-	 h2KchIcNii6iBq1jm/M4xT08IolsroFxcQsYL7a/wkIBzBe1a7g9hGS9ZqQj7KYG1N
-	 gQICg8IZifWWVQJXVlRM4Zpy+QJTLsQSROGx1qugSXXGuszEK6z9AyhrrYMyAcRPUP
-	 m6Q9q7gzhRbAGekyaQeeeXxToVJmDdYGA95NTpiDs/C+zVHTNTz9OvRjzaO6OL4R9a
-	 qDAyOY9RfsG7A==
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfauth.phl.internal (Postfix) with ESMTP id 9B26AF4006B;
-	Fri, 29 May 2026 10:48:15 -0400 (EDT)
-Received: from phl-imap-05 ([10.202.2.95])
-  by phl-compute-01.internal (MEProxy); Fri, 29 May 2026 10:48:15 -0400
-X-ME-Sender: <xms:L6cZalvqhsB-aHhaRkze_h7UY2ABhSZeFnZ60Q3_IKMDCODR4iuKzA>
-    <xme:L6cZapRecgER7059-g_h5SmbR74_rDZdbLKHp8wKImrL7GCvJSuQ-czyG9PRHVNgX
-    LodoT-OBe61zEkLfQ414HQKZYu3vF8l4Y7Vj5axhKW3qvVV9XuVlw0>
-X-ME-Proxy-Cause: dmFkZTGt+msDe027/QMow7WM2h4XBrXubrUHHx9XVuKXNuewjeECntXEkvpZpwjkpuwWEv
-    A+IG7AeFN5owfWzwbPO9CjcB7TRAAsY44WxF7zXFXy6LoVGUAKFH2Bx1eeqBPzIerpvVjv
-    ELx4NQx0XG6whtq/UTw90jigQlW4j18Zh0Zt1+paIGSTOJ9ku9oHpPkPFvh0lxBxqNkgBT
-    FnRPsw9ol+7BaTbq+VC3GgNlb/hfOhjgLaPfDPKB8smIObxRKijH1R3rHFi8eHD+NkkdLJ
-    A7LUeOTltjqUyU3MM5Wv53HhVF64Qimbf03q9/pBfm6OGXhfkEoLOeymapiGYXWuW7kwNp
-    ckYNzIG87pXFDqxBpRSEjOxQSObcP/T++yyH1GkG3YItNvgZi8BW7YZJf0oLK1Eiu9ctpj
-    e/Qrzm63c6EjvCPOKuUOldqVtQ9ZHP5SjAUyNeaZsq8FP10znmcrDkJjKhmkqvgalMjmqj
-    5yI6GJ6yQK3gJ/0sFlH1xfNMM7hLe/tXPVaeY8cRX+7fv6nhbeMCau2aQ4gfKKOCQInygr
-    DX9MXYrq5o/uY7i19kTROhADx/RRu9bkIc+kVBeOktIvcQ1AMx9acT0YqOTPMhDzC2jr7R
-    qbv5MzK1kh98MwYu6S2aUc5FDL3Tal9kQVrQ86RuzLjlmuBz9HkOhgZjLFug
-X-ME-Proxy: <xmx:L6cZanX74O-bar_jLvxjWKCnp-Ih7O5QrV09suBOhbCd2rIrR9xQeA>
-    <xmx:L6cZamrF7UpYic3Pul9sEvDf0nlILb6aAYq-n3JKJgUil7UpBZORtQ>
-    <xmx:L6cZarFrHHphMz_k0i3sOdMq0fdtjxTfs29QHz9bIdolxCo5oEEGVA>
-    <xmx:L6cZaouUFRbFWAprH-4qWiANOmu1DUXbhNuFie1nlzyqPUFP98ZCWQ>
-    <xmx:L6cZauQug8MFn_HvWRIXz9IpPD4mlQQP6iSw5xCI5jVhcTfQZiXZW5o_>
-Feedback-ID: ice86485a:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 780D8182007A; Fri, 29 May 2026 10:48:15 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="UxCUe8OF"
+Received: by mail-ej1-f74.google.com with SMTP id a640c23a62f3a-bd86cf9d900so1012288466b.2
+        for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 08:02:18 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20251104; t=1780066937; x=1780671737; darn=vger.kernel.org;
+        h=cc:to:from:subject:message-id:mime-version:date:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=HpQ+gbfLV3ep0KH+7DICYy7iPk4t74I7YHv+Lp6qVhM=;
+        b=UxCUe8OFlM4SC6KNkfSCTkM8ZYLHFYhL/U6nQzFPoPdCpxdhElhXpvkaDN17YEPtrd
+         P+x3DcPjAFnvaBFHz7CiGHQIE6cwUvqtOd+zbt/iXOk4SvgFMfgkLz6QWSkjy8NWQDzo
+         /yUbZ7JmfytaTvn1mP9p0uoyR22dznn+8C4w7fBQoPgvtBMj9frjSkTYmPkePS/Wg7es
+         ORSL7TQ5s9W+RnbK+U5XnFsiyfTPYRubn96iAJkyxgdy8S1C8ttqiAdoK9ZOmW7V3FJe
+         /qSl1xCclmBOvD0wos3KsHVn2T2eCPfvzsFSyltk66NFVDbdF0CppXzKLb6DhIMJJC+C
+         rEUg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780066937; x=1780671737;
+        h=cc:to:from:subject:message-id:mime-version:date:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=HpQ+gbfLV3ep0KH+7DICYy7iPk4t74I7YHv+Lp6qVhM=;
+        b=EQ22YQ+SLkZotyI/4ko34gOaLpCRI4SWJgwcxf1rHhyDkeoY5/hIXcZ/dFvnFpEyS0
+         9Er7Q7rHp3Q3rqps4kTpIvpOcaFWlcOJP6dOURNt/7gw1sXxreuYng7rPmQDpITd9TcS
+         KXRFv0oi26/pzog7IGAjm/7jgCI7g33QeGBKZaPiXZWehdji2nKG844cLAFI0Wc6MO9p
+         xONJ952/rseJm1xxVF+sOzTZGcD+pT5xdmrIQQnHMTfwATydcmi5+H8vRn/WjwDhRSu8
+         1PNelPeIPA5/FVPEojUwXoVaLa0rZrZ8DAN4DOrOauD4vnJ5QWqLxKLaoEQA2P3hHzJw
+         zXRQ==
+X-Forwarded-Encrypted: i=1; AFNElJ9ZjjWho9hTpmJXzVjhofbvm2FPUgGE4Ise3S5hIAjiU8RELFZ4UxxJumCCElVaEQlLqDmFKFsQ/w==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzxogEakuPOry84aZylOL1plw+DT1fyWM1hNqnVPvCTTeAiA9pC
+	lZ+rCugM1fEB2fzJjSEhAZnacGspA/B6d21C6s0t8Vcbu35yNVlI7V+JDJi7VkRmXdwtJJO+7A=
+	=
+X-Received: from wrub1.prod.google.com ([2002:a5d:4d81:0:b0:43d:77d4:5f14])
+ (user=ardb job=prod-delivery.src-stubby-dispatcher) by 2002:a17:906:7945:b0:bce:a1fc:6877
+ with SMTP id a640c23a62f3a-be9cad0b276mr172778166b.24.1780066936607; Fri, 29
+ May 2026 08:02:16 -0700 (PDT)
+Date: Fri, 29 May 2026 17:01:51 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Date: Fri, 29 May 2026 16:47:54 +0200
-From: "Ard Biesheuvel" <ardb@kernel.org>
-To: "Kevin Brodsky" <kevin.brodsky@arm.com>,
- "Ard Biesheuvel" <ardb+git@google.com>, linux-arm-kernel@lists.infradead.org
-Cc: linux-kernel@vger.kernel.org, "Will Deacon" <will@kernel.org>,
- "Catalin Marinas" <catalin.marinas@arm.com>,
- "Mark Rutland" <mark.rutland@arm.com>, "Ryan Roberts" <ryan.roberts@arm.com>,
- "Anshuman Khandual" <anshuman.khandual@arm.com>,
- "Liz Prucka" <lizprucka@google.com>, "Seth Jenkins" <sethjenkins@google.com>,
- "Kees Cook" <kees@kernel.org>, "Mike Rapoport" <rppt@kernel.org>,
- "David Hildenbrand" <david@kernel.org>,
- "Andrew Morton" <akpm@linux-foundation.org>, "Jann Horn" <jannh@google.com>,
- linux-mm@kvack.org, linux-hardening@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
-Message-Id: <feab72b8-2961-4145-ac5c-80e820bf1ce9@app.fastmail.com>
-In-Reply-To: <b76b327f-612e-494f-b8d3-44108aa73d2a@arm.com>
-References: <20260526175846.2694125-17-ardb+git@google.com>
- <20260526175846.2694125-26-ardb+git@google.com>
- <2a6f9f05-ac57-4ef8-9328-74cc8ccfea16@arm.com>
- <96a8b6b9-71f2-4550-bbbb-fbfa146f4e6a@app.fastmail.com>
- <b76b327f-612e-494f-b8d3-44108aa73d2a@arm.com>
-Subject: Re: [PATCH v6 09/15] arm64: Move fixmap and kasan page tables to end of kernel
- image
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Mime-Version: 1.0
+X-Developer-Key: i=ardb@kernel.org; a=openpgp; fpr=F43D03328115A198C90016883D200E9CA6329909
+X-Developer-Signature: v=1; a=openpgp-sha256; l=6016; i=ardb@kernel.org;
+ h=from:subject; bh=1J4/eBxWUzNbzISy66s5wYlPFITBFouUFXFgBmOizGU=;
+ b=owGbwMvMwCVmkMcZplerG8N4Wi2JIUtyVbx/uurJFp+7lxfraxzxO+j8qpt7ylXD8r3Oblc1D
+ 1q97K/sKGVhEONikBVTZBGY/ffdztMTpWqdZ8nCzGFlAhnCwMUpABOZzcnwPzZyX86SrtObDbx+
+ z714VZhZY8c1Kb2LJRHXPl3UVlXMUGL4X+DuW1oyQ1zWb99Z/cx301JrXATZI7vYmbc++evbL/u BEwA=
+X-Mailer: git-send-email 2.54.0.823.g6e5bcc1fc9-goog
+Message-ID: <20260529150150.1670604-17-ardb+git@google.com>
+Subject: [PATCH v7 00/15] arm64: Unmap linear alias of kernel data/bss
+From: Ard Biesheuvel <ardb+git@google.com>
+To: linux-arm-kernel@lists.infradead.org
+Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com, 
+	mark.rutland@arm.com, Ard Biesheuvel <ardb@kernel.org>, Ryan Roberts <ryan.roberts@arm.com>, 
+	Anshuman Khandual <anshuman.khandual@arm.com>, Kevin Brodsky <kevin.brodsky@arm.com>, 
+	Liz Prucka <lizprucka@google.com>, Seth Jenkins <sethjenkins@google.com>, 
+	Kees Cook <kees@kernel.org>, Mike Rapoport <rppt@kernel.org>, David Hildenbrand <david@kernel.org>, 
+	Andrew Morton <akpm@linux-foundation.org>, Jann Horn <jannh@google.com>, linux-mm@kvack.org, 
+	linux-hardening@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On Fri, 29 May 2026, at 16:42, Kevin Brodsky wrote:
-> On 29/05/2026 13:19, Ard Biesheuvel wrote:
->> On Fri, 29 May 2026, at 10:27, Kevin Brodsky wrote:
->>> On 26/05/2026 19:58, Ard Biesheuvel wrote:
->>>> From: Ard Biesheuvel <ardb@kernel.org>
->>>>
->>>> Move the fixmap and kasan page tables out of the BSS section, and place
->>>> them at the end of the image, right before the init_pg_dir section where
->>>> some of the other statically allocated page tables live.
->>>>
->>>> These page tables are currently the only data objects in vmlinux that
->>>> are meant to be accessed via the kernel image's linear alias, and so
->>>> placing them together allows the remainder of the data/bss section to be
->>>> remapped read-only or unmapped entirely.
->>>>
->>>> Reviewed-by: Kevin Brodsky <kevin.brodsky@arm.com>
->>>> Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
->>>> ---
->>>>  arch/arm64/include/asm/mmu.h    | 2 ++
->>>>  arch/arm64/kernel/vmlinux.lds.S | 8 +++++++-
->>>>  arch/arm64/mm/fixmap.c          | 6 +++---
->>>>  arch/arm64/mm/kasan_init.c      | 2 +-
->>>>  4 files changed, 13 insertions(+), 5 deletions(-)
->>>>
->>>> diff --git a/arch/arm64/include/asm/mmu.h b/arch/arm64/include/asm/mmu.h
->>>> index 5e1211c540ab..fb95754f2876 100644
->>>> --- a/arch/arm64/include/asm/mmu.h
->>>> +++ b/arch/arm64/include/asm/mmu.h
->>>> @@ -13,6 +13,8 @@
->>>>  
->>>>  #ifndef __ASSEMBLER__
->>>>  
->>>> +#define __pgtbl_bss __section(".pgdir.bss") __aligned(PAGE_SIZE)
->>>> +
->>>>  #include <linux/refcount.h>
->>>>  #include <asm/cpufeature.h>
->>>>  
->>>> diff --git a/arch/arm64/kernel/vmlinux.lds.S b/arch/arm64/kernel/vmlinux.lds.S
->>>> index e1ac876200a3..2b0ebfb30c63 100644
->>>> --- a/arch/arm64/kernel/vmlinux.lds.S
->>>> +++ b/arch/arm64/kernel/vmlinux.lds.S
->>>> @@ -349,9 +349,15 @@ SECTIONS
->>>>  	_edata = .;
->>>>  
->>>>  	/* start of zero-init region */
->>>> -	BSS_SECTION(SBSS_ALIGN, 0, 0)
->>>> +	BSS_SECTION(SBSS_ALIGN, 0, PAGE_SIZE)
->>>>  	__pi___bss_start = __bss_start;
->>>>  
->>>> +	/* fixmap BSS starts here - preceding data/BSS is omitted from the linear map */
->>>> +	.pgdir.bss (NOLOAD) : ALIGN(PAGE_SIZE) {
->>> Do we actually need the NOLOAD type here?
->> Yes, otherwise it is emitted as PROGBITS, resulting in all of BSS to be
->> emitted into Image.
->
-> That's rather strange, aren't the .pgdir.bss input sections already
-> NOBITS since __pgtbl_bss is only used on default-initialised globals?
+From: Ard Biesheuvel <ardb@kernel.org>
 
-Not sure why, but the section was PROGBITS not NOBITS before I added the (NOLOAD)
+One of the reasons the lack of randomization of the linear map on arm64
+is considered problematic is the fact that bootloaders adhering to the
+original arm64 boot protocol (i.e., a substantial fraction of all
+Android phones) may place the kernel at the base of DRAM, and therefore
+at the base of the non-randomized linear map. This puts a writable alias
+of the kernel's data and bss regions at a predictable location, removing
+the need for an attacker to guess where KASLR mapped the kernel.
 
-> Also AFAIU NOLOAD does not prevent the output section from being emitted
-> into the ELF file.
->
+Let's unmap this linear, writable alias entirely, so that knowing the
+location of the linear alias does not give write access to the kernel's
+data and bss regions.
 
-NOLOAD marks it as NOBITS, which means there is no data in the file that should
-be used to populate the section in memory.
+Changes since v6:
+- Improve commits logs and comments
+- Add acks from Kevin
+- Reorder patches so remapping data/bss R/O occurs after moving the zero
+  page into .rodata
+- Drop zero page cache flush from SuperH rather than casting away the
+  constness
+- Map kfence pool with NO_EXEC_MAPPINGS
+
+Note that Sashiko had some comments on patch 15/15 [1] but none of those
+seem accurate. (I have tested both suspend/resume and hibernate under
+QEMU and both work as expected)
+
+Changes since v5:
+- Reorder series in ascending order of impact, so that the first few can
+  be merged earlier if desired. This also makes the patch that remaps
+  the data/bss linear alias as tagged redundant, which is therefore
+  dropped.
+- Add patch #3 to address an existing issue spotted by Sashiko
+- Fix thinko in contiguous region check (#5), where the whole region
+  needs to be considered and not only the first entry (dropped Rb as
+  well) - this addresses the kfence issue Sashiko reported on v5 [0]
+- Update commit log on #6 to clarify that changing permission bits on
+  PTE_CONT entries is safe as long as PTE_CONT itself does not change
+- Likewise, drop hunk that adds the PTE_CONT bit to the 'permitted' mask
+  in pgattr_change_is_safe(), as changing it is not safe. (#8)
+- Move kasan's additional page table to pgdir BSS as well
+- Use (NOLOAD) on the .pgdir.bss section so it does not get emitted into
+  vmlinux
+- Add powerpc and SuperH patches to deal with empty_zero_page[] being
+  made const
+
+Changes since v4:
+- Update the correct [early] mapping in patch #1
+- Make empty_zero_page[] const instead of __ro_after_init
+- Drop patches that remap the fixmap page tables r/o for now
+- Don't force page mappings for the data/bss linear alias, as it is no
+  longer needed for set_memory_valid()
+- Add acks
+
+Changes since v3:
+- Drop bogus patch adding hierarchical PXN to the fixmap mapping, which
+  breaks the KPTI trampoline (thanks to Sashiko)
+- Add generic patch to move the empty_zero_page to __ro_after_init, as
+  it now lives in generic code.
+- Add patches to remap the linear aliases of the fixmap page tables
+  read-only too - these live at an a priori known offset in the linear
+  map if physical KASLR was omitted, and control a priori known
+  addresses in the virtual kernel space.
+- Rebase onto v7.1-rc1
+
+Changes since v2:
+- Keep bm_pte[] in the region that is remapped r/o or unmapped, as it is
+  only manipulated via its kernel alias
+- Drop check that prohibits any manipulation of descriptors with the
+  CONT bit set
+- Add Ryan's ack to a couple of patches
+- Rebase onto v7.0-rc4
+
+Changes since v1:
+- Put zero page patch at the start of the series
+- Tweak __map_memblock() API to respect existing table and contiguous
+  mappings, so that the logic to map the kernel alias can be simplified
+- Stop abusing the MEMBLOCK_NOMAP flag to initially omit the kernel
+  linear alias from the linear map
+- Some additional cleanup patches
+- Use proper API [set_memory_valid()] to (un)map the linear alias of
+  data/bss.
+
+Cc: Ryan Roberts <ryan.roberts@arm.com>
+Cc: Anshuman Khandual <anshuman.khandual@arm.com>
+Cc: Kevin Brodsky <kevin.brodsky@arm.com>
+Cc: Liz Prucka <lizprucka@google.com>
+Cc: Seth Jenkins <sethjenkins@google.com>
+Cc: Kees Cook <kees@kernel.org>
+Cc: Mike Rapoport <rppt@kernel.org>
+Cc: David Hildenbrand <david@kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Jann Horn <jannh@google.com>
+Cc: linux-mm@kvack.org
+Cc: linux-hardening@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-sh@vger.kernel.org
+
+[0] https://sashiko.dev/#/patchset/20260519151616.2557018-15-ardb%2Bgit%40google.com
+[1] https://sashiko.dev/#/patchset/20260526175846.2694125-17-ardb%2Bgit%40google.com
+
+Ard Biesheuvel (15):
+  arm64: mm: Remove bogus stop condition from map_mem() loop
+  arm64: mm: Drop redundant pgd_t* argument from map_mem()
+  arm64: mm: Check for pud_/pmd_set_huge() failures on kernel mappings
+  arm64: mm: Preserve existing table mappings when mapping DRAM
+  arm64: mm: Preserve non-contiguous descriptors when mapping DRAM
+  arm64: mm: Permit contiguous descriptors to be manipulated
+  arm64: kfence: Avoid NOMAP tricks when mapping the early pool
+  arm64: mm: Permit contiguous attribute for preliminary mappings
+  arm64: Move fixmap and kasan page tables to end of kernel image
+  arm64: mm: Don't abuse memblock NOMAP to check for overlaps
+  powerpc/code-patching: Avoid r/w mapping of the zero page
+  sh: Drop cache flush of the zero page at boot
+  mm: Make empty_zero_page[] const
+  arm64: mm: Map the kernel data/bss read-only in the linear map
+  arm64: mm: Unmap kernel data/bss entirely from the linear map
+
+ arch/arm64/include/asm/mmu.h     |   2 +
+ arch/arm64/include/asm/pgtable.h |   4 +
+ arch/arm64/kernel/vmlinux.lds.S  |   8 +-
+ arch/arm64/mm/fixmap.c           |   6 +-
+ arch/arm64/mm/kasan_init.c       |   2 +-
+ arch/arm64/mm/mmu.c              | 164 ++++++++++++--------
+ arch/powerpc/lib/code-patching.c |  52 +------
+ arch/sh/mm/init.c                |   3 -
+ include/linux/pgtable.h          |   2 +-
+ mm/mm_init.c                     |   2 +-
+ 10 files changed, 121 insertions(+), 124 deletions(-)
+
+
+base-commit: 254f49634ee16a731174d2ae34bc50bd5f45e731
+-- 
+2.54.0.823.g6e5bcc1fc9-goog
 
