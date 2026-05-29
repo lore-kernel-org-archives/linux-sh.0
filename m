@@ -1,54 +1,54 @@
-Received: from mail-wr1-f74.google.com (mail-wr1-f74.google.com [209.85.221.74])
+Received: from mail-wm1-f74.google.com (mail-wm1-f74.google.com [209.85.128.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EF79E3F44E2
-	for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 15:02:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3914C3F4DD3
+	for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 15:02:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780066945; cv=none; b=MeyZM63UvH4U4VHcp1K0wE8pXdQMprYG3LT11A+rbNW7gdJ37s1dYqu0Qx2wCgwGZY8mBvj/1sTMinIX1b4d73w4ZfP2PK45kLjfQSREt/6N6juGGL0sKX6xvbN98JIVBvrJDCSRGIU6sDlDecA9uzM3FAUTCT3cE7sI8WgJtO8=
+	t=1780066946; cv=none; b=DcXaNaF7q+JsIfFmV7pRi7FmX5xUgU/PPC0QEFnDTc5ajKq+h27hhbztFZ5Yx1A48h38Djxkllh2le509j+MIqVbmoeWwpjcLMDUYw3K7KDwpEgZG+R99Rg+k/Muk35C6DyYrfCfNOC2yan3iWxoEzCSC57hB2uDFYs/FK6mF2Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780066945; c=relaxed/simple;
-	bh=MK4il/RyXbeZqS4oUFS19K5ZKkdBSMDJph3YVgjuPuE=;
+	s=arc-20240116; t=1780066946; c=relaxed/simple;
+	bh=mefb2BUpeFYk0zitvgHd6k235xD5JCNkHqkPJ1oqbQ4=;
 	h=Date:In-Reply-To:Mime-Version:References:Message-ID:Subject:From:
-	 To:Cc:Content-Type; b=DZlWeYPaotwySY7g8g5S4uUQx/RNgCxpVPAUtPq4xE7qSP9V5rtHCHdVCQDTMbzQvg2WSn6wk4+bSdQlXTbDpebIw9uyBJ4hT0EEkyAnYTUGl2AaON92/5CFIQNcCu2qCaAu4HBptc6p2mbipw5Np0o3UTMk5k6hBGQ6EmTye0M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=tCcGjhYR; arc=none smtp.client-ip=209.85.221.74
+	 To:Cc:Content-Type; b=nl0JnC91yU5UUqyY/f6UOMflDDwIxgjKRnLUw16SfUyz22YPXaHZLZXTfKN/XWgZIlMrjlNMMSX1OiRjLA8rwDu+6HU7BcbD2B7N68HE6DXattJHOyumQI797sj11dQbzl6Zeb8S2D8lVJ/F0heFCC6pASVDI3iRJq+xmkWvj/o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=MrbdKwCy; arc=none smtp.client-ip=209.85.128.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="tCcGjhYR"
-Received: by mail-wr1-f74.google.com with SMTP id ffacd0b85a97d-45ef66cc579so84074f8f.3
-        for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 08:02:23 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="MrbdKwCy"
+Received: by mail-wm1-f74.google.com with SMTP id 5b1f17b1804b1-4909e55c480so9133295e9.3
+        for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 08:02:25 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20251104; t=1780066942; x=1780671742; darn=vger.kernel.org;
+        d=google.com; s=20251104; t=1780066944; x=1780671744; darn=vger.kernel.org;
         h=cc:to:from:subject:message-id:references:mime-version:in-reply-to
          :date:from:to:cc:subject:date:message-id:reply-to;
-        bh=9SMbp+4SpJBPuSW3tE55txpooI4fjODhC3THY1otv5g=;
-        b=tCcGjhYRpAgjs9ZQlg5nTj4fwuIXRojXh2ckb8TsgT25viMsROlKb2ET0dIeogpNHy
-         0Ed5eSypvv8tNy/NzP8eZJMUZ/tOEpkb02mQ6lKKC3VWEKMwGbkeN2Qy+ffJiKwpn9i6
-         e8BgJKUhJ/YPmn7X2t0EKM3SBRUodNbVo6Me+A/1BuGCudiIJFcxdol4JhAyoS8EsABp
-         9zCX1PywkLAhGtHTXVAjUdAypNSeXM5PbDyZishE+kUW0mFfzDuPm/ZZMbi9Cw9RBaV7
-         RSizPmAv6XaGhiPxXJAs1E1a/mHSkUOJZ2g83YopW3mEeDCPjAugnK3r5fbgr3BvSpTr
-         75KQ==
+        bh=KwwWx+36ZO5AyFG8PbXK1ZtkzsCWR7UH7LxbrRw2oLU=;
+        b=MrbdKwCyhw29Mz0k6FwaTmwLsVhbtLXj6CGQ+1PHHVW8BJBxaeH6vL4CHkSE3aOa6D
+         FagbP3bN2+BBE6lSvdCzBspm+UEnHfwzwO7Y6KSGilxZtox66dWYgCwYOU2UvlUk977b
+         8Z3tZQGTBAzj0WlX27pv1PQNqAouNj7JV9Kw1SdXcI5eFgcWylPYgtvUo+vo5JiAXeNs
+         zh1FnHeLzYru3SDRlKUnR6fNrOzwEKE362Hgg5TljydIpoq4KbiIdRwHna4qhzOK5zLp
+         NDsTPvJAhIKDL82e0sYNnSlrQLxf9Ztzk6x2ErPFsLR0cBvldVhma2W47YrrXk1ZQtDS
+         QaUw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780066942; x=1780671742;
+        d=1e100.net; s=20251104; t=1780066944; x=1780671744;
         h=cc:to:from:subject:message-id:references:mime-version:in-reply-to
          :date:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=9SMbp+4SpJBPuSW3tE55txpooI4fjODhC3THY1otv5g=;
-        b=RWaI3VmyE0nsGsJ8QiwhhNRpxqk5AhjbTuS8Sn51d3WxhH6bWkor6htZlxX36JYMzb
-         AR8J6KI+PTvij/rdTv5EOKVhtr2JO1ZS8vy16tOLsrsbL9mcvWlL7l8RhdjAzEOnXUHX
-         StkRoGwgEuCIMa9I6uPVkAb9KnFqhPldjufcMH5nn8G/ok3vp0002Uv8PSlGc6ahJpHb
-         d15++kzT7v6XZR7HIYAwCO4P27fbDTHvrCpgG2jmnyR8KM847Uc+pSDgw/FnWBlPgdOs
-         X+iXLEl4/mkLLYliuNhdt9G9rZbumk+EpO248v7maPOXO/nfR7OZtsVGW44FmbG2ZjQR
-         3hzA==
-X-Forwarded-Encrypted: i=1; AFNElJ/pt5CtYQNI/wPZRxwsv8qMIEpL2o17BesZhWgfFNaNu2mJceK7N4n89ls9dNHJ7yudualcKl52Vw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyheVHBcAEcUnEyr8LHVd0D+rFrIRGMqdZwIdmkfikLBGCO3jvb
-	gSy2duB8b6knDKrLNmEoLihdKHa5453uwWr61vuRR3ArvpPx2luw5q47bdNj/4os0k3ZK5MTEQ=
+        bh=KwwWx+36ZO5AyFG8PbXK1ZtkzsCWR7UH7LxbrRw2oLU=;
+        b=lzvDSLyq47nvZ5kDNM8V1s9iPwtv5Kei4AdCU/iURd0Nv+0omitHf6GQjexnx4WwYE
+         SfKfLpQcukrnip7kavpyytugnenTR1H68bWO3t5oUFNqS2UYN08b85d9a3250q+zdNtu
+         0MwzRUUeJoBclemKhlGGd84rpV5nCVNdjEo2BwOPynlVbQ+OAK0IbNyzgi7QbnQ9cmA2
+         Jkj6lrGXqyR/sibNn0gyaQldRmiRCGTaVem3OM+q7+4u+u9/QP4EtD82Vj4svPmp+NDB
+         s319/Ou1GrntnFCGkZ5/8FZx/aGrAfAIVxY5c3SXWbXQP79L5b3vooXoArW9t/3L8foh
+         Hsnw==
+X-Forwarded-Encrypted: i=1; AFNElJ+aJb1BdMZ5BkmWv3E4/idmZS3V+swFeBLsliNhf15NUl6x+4UngGS/H9kO+gi5ZZsXS/l5POTXDw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwZ3a71PPWSSQfK0sxJF98svlHc+RBj0ePlUQTNhHEop1IqRv2m
+	HzlIz7plAKrANIkwmja15yXyv346u0q/8hyGP0CR/BXq/jzXyPomMpR8Zn5Se1+at8zMybRiQw=
 	=
-X-Received: from wrna16.prod.google.com ([2002:adf:e5d0:0:b0:43f:df99:cb43])
- (user=ardb job=prod-delivery.src-stubby-dispatcher) by 2002:a05:6000:b05:b0:45e:e3ea:1101
- with SMTP id ffacd0b85a97d-45ef6b3a9d3mr250438f8f.17.1780066942102; Fri, 29
- May 2026 08:02:22 -0700 (PDT)
-Date: Fri, 29 May 2026 17:01:55 +0200
+X-Received: from wmbiv7.prod.google.com ([2002:a05:600c:5487:b0:48f:de29:3f52])
+ (user=ardb job=prod-delivery.src-stubby-dispatcher) by 2002:a05:600c:2313:b0:490:6237:5213
+ with SMTP id 5b1f17b1804b1-4909c0af69cmr42420765e9.23.1780066943345; Fri, 29
+ May 2026 08:02:23 -0700 (PDT)
+Date: Fri, 29 May 2026 17:01:56 +0200
 In-Reply-To: <20260529150150.1670604-17-ardb+git@google.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -58,14 +58,14 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 References: <20260529150150.1670604-17-ardb+git@google.com>
 X-Developer-Key: i=ardb@kernel.org; a=openpgp; fpr=F43D03328115A198C90016883D200E9CA6329909
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1360; i=ardb@kernel.org;
- h=from:subject; bh=zgVblspip5ZINNAWS3J63kCjniwJXU0OYP5r0DXGxEI=;
- b=owGbwMvMwCVmkMcZplerG8N4Wi2JIUtyVfJJkczPYfGm/hd8+FL02y7q1vnc3l5lLz2B/bWeR
- ZyU8q+OUhYGMS4GWTFFFoHZf9/tPD1RqtZ5lizMHFYmkCEMXJwCMJGrFxn+e55rMk6KmS+o8qjx
- TFPydss+tp/hHKtbs3vkHc/PO8RoyvA/WrE+UfB50QXpS/Hr3nSqW/oxK2XsCGS8dSmZxXNHTQs /AA==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3700; i=ardb@kernel.org;
+ h=from:subject; bh=JEV2e9VnURwytUBvbY/jPf+EEXewGZ41iq/e9jE9rQo=;
+ b=owGbwMvMwCVmkMcZplerG8N4Wi2JIUtyVap1rG3Fm6CS7u4UZS4lT7Z9HxxXNudcEuL6naq74
+ afp7KCOUhYGMS4GWTFFFoHZf9/tPD1RqtZ5lizMHFYmkCEMXJwCMJGPCgx/uKQ8e8xyJPt5JLP2
+ bi5SltRnOvLycG3KFEeBXT7tu08rMTKsXffM79eljW7bhWbvntV0WFru9cWYiprdF6/MlLIvbk5 kAAA=
 X-Mailer: git-send-email 2.54.0.823.g6e5bcc1fc9-goog
-Message-ID: <20260529150150.1670604-21-ardb+git@google.com>
-Subject: [PATCH v7 04/15] arm64: mm: Preserve existing table mappings when
+Message-ID: <20260529150150.1670604-22-ardb+git@google.com>
+Subject: [PATCH v7 05/15] arm64: mm: Preserve non-contiguous descriptors when
  mapping DRAM
 From: Ard Biesheuvel <ardb+git@google.com>
 To: linux-arm-kernel@lists.infradead.org
@@ -81,41 +81,94 @@ Content-Type: text/plain; charset="UTF-8"
 
 From: Ard Biesheuvel <ardb@kernel.org>
 
-Instead of blindly overwriting an existing table entry when mapping DRAM
-regions, take care not to replace a pre-existing table entry with a
-block entry. This permits the logic of mapping the kernel's linear alias
-to be simplified in a subsequent patch.
+Instead of blindly overwriting existing live entries regardless of the
+value of their contiguous bit when mapping DRAM regions at
+contiguous-hint granularity, check whether the contiguous region in
+question contains any valid descriptors that have the contiguous bit
+cleared, and in that case, leave the contiguous bit unset on the entire
+region. This permits the logic of mapping the kernel's linear alias to
+be simplified in a subsequent patch.
 
-Reviewed-by: Ryan Roberts <ryan.roberts@arm.com>
+Note that this can only result in a misprogrammed contiguous bit (as per
+ARM ARM RNGLXZ) if the region in question already contains a mix of
+valid contiguous and valid non-contiguous descriptors, in which case it
+was already misprogrammed to begin with.
+
 Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
 ---
- arch/arm64/mm/mmu.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ arch/arm64/include/asm/pgtable.h |  4 ++++
+ arch/arm64/mm/mmu.c              | 22 ++++++++++++++++++--
+ 2 files changed, 24 insertions(+), 2 deletions(-)
 
+diff --git a/arch/arm64/include/asm/pgtable.h b/arch/arm64/include/asm/pgtable.h
+index 4dfa42b7d053..a1c5894332d9 100644
+--- a/arch/arm64/include/asm/pgtable.h
++++ b/arch/arm64/include/asm/pgtable.h
+@@ -181,6 +181,10 @@ static inline pteval_t __phys_to_pte_val(phys_addr_t phys)
+  * Returns true if the pte is valid and has the contiguous bit set.
+  */
+ #define pte_valid_cont(pte)	(pte_valid(pte) && pte_cont(pte))
++/*
++ * Returns true if the pte is valid and has the contiguous bit cleared.
++ */
++#define pte_valid_noncont(pte)	(pte_valid(pte) && !pte_cont(pte))
+ /*
+  * Could the pte be present in the TLB? We must check mm_tlb_flush_pending
+  * so that we don't erroneously return false for pages that have been
 diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-index b2ba5b35c35f..5c827fa3cd38 100644
+index 5c827fa3cd38..6b42d724bd1b 100644
 --- a/arch/arm64/mm/mmu.c
 +++ b/arch/arm64/mm/mmu.c
-@@ -256,7 +256,8 @@ static int init_pmd(pmd_t *pmdp, unsigned long addr, unsigned long end,
+@@ -187,6 +187,14 @@ static void init_pte(pte_t *ptep, unsigned long addr, unsigned long end,
+ 	} while (ptep++, addr += PAGE_SIZE, addr != end);
+ }
  
- 		/* try section mapping first */
- 		if (((addr | next | phys) & ~PMD_MASK) == 0 &&
--		    (flags & NO_BLOCK_MAPPINGS) == 0) {
-+		    (flags & NO_BLOCK_MAPPINGS) == 0 &&
-+		    !pmd_table(old_pmd)) {
- 			WARN_ON(!pmd_set_huge(pmdp, phys, prot));
++static bool pte_range_has_valid_noncont(pte_t *ptep)
++{
++	for (int i = 0; i < CONT_PTES; i++)
++		if (pte_valid_noncont(__ptep_get(&ptep[i])))
++			return true;
++	return false;
++}
++
+ static int alloc_init_cont_pte(pmd_t *pmdp, unsigned long addr,
+ 			       unsigned long end, phys_addr_t phys,
+ 			       pgprot_t prot,
+@@ -224,7 +232,8 @@ static int alloc_init_cont_pte(pmd_t *pmdp, unsigned long addr,
  
- 			/*
-@@ -379,7 +380,8 @@ static int alloc_init_pud(p4d_t *p4dp, unsigned long addr, unsigned long end,
- 		 */
- 		if (pud_sect_supported() &&
- 		   ((addr | next | phys) & ~PUD_MASK) == 0 &&
--		    (flags & NO_BLOCK_MAPPINGS) == 0) {
-+		    (flags & NO_BLOCK_MAPPINGS) == 0 &&
-+		    !pud_table(old_pud)) {
- 			WARN_ON(!pud_set_huge(pudp, phys, prot));
+ 		/* use a contiguous mapping if the range is suitably aligned */
+ 		if ((((addr | next | phys) & ~CONT_PTE_MASK) == 0) &&
+-		    (flags & NO_CONT_MAPPINGS) == 0)
++		    (flags & NO_CONT_MAPPINGS) == 0 &&
++		    !pte_range_has_valid_noncont(ptep))
+ 			__prot = __pgprot(pgprot_val(prot) | PTE_CONT);
  
- 			/*
+ 		init_pte(ptep, addr, next, phys, __prot);
+@@ -283,6 +292,14 @@ static int init_pmd(pmd_t *pmdp, unsigned long addr, unsigned long end,
+ 	return 0;
+ }
+ 
++static bool pmd_range_has_valid_noncont(pmd_t *pmdp)
++{
++	for (int i = 0; i < CONT_PMDS; i++)
++		if (pte_valid_noncont(pmd_pte(READ_ONCE(pmdp[i]))))
++			return true;
++	return false;
++}
++
+ static int alloc_init_cont_pmd(pud_t *pudp, unsigned long addr,
+ 			       unsigned long end, phys_addr_t phys,
+ 			       pgprot_t prot,
+@@ -324,7 +341,8 @@ static int alloc_init_cont_pmd(pud_t *pudp, unsigned long addr,
+ 
+ 		/* use a contiguous mapping if the range is suitably aligned */
+ 		if ((((addr | next | phys) & ~CONT_PMD_MASK) == 0) &&
+-		    (flags & NO_CONT_MAPPINGS) == 0)
++		    (flags & NO_CONT_MAPPINGS) == 0 &&
++		    !pmd_range_has_valid_noncont(pmdp))
+ 			__prot = __pgprot(pgprot_val(prot) | PTE_CONT);
+ 
+ 		ret = init_pmd(pmdp, addr, next, phys, __prot, pgtable_alloc, flags);
 -- 
 2.54.0.823.g6e5bcc1fc9-goog
 
