@@ -1,33 +1,33 @@
 Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id DEA49351C20;
-	Fri, 29 May 2026 08:25:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 8B3F82DEA89;
+	Fri, 29 May 2026 08:27:47 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780043148; cv=none; b=bYEEhAjDynXza45UreovLHXZTsaeEMqtgtu7y7CZzWftME+0sWW2aEKGyNe01UhQLEdOHsf7FF4eNRKhTFEyXmZbo40GYc7t29YcetvQUTkFOJWqXkFkDqlc1V+3aiqsUMZ7JZdO57BC4tiwkuE3hbv1e/xKRSm5/b/ih2ES8is=
+	t=1780043268; cv=none; b=jIxxzcjYnoc1bQJ2pdV1T1XY/BI2sBQe4E5fALz3V/6QoPf50tV0qdrNvSS7Jg8d5qA1Rwh4HaxVPinx0i15mi0TLBzQMJrvP+8JVsV5zn4sKcQK5oKozHblQThxcF4l+9F8U7+GXfHByXUnw0ChnMNw3/NBfPoQYdBMojncmFc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780043148; c=relaxed/simple;
-	bh=XELYFuViuZqrLLxfdD4PGyPtxf/Au3oWznf3FJ0ages=;
+	s=arc-20240116; t=1780043268; c=relaxed/simple;
+	bh=vGqKwtowp8PNMRvBO7niOdxzr80Af+Ycpil33LSytq8=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=JgCxkleplbZkiv77qmKbb2FmdqLkJ+ygpkL3ya7h2xeyRAfMLlLZGRJAHe99rc6xsSY/9rd0y3vuyMRXeKqz0C9TRbgQ5p8PbVOgbsfNi06e/r1oClOJxnxo/aqjkT2I38ZqevMdSP1npQ2ozzzmT9isDVRXNTIlCXm8Oqegs5A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b=nLeLgcyf; arc=none smtp.client-ip=217.140.110.172
+	 In-Reply-To:Content-Type; b=jaUGM2gwtG1Dv19CxjSjHMpITtqBI+JjHCjK8BfY+QCOYcdbFGX83kpukRNo6Sy+xB07ybP476TS4ljSIhYOEDp3UIqaanVcGsGh//yAjy1Z5NLcZf2JJ5ZikbRdhTzLoGsfYVa7qoyj/x/hjkLA5WV/LLcL8ely/Z4jYgMekWw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b=sZLc3D9c; arc=none smtp.client-ip=217.140.110.172
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b="nLeLgcyf"
+	dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b="sZLc3D9c"
 Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 26BB920E3;
-	Fri, 29 May 2026 01:25:41 -0700 (PDT)
+	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id B2265201B;
+	Fri, 29 May 2026 01:27:41 -0700 (PDT)
 Received: from [10.57.91.162] (unknown [10.57.91.162])
-	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id EB3B03F632;
-	Fri, 29 May 2026 01:25:41 -0700 (PDT)
+	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 2F36E3F632;
+	Fri, 29 May 2026 01:27:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=arm.com; s=foss;
-	t=1780043146; bh=XELYFuViuZqrLLxfdD4PGyPtxf/Au3oWznf3FJ0ages=;
+	t=1780043266; bh=vGqKwtowp8PNMRvBO7niOdxzr80Af+Ycpil33LSytq8=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=nLeLgcyf0k0ldux0TFh1jZXIYKRbC8G2USuqOmM/9EmYadwJutsqHi6rAS3wJ4LeP
-	 LQ0tUrmOO60rTr/DJhKXdMc6ZEjfiLBQ3YU7iRkmjIzZx6xkLa0FfaMwWkTN/fTA4l
-	 YY6GEpLN1I96rm5mjpzFJBCMsGNrpegHKxst0bvg=
-Message-ID: <9493da99-3476-4fdd-818b-19e424b46f8e@arm.com>
-Date: Fri, 29 May 2026 10:25:39 +0200
+	b=sZLc3D9chfT7SLPciBg3CzU4tEgQd2MgnitSwynPVzMJkASztCzaS8U6eG48NlXUj
+	 NjlYJAnCst9GC7POcH6vB4eJQPJcLzWDvzqPHQrCfUmthlePWs5wgYHTV4sko2IV+Z
+	 aIr2mh8cXNbx5h2aQZIulPua6F09KFpwA+oUzHNk=
+Message-ID: <2a6f9f05-ac57-4ef8-9328-74cc8ccfea16@arm.com>
+Date: Fri, 29 May 2026 10:27:37 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v6 08/15] arm64: mm: Permit contiguous attribute for
- preliminary mappings
+Subject: Re: [PATCH v6 09/15] arm64: Move fixmap and kasan page tables to end
+ of kernel image
 To: Ard Biesheuvel <ardb+git@google.com>, linux-arm-kernel@lists.infradead.org
 Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com,
  mark.rutland@arm.com, Ard Biesheuvel <ardb@kernel.org>,
@@ -49,83 +49,102 @@ Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com,
  linux-mm@kvack.org, linux-hardening@vger.kernel.org,
  linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
 References: <20260526175846.2694125-17-ardb+git@google.com>
- <20260526175846.2694125-25-ardb+git@google.com>
+ <20260526175846.2694125-26-ardb+git@google.com>
 From: Kevin Brodsky <kevin.brodsky@arm.com>
 Content-Language: en-GB
-In-Reply-To: <20260526175846.2694125-25-ardb+git@google.com>
+In-Reply-To: <20260526175846.2694125-26-ardb+git@google.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 26/05/2026 19:58, Ard Biesheuvel wrote:
 > From: Ard Biesheuvel <ardb@kernel.org>
 >
-> There are a few cases where we omit the contiguous hint for mappings
-> that start out as read-write and are remapped read-only later, on the
-> basis that manipulating live descriptors with the PTE_CONT attribute set
-> is unsafe. When support for the contiguous hint was added to the code,
-> the ARM ARM was ambiguous about this, and so we erred on the side of
-> caution.
+> Move the fixmap and kasan page tables out of the BSS section, and place
+> them at the end of the image, right before the init_pg_dir section where
+> some of the other statically allocated page tables live.
 >
-> In the meantime, this has been clarified [0], and regions that will be
-> remapped in their entirety, retaining the contiguous bit on all entries,
-> can use the contiguous hint both in the initial mapping as well as the
-> one that replaces it. Note that this requires that the logic that may be
-> called to remap overlapping regions respects existing valid descriptors
-> that have the contiguous bit cleared.
+> These page tables are currently the only data objects in vmlinux that
+> are meant to be accessed via the kernel image's linear alias, and so
+> placing them together allows the remainder of the data/bss section to be
+> remapped read-only or unmapped entirely.
 >
-> So omit the NO_CONT_MAPPINGS flag in places where it is unneeded.
->
-> Thanks to Ryan for the reference.
->
-> [0] RJQQTC
->
-> For a TLB lookup in a contiguous region mapped by translation table entries that
-> have consistent values for the Contiguous bit, but have the OA, attributes, or
-> permissions misprogrammed, that TLB lookup is permitted to produce an OA, access
-> permissions, and memory attributes that are consistent with any one of the
-> programmed translation table values.
->
+> Reviewed-by: Kevin Brodsky <kevin.brodsky@arm.com>
 > Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+> ---
+>  arch/arm64/include/asm/mmu.h    | 2 ++
+>  arch/arm64/kernel/vmlinux.lds.S | 8 +++++++-
+>  arch/arm64/mm/fixmap.c          | 6 +++---
+>  arch/arm64/mm/kasan_init.c      | 2 +-
+>  4 files changed, 13 insertions(+), 5 deletions(-)
+>
+> diff --git a/arch/arm64/include/asm/mmu.h b/arch/arm64/include/asm/mmu.h
+> index 5e1211c540ab..fb95754f2876 100644
+> --- a/arch/arm64/include/asm/mmu.h
+> +++ b/arch/arm64/include/asm/mmu.h
+> @@ -13,6 +13,8 @@
+>  
+>  #ifndef __ASSEMBLER__
+>  
+> +#define __pgtbl_bss __section(".pgdir.bss") __aligned(PAGE_SIZE)
+> +
+>  #include <linux/refcount.h>
+>  #include <asm/cpufeature.h>
+>  
+> diff --git a/arch/arm64/kernel/vmlinux.lds.S b/arch/arm64/kernel/vmlinux.lds.S
+> index e1ac876200a3..2b0ebfb30c63 100644
+> --- a/arch/arm64/kernel/vmlinux.lds.S
+> +++ b/arch/arm64/kernel/vmlinux.lds.S
+> @@ -349,9 +349,15 @@ SECTIONS
+>  	_edata = .;
+>  
+>  	/* start of zero-init region */
+> -	BSS_SECTION(SBSS_ALIGN, 0, 0)
+> +	BSS_SECTION(SBSS_ALIGN, 0, PAGE_SIZE)
+>  	__pi___bss_start = __bss_start;
+>  
+> +	/* fixmap BSS starts here - preceding data/BSS is omitted from the linear map */
+> +	.pgdir.bss (NOLOAD) : ALIGN(PAGE_SIZE) {
+
+Do we actually need the NOLOAD type here?
+
+Aside from that:
 
 Reviewed-by: Kevin Brodsky <kevin.brodsky@arm.com>
 
-> ---
->  arch/arm64/mm/mmu.c | 10 +++-------
->  1 file changed, 3 insertions(+), 7 deletions(-)
->
-> diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-> index 55bb40348a47..04cc579c7a15 100644
-> --- a/arch/arm64/mm/mmu.c
-> +++ b/arch/arm64/mm/mmu.c
-> @@ -1016,8 +1016,7 @@ void __init create_mapping_noalloc(phys_addr_t phys, unsigned long virt,
->  			&phys, virt);
->  		return;
->  	}
-> -	early_create_pgd_mapping(init_mm.pgd, phys, virt, size, prot, NULL,
-> -				 NO_CONT_MAPPINGS);
-> +	early_create_pgd_mapping(init_mm.pgd, phys, virt, size, prot, NULL, 0);
->  }
+> +		*(.pgdir.bss)
+> +	}
+> +	ASSERT(ADDR(.pgdir.bss) == __bss_stop, ".pgdir.bss must follow BSS")
+> +
+>  	. = ALIGN(PAGE_SIZE);
+>  	__pi_init_pg_dir = .;
+>  	. += INIT_DIR_SIZE;
+> diff --git a/arch/arm64/mm/fixmap.c b/arch/arm64/mm/fixmap.c
+> index c5c5425791da..1a3bbd67dd76 100644
+> --- a/arch/arm64/mm/fixmap.c
+> +++ b/arch/arm64/mm/fixmap.c
+> @@ -31,9 +31,9 @@ static_assert(NR_BM_PMD_TABLES == 1);
 >  
->  void __init create_pgd_mapping(struct mm_struct *mm, phys_addr_t phys,
-> @@ -1044,8 +1043,7 @@ static void update_mapping_prot(phys_addr_t phys, unsigned long virt,
->  		return;
->  	}
+>  #define BM_PTE_TABLE_IDX(addr)	__BM_TABLE_IDX(addr, PMD_SHIFT)
 >  
-> -	early_create_pgd_mapping(init_mm.pgd, phys, virt, size, prot, NULL,
-> -				 NO_CONT_MAPPINGS);
-> +	early_create_pgd_mapping(init_mm.pgd, phys, virt, size, prot, NULL, 0);
+> -static pte_t bm_pte[NR_BM_PTE_TABLES][PTRS_PER_PTE] __page_aligned_bss;
+> -static pmd_t bm_pmd[PTRS_PER_PMD] __page_aligned_bss __maybe_unused;
+> -static pud_t bm_pud[PTRS_PER_PUD] __page_aligned_bss __maybe_unused;
+> +static pte_t bm_pte[NR_BM_PTE_TABLES][PTRS_PER_PTE] __pgtbl_bss;
+> +static pmd_t bm_pmd[PTRS_PER_PMD] __pgtbl_bss __maybe_unused;
+> +static pud_t bm_pud[PTRS_PER_PUD] __pgtbl_bss __maybe_unused;
 >  
->  	/* flush the TLBs after updating live kernel mappings */
->  	flush_tlb_kernel_range(virt, virt + size);
-> @@ -1191,10 +1189,8 @@ static void __init map_mem(void)
->  	 * alternative patching has completed). This makes the contents
->  	 * of the region accessible to subsystems such as hibernate,
->  	 * but protects it from inadvertent modification or execution.
-> -	 * Note that contiguous mappings cannot be remapped in this way,
-> -	 * so we should avoid them here.
->  	 */
-> -	__map_memblock(kernel_start, kernel_end, PAGE_KERNEL, NO_CONT_MAPPINGS);
-> +	__map_memblock(kernel_start, kernel_end, PAGE_KERNEL, 0);
->  	memblock_clear_nomap(kernel_start, kernel_end - kernel_start);
->  }
+>  static inline pte_t *fixmap_pte(unsigned long addr)
+>  {
+> diff --git a/arch/arm64/mm/kasan_init.c b/arch/arm64/mm/kasan_init.c
+> index abeb81bf6ebd..dbf22cae82ee 100644
+> --- a/arch/arm64/mm/kasan_init.c
+> +++ b/arch/arm64/mm/kasan_init.c
+> @@ -214,7 +214,7 @@ asmlinkage void __init kasan_early_init(void)
+>  		 * shadow pud_t[]/p4d_t[], which could end up getting corrupted
+>  		 * when the linear region is mapped.
+>  		 */
+> -		static pte_t tbl[PTRS_PER_PTE] __page_aligned_bss;
+> +		static pte_t tbl[PTRS_PER_PTE] __pgtbl_bss;
+>  		pgd_t *pgdp = pgd_offset_k(KASAN_SHADOW_START);
 >  
+>  		set_pgd(pgdp, __pgd(__pa_symbol(tbl) | PGD_TYPE_TABLE));
