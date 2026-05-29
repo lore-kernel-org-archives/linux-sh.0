@@ -1,54 +1,54 @@
 Received: from mail-wm1-f73.google.com (mail-wm1-f73.google.com [209.85.128.73])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 303913F1ADA
-	for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 15:02:21 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 989BC3F23CC
+	for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 15:02:22 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.73
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780066942; cv=none; b=VE0GLo0IBI7EW1IrC90nqMk+JBnUSWNcu/UhVwF4ZYu4EpyZ1cBNyBuE2ZVVXhRVAaNXU2VLimdNlWKbOG8LVs2NUQPtfOI0ktnTQpnnBRnauBFi8M/ns1MmEsIqVEYsGgC0F4ZbUMswSN+IquaiB1sG8qmEoTd9OR6eeplNXRI=
+	t=1780066944; cv=none; b=uEskOReI+U+t9Ps7eNOR5GUOvCHTzgGRxJOoTSjm2MfOsQT8iih2idv2vzm11whdb6NF1XonaczKDVitB5o0VSKui1/K4otMDa5JdqKie9thKTMe26OD/zzn7miuEb6Eltt/jfsdjzbNFT2J+zr9GGXS7xElHbElexumChia2Gs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780066942; c=relaxed/simple;
-	bh=vxD7TlABQc5YNXy8IgLYLrozgSyvWqQX2jVCpPFJU8g=;
+	s=arc-20240116; t=1780066944; c=relaxed/simple;
+	bh=emiPSkc5kq8Ky8pUT11zWkfNXnzxzu2xwOZVFKgqaqo=;
 	h=Date:In-Reply-To:Mime-Version:References:Message-ID:Subject:From:
-	 To:Cc:Content-Type; b=l0/dunpSLPyUJJOjkoi8lxZkT61I6K4YKjyDL//D4OoMalclyjTU0xzJnAQyKR9ZAj4NoEfCp8RPTHJDRyeTMwenfwIUFptRZhf6L928wkdMX0LrMmZJvuxUkOz7H0bbyZTnyp63+gPNqQ+vmXT+n81MCtHd35foVn5EB48dCco=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=VbBIUmdp; arc=none smtp.client-ip=209.85.128.73
+	 To:Cc:Content-Type; b=GNqHnPk0ocggjw23M9WVg4rkeAUbBrtNmpI3zu0mzaXjDZguDOAH9794oJKl5lPlsz1tNESr7Q5fw42RiL84m0A4tSxfrG6cwrIRj0hNGIQVedLQrxIIXY7FlGzeBIBaPR0TCErNvD2PQ0slzI5DxmZEGPknEklkINiiExrsxh8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=LchDk342; arc=none smtp.client-ip=209.85.128.73
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="VbBIUmdp"
-Received: by mail-wm1-f73.google.com with SMTP id 5b1f17b1804b1-4905428aad6so54768845e9.1
-        for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 08:02:21 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="LchDk342"
+Received: by mail-wm1-f73.google.com with SMTP id 5b1f17b1804b1-48fdacf2616so73376875e9.3
+        for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 08:02:22 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20251104; t=1780066940; x=1780671740; darn=vger.kernel.org;
+        d=google.com; s=20251104; t=1780066941; x=1780671741; darn=vger.kernel.org;
         h=cc:to:from:subject:message-id:references:mime-version:in-reply-to
          :date:from:to:cc:subject:date:message-id:reply-to;
-        bh=RHwZV4K/OQyLo87ubxB2N7tui2RqyNeWqpTDKGM1mWQ=;
-        b=VbBIUmdpZgOVz9yfJy0u03XE2GOK1RKhnCeBUphANyyrP9pEynPVnIdXDiF5WQNH7h
-         JKb0rAiiAPuj0TTH5U1xBMBLk598jVsMpCVeQp/PGD9sRpCxPKxJBNmhDikJfrvkGyci
-         EAUXqGMoLDOSSM5/Lo0N8I1kSvT4a0jasa0UB36G4JYjvCxVrVs5LIRtvUDZcDCx0KVy
-         980hkTZSsv3enEj2YMXzCemGeIZuoeZfQu6WmABwx4/esuHBLpMv4QEFTbNNYgt3ff6I
-         qGn7mxz5nUqHTdcKeSMzb0J7s9MqcXUhmy2lXOS8hPYFhPmeMLuwzdhn3dPo5vz89jKL
-         jM7g==
+        bh=U/mwSEvShIHWF2QZpE0iwPRub+uC5Pg2lSQX62+z6MM=;
+        b=LchDk342FT5+TG0vRfl7lYPAibY+1oTeN2E7mUMWToHrc916Dj4NTAmVmxhl1hT1h8
+         kDwK+hZr4alasKBsCqOlMvqLRbCVDs7qKesTQVz60rIgh5aSLVvAIe3QEsvZSzLJDT0B
+         Ry/bZWYKY91d9XDfdbzy+gwSyKxHJPLqqpg0/LH5K5M7zhnSIXouNGKV2StnTMPlv9lL
+         cC1XexNBWldyCkl/4gOFa2G4vf/Qyyc6+RAIGaUEXVQjen1YYoETPSau7qQ77VjKVGgj
+         LTEpzgR5oAjBWwaJuD//gGcXNuW0aOAhTltFGxvPq1rz90kfI4ckduLWEOVNxK6O4x9+
+         nweg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780066940; x=1780671740;
+        d=1e100.net; s=20251104; t=1780066941; x=1780671741;
         h=cc:to:from:subject:message-id:references:mime-version:in-reply-to
          :date:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=RHwZV4K/OQyLo87ubxB2N7tui2RqyNeWqpTDKGM1mWQ=;
-        b=QHSLCM2NySga0N2qf3lHa+fxjW64KOkWZ/faxEbSkSksrChr17Nplihl3hgLmY7RmM
-         nSgda/Yp9+0lKLg+MwHxOOH7FXuaY0rIqSJLjBmhdIT9bhdj76s34UBmjqUGuY2KqxJB
-         bl1epNopuqgepBhXyEVzmM1BStsUagcmm/isKPVYCjEYqQ7BHXpRv3idZ7LlpQxtcGta
-         ZdqHjzHwiTzrB8dZbtIVjAlJEtbl8dUUuW6I8ThaGRDpMuh1T0WKmxZzZqHycKSLcmsB
-         oeM5m2Y+hsDoXBrAAxA1kF1HwrCxt8+MIhxmx6Hp2ptr8Q6tUQvvsbPXYNnm/9Kp10IW
-         DE2Q==
-X-Forwarded-Encrypted: i=1; AFNElJ+VV930JSK+rZ/VRVtjIyaTb8guiegaeu37trDQ4ce2JsmXEhVWq7tx8KLXPMuwkvHF0XKp5y4Ptg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywr8uzvSrsA4WjeGenBbcZ/kDGIuLDARBv6nxgB61LjQeBEh7RX
-	QTu4rmwfQHsaPglk7e6v+EPB6K08o0hyn2hzvlNkXb0NFDFgP1Cw4i7O9tjwS4WI9TOml1xMIw=
+        bh=U/mwSEvShIHWF2QZpE0iwPRub+uC5Pg2lSQX62+z6MM=;
+        b=Pt9z8OVUzuQN5qtkLHCkYOF/4Z11oPW6YOHbTxtQzO9J9UHg7On63aX32ItHxTQ8Aa
+         jZ22FyTiKMKX7hAdYIeC7Ex/zXOQ+3eFpzPmypxA6IoGQlHjBCr7A3znXlmsEMPckHn6
+         Riq/XgEBo47K20I+P7EKPsNQtileaabNm/BvJ2JNqdjvVCjFwK+a2Qywfgu6G6sXzT8V
+         eEWM4zk9YRPzNgNtrQKUolQm/lOc5EnomurCWC1HiMN2QocOoK5LElGL5cuaD8FYSD43
+         S5HTNu3WJ7rutW6tGkkTuY7toI4qUvI67GzEP+ckrbFWOQNKR1JO83fi0EoTTcsxxhoN
+         WAJw==
+X-Forwarded-Encrypted: i=1; AFNElJ//TT7FGh78OvCoy+4pQXLfZKuyXSkmBNp740Jnf9/jYU/MREthPvCq6+ax+arDbmdy2aNv/sVHhw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwtGLa9mnNMnW/jS2XSRrsUHXgNk2RkylFJuiFYBRF9dREyqlLJ
+	y9riW4FAj9QG/x2uF1ZJrmAyoiP0zT+/uhlHdyJR9BhWv3Sswd9f7wR1+bsQ875fC5JMt9ClHA=
 	=
-X-Received: from wmbz2.prod.google.com ([2002:a05:600c:c082:b0:490:3d2f:edc])
- (user=ardb job=prod-delivery.src-stubby-dispatcher) by 2002:a05:600c:828d:b0:490:507c:bdb1
- with SMTP id 5b1f17b1804b1-490a291cbbemr329805e9.15.1780066939649; Fri, 29
- May 2026 08:02:19 -0700 (PDT)
-Date: Fri, 29 May 2026 17:01:53 +0200
+X-Received: from wmos19.prod.google.com ([2002:a05:600c:45d3:b0:48a:6a1b:6c3b])
+ (user=ardb job=prod-delivery.src-stubby-dispatcher) by 2002:a05:600c:e489:20b0:490:6869:46c6
+ with SMTP id 5b1f17b1804b1-4909c0c3aa4mr45310045e9.31.1780066940967; Fri, 29
+ May 2026 08:02:20 -0700 (PDT)
+Date: Fri, 29 May 2026 17:01:54 +0200
 In-Reply-To: <20260529150150.1670604-17-ardb+git@google.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -58,14 +58,15 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 References: <20260529150150.1670604-17-ardb+git@google.com>
 X-Developer-Key: i=ardb@kernel.org; a=openpgp; fpr=F43D03328115A198C90016883D200E9CA6329909
-X-Developer-Signature: v=1; a=openpgp-sha256; l=3439; i=ardb@kernel.org;
- h=from:subject; bh=RVK4+kwUNBzT2vP63qv/oNPK4oNSEDZX2ULcXiZameE=;
- b=owGbwMvMwCVmkMcZplerG8N4Wi2JIUtyVeK1gth6p/IV1dd2mU+oVf+4YqKnwbIQxumu9bquP
- Yfu1HZ2lLIwiHExyIopsgjM/vtu5+mJUrXOs2Rh5rAygQxh4OIUgIncvMPIcGzv+x2vrDJc2eUk
- LtltCDno/Lq1Z7LA5Ge9k44qbfyXuZqR4dqGMNajx9vSleJns73yeprz3enQ4h9HLk24LK1xMO+ dISMA
+X-Developer-Signature: v=1; a=openpgp-sha256; l=2121; i=ardb@kernel.org;
+ h=from:subject; bh=bTKeTgp6cCkzZ1W18Sd9Cjl54RAT9moCkecsCk8B5PI=;
+ b=owGbwMvMwCVmkMcZplerG8N4Wi2JIUtyVRLb9epvd/g6Z6nXCMU1XxDqFp7StynL770hk8KPC
+ 3fVkv52lLIwiHExyIopsgjM/vtu5+mJUrXOs2Rh5rAygQxh4OIUgIm42DP8T+QPDuZ5kJNY4Fq0
+ fndHhtCalPXbZGdn3574zC/PNP3pckaG3SKqFZWbT0T+XSk3T86mOHw7v2nxfgWXR9PW1P5ftia AFQA=
 X-Mailer: git-send-email 2.54.0.823.g6e5bcc1fc9-goog
-Message-ID: <20260529150150.1670604-19-ardb+git@google.com>
-Subject: [PATCH v7 02/15] arm64: mm: Drop redundant pgd_t* argument from map_mem()
+Message-ID: <20260529150150.1670604-20-ardb+git@google.com>
+Subject: [PATCH v7 03/15] arm64: mm: Check for pud_/pmd_set_huge() failures on
+ kernel mappings
 From: Ard Biesheuvel <ardb+git@google.com>
 To: linux-arm-kernel@lists.infradead.org
 Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com, 
@@ -80,97 +81,55 @@ Content-Type: text/plain; charset="UTF-8"
 
 From: Ard Biesheuvel <ardb@kernel.org>
 
-__map_memblock() and map_mem() always operate on swapper_pg_dir, so
-there is no need to pass around a pgd_t pointer between them.
+Sashiko reports:
 
-Reviewed-by: Ryan Roberts <ryan.roberts@arm.com>
-Reviewed-by: Kevin Brodsky <kevin.brodsky@arm.com>
+| If pmd_set_huge() rejects an unsafe page table transition (such as
+| mapping a different physical address over an existing block mapping),
+| it returns 0 and leaves the page table entry unmodified.
+|
+| Because *pmdp remains unmodified, READ_ONCE(pmd_val(*pmdp)) will equal
+| pmd_val(old_pmd). The transition from old_pmd to old_pmd is evaluated
+| as safe by pgattr_change_is_safe(), so the BUG_ON never triggers.
+|
+| This allows invalid and unsafe mapping updates to be silently dropped
+| instead of panicking, leaving stale memory mappings active while the
+| caller assumes the update was successful.
+
+The same applies to pud_set_huge() in alloc_init_pud().
+
+Given how it is generally preferred to limp on rather than blow up the
+system if an unexpected condition such as this one occurs, and the fact
+that there are no known cases where this disparity results in real
+problems, let's WARN on these failures rather than BUG, allowing the
+system to survive to the point where it can actually report them.
+
 Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
 ---
- arch/arm64/mm/mmu.c | 25 ++++++++++----------
- 1 file changed, 12 insertions(+), 13 deletions(-)
+ arch/arm64/mm/mmu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-index 112fa4a3b0eb..aa0e2c6435f7 100644
+index aa0e2c6435f7..b2ba5b35c35f 100644
 --- a/arch/arm64/mm/mmu.c
 +++ b/arch/arm64/mm/mmu.c
-@@ -1035,11 +1035,11 @@ static void update_mapping_prot(phys_addr_t phys, unsigned long virt,
- 	flush_tlb_kernel_range(virt, virt + size);
- }
+@@ -257,7 +257,7 @@ static int init_pmd(pmd_t *pmdp, unsigned long addr, unsigned long end,
+ 		/* try section mapping first */
+ 		if (((addr | next | phys) & ~PMD_MASK) == 0 &&
+ 		    (flags & NO_BLOCK_MAPPINGS) == 0) {
+-			pmd_set_huge(pmdp, phys, prot);
++			WARN_ON(!pmd_set_huge(pmdp, phys, prot));
  
--static void __init __map_memblock(pgd_t *pgdp, phys_addr_t start,
--				  phys_addr_t end, pgprot_t prot, int flags)
-+static void __init __map_memblock(phys_addr_t start, phys_addr_t end,
-+				  pgprot_t prot, int flags)
- {
--	early_create_pgd_mapping(pgdp, start, __phys_to_virt(start), end - start,
--				 prot, early_pgtable_alloc, flags);
-+	early_create_pgd_mapping(swapper_pg_dir, start, __phys_to_virt(start),
-+				 end - start, prot, early_pgtable_alloc, flags);
- }
+ 			/*
+ 			 * After the PMD entry has been populated once, we
+@@ -380,7 +380,7 @@ static int alloc_init_pud(p4d_t *p4dp, unsigned long addr, unsigned long end,
+ 		if (pud_sect_supported() &&
+ 		   ((addr | next | phys) & ~PUD_MASK) == 0 &&
+ 		    (flags & NO_BLOCK_MAPPINGS) == 0) {
+-			pud_set_huge(pudp, phys, prot);
++			WARN_ON(!pud_set_huge(pudp, phys, prot));
  
- void __init mark_linear_text_alias_ro(void)
-@@ -1087,13 +1087,13 @@ static phys_addr_t __init arm64_kfence_alloc_pool(void)
- 	return kfence_pool;
- }
- 
--static void __init arm64_kfence_map_pool(phys_addr_t kfence_pool, pgd_t *pgdp)
-+static void __init arm64_kfence_map_pool(phys_addr_t kfence_pool)
- {
- 	if (!kfence_pool)
- 		return;
- 
- 	/* KFENCE pool needs page-level mapping. */
--	__map_memblock(pgdp, kfence_pool, kfence_pool + KFENCE_POOL_SIZE,
-+	__map_memblock(kfence_pool, kfence_pool + KFENCE_POOL_SIZE,
- 			pgprot_tagged(PAGE_KERNEL),
- 			NO_BLOCK_MAPPINGS | NO_CONT_MAPPINGS);
- 	memblock_clear_nomap(kfence_pool, KFENCE_POOL_SIZE);
-@@ -1129,11 +1129,11 @@ bool arch_kfence_init_pool(void)
- #else /* CONFIG_KFENCE */
- 
- static inline phys_addr_t arm64_kfence_alloc_pool(void) { return 0; }
--static inline void arm64_kfence_map_pool(phys_addr_t kfence_pool, pgd_t *pgdp) { }
-+static inline void arm64_kfence_map_pool(phys_addr_t kfence_pool) { }
- 
- #endif /* CONFIG_KFENCE */
- 
--static void __init map_mem(pgd_t *pgdp)
-+static void __init map_mem(void)
- {
- 	static const u64 direct_map_end = _PAGE_END(VA_BITS_MIN);
- 	phys_addr_t kernel_start = __pa_symbol(_text);
-@@ -1178,7 +1178,7 @@ static void __init map_mem(pgd_t *pgdp)
- 		 * if MTE is present. Otherwise, it has the same attributes as
- 		 * PAGE_KERNEL.
- 		 */
--		__map_memblock(pgdp, start, end, pgprot_tagged(PAGE_KERNEL),
-+		__map_memblock(start, end, pgprot_tagged(PAGE_KERNEL),
- 			       flags);
- 	}
- 
-@@ -1192,10 +1192,9 @@ static void __init map_mem(pgd_t *pgdp)
- 	 * Note that contiguous mappings cannot be remapped in this way,
- 	 * so we should avoid them here.
- 	 */
--	__map_memblock(pgdp, kernel_start, kernel_end,
--		       PAGE_KERNEL, NO_CONT_MAPPINGS);
-+	__map_memblock(kernel_start, kernel_end, PAGE_KERNEL, NO_CONT_MAPPINGS);
- 	memblock_clear_nomap(kernel_start, kernel_end - kernel_start);
--	arm64_kfence_map_pool(early_kfence_pool, pgdp);
-+	arm64_kfence_map_pool(early_kfence_pool);
- }
- 
- void mark_rodata_ro(void)
-@@ -1417,7 +1416,7 @@ static void __init create_idmap(void)
- 
- void __init paging_init(void)
- {
--	map_mem(swapper_pg_dir);
-+	map_mem();
- 
- 	memblock_allow_resize();
- 
+ 			/*
+ 			 * After the PUD entry has been populated once, we
 -- 
 2.54.0.823.g6e5bcc1fc9-goog
 
