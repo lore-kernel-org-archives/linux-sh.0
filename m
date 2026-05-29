@@ -1,54 +1,54 @@
-Received: from mail-wm1-f73.google.com (mail-wm1-f73.google.com [209.85.128.73])
+Received: from mail-wr1-f74.google.com (mail-wr1-f74.google.com [209.85.221.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 989BC3F23CC
-	for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 15:02:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.73
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EF79E3F44E2
+	for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 15:02:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780066944; cv=none; b=uEskOReI+U+t9Ps7eNOR5GUOvCHTzgGRxJOoTSjm2MfOsQT8iih2idv2vzm11whdb6NF1XonaczKDVitB5o0VSKui1/K4otMDa5JdqKie9thKTMe26OD/zzn7miuEb6Eltt/jfsdjzbNFT2J+zr9GGXS7xElHbElexumChia2Gs=
+	t=1780066945; cv=none; b=MeyZM63UvH4U4VHcp1K0wE8pXdQMprYG3LT11A+rbNW7gdJ37s1dYqu0Qx2wCgwGZY8mBvj/1sTMinIX1b4d73w4ZfP2PK45kLjfQSREt/6N6juGGL0sKX6xvbN98JIVBvrJDCSRGIU6sDlDecA9uzM3FAUTCT3cE7sI8WgJtO8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780066944; c=relaxed/simple;
-	bh=emiPSkc5kq8Ky8pUT11zWkfNXnzxzu2xwOZVFKgqaqo=;
+	s=arc-20240116; t=1780066945; c=relaxed/simple;
+	bh=MK4il/RyXbeZqS4oUFS19K5ZKkdBSMDJph3YVgjuPuE=;
 	h=Date:In-Reply-To:Mime-Version:References:Message-ID:Subject:From:
-	 To:Cc:Content-Type; b=GNqHnPk0ocggjw23M9WVg4rkeAUbBrtNmpI3zu0mzaXjDZguDOAH9794oJKl5lPlsz1tNESr7Q5fw42RiL84m0A4tSxfrG6cwrIRj0hNGIQVedLQrxIIXY7FlGzeBIBaPR0TCErNvD2PQ0slzI5DxmZEGPknEklkINiiExrsxh8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=LchDk342; arc=none smtp.client-ip=209.85.128.73
+	 To:Cc:Content-Type; b=DZlWeYPaotwySY7g8g5S4uUQx/RNgCxpVPAUtPq4xE7qSP9V5rtHCHdVCQDTMbzQvg2WSn6wk4+bSdQlXTbDpebIw9uyBJ4hT0EEkyAnYTUGl2AaON92/5CFIQNcCu2qCaAu4HBptc6p2mbipw5Np0o3UTMk5k6hBGQ6EmTye0M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=tCcGjhYR; arc=none smtp.client-ip=209.85.221.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--ardb.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="LchDk342"
-Received: by mail-wm1-f73.google.com with SMTP id 5b1f17b1804b1-48fdacf2616so73376875e9.3
-        for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 08:02:22 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="tCcGjhYR"
+Received: by mail-wr1-f74.google.com with SMTP id ffacd0b85a97d-45ef66cc579so84074f8f.3
+        for <linux-sh@vger.kernel.org>; Fri, 29 May 2026 08:02:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20251104; t=1780066941; x=1780671741; darn=vger.kernel.org;
+        d=google.com; s=20251104; t=1780066942; x=1780671742; darn=vger.kernel.org;
         h=cc:to:from:subject:message-id:references:mime-version:in-reply-to
          :date:from:to:cc:subject:date:message-id:reply-to;
-        bh=U/mwSEvShIHWF2QZpE0iwPRub+uC5Pg2lSQX62+z6MM=;
-        b=LchDk342FT5+TG0vRfl7lYPAibY+1oTeN2E7mUMWToHrc916Dj4NTAmVmxhl1hT1h8
-         kDwK+hZr4alasKBsCqOlMvqLRbCVDs7qKesTQVz60rIgh5aSLVvAIe3QEsvZSzLJDT0B
-         Ry/bZWYKY91d9XDfdbzy+gwSyKxHJPLqqpg0/LH5K5M7zhnSIXouNGKV2StnTMPlv9lL
-         cC1XexNBWldyCkl/4gOFa2G4vf/Qyyc6+RAIGaUEXVQjen1YYoETPSau7qQ77VjKVGgj
-         LTEpzgR5oAjBWwaJuD//gGcXNuW0aOAhTltFGxvPq1rz90kfI4ckduLWEOVNxK6O4x9+
-         nweg==
+        bh=9SMbp+4SpJBPuSW3tE55txpooI4fjODhC3THY1otv5g=;
+        b=tCcGjhYRpAgjs9ZQlg5nTj4fwuIXRojXh2ckb8TsgT25viMsROlKb2ET0dIeogpNHy
+         0Ed5eSypvv8tNy/NzP8eZJMUZ/tOEpkb02mQ6lKKC3VWEKMwGbkeN2Qy+ffJiKwpn9i6
+         e8BgJKUhJ/YPmn7X2t0EKM3SBRUodNbVo6Me+A/1BuGCudiIJFcxdol4JhAyoS8EsABp
+         9zCX1PywkLAhGtHTXVAjUdAypNSeXM5PbDyZishE+kUW0mFfzDuPm/ZZMbi9Cw9RBaV7
+         RSizPmAv6XaGhiPxXJAs1E1a/mHSkUOJZ2g83YopW3mEeDCPjAugnK3r5fbgr3BvSpTr
+         75KQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780066941; x=1780671741;
+        d=1e100.net; s=20251104; t=1780066942; x=1780671742;
         h=cc:to:from:subject:message-id:references:mime-version:in-reply-to
          :date:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=U/mwSEvShIHWF2QZpE0iwPRub+uC5Pg2lSQX62+z6MM=;
-        b=Pt9z8OVUzuQN5qtkLHCkYOF/4Z11oPW6YOHbTxtQzO9J9UHg7On63aX32ItHxTQ8Aa
-         jZ22FyTiKMKX7hAdYIeC7Ex/zXOQ+3eFpzPmypxA6IoGQlHjBCr7A3znXlmsEMPckHn6
-         Riq/XgEBo47K20I+P7EKPsNQtileaabNm/BvJ2JNqdjvVCjFwK+a2Qywfgu6G6sXzT8V
-         eEWM4zk9YRPzNgNtrQKUolQm/lOc5EnomurCWC1HiMN2QocOoK5LElGL5cuaD8FYSD43
-         S5HTNu3WJ7rutW6tGkkTuY7toI4qUvI67GzEP+ckrbFWOQNKR1JO83fi0EoTTcsxxhoN
-         WAJw==
-X-Forwarded-Encrypted: i=1; AFNElJ//TT7FGh78OvCoy+4pQXLfZKuyXSkmBNp740Jnf9/jYU/MREthPvCq6+ax+arDbmdy2aNv/sVHhw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwtGLa9mnNMnW/jS2XSRrsUHXgNk2RkylFJuiFYBRF9dREyqlLJ
-	y9riW4FAj9QG/x2uF1ZJrmAyoiP0zT+/uhlHdyJR9BhWv3Sswd9f7wR1+bsQ875fC5JMt9ClHA=
+        bh=9SMbp+4SpJBPuSW3tE55txpooI4fjODhC3THY1otv5g=;
+        b=RWaI3VmyE0nsGsJ8QiwhhNRpxqk5AhjbTuS8Sn51d3WxhH6bWkor6htZlxX36JYMzb
+         AR8J6KI+PTvij/rdTv5EOKVhtr2JO1ZS8vy16tOLsrsbL9mcvWlL7l8RhdjAzEOnXUHX
+         StkRoGwgEuCIMa9I6uPVkAb9KnFqhPldjufcMH5nn8G/ok3vp0002Uv8PSlGc6ahJpHb
+         d15++kzT7v6XZR7HIYAwCO4P27fbDTHvrCpgG2jmnyR8KM847Uc+pSDgw/FnWBlPgdOs
+         X+iXLEl4/mkLLYliuNhdt9G9rZbumk+EpO248v7maPOXO/nfR7OZtsVGW44FmbG2ZjQR
+         3hzA==
+X-Forwarded-Encrypted: i=1; AFNElJ/pt5CtYQNI/wPZRxwsv8qMIEpL2o17BesZhWgfFNaNu2mJceK7N4n89ls9dNHJ7yudualcKl52Vw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyheVHBcAEcUnEyr8LHVd0D+rFrIRGMqdZwIdmkfikLBGCO3jvb
+	gSy2duB8b6knDKrLNmEoLihdKHa5453uwWr61vuRR3ArvpPx2luw5q47bdNj/4os0k3ZK5MTEQ=
 	=
-X-Received: from wmos19.prod.google.com ([2002:a05:600c:45d3:b0:48a:6a1b:6c3b])
- (user=ardb job=prod-delivery.src-stubby-dispatcher) by 2002:a05:600c:e489:20b0:490:6869:46c6
- with SMTP id 5b1f17b1804b1-4909c0c3aa4mr45310045e9.31.1780066940967; Fri, 29
- May 2026 08:02:20 -0700 (PDT)
-Date: Fri, 29 May 2026 17:01:54 +0200
+X-Received: from wrna16.prod.google.com ([2002:adf:e5d0:0:b0:43f:df99:cb43])
+ (user=ardb job=prod-delivery.src-stubby-dispatcher) by 2002:a05:6000:b05:b0:45e:e3ea:1101
+ with SMTP id ffacd0b85a97d-45ef6b3a9d3mr250438f8f.17.1780066942102; Fri, 29
+ May 2026 08:02:22 -0700 (PDT)
+Date: Fri, 29 May 2026 17:01:55 +0200
 In-Reply-To: <20260529150150.1670604-17-ardb+git@google.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -58,15 +58,15 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 References: <20260529150150.1670604-17-ardb+git@google.com>
 X-Developer-Key: i=ardb@kernel.org; a=openpgp; fpr=F43D03328115A198C90016883D200E9CA6329909
-X-Developer-Signature: v=1; a=openpgp-sha256; l=2121; i=ardb@kernel.org;
- h=from:subject; bh=bTKeTgp6cCkzZ1W18Sd9Cjl54RAT9moCkecsCk8B5PI=;
- b=owGbwMvMwCVmkMcZplerG8N4Wi2JIUtyVRLb9epvd/g6Z6nXCMU1XxDqFp7StynL770hk8KPC
- 3fVkv52lLIwiHExyIopsgjM/vtu5+mJUrXOs2Rh5rAygQxh4OIUgIm42DP8T+QPDuZ5kJNY4Fq0
- fndHhtCalPXbZGdn3574zC/PNP3pckaG3SKqFZWbT0T+XSk3T86mOHw7v2nxfgWXR9PW1P5ftia AFQA=
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1360; i=ardb@kernel.org;
+ h=from:subject; bh=zgVblspip5ZINNAWS3J63kCjniwJXU0OYP5r0DXGxEI=;
+ b=owGbwMvMwCVmkMcZplerG8N4Wi2JIUtyVfJJkczPYfGm/hd8+FL02y7q1vnc3l5lLz2B/bWeR
+ ZyU8q+OUhYGMS4GWTFFFoHZf9/tPD1RqtZ5lizMHFYmkCEMXJwCMJGrFxn+e55rMk6KmS+o8qjx
+ TFPydss+tp/hHKtbs3vkHc/PO8RoyvA/WrE+UfB50QXpS/Hr3nSqW/oxK2XsCGS8dSmZxXNHTQs /AA==
 X-Mailer: git-send-email 2.54.0.823.g6e5bcc1fc9-goog
-Message-ID: <20260529150150.1670604-20-ardb+git@google.com>
-Subject: [PATCH v7 03/15] arm64: mm: Check for pud_/pmd_set_huge() failures on
- kernel mappings
+Message-ID: <20260529150150.1670604-21-ardb+git@google.com>
+Subject: [PATCH v7 04/15] arm64: mm: Preserve existing table mappings when
+ mapping DRAM
 From: Ard Biesheuvel <ardb+git@google.com>
 To: linux-arm-kernel@lists.infradead.org
 Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com, 
@@ -81,55 +81,41 @@ Content-Type: text/plain; charset="UTF-8"
 
 From: Ard Biesheuvel <ardb@kernel.org>
 
-Sashiko reports:
+Instead of blindly overwriting an existing table entry when mapping DRAM
+regions, take care not to replace a pre-existing table entry with a
+block entry. This permits the logic of mapping the kernel's linear alias
+to be simplified in a subsequent patch.
 
-| If pmd_set_huge() rejects an unsafe page table transition (such as
-| mapping a different physical address over an existing block mapping),
-| it returns 0 and leaves the page table entry unmodified.
-|
-| Because *pmdp remains unmodified, READ_ONCE(pmd_val(*pmdp)) will equal
-| pmd_val(old_pmd). The transition from old_pmd to old_pmd is evaluated
-| as safe by pgattr_change_is_safe(), so the BUG_ON never triggers.
-|
-| This allows invalid and unsafe mapping updates to be silently dropped
-| instead of panicking, leaving stale memory mappings active while the
-| caller assumes the update was successful.
-
-The same applies to pud_set_huge() in alloc_init_pud().
-
-Given how it is generally preferred to limp on rather than blow up the
-system if an unexpected condition such as this one occurs, and the fact
-that there are no known cases where this disparity results in real
-problems, let's WARN on these failures rather than BUG, allowing the
-system to survive to the point where it can actually report them.
-
+Reviewed-by: Ryan Roberts <ryan.roberts@arm.com>
 Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
 ---
- arch/arm64/mm/mmu.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm64/mm/mmu.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-index aa0e2c6435f7..b2ba5b35c35f 100644
+index b2ba5b35c35f..5c827fa3cd38 100644
 --- a/arch/arm64/mm/mmu.c
 +++ b/arch/arm64/mm/mmu.c
-@@ -257,7 +257,7 @@ static int init_pmd(pmd_t *pmdp, unsigned long addr, unsigned long end,
+@@ -256,7 +256,8 @@ static int init_pmd(pmd_t *pmdp, unsigned long addr, unsigned long end,
+ 
  		/* try section mapping first */
  		if (((addr | next | phys) & ~PMD_MASK) == 0 &&
- 		    (flags & NO_BLOCK_MAPPINGS) == 0) {
--			pmd_set_huge(pmdp, phys, prot);
-+			WARN_ON(!pmd_set_huge(pmdp, phys, prot));
+-		    (flags & NO_BLOCK_MAPPINGS) == 0) {
++		    (flags & NO_BLOCK_MAPPINGS) == 0 &&
++		    !pmd_table(old_pmd)) {
+ 			WARN_ON(!pmd_set_huge(pmdp, phys, prot));
  
  			/*
- 			 * After the PMD entry has been populated once, we
-@@ -380,7 +380,7 @@ static int alloc_init_pud(p4d_t *p4dp, unsigned long addr, unsigned long end,
+@@ -379,7 +380,8 @@ static int alloc_init_pud(p4d_t *p4dp, unsigned long addr, unsigned long end,
+ 		 */
  		if (pud_sect_supported() &&
  		   ((addr | next | phys) & ~PUD_MASK) == 0 &&
- 		    (flags & NO_BLOCK_MAPPINGS) == 0) {
--			pud_set_huge(pudp, phys, prot);
-+			WARN_ON(!pud_set_huge(pudp, phys, prot));
+-		    (flags & NO_BLOCK_MAPPINGS) == 0) {
++		    (flags & NO_BLOCK_MAPPINGS) == 0 &&
++		    !pud_table(old_pud)) {
+ 			WARN_ON(!pud_set_huge(pudp, phys, prot));
  
  			/*
- 			 * After the PUD entry has been populated once, we
 -- 
 2.54.0.823.g6e5bcc1fc9-goog
 
