@@ -1,115 +1,90 @@
-Received: from mail-vk1-f170.google.com (mail-vk1-f170.google.com [209.85.221.170])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F2C2385D8A
-	for <linux-sh@vger.kernel.org>; Mon,  1 Jun 2026 08:12:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.170
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id DD3C03876A7;
+	Mon,  1 Jun 2026 08:37:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780301522; cv=none; b=EhjfxrdIOFBPuMANSGRhfk7W04JIJNgD7NGe+QZ/k5xB7IhLjm+9QtJ+mdTZiVY+a80Lwp4GKnreIInLbpDGtoW2BfyGBnGav0LBnilYQ1LulKTRyT4W9uuX2fXM8q1uheslXTkgePzDIEVB3iRDfuexLDxAXe1AOD++JrqA1LI=
+	t=1780303036; cv=none; b=IBHE6ASiy9HPVM853jL4eNotcV4BJnvuKLszQeR6oJnT1EAFQ2J/csBlQCp6TD9qYk756pW0voVcJ9rTZgOqv09eHi3nSpPOVvK3vnyAWdP8ZHQr08xc+S9K9dSGczg+xzaVgt65AkiTBRVaM1rLK9yiSHl0Z0mCDazA9c3SNfs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780301522; c=relaxed/simple;
-	bh=nnuOMcbYOCL4y+N/0eemC5pbxvM0uxdM9ZqpwqEbLSc=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=n0iEZq4nZ1XDZcJVhnRjQeY6p2WFEzcO4fg8U6rZEvRwl59qmdpw+2OHbJqeK+lW8h8l0Jfof7wMRMdNX3p6dP4GrS7VJVzOKiHJ0RAcdnd/gHxz/TmBNLkN0aDqmxOGRAI0djdmy0z5muVDGbKhTZCYd3H0RvBdmhGRUHeUzm8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.170
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vk1-f170.google.com with SMTP id 71dfb90a1353d-59cd803792aso1094519e0c.3
-        for <linux-sh@vger.kernel.org>; Mon, 01 Jun 2026 01:12:01 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780301520; x=1780906320;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=Z6bsjRyMlYCGVZWYk2Y60sUCqRedkIR0Vi6kAvx0wUs=;
-        b=NtoFNVzgNCHkfXpbOZ9NlOzmh8afwc1Zf76rMeS5eXv+3iGwWaJTi2HUUfXc6ryPZQ
-         JS2bK4yshe6zMR5em2y+K2LsS7ZbjbfR/SC9aMVeNjLKRFDfTGRiAfDVY10Ps4cdfkEZ
-         baxx7ooL8AfGSLdu0dvDBKJcjsG8pNrybfFBpZLPiQq5FRRgwnNBs6pLyb6TMQ0l4kn2
-         qxX4g1YuTKMrFJ+FAvvOttVDd2E/8SsBrsCy6Em/D/D4dlNV4ygdRtQKgG9uVEgDVh3X
-         WYP1F9kceJnTCnGBPdttIM3dpeW4nwBr9iJnPnJzT1t0lBG0tCC4N2oeA83cbvHy6CqV
-         g7RA==
-X-Forwarded-Encrypted: i=1; AFNElJ/6oysDuKHy21kgLHPUmEfrxqCCF9IJMOVau/nts82NYOOov1XvdccOHp96B22kqfZZogYmtZNjkw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyrSsg/ifZJ2ariHIewfmz8z1NUlIwqG8WKrOZZngY2QCzvE4Fz
-	gjqTl+osaYSeAhtgrR1bhV7omxyxiwd7RXRCnIkPahfRAToayasUPDMQ4+Boll1r
-X-Gm-Gg: Acq92OEH2bAk1dMQeywJYHudKVr+XXDUXB3Ss6Bs2OBi41mogxSqEl24tv7ay6lPtKF
-	BTm1ZViZvSuqk4Kh7SaBEeY9H/Bm5bWgsSZ2ujvMkulFPEjVdIZzziD2Ft7KjCsaeHBMgNDzr4j
-	Ve6gBmXtIVnxschStERRr/EklRm76Gr0BpkNR29TemGxVPPAFepnOyRb13uJhI09HmVuxU/8xMQ
-	p/KUUJnxJX46RRTq1symxJXqvw+58D6yeLIKfeDz4CpioDWN4jQfL0igSKKCuU9ypqlB9k0Zc1D
-	x2qo9y7T9QCjP4d/1TrvROYLxmvpqFo2KEipBKQNUTzPiKGxP1ir65vPONk3QMAAouEn8UWvJf7
-	SweSwgzepLIFc4Y5/8KXZFkqfL551Dknei6xsKnUb1+XiVsTspdeO33RHM1lMjn/GHF7wqH7lA8
-	7D+uL6BnHrj/Q2JeGDSuypUoXkntEOc4/WUi6l0TMF4Lzt2/Ah86Xk8OBP8/RIeUkjtvbAn2A=
-X-Received: by 2002:a05:6122:d05:b0:572:353f:be2d with SMTP id 71dfb90a1353d-59bf6957331mr4102060e0c.13.1780301520327;
-        Mon, 01 Jun 2026 01:12:00 -0700 (PDT)
-Received: from mail-ua1-f51.google.com (mail-ua1-f51.google.com. [209.85.222.51])
-        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-5a16abe3769sm1372187e0c.18.2026.06.01.01.11.58
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 01 Jun 2026 01:11:59 -0700 (PDT)
-Received: by mail-ua1-f51.google.com with SMTP id a1e0cc1a2514c-9639aa8ca17so2385000241.3
-        for <linux-sh@vger.kernel.org>; Mon, 01 Jun 2026 01:11:58 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ/5YJnPJKfIe8lSLRziUxHYE5SRfkIZ/Hp0HKcGk4g3/1feTwxI+Q0IYFATIDDYOIGsCg+hoLmjLQ==@vger.kernel.org
-X-Received: by 2002:a05:6102:3ed4:b0:639:4bb7:c916 with SMTP id
- ada2fe7eead31-6c67682807bmr3734166137.3.1780301518249; Mon, 01 Jun 2026
- 01:11:58 -0700 (PDT)
+	s=arc-20240116; t=1780303036; c=relaxed/simple;
+	bh=KhZVl+Vwqx0OaCH6S7jXIByk6u8k8lh7Uhiuy+3SVi0=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=bTQHCBX3eBd66D02VNZEJcJnH5As6yDDcbntCroA+PIzUHNQ7Blj4e+y8erM40LCSmNcMNehDrzmoy55poW9xubfL7fcDo0c7viQSxDfDDS8VPblC7PJaIKnY2jGCgNuXEtHVWnjb32fBXmLltKcHnzROE2ciN8Fv3t3MK+HoxY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b=PZxls1oX; arc=none smtp.client-ip=217.140.110.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b="PZxls1oX"
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id E6BEF1E8D;
+	Mon,  1 Jun 2026 01:37:07 -0700 (PDT)
+Received: from [10.57.94.8] (unknown [10.57.94.8])
+	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 367EE3F93E;
+	Mon,  1 Jun 2026 01:37:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=arm.com; s=foss;
+	t=1780303032; bh=KhZVl+Vwqx0OaCH6S7jXIByk6u8k8lh7Uhiuy+3SVi0=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=PZxls1oXIsr6hApf9XohwV3WTI1Qo/Er1dviSU6itCMJmAKDxMZHODtjuGAfErgJl
+	 6867qR2HsryNZcylx+G0a/AX10BCLvlvPK4pBvuCBYe/sz6hhDG0C2A1TIs2eBczWC
+	 E1gn7G1PE54lFFInYxUKOqbSvwpx/gKLHzFd0Yb4=
+Message-ID: <69488547-cf2a-4aa0-bca7-0cb65aa01914@arm.com>
+Date: Mon, 1 Jun 2026 10:37:03 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260529150150.1670604-17-ardb+git@google.com> <20260529150150.1670604-29-ardb+git@google.com>
-In-Reply-To: <20260529150150.1670604-29-ardb+git@google.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 1 Jun 2026 10:11:45 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXp0qp38vHJTDFMrY-AUDXPSJtc5Dds_qu58FSeS_242w@mail.gmail.com>
-X-Gm-Features: AVHnY4I0grL2HGASleAgF6ybT4VX0NqDy8gokQJ4KkNhvH_ouOMg7ryFWIbyvcA
-Message-ID: <CAMuHMdXp0qp38vHJTDFMrY-AUDXPSJtc5Dds_qu58FSeS_242w@mail.gmail.com>
-Subject: Re: [PATCH v7 12/15] sh: Drop cache flush of the zero page at boot
-To: Ard Biesheuvel <ardb+git@google.com>
-Cc: linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, 
-	will@kernel.org, catalin.marinas@arm.com, mark.rutland@arm.com, 
-	Ard Biesheuvel <ardb@kernel.org>, Ryan Roberts <ryan.roberts@arm.com>, 
-	Anshuman Khandual <anshuman.khandual@arm.com>, Kevin Brodsky <kevin.brodsky@arm.com>, 
-	Liz Prucka <lizprucka@google.com>, Seth Jenkins <sethjenkins@google.com>, 
-	Kees Cook <kees@kernel.org>, Mike Rapoport <rppt@kernel.org>, David Hildenbrand <david@kernel.org>, 
-	Andrew Morton <akpm@linux-foundation.org>, Jann Horn <jannh@google.com>, linux-mm@kvack.org, 
-	linux-hardening@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
-	linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Geert Uytterhoeven <geert+renesas@glider.be>
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v6 09/15] arm64: Move fixmap and kasan page tables to end
+ of kernel image
+To: Ard Biesheuvel <ardb@kernel.org>, Ard Biesheuvel <ardb+git@google.com>,
+ linux-arm-kernel@lists.infradead.org
+Cc: linux-kernel@vger.kernel.org, Will Deacon <will@kernel.org>,
+ Catalin Marinas <catalin.marinas@arm.com>,
+ Mark Rutland <mark.rutland@arm.com>, Ryan Roberts <ryan.roberts@arm.com>,
+ Anshuman Khandual <anshuman.khandual@arm.com>,
+ Liz Prucka <lizprucka@google.com>, Seth Jenkins <sethjenkins@google.com>,
+ Kees Cook <kees@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ David Hildenbrand <david@kernel.org>,
+ Andrew Morton <akpm@linux-foundation.org>, Jann Horn <jannh@google.com>,
+ linux-mm@kvack.org, linux-hardening@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
+References: <20260526175846.2694125-17-ardb+git@google.com>
+ <20260526175846.2694125-26-ardb+git@google.com>
+ <2a6f9f05-ac57-4ef8-9328-74cc8ccfea16@arm.com>
+ <96a8b6b9-71f2-4550-bbbb-fbfa146f4e6a@app.fastmail.com>
+ <b76b327f-612e-494f-b8d3-44108aa73d2a@arm.com>
+ <feab72b8-2961-4145-ac5c-80e820bf1ce9@app.fastmail.com>
+From: Kevin Brodsky <kevin.brodsky@arm.com>
+Content-Language: en-GB
+In-Reply-To: <feab72b8-2961-4145-ac5c-80e820bf1ce9@app.fastmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On Fri, 29 May 2026 at 17:02, Ard Biesheuvel <ardb+git@google.com> wrote:
-> From: Ard Biesheuvel <ardb@kernel.org>
->
-> SuperH performs cache maintenance on the zero page during boot,
-> presumably because before commit
->
->   6215d9f4470f ("arch, mm: consolidate empty_zero_page")
->
-> the zero page did double duty as a boot params region, and was cleared
-> separately, as it was not part of BSS. The memset() in question was
-> dropped by that commit, but the __flush_wback_region() call remained.
->
-> As empty_zero_page[] has been moved to BSS, it can be treated as any
-> other BSS memory, and so the cache flush can be dropped.
->
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Mike Rapoport <rppt@kernel.org>
-> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+On 29/05/2026 16:47, Ard Biesheuvel wrote:
+>>>>> +	/* fixmap BSS starts here - preceding data/BSS is omitted from the linear map */
+>>>>> +	.pgdir.bss (NOLOAD) : ALIGN(PAGE_SIZE) {
+>>>> Do we actually need the NOLOAD type here?
+>>> Yes, otherwise it is emitted as PROGBITS, resulting in all of BSS to be
+>>> emitted into Image.
+>> That's rather strange, aren't the .pgdir.bss input sections already
+>> NOBITS since __pgtbl_bss is only used on default-initialised globals?
+> Not sure why, but the section was PROGBITS not NOBITS before I added the (NOLOAD)
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+I've had a closer look into this. Similar sections in other
+architectures are all named .bss..<something>. If I rename this section
+to .bss..pgdir, then indeed the compiler does emit an object file with
+that section marked NOBITS:
 
-Gr{oetje,eeting}s,
+$ readelf -e out/arch/arm64/mm/fixmap.o | grep bss
+  [ 4] .bss              NOBITS          0000000000000000 0002ac 000000
+00  WA  0   0  1
+  [18] .bss..pgdir       NOBITS          0000000000000000 000750 005000
+00  WA  0   0 4096
 
-                        Geert
+And then the linker does the right thing without having to use NOLOAD.
 
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+I was concerned that .bss..pgdir might get caught by BSS_SECTION(), but
+it seems that the double dots are meant to prevent exactly that.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+- Kevin
