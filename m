@@ -1,121 +1,102 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.16])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 607913403F8;
-	Tue,  2 Jun 2026 20:34:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65DA0381B1F;
+	Tue,  2 Jun 2026 22:03:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.16
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780432491; cv=none; b=trB99rVyn2z+NUgBRurdOrsJh2Vrf84m6/7RE2c+ucH9fxrvZrG9mcUTTiakHrMXZ8JU/rS1GoPln9wGZrsgltRaTj+GCk6Q5+aFGALLOUldvdJxMsfFYhO4f1WxZ6s+H9G89hilv2tl5YwQ7ZEqnB/RJLNP5ePLC3Jw+ZGiqKI=
+	t=1780437783; cv=none; b=QvOsVhg/qnYJSbEguVf0LqyC42eLtG0HLFGPBHdmRoImRw2wHAqY5nFTZ0QnNxYzdm10MSxiofPYUIC8ulumvvglebi5LH/Be0lzejzA7hIIBgNlPBNElH5iVtenoj6i2ESQwskFpPTBtGkRWesVilf0NNLS6lXPfPGhwnBMHo8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780432491; c=relaxed/simple;
-	bh=z2/CwMmdEu8nK/R+4KV2Eu57q8EkVOD08lpnXMmV3OA=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=XB1PdZl2OAKHJI7CnqkqQSH/5HP8PSDOCqSZqWC78Jac6zuX4X1owFyZEXcwTNe3hQikrtVJBmQvA0Wt7rtV3rEhBtERW/sYBYy9EgvHoAetAbV848Qbeyf06Y07cxGYK6AFw/iJ/4WN/s/f3K/ygOY5hbj9fDQedDIq6r8FN28=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZxfxWfdM; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1780437783; c=relaxed/simple;
+	bh=5Eu+KLYLa0nbb+xrRIQGmpnkV2DnY5IS9nq+/lttbRQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=tVWvIu4AZTOp4gvaerh+5bfBo9okeEnRunojPtBY0E7+jELU5LP8bz83gjy4fIusfnGSIu1yq6xNCLfSRqoapVGqeRYvAehIWhNNO4quX7bddy7EOMUZFfDAUjiVYj4QHxxtiCY+32yfyH3/NhNAQOhzZg+oQ3dMljMY55guy4c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com; spf=pass smtp.mailfrom=linux.intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=EV6+790M; arc=none smtp.client-ip=192.198.163.16
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZxfxWfdM"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1437C1F00893;
-	Tue,  2 Jun 2026 20:34:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780432490;
-	bh=S//fEDteJ4rzTnDBScY4eGHQWJlVMyyy6h7anmp3x+k=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=ZxfxWfdMQ3+Vq+Ma03V2QSXlB3XRJ2M5Did8lMtEII0G+3I0Mn+KoGSxk5Mbv0z3I
-	 eSifAuVTOlBV98gSsIUbmj8ujq+U/KmlZ/dQP7pUzZjY04CU58Y+sgkwr1wg6evnYM
-	 IVoXvJxep7VzxPFXOGANf1mU6ye3Mafv+WmYKvzi7at8qUa+iZFeY7zqiUxCEvZFM/
-	 fjusegJTSCUmjBP7CA/qHQtB8wTK8Jc4dadNTvYGMtjatVjBZN4rZEnYKHGBQHPrCt
-	 j6I3SYxIA9f1IMqxFo73y3NYXAPu3pvvOvODplkrV/iUNmLrtqWvgusvQ/0MXkcYQw
-	 RZn0bqJ/It5Ww==
-From: Will Deacon <will@kernel.org>
-To: linux-arm-kernel@lists.infradead.org,
-	Ard Biesheuvel <ardb+git@google.com>
-Cc: catalin.marinas@arm.com,
-	kernel-team@android.com,
-	Will Deacon <will@kernel.org>,
-	linux-kernel@vger.kernel.org,
-	mark.rutland@arm.com,
-	Ard Biesheuvel <ardb@kernel.org>,
-	Ryan Roberts <ryan.roberts@arm.com>,
-	Anshuman Khandual <anshuman.khandual@arm.com>,
-	Kevin Brodsky <kevin.brodsky@arm.com>,
-	Liz Prucka <lizprucka@google.com>,
-	Seth Jenkins <sethjenkins@google.com>,
-	Kees Cook <kees@kernel.org>,
-	Mike Rapoport <rppt@kernel.org>,
-	David Hildenbrand <david@kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Jann Horn <jannh@google.com>,
-	linux-mm@kvack.org,
-	linux-hardening@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org,
-	linux-sh@vger.kernel.org
-Subject: Re: [PATCH v7 00/15] arm64: Unmap linear alias of kernel data/bss
-Date: Tue,  2 Jun 2026 21:34:36 +0100
-Message-ID: <178041415770.4024555.11336437584927054639.b4-ty@kernel.org>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20260529150150.1670604-17-ardb+git@google.com>
-References: <20260529150150.1670604-17-ardb+git@google.com>
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="EV6+790M"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1780437783; x=1811973783;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=5Eu+KLYLa0nbb+xrRIQGmpnkV2DnY5IS9nq+/lttbRQ=;
+  b=EV6+790MeN4WaFYVrRxBSkKmE267lV8ZtuamkLPK607eyRiP8NxfrVPs
+   y5yIVOxV/XfGKeZrYejaQqPexijlZou10fb5rOE16H29RSWCpkNvC5GTK
+   xFaOXzZDAuZbZdkH80j0sZErIsfoNiCukvIGzI8b3mvQLkUcARYBlW1eE
+   e6QC38h+LxDIvShrKMBXVogdMTDEXoURKmmgUHrS6s6C2FqxMagjr95ni
+   1f0TX9MQsgkaHA9uDau4Plx+UvMNjnOopTNmY+WgP7BJQh8nn3MWLQREZ
+   VVULSXWleo/UReMvoQLGUMBeaTPnOtAw5Qls3hgwXmyPmpB/TS2N5LneW
+   Q==;
+X-CSE-ConnectionGUID: qoVrKFHXSlqYzYGs3N9cVA==
+X-CSE-MsgGUID: 2fZ3HYOfRLWC0PBeqLUtJg==
+X-IronPort-AV: E=McAfee;i="6800,10657,11805"; a="68778024"
+X-IronPort-AV: E=Sophos;i="6.24,183,1774335600"; 
+   d="scan'208";a="68778024"
+Received: from fmviesa009.fm.intel.com ([10.60.135.149])
+  by fmvoesa110.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Jun 2026 15:03:02 -0700
+X-CSE-ConnectionGUID: YjSbJmO7SdqHodQ3uxUwsQ==
+X-CSE-MsgGUID: lnBU+o19RgmQlsdItY2dVg==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.24,183,1774335600"; 
+   d="scan'208";a="237674514"
+Received: from pgcooper-mobl3.ger.corp.intel.com (HELO localhost) ([10.245.244.116])
+  by fmviesa009-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Jun 2026 15:02:59 -0700
+Date: Wed, 3 Jun 2026 01:02:56 +0300
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Linus Walleij <linusw@kernel.org>,
+	Bartosz Golaszewski <brgl@kernel.org>,
+	Arnd Bergmann <arnd@kernel.org>, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-gpio@vger.kernel.org
+Subject: Re: [PATCH v2 3/5] sh: mach-rsk: rsk7203: use static device
+ properties for LEDs and GPIO buttons
+Message-ID: <ah9TEJ_jrfcJwrb9@ashevche-desk.local>
+References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com>
+ <20260520-rsk7203-properties-v2-3-465f3308021b@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260520-rsk7203-properties-v2-3-465f3308021b@gmail.com>
+Organization: Intel Finland Oy - BIC 0357606-4 - c/o Alberga Business Park, 6
+ krs, Bertel Jungin Aukio 5, 02600 Espoo
 
-On Fri, 29 May 2026 17:01:51 +0200, Ard Biesheuvel wrote:
-> One of the reasons the lack of randomization of the linear map on arm64
-> is considered problematic is the fact that bootloaders adhering to the
-> original arm64 boot protocol (i.e., a substantial fraction of all
-> Android phones) may place the kernel at the base of DRAM, and therefore
-> at the base of the non-randomized linear map. This puts a writable alias
-> of the kernel's data and bss regions at a predictable location, removing
-> the need for an attacker to guess where KASLR mapped the kernel.
-> 
-> [...]
+On Wed, May 20, 2026 at 10:13:19PM -0700, Dmitry Torokhov wrote:
+> Convert the board to use static device properties instead of platform
+> data to describe LEDs and GPIO-connected buttons on the board, so
+> that support for platform data can be removed from gpio-keys and other
+> drivers, unifying their behavior.
 
-It would've been nice to hear from the ppc folks on patch 11, but I've
-picked it up on the assumption that they'll love the negative diff stat.
-Worst case, we can drop/revert stuff if they have late objections.
+...
 
-Applied to arm64 (for-next/mm), thanks!
+> +	for (i = 0; i < ARRAY_SIZE(rsk7203_devices); i++) {
 
-[01/15] arm64: mm: Remove bogus stop condition from map_mem() loop
-        https://git.kernel.org/arm64/c/36ca7f4be809
-[02/15] arm64: mm: Drop redundant pgd_t* argument from map_mem()
-        https://git.kernel.org/arm64/c/2e527667a3b9
-[03/15] arm64: mm: Check for pud_/pmd_set_huge() failures on kernel mappings
-        https://git.kernel.org/arm64/c/8dd640d9233d
-[04/15] arm64: mm: Preserve existing table mappings when mapping DRAM
-        https://git.kernel.org/arm64/c/a64293e993f6
-[05/15] arm64: mm: Preserve non-contiguous descriptors when mapping DRAM
-        https://git.kernel.org/arm64/c/ecda73ae92ca
-[06/15] arm64: mm: Permit contiguous descriptors to be manipulated
-        https://git.kernel.org/arm64/c/05c5c31e9d8d
-[07/15] arm64: kfence: Avoid NOMAP tricks when mapping the early pool
-        https://git.kernel.org/arm64/c/dfd73e574d38
-[08/15] arm64: mm: Permit contiguous attribute for preliminary mappings
-        https://git.kernel.org/arm64/c/28becb2c1d74
-[09/15] arm64: Move fixmap and kasan page tables to end of kernel image
-        https://git.kernel.org/arm64/c/382a03e12eba
-[10/15] arm64: mm: Don't abuse memblock NOMAP to check for overlaps
-        https://git.kernel.org/arm64/c/d672a4b72c95
-[11/15] powerpc/code-patching: Avoid r/w mapping of the zero page
-        https://git.kernel.org/arm64/c/c0693153fb17
-[12/15] sh: Drop cache flush of the zero page at boot
-        https://git.kernel.org/arm64/c/99bad3e992e2
-[13/15] mm: Make empty_zero_page[] const
-        https://git.kernel.org/arm64/c/0aae825f1ed7
-[14/15] arm64: mm: Map the kernel data/bss read-only in the linear map
-        https://git.kernel.org/arm64/c/f2ba877402e5
-[15/15] arm64: mm: Unmap kernel data/bss entirely from the linear map
-        https://git.kernel.org/arm64/c/63e0b6a5b693
+	for (unsigned int i = 0; i < ARRAY_SIZE(rsk7203_devices); i++) {
 
-Cheers,
+...and drop the above definition of i.
+
+> +		pd = platform_device_register_full(&rsk7203_devices[i]);
+> +		error = PTR_ERR_OR_ZERO(pd);
+> +		if (error) {
+> +			pr_err("failed to create platform device %s: %d\n",
+> +			       rsk7203_devices[i].name, error);
+> +			return error;
+> +		}
+> +	}
+
 -- 
-Will
+With Best Regards,
+Andy Shevchenko
 
-https://fixes.arm64.dev
-https://next.arm64.dev
-https://will.arm64.dev
+
