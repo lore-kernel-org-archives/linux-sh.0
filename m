@@ -1,141 +1,334 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f41.google.com (mail-wr1-f41.google.com [209.85.221.41])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 13C5D389DF3
-	for <linux-sh@vger.kernel.org>; Wed,  3 Jun 2026 11:25:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A9FB62BD00C
+	for <linux-sh@vger.kernel.org>; Wed,  3 Jun 2026 13:26:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780485918; cv=none; b=bx5tq85MFLMfGHcY40VvQdqCWCT5+CKyOdGThfmxAw4yUAgU3iHl/SO+l4wiBGwpI4iDrm3gL3ADqdasVYXozLeqDJy/z2gMGdFJ2pLGGy5twrH9CUx23/D2y3vXWbsGAteeZRTXaKXRrCBkfBXUQ9ODAcL17QO0KN/DIK1dHKY=
+	t=1780493184; cv=none; b=gfv9pekPsXCApJxYTw9LOd3oTfBlwfxyymMQGQSveoFj7U/12JNeov19GEJ+GmrSULFe14+OKW98WTb/wqMx72FUs9y1gVnw7/yiz/c3xZGgXGBi8hzlT6hFidDOFA479kXuKVLrpy6DGWd/ym/ejOxirjl3qrj3b2I5mQiP0Nc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780485918; c=relaxed/simple;
-	bh=mQwxmxG3zUsGZ9nDWKhGbrFJTe9Hn6qRBaAUPAl9JNo=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=o5sBmUsMMv8pBGHOcB4IIqXwOwodah64qaEzz7cSyMtM8klCvorTYH985m0CiQ7ucJ0QSxEaEuad2l0TeL+7PhzjHiSdYmM/qbPmhvnbAYS1KiVPwexZPYjxSNjd7t6FIMyTMW1q62GIwheDeSA+ft8mR41pKSXouzBEP0i8h7g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=exw4XYzJ; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1780493184; c=relaxed/simple;
+	bh=JbV17MusThKsX/XfftOIwSTO4Uf9F1T1idPmFAgjMao=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:
+	 In-Reply-To:References:To:Cc; b=uM6+gLruA2HYdwzJdMXT0F49hleuO5CmD5VmgA1qonFAuxhPdXiizjSxdxe3r3yJ5rIruYot4C01k2wN3Xcw+baGRXJ65SzyUrTK2aLcUrUrC9eILUXBhaauHy+CUp1S5s1VAzQS5H8vMGeS5lhnDg9S87/lhPwMuFURzXNTKJs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=N1qUTdKQ; arc=none smtp.client-ip=209.85.221.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="exw4XYzJ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 252B41F00899;
-	Wed,  3 Jun 2026 11:25:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780485916;
-	bh=Ej/A4bAeP3GRRv4aBL4VdTQbInf6PAP5PBV1hqxuGeU=;
-	h=Date:From:To:Cc:In-Reply-To:References:Subject;
-	b=exw4XYzJHNx8NPTpD1SzdOEOLUIA0xbYO2jphTnpVII8b31Q/9zoA+W2Rvg/yhsRJ
-	 rEc/sWlhy60ka7H0KxygsKKzTfK2eoV1T3KYgDO6PTRuKF9q3CHlxXeAxdewT+ecHQ
-	 NBSd91h0blVNopV1S8MSD25RQBFS7xz5PlvkBpwHruhFkJ3FpKkcFYAWPIuu7rzfF6
-	 x+OGEki1CCoDqkOh1nrN5UKDwOjNctAtNOzcuXJvxl7TfG6lbZBxvDoShpMpgqqsJm
-	 3gltOvlx5FPE7bceYtY1n+j09Xo/ig1esnSx7M+rmwf6cTja4OnJ8sQgCh4Xrx7MK9
-	 Q3cwykG/gR1EA==
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfauth.phl.internal (Postfix) with ESMTP id 35B68F40070;
-	Wed,  3 Jun 2026 07:25:15 -0400 (EDT)
-Received: from phl-imap-05 ([10.202.2.95])
-  by phl-compute-01.internal (MEProxy); Wed, 03 Jun 2026 07:25:15 -0400
-X-ME-Sender: <xms:Gw8ganjrXz0JQ4a20pZ2keYgLL966sZB7ggcBghyxiZjOST0pbGkzg>
-    <xme:Gw8gau3lk00GKn5Y2in9l7RFhymSP38WEHp3EMZII2yHEoKx7m9e2_O1ItUdjYSaY
-    4mktIanZvMpp4BxKaVX3h41Qzq6CxeF-i3QeDrzyNPiZLrjovwMNSo>
-X-ME-Proxy-Cause: dmFkZTGk07hpe1NCwTVIzfP2HgIVR+mhM9tsG3G5fFNmt40ZyD0SKBCj9VlPFNEJ/mKYg+
-    yn9XCnk7DMqqvKhYAonBnb+EiK7yyt6XwsAKFP1NRUIxeRopUJbCzFAEtgdZwZ2syq6mLt
-    hIc8ns+tGdiT78GcOIddkRPvwXakkAXz6AaOGjfod1A73n2hhP0S+irMK6MY6pmOGSphLV
-    9LSrur6d22T4VrRb0o5gM+dJx+HdoAtQGS5mxYoTkKVSFjuFyOM+kuaRmHmk5SGbsP2X5U
-    zTfs5UQKk93YP1gI0iWsago6o9Zae+QmHbKuHZObMf4rdXX8pu80r92+oAHgcVeIlkcQDt
-    0QoJr48G7g3k7Axy3vrUiaTuSSNl5Y+BBkBWhf7/BIuAoakZ1dJtZrM+QYGf6QD0T7M/C0
-    ueKDXo5EQVNDoS+0A/91fYorYH01AUmS/P8O4XOQS5akirZ4o6R39OVDG5ahWkb2lF336H
-    YbIyD0BajwqJNC5uYkvP7UDCRsQcdeI+orDmIIjHhBz6YSpbphRyIkD91JJ5F8fMl9IFqF
-    a0YT3rtTfzLsSqiNI66DGkElA3Hc8cBk3YfeNWCCudJjd2gSSl3qVSUppja1jEfUb97L0h
-    hPAd/USZemqekfo8KMLkrAbpwvAtpzbyCrEKM6liYSn40sbEKKE762X7+RKw
-X-ME-Proxy: <xmx:Gw8gakVtaCK4ce7TGaafgWSRTK9aFbX2O3RU4WUOTM8sVh_nx1Wfeg>
-    <xmx:Gw8gaqOLByCdyD78lmI0iP9F3j-yUw1MG1v484Rm7MAoLd2u5zohIQ>
-    <xmx:Gw8gasfLsOXv2iWZ1GY4UgCbbbl1MSvSRNMh5lEG4-5iDY27pvISJw>
-    <xmx:Gw8gapw04dbEZ-YaSVuDJ6MnkCD0rEgcBTKMEm-QTUsw0wXutnCBoA>
-    <xmx:Gw8gatgq8miMnJmGvsy1x2eDW6BAFtzhVAqxtdrb0sGgeFGbLROK63AZ>
-Feedback-ID: ice86485a:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 0E8AE182007E; Wed,  3 Jun 2026 07:25:14 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="N1qUTdKQ"
+Received: by mail-wr1-f41.google.com with SMTP id ffacd0b85a97d-45ef56d9b67so4166393f8f.2
+        for <linux-sh@vger.kernel.org>; Wed, 03 Jun 2026 06:26:22 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1780493181; x=1781097981; darn=vger.kernel.org;
+        h=cc:to:references:in-reply-to:message-id:content-transfer-encoding
+         :mime-version:subject:date:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=utDwPV/p1t0/Jmc7E5OVVroM+Yd4IFrNq2llOGm4i1I=;
+        b=N1qUTdKQr5zr//bKoOHZ8HnbuETgQ5422JuSCXaGdxj9n+/hWgRGKgEWMxdGlucdoD
+         ATiTLmWU+mAqtLJIdoJMeKXiO5szARyX/URy1mrVFI8tsq/LO1ZZuPuxypM+mtBOEuQy
+         HT4hEDAl6/IhCyH86rEb4Vfnmin/pXHrIU+w1MKm70r+S5eW+bIv0ZlWN02YXovEjER/
+         Oy6UZobP1viaDXSZK1pma5smuRP2NS/XOVLosKbPTaOjuZXAMeQCX+VbRoi9ClQT6vJa
+         i3QOnmPaPio6q0EGQdB4rDx+UtFV1AmDjxoZTqdkfuIdOy34AXdUOH4s+t5q3kSPCg8k
+         1lQg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780493181; x=1781097981;
+        h=cc:to:references:in-reply-to:message-id:content-transfer-encoding
+         :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=utDwPV/p1t0/Jmc7E5OVVroM+Yd4IFrNq2llOGm4i1I=;
+        b=Y1VEmTUZMXRBMzxc/Zfvlqsv65fugbIUWKYCKiKRKbvoXGhS+zfyZ6wJ01CVfGjI0F
+         5qYSugpX0b7dWbPENxf8gzSRZ4TdGj9NvbevSK1fdRNLOUX2mRjIjV5/ySIdUpxjhuSp
+         I71ppe4gq+gwc8TI2J4N0WUsELFoZmVvNWEUh9+ARAV+GwXWy7nMszo9N4GizYTyPwHn
+         wXmyW4Y32baV6xY7V5C/EVPy5bqb+MD1l7W1a3D9p68+BqIm1ElsmsbwBKi00In0GoYh
+         cpUOqvHv15tE5vxl8MYoB7T1xkWxyHOiINCXF8XQYBD3Ex5mAALqQhUaTyZgHrdT5PQP
+         KwwQ==
+X-Forwarded-Encrypted: i=1; AFNElJ+B4rfLXUrSsUeYJ6zbJUANQh5Aqe9JdiReIOeNomtFoczaD14rS3dJEVtOTeLeoRXgAdH8Pr3+ew==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzI6rzKF+KBo3lk8vjyXz7BbHTL/EnNN3WqLv4bARqc0A57890I
+	SgmAr3W8CJSrc3fm4Un0Mq1h+tGQIB8D2YAovofumptwo0QyycUmgONKwZbKle2v
+X-Gm-Gg: Acq92OHhUVq3s4+oFoaZ3hifZurvmaMBihtxBiA+TjPIwDk0RI+1velriAkPLSyid0+
+	aWCWQh6YOag6kDuSR0wxg2l9YdRpKBJMD7WsT07A7MBO0Tmm///zuMauJoWCLvplzVeuVTS5L7S
+	wmZ1BmYie47VB4u+/wtrDmiymsEAeZi5poYOtX0GpYL18KtVxa8+E+xprLn0mVitXTC6XU2WqjX
+	NFLr+lqMRbvBJ1xYGNNc/6ps9x4flCJ23K59vS8bWr/5xZwxVEX22hp5euGicMJHarbCJBe+mww
+	e6Jodbony//7GqjHQNPp5vdHbqjGlLJ0HQO6280F0VO/k7jphw6lIa+/rT52FwSZE8iy2l8/KYg
+	BLJ1I6lrVy0wejpmwRmpJr8Y4qRST/bXap6gU4JwygcKj4kULfevrPUXZoCo0PeVlcUL6Gxmffd
+	PQBQ67Aj1tjY/nv0i+HUjOUWb5gRmegaHj
+X-Received: by 2002:a5d:63c8:0:b0:43d:69ff:6898 with SMTP id ffacd0b85a97d-460218c57f8mr3748207f8f.9.1780493180903;
+        Wed, 03 Jun 2026 06:26:20 -0700 (PDT)
+Received: from localhost ([94.53.77.213])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4601f35fd33sm8224614f8f.35.2026.06.03.06.26.19
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 03 Jun 2026 06:26:20 -0700 (PDT)
+From: Catalin Iacob <iacobcatalin@gmail.com>
+Date: Wed, 03 Jun 2026 16:27:09 +0300
+Subject: [PATCH v2] scsi: core: Remove remaining references to the pktcdvd
+ driver
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Wed, 03 Jun 2026 13:24:53 +0200
-From: "Ard Biesheuvel" <ardb@kernel.org>
-To: "Will Deacon" <will@kernel.org>
-Cc: linux-arm-kernel@lists.infradead.org,
- "Ard Biesheuvel" <ardb+git@google.com>,
- "Catalin Marinas" <catalin.marinas@arm.com>, kernel-team@android.com,
- linux-kernel@vger.kernel.org, "Mark Rutland" <mark.rutland@arm.com>,
- "Ryan Roberts" <ryan.roberts@arm.com>,
- "Anshuman Khandual" <anshuman.khandual@arm.com>,
- "Kevin Brodsky" <kevin.brodsky@arm.com>, "Liz Prucka" <lizprucka@google.com>,
- "Seth Jenkins" <sethjenkins@google.com>, "Kees Cook" <kees@kernel.org>,
- "Mike Rapoport" <rppt@kernel.org>, "David Hildenbrand" <david@kernel.org>,
- "Andrew Morton" <akpm@linux-foundation.org>, "Jann Horn" <jannh@google.com>,
- linux-mm@kvack.org, linux-hardening@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, maz@kernel.org
-Message-Id: <d5186071-55dc-42b4-9e5a-b279a6ca1384@app.fastmail.com>
-In-Reply-To: <aiAOaYwPlGEG6FML@willie-the-truck>
-References: <20260529150150.1670604-17-ardb+git@google.com>
- <178041415770.4024555.11336437584927054639.b4-ty@kernel.org>
- <2c7929d4-6622-475d-af1b-bcd0cd997cd3@app.fastmail.com>
- <aiAOaYwPlGEG6FML@willie-the-truck>
-Subject: Re: [PATCH v7 00/15] arm64: Unmap linear alias of kernel data/bss
-Content-Type: text/plain
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
+Message-Id: <20260603-remove-pktcdvd-references-v2-1-c4402154d53a@gmail.com>
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/42NTQ7CIBBGr9LMWkyhhaSuvIfpAmFsR21poBJNw
+ 92FegGXL9/P2yCgJwxwqjbwGCmQmzOIQwVm1POAjGxmELVQtWxq5nFyEdnyWI2NNuMNPc4GA+u
+ sNKpRQkuLkPdLzui9f1/6H4fX9Y5mLYelMVJYnf/s8shL7x9P5IwzraXqWm7bhsvzMGl6Ho2bo
+ E8pfQGcBljc1AAAAA==
+X-Change-ID: 20260530-remove-pktcdvd-references-9d5c6362a5de
+In-Reply-To: <20260530-remove-pktcdvd-references-v1-1-aa56941d4315@gmail.com>
+References: <20260530-remove-pktcdvd-references-v1-1-aa56941d4315@gmail.com>
+To: Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+ Madhavan Srinivasan <maddy@linux.ibm.com>, 
+ Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, 
+ "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, 
+ Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ "David S. Miller" <davem@davemloft.net>, 
+ Andreas Larsson <andreas@gaisler.com>, 
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
+ "Martin K. Petersen" <martin.petersen@oracle.com>, 
+ Jens Axboe <axboe@kernel.dk>
+Cc: linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, 
+ sparclinux@vger.kernel.org, linux-scsi@vger.kernel.org, 
+ Catalin Iacob <iacobcatalin@gmail.com>
+X-Mailer: b4 0.16-dev
+X-Developer-Signature: v=1; a=openpgp-sha256; l=8092;
+ i=iacobcatalin@gmail.com; h=from:subject:message-id;
+ bh=JbV17MusThKsX/XfftOIwSTO4Uf9F1T1idPmFAgjMao=;
+ b=owGbwMvMwCX261qtXAKXKjvjabUkhiwF7Z0Rd7zbzT7PWVCVdOLs2+ecMmtY1H+fmOClXXHz/
+ +VtSxMkOkpZGMS4GGTFFFlenLvetmHPmYB7SXYtMHNYmUCGMHBxCsBETnczMjx8vTAkU2vFIgUt
+ wa99KhvEpBP/7NO6YmXjZW0g8kf+0CZGhpnHb/w+9dDUNKA7w6SpS32pg/clzj2bgnWfOzFdK70
+ QyggA
+X-Developer-Key: i=iacobcatalin@gmail.com; a=openpgp;
+ fpr=F609BFABD84EB5C9DDDC37EDE89C6A3571CD0E33
 
+Commit 1cea5180f2f8 ("block: remove pktcdvd driver") left behind some
+CONFIG_CONFIG_CDROM_PKTCDVD* references in defconfigs and around an
+export. Remove them.
 
+Signed-off-by: Catalin Iacob <iacobcatalin@gmail.com>
+---
+Found this incidentally while looking at kernel sources to understand
+what pktcdvd is
+---
+Changes in v2:
+- Reworded commit message on John Paul Adrian's suggestion to be about
+  the removed references not the export symbol
+- Link to v1: https://patch.msgid.link/20260530-remove-pktcdvd-references-v1-1-aa56941d4315@gmail.com
+---
+ arch/mips/configs/fuloong2e_defconfig    | 1 -
+ arch/mips/configs/ip22_defconfig         | 1 -
+ arch/mips/configs/ip27_defconfig         | 1 -
+ arch/mips/configs/ip30_defconfig         | 1 -
+ arch/mips/configs/jazz_defconfig         | 1 -
+ arch/mips/configs/malta_defconfig        | 1 -
+ arch/mips/configs/malta_kvm_defconfig    | 1 -
+ arch/mips/configs/maltaup_xpa_defconfig  | 1 -
+ arch/mips/configs/rm200_defconfig        | 1 -
+ arch/mips/configs/sb1250_swarm_defconfig | 1 -
+ arch/powerpc/configs/g5_defconfig        | 1 -
+ arch/powerpc/configs/ppc6xx_defconfig    | 1 -
+ arch/sh/configs/sh2007_defconfig         | 1 -
+ arch/sparc/configs/sparc64_defconfig     | 2 --
+ drivers/scsi/scsi_lib.c                  | 8 --------
+ 15 files changed, 23 deletions(-)
 
-On Wed, 3 Jun 2026, at 13:22, Will Deacon wrote:
-> On Wed, Jun 03, 2026 at 10:57:49AM +0200, Ard Biesheuvel wrote:
->> (cc Marc)
->> 
->> On Tue, 2 Jun 2026, at 22:34, Will Deacon wrote:
->> > On Fri, 29 May 2026 17:01:51 +0200, Ard Biesheuvel wrote:
->> >> One of the reasons the lack of randomization of the linear map on arm64
->> >> is considered problematic is the fact that bootloaders adhering to the
->> >> original arm64 boot protocol (i.e., a substantial fraction of all
->> >> Android phones) may place the kernel at the base of DRAM, and therefore
->> >> at the base of the non-randomized linear map. This puts a writable alias
->> >> of the kernel's data and bss regions at a predictable location, removing
->> >> the need for an attacker to guess where KASLR mapped the kernel.
->> >> 
->> >> [...]
->> >
->> > It would've been nice to hear from the ppc folks on patch 11, but I've
->> > picked it up on the assumption that they'll love the negative diff stat.
->> > Worst case, we can drop/revert stuff if they have late objections.
->> >
->> 
->> Thanks.
->> 
->> There is a de facto ack from Michael Ellerman in the Link:, which is why
->> I included it.
->> 
->> Note that Sashiko found an issue with KVM+MTE, where a read-only mapping
->> of the zero page in the linear map may result in issues:
->> 
->> """
->> Does moving the zero page to .rodata (or unmapping/read-only mapping its
->> linear alias) expose a guest-to-host denial of service with KVM and MTE?
->> When an MTE-enabled KVM guest reads an unmapped memory address, KVM handles
->> the stage-2 fault by mapping the host's shared zero page. KVM will then
->> call sanitise_mte_tags() in arch/arm64/kvm/mmu.c.
->> Since the PG_mte_tagged flag is never set on the zero page, KVM's
->> try_page_mte_tagging() succeeds, and it calls mte_clear_page_tags().
->> This executes the STGM instruction using the zero page's linear map alias.
->> If this alias is read-only or unmapped, won't the STGM instruction trigger
->> a synchronous permission fault or translation fault in EL1, causing a host
->> kernel panic?
->> """
->> 
->> Marc seems to think it is legit, so I came up with the following (I'll send
->> it out separately with another pair of tweaks):
->
-> Thanks, it also looks like we're getting some early WARN_ON()s firing in
-> CI from split_kernel_leaf_mapping() after applying your changes:
->
-> https://s3.amazonaws.com/arr-cki-prod-trusted-artifacts/trusted-artifacts/2571596185/test_aarch64/14662134813/artifacts/jobwatch/logs/recipes/21399931/tasks/219104268/results/1007729692/logs/journalctl.log
->
+diff --git a/arch/mips/configs/fuloong2e_defconfig b/arch/mips/configs/fuloong2e_defconfig
+index b6fe3c962464..840130a73992 100644
+--- a/arch/mips/configs/fuloong2e_defconfig
++++ b/arch/mips/configs/fuloong2e_defconfig
+@@ -89,7 +89,6 @@ CONFIG_MTD_CFI_STAA=m
+ CONFIG_MTD_PHYSMAP=m
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=m
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_BLK_DEV_SR=y
+diff --git a/arch/mips/configs/ip22_defconfig b/arch/mips/configs/ip22_defconfig
+index e123848f94ab..61f09cc9ac12 100644
+--- a/arch/mips/configs/ip22_defconfig
++++ b/arch/mips/configs/ip22_defconfig
+@@ -177,7 +177,6 @@ CONFIG_NET_ACT_SIMP=m
+ CONFIG_NET_ACT_SKBEDIT=m
+ CONFIG_RFKILL=m
+ CONFIG_CONNECTOR=m
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_RAID_ATTRS=m
+ CONFIG_SCSI=y
+diff --git a/arch/mips/configs/ip27_defconfig b/arch/mips/configs/ip27_defconfig
+index fea0ccee6948..60da9cf71b72 100644
+--- a/arch/mips/configs/ip27_defconfig
++++ b/arch/mips/configs/ip27_defconfig
+@@ -83,7 +83,6 @@ CONFIG_CFG80211=m
+ CONFIG_MAC80211=m
+ CONFIG_RFKILL=m
+ CONFIG_BLK_DEV_LOOP=y
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/mips/configs/ip30_defconfig b/arch/mips/configs/ip30_defconfig
+index 718f3060d9fa..5c2911ff9a87 100644
+--- a/arch/mips/configs/ip30_defconfig
++++ b/arch/mips/configs/ip30_defconfig
+@@ -77,7 +77,6 @@ CONFIG_NET_ACT_PEDIT=m
+ CONFIG_NET_ACT_SKBEDIT=m
+ # CONFIG_VGA_ARB is not set
+ CONFIG_BLK_DEV_LOOP=y
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/mips/configs/jazz_defconfig b/arch/mips/configs/jazz_defconfig
+index a790c2610fd3..dd3486b8d1fc 100644
+--- a/arch/mips/configs/jazz_defconfig
++++ b/arch/mips/configs/jazz_defconfig
+@@ -33,7 +33,6 @@ CONFIG_BLK_DEV_FD=m
+ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_BLK_DEV_NBD=m
+ CONFIG_BLK_DEV_RAM=m
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_RAID_ATTRS=m
+ CONFIG_SCSI=y
+diff --git a/arch/mips/configs/malta_defconfig b/arch/mips/configs/malta_defconfig
+index 81704ec67f09..b10dac71f400 100644
+--- a/arch/mips/configs/malta_defconfig
++++ b/arch/mips/configs/malta_defconfig
+@@ -224,7 +224,6 @@ CONFIG_BLK_DEV_FD=m
+ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_BLK_DEV_NBD=m
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_RAID_ATTRS=m
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/mips/configs/malta_kvm_defconfig b/arch/mips/configs/malta_kvm_defconfig
+index 82a97f58bce1..bdd5d99884e3 100644
+--- a/arch/mips/configs/malta_kvm_defconfig
++++ b/arch/mips/configs/malta_kvm_defconfig
+@@ -228,7 +228,6 @@ CONFIG_BLK_DEV_FD=m
+ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_BLK_DEV_NBD=m
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_RAID_ATTRS=m
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/mips/configs/maltaup_xpa_defconfig b/arch/mips/configs/maltaup_xpa_defconfig
+index 0f9ef20744f9..523c0ff329ac 100644
+--- a/arch/mips/configs/maltaup_xpa_defconfig
++++ b/arch/mips/configs/maltaup_xpa_defconfig
+@@ -226,7 +226,6 @@ CONFIG_BLK_DEV_FD=m
+ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_BLK_DEV_NBD=m
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_RAID_ATTRS=m
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/mips/configs/rm200_defconfig b/arch/mips/configs/rm200_defconfig
+index ad9fbd0cbb38..60054e54bc5a 100644
+--- a/arch/mips/configs/rm200_defconfig
++++ b/arch/mips/configs/rm200_defconfig
+@@ -177,7 +177,6 @@ CONFIG_PARIDE_ON26=m
+ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_BLK_DEV_NBD=m
+ CONFIG_BLK_DEV_RAM=m
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_RAID_ATTRS=m
+ CONFIG_SCSI=y
+diff --git a/arch/mips/configs/sb1250_swarm_defconfig b/arch/mips/configs/sb1250_swarm_defconfig
+index 4a25b8d3e507..a50a7c097542 100644
+--- a/arch/mips/configs/sb1250_swarm_defconfig
++++ b/arch/mips/configs/sb1250_swarm_defconfig
+@@ -43,7 +43,6 @@ CONFIG_FW_LOADER=m
+ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_SIZE=9220
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_RAID_ATTRS=m
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/powerpc/configs/g5_defconfig b/arch/powerpc/configs/g5_defconfig
+index 5ca1676e6058..647775f6d174 100644
+--- a/arch/powerpc/configs/g5_defconfig
++++ b/arch/powerpc/configs/g5_defconfig
+@@ -57,7 +57,6 @@ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_NBD=m
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_SIZE=65536
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_CHR_DEV_ST=y
+ CONFIG_BLK_DEV_SR=y
+diff --git a/arch/powerpc/configs/ppc6xx_defconfig b/arch/powerpc/configs/ppc6xx_defconfig
+index eda1fec7ffd9..5c3e25fd8edd 100644
+--- a/arch/powerpc/configs/ppc6xx_defconfig
++++ b/arch/powerpc/configs/ppc6xx_defconfig
+@@ -306,7 +306,6 @@ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_BLK_DEV_NBD=m
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_SIZE=16384
+-CONFIG_CDROM_PKTCDVD=m
+ CONFIG_VIRTIO_BLK=m
+ CONFIG_ENCLOSURE_SERVICES=m
+ CONFIG_SENSORS_TSL2550=m
+diff --git a/arch/sh/configs/sh2007_defconfig b/arch/sh/configs/sh2007_defconfig
+index 5d9080499485..f287a41cd38c 100644
+--- a/arch/sh/configs/sh2007_defconfig
++++ b/arch/sh/configs/sh2007_defconfig
+@@ -45,7 +45,6 @@ CONFIG_NETWORK_SECMARK=y
+ CONFIG_NET_PKTGEN=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_CDROM_PKTCDVD=y
+ CONFIG_RAID_ATTRS=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/sparc/configs/sparc64_defconfig b/arch/sparc/configs/sparc64_defconfig
+index 632081a262ba..4abea39281cd 100644
+--- a/arch/sparc/configs/sparc64_defconfig
++++ b/arch/sparc/configs/sparc64_defconfig
+@@ -60,8 +60,6 @@ CONFIG_CONNECTOR=m
+ CONFIG_BLK_DEV_LOOP=m
+ CONFIG_BLK_DEV_CRYPTOLOOP=m
+ CONFIG_BLK_DEV_NBD=m
+-CONFIG_CDROM_PKTCDVD=m
+-CONFIG_CDROM_PKTCDVD_WCACHE=y
+ CONFIG_ATA_OVER_ETH=m
+ CONFIG_SUNVDC=m
+ CONFIG_ATA=y
+diff --git a/drivers/scsi/scsi_lib.c b/drivers/scsi/scsi_lib.c
+index 85eef401925a..b67f0dc79499 100644
+--- a/drivers/scsi/scsi_lib.c
++++ b/drivers/scsi/scsi_lib.c
+@@ -2224,14 +2224,6 @@ struct scsi_device *scsi_device_from_queue(struct request_queue *q)
+ 
+ 	return sdev;
+ }
+-/*
+- * pktcdvd should have been integrated into the SCSI layers, but for historical
+- * reasons like the old IDE driver it isn't.  This export allows it to safely
+- * probe if a given device is a SCSI one and only attach to that.
+- */
+-#ifdef CONFIG_CDROM_PKTCDVD_MODULE
+-EXPORT_SYMBOL_GPL(scsi_device_from_queue);
+-#endif
+ 
+ /**
+  * scsi_block_requests - Utility function used by low-level drivers to prevent
 
-OK I'll investigate
+---
+base-commit: e43ffb69e0438cddd72aaa30898b4dc446f664f8
+change-id: 20260530-remove-pktcdvd-references-9d5c6362a5de
+
+Best regards,
+--  
+Catalin Iacob <iacobcatalin@gmail.com>
+
