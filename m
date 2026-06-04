@@ -1,178 +1,83 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from out-172.mta1.migadu.com (out-172.mta1.migadu.com [95.215.58.172])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2E7BE3947AB;
-	Thu,  4 Jun 2026 07:43:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E788640B6DB
+	for <linux-sh@vger.kernel.org>; Thu,  4 Jun 2026 11:12:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780559008; cv=none; b=M33ylAHJzNEyuBjgcIGCtVHyBVg4gdHUvvduQxppNAPC7M3w9cRw0WiI7uETGrPN5KOrpXP9rWkCyI9p8J8Aew1xRKPS8T4+hxaAOiWDzev8brwZCkFzx6oYVSRF3hKHnabJR2PAaOEnoPMBovi2dBa1Azr2Hkm/uvHjWnJ4cGs=
+	t=1780571577; cv=none; b=UsKaW3uXjyboS2LUeKuIIsf6PpweBw1zKfIhIu4zIQ7EG4McNBDPaq9eaR9gPItNDBpAuNV4x7XrD9rOgY6knrfflxIWTgNijE/DtARnjSxrHbfj+mcDiV37GzzM4H3IYWPaKixR7VjC0fkPc2IWfueRX8Rlef8Ko4T4cDB6CMo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780559008; c=relaxed/simple;
-	bh=fAEkZfvTx0bV/fhxeNMZOpVnOoYX52wbeVc64QTELDk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=BgFdOCZKu0j3dH0mqgC4hCE15dAXmjeQS3wkEXFrsp3mmkyt4lidb5dw2sSol4Dwtm2dDERhtohoeH6lwTexQpe0Uyfeg3PfACl9r7Yyld4yhbK9igtD0C6KGD0dfd/XfJI/z0+MvPsDq20AD3xA+Vn28DJeT159ghfSO8leM/8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FP8b2xGD; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1780571577; c=relaxed/simple;
+	bh=ytdeCiJdNll6wjnMF7+8t1je0hArLGIcQuy8rAoL66Q=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=gSen+4BPqn5okKzmWbtRdq7ZCZIc0YnEotN1z04vDlVkIDyliGXQVhHx2bPJ2sSLR8pjNEEp/tv/iPWV9va/n7jtlDl/jCvk+6iSQ6XzS3PBhVf5SmgeTwIU7JvD6aC4FXxdDwq/y6EceHqBxj17Yo2rXg6SGLVeD7XIwnvY1rs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=Mk2doaQo; arc=none smtp.client-ip=95.215.58.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FP8b2xGD"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 93BE01F00893;
-	Thu,  4 Jun 2026 07:43:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780559006;
-	bh=FcphQ0Rw2o1L4ixWXv1z/UyHZdPxmHTlt/k525r269U=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=FP8b2xGDkzxHJ7n2qYYxpH1CybRl8kL3CD+0OVxwkPI/nHpC05YEnca4gvdN7gNb/
-	 lNynqq4CtTAoVYy5gcVYxgxcyR+ySL7wGXlUJl7SXYUt+iBE7iVmXvpBBM+2ZqjF6g
-	 S6HCf1RdhXjHRVgAnWsNT2IkrrMof03Tzon8NrSOG7oG6Q7iIrM9GW/GzpfWV+Z0QD
-	 x0c9tYofo+wlJFnOT8RyGrdU6BkUBheELnytF2mQlTwMYTlA7KUDyyB2PVRQFlSBgg
-	 rBdpIxXTBVVqbhtHf77+iowcjPoA1Dv5MyERvxzSPC/DKi6Z0ThqJoDesIlgePnZYK
-	 2LCn5WB81zLvw==
-Message-ID: <11d2f0bd-baca-42aa-89ce-328a9d555f7e@kernel.org>
-Date: Thu, 4 Jun 2026 09:43:19 +0200
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="Mk2doaQo"
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1780571563;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=6YzdzQqy1dyCmwGKMsad+62QDYi8eL8H4CsEyEO05H8=;
+	b=Mk2doaQowS7y76ySBf0cQG2deK8ECYpoNUjpW6+xA3VQ0iFz7POL1SAmGE9AbowB5UwEVF
+	PYsl/MCydLh/OfMP9+ErrsfxL/cs9NzqsBOEyBYGtiXN9ffqYox6uUzHYPNuOMICfhQCCn
+	3le06Dl42wRdSzafKf1HK+l0q1piqHM=
+From: Thorsten Blum <thorsten.blum@linux.dev>
+To: Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Kees Cook <kees@kernel.org>
+Cc: Thorsten Blum <thorsten.blum@linux.dev>,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH] sh: sq: use str_plural helper in sq_remap
+Date: Thu,  4 Jun 2026 13:12:36 +0200
+Message-ID: <20260604111237.1297783-2-thorsten.blum@linux.dev>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v7 11/15] powerpc/code-patching: Avoid r/w mapping of the
- zero page
-To: Ard Biesheuvel <ardb+git@google.com>, linux-arm-kernel@lists.infradead.org
-Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com,
- mark.rutland@arm.com, Ard Biesheuvel <ardb@kernel.org>,
- Ryan Roberts <ryan.roberts@arm.com>,
- Anshuman Khandual <anshuman.khandual@arm.com>,
- Kevin Brodsky <kevin.brodsky@arm.com>, Liz Prucka <lizprucka@google.com>,
- Seth Jenkins <sethjenkins@google.com>, Kees Cook <kees@kernel.org>,
- Mike Rapoport <rppt@kernel.org>, David Hildenbrand <david@kernel.org>,
- Andrew Morton <akpm@linux-foundation.org>, Jann Horn <jannh@google.com>,
- linux-mm@kvack.org, linux-hardening@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
- Madhavan Srinivasan <maddy@linux.ibm.com>,
- Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>
-References: <20260529150150.1670604-17-ardb+git@google.com>
- <20260529150150.1670604-28-ardb+git@google.com>
-Content-Language: fr-FR
-From: "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>
-In-Reply-To: <20260529150150.1670604-28-ardb+git@google.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1238; i=thorsten.blum@linux.dev; h=from:subject; bh=ytdeCiJdNll6wjnMF7+8t1je0hArLGIcQuy8rAoL66Q=; b=owGbwMvMwCUWt7pQ4caZUj3G02pJDFmKsUtfizhM+VTxuZ1p9QHu46ZWaXE/b8yUTq7+9cR+Y 6/4vWNTOkpZGMS4GGTFFFkezPoxw7e0pnKTScROmDmsTCBDGLg4BWAi1c8ZGZ6taFp5dfmZXRrp J1tLWnTKAjJeJle1FVcv+vt1/0veqVEM/5QUjL8Izpjq9yz2JdvkAP1bJw/V+tUo+22cp1x1IDz 3ERcA
+X-Developer-Key: i=thorsten.blum@linux.dev; a=openpgp; fpr=1D60735E8AEF3BE473B69D84733678FD8DFEEAD4
 Content-Transfer-Encoding: 8bit
+X-Migadu-Flow: FLOW_OUT
 
+Replace the manual ternary "s" pluralization with str_plural() to
+simplify the code. Use the format specifier %-1s to preserve the
+whitespace alignment.
 
+Simplify the map->name ternary expression while at it.
 
-Le 29/05/2026 à 17:02, Ard Biesheuvel a écrit :
-> From: Ard Biesheuvel <ardb@kernel.org>
-> 
-> The only remaining use of map_patch_area() is mapping the zero page, and
-> immediately unmapping it again so that the intermediate page table
-> levels are all guaranteed to be populated.
-> 
-> The use of the zero page here is completely arbitrary, and not harmful
-> per se, but currently, it creates a writable mapping, and does so in a
-> manner that requires that the empty_zero_page[] symbol is not
-> const-qualified.
-> 
-> Given that this is about to change, and that map_patch_area() now never
-> maps anything other than the zero page, let's simplify the code and
-> - remove the helpers and call [un]map_kernel_page() directly
-> - take the PA of empty_zero_page directly
-> - create a read-only temporary mapping.
-> 
-> This allows empty_zero_page[] to be repainted as const u8[] in a
-> subsequent patch, without making substantial changes to this code
-> patching logic.
-> 
-> Cc: Madhavan Srinivasan <maddy@linux.ibm.com>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Nicholas Piggin <npiggin@gmail.com>
-> Cc: "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>
-> Link: https://eur01.safelinks.protection.outlook.com/?url=https%3A%2F%2Flore.kernel.org%2Fall%2F20260520085423.485402-1-ardb%40kernel.org%2F&data=05%7C02%7Cchristophe.leroy%40csgroup.eu%7Ca75a9b5e25f14d0d9b2208debd935266%7C8b87af7d86474dc78df45f69a2011bb5%7C0%7C0%7C639156637598013085%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=Q82ykchJOsuWlbmq%2BKFb2cTWIU4wGXbR53VQjNvgOCk%3D&reserved=0
-> Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+Signed-off-by: Thorsten Blum <thorsten.blum@linux.dev>
+---
+ arch/sh/kernel/cpu/sh4/sq.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Reviewed-by: "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>
-
-> ---
->   arch/powerpc/lib/code-patching.c | 52 +-------------------
->   1 file changed, 2 insertions(+), 50 deletions(-)
-> 
-> diff --git a/arch/powerpc/lib/code-patching.c b/arch/powerpc/lib/code-patching.c
-> index f84e0337cc02..44ff9f684bef 100644
-> --- a/arch/powerpc/lib/code-patching.c
-> +++ b/arch/powerpc/lib/code-patching.c
-> @@ -60,9 +60,6 @@ struct patch_context {
->   
->   static DEFINE_PER_CPU(struct patch_context, cpu_patching_context);
->   
-> -static int map_patch_area(void *addr, unsigned long text_poke_addr);
-> -static void unmap_patch_area(unsigned long addr);
-> -
->   static bool mm_patch_enabled(void)
->   {
->   	return IS_ENABLED(CONFIG_SMP) && radix_enabled();
-> @@ -117,11 +114,11 @@ static int text_area_cpu_up(unsigned int cpu)
->   
->   	// Map/unmap the area to ensure all page tables are pre-allocated
->   	addr = (unsigned long)area->addr;
-> -	err = map_patch_area(empty_zero_page, addr);
-> +	err = map_kernel_page(addr, __pa_symbol(empty_zero_page), PAGE_KERNEL_RO);
->   	if (err)
->   		return err;
->   
-> -	unmap_patch_area(addr);
-> +	unmap_kernel_page(addr);
->   
->   	this_cpu_write(cpu_patching_context.area, area);
->   	this_cpu_write(cpu_patching_context.addr, addr);
-> @@ -233,51 +230,6 @@ static unsigned long get_patch_pfn(void *addr)
->   		return __pa_symbol(addr) >> PAGE_SHIFT;
->   }
->   
-> -/*
-> - * This can be called for kernel text or a module.
-> - */
-> -static int map_patch_area(void *addr, unsigned long text_poke_addr)
-> -{
-> -	unsigned long pfn = get_patch_pfn(addr);
-> -
-> -	return map_kernel_page(text_poke_addr, (pfn << PAGE_SHIFT), PAGE_KERNEL);
-> -}
-> -
-> -static void unmap_patch_area(unsigned long addr)
-> -{
-> -	pte_t *ptep;
-> -	pmd_t *pmdp;
-> -	pud_t *pudp;
-> -	p4d_t *p4dp;
-> -	pgd_t *pgdp;
-> -
-> -	pgdp = pgd_offset_k(addr);
-> -	if (WARN_ON(pgd_none(*pgdp)))
-> -		return;
-> -
-> -	p4dp = p4d_offset(pgdp, addr);
-> -	if (WARN_ON(p4d_none(*p4dp)))
-> -		return;
-> -
-> -	pudp = pud_offset(p4dp, addr);
-> -	if (WARN_ON(pud_none(*pudp)))
-> -		return;
-> -
-> -	pmdp = pmd_offset(pudp, addr);
-> -	if (WARN_ON(pmd_none(*pmdp)))
-> -		return;
-> -
-> -	ptep = pte_offset_kernel(pmdp, addr);
-> -	if (WARN_ON(pte_none(*ptep)))
-> -		return;
-> -
-> -	/*
-> -	 * In hash, pte_clear flushes the tlb, in radix, we have to
-> -	 */
-> -	pte_clear(&init_mm, addr, ptep);
-> -	flush_tlb_kernel_range(addr, addr + PAGE_SIZE);
-> -}
-> -
->   static int __do_patch_mem_mm(void *addr, unsigned long val, bool is_dword)
->   {
->   	int err;
-
+diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
+index 908a8e09113b..0f9244be6dcc 100644
+--- a/arch/sh/kernel/cpu/sh4/sq.c
++++ b/arch/sh/kernel/cpu/sh4/sq.c
+@@ -14,6 +14,7 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
++#include <linux/string_choices.h>
+ #include <linux/vmalloc.h>
+ #include <linux/mm.h>
+ #include <linux/io.h>
+@@ -181,9 +182,8 @@ unsigned long sq_remap(unsigned long phys, unsigned int size,
+ 		goto out;
+ 
+ 	psz = (size + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
+-	pr_info("sqremap: %15s  [%4d page%s]  va 0x%08lx   pa 0x%08lx\n",
+-		likely(map->name) ? map->name : "???",
+-		psz, psz == 1 ? " " : "s",
++	pr_info("sqremap: %15s  [%4d page%-1s]  va 0x%08lx   pa 0x%08lx\n",
++		map->name ?: "???", psz, str_plural(psz),
+ 		map->sq_addr, map->addr);
+ 
+ 	sq_mapping_list_add(map);
