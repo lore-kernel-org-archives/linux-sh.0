@@ -1,139 +1,122 @@
-Received: from mail-vk1-f181.google.com (mail-vk1-f181.google.com [209.85.221.181])
+Received: from mail-pl1-f176.google.com (mail-pl1-f176.google.com [209.85.214.176])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68BA04218A1
-	for <linux-sh@vger.kernel.org>; Tue,  9 Jun 2026 13:38:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.181
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 230C43F0763
+	for <linux-sh@vger.kernel.org>; Tue,  9 Jun 2026 22:25:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.176
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781012285; cv=none; b=bfRrlQslWIZqfPvMGuNWaSt9v5gKgc4Y9c3zfDV7gjagEHhxeFxTbmTUgSYj7pE7dHbXQueTeQLnh9z50TSaxIcpWaKX+MqeO0yPNKpEzeFkX5iybBbpdsG/jg13s1PvF/diIqeEFrQxBD96mINNzWX0+q85zAfngQb09meUEuU=
+	t=1781043958; cv=none; b=sQjK5gKQlSAMSVdi0T/HUv9+K2+n+Ev8vtzwJDAKe+5g3XJPonioyqMYQsAXHagZP57Se4qJvAZr/YlAFPRlBdhK3WJfJ9q8w+euJU5PQiSgBmyLbFNeAMMm6lXgD+4dflHznlJ/Vikyn82U3egIrF36qkOSvZhiWpvyH6VM4Wk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781012285; c=relaxed/simple;
-	bh=zNk6pJWd+v88a+9NOUGNQabXaXiV9hjQTgWFhpjOWl0=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=L4R6uHC0L7W6PZxrWzcEL1wGdz1HDFJsArVCiauTVxrl2nRHNIuIxxr0yAX/JvmtizDCOnETxOU22MQfpwV0kdb5eEwwENOoce2QzOgIQCufbQB9rWo0ssIyTl449XnT8xUAaroBKdHqR9iIdYXtv6Fu6emFYj+nk943UpVNxvY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.181
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vk1-f181.google.com with SMTP id 71dfb90a1353d-59ccf81e6feso1864830e0c.2
-        for <linux-sh@vger.kernel.org>; Tue, 09 Jun 2026 06:38:03 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781012282; x=1781617082;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+	s=arc-20240116; t=1781043958; c=relaxed/simple;
+	bh=gC5RijoMreJ37E+ZXnO6sSCfWOZUThbmrEidBKcTv9A=;
+	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
+	 MIME-Version:Content-Type; b=O6mw5X9aQkNIQ3AMWtSm71yMIj3+5VaX4tZrLiGYNgZdiYFgDGP7b9AjDycIJxzjonwIJtRX2CBpo6TPck1BiJDCT4RJEarSKvWSyICbo88eZAsnjyp+LfJ3cGb7zYFD/a9eAIN5y/hJdjdg/QuHIT4nqVgBMaVFvttE9jlqTpc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=baylibre.com; spf=pass smtp.mailfrom=baylibre.com; dkim=pass (2048-bit key) header.d=baylibre.com header.i=@baylibre.com header.b=Ckt5g5mh; arc=none smtp.client-ip=209.85.214.176
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=baylibre.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=baylibre.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=baylibre.com header.i=@baylibre.com header.b="Ckt5g5mh"
+Received: by mail-pl1-f176.google.com with SMTP id d9443c01a7336-2c0c2c7e0c5so41248625ad.1
+        for <linux-sh@vger.kernel.org>; Tue, 09 Jun 2026 15:25:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=baylibre.com; s=google; t=1781043956; x=1781648756; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:date:message-id:subject
+         :references:in-reply-to:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=t/PRbin0hiFf0sv0V65HKQzKM0CIanlyTiYsPPuNvzs=;
-        b=TC27wjmpffStmIYBOSv+wzYC+AJeQMoKVII/JySTH1pT5rGzbRwk+PvWYubEZ283ez
-         8AhYGosB9huZegmN9nFsWdficseRw+5uVlHzoLC+qfrs2QWJ2w5dk1N4zjqYEsIMZX1y
-         2UCFJCMECXLEGRm7O0fqbxBJgJgSiMVFAFOidVsrTUo3TD2XX/v/CoIE+4lVlR0UrcjS
-         6LXQKI5pCMIqIhVder/aMUqBDbqDtbwMQ2XONtskqNZPF1XTVYIaB67TGCqjvSPSZnbN
-         zYJZSp+YDnDoUaaHz/e4GPhwDsNIYIWtS7iLN7dz1BkceZzb7MgL7/gFZr/pp3YjNOHP
-         wGuA==
-X-Forwarded-Encrypted: i=1; AFNElJ/UbJLQKNhmPyWsJtc4kne5NzTqnCz8uq7vIByB8ZVt3aiyQB1mFfPe0xlVXJGUQehrEpmy4mt0CQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxE9C5kVqC8ks/Zj2dWrmDzdlwqJXmvjDCImJMBo4xjMf+Qldjc
-	Ee91fdzMmJpJwK5oxFtHduJspSzw8eyYTRxpdMKLFcvo9FQA8/i2V9hBgQ5iOypWcYM=
-X-Gm-Gg: Acq92OEuTPMck/K0b7o4Y0H+2yALdXoIAuk+TCUZy7F1Dlw7gUn9CfCjCpn49lj/lrL
-	GZWFgfRuNVkoHibYt6i/j1uuulKZa5blmYFkFWqvmlE/4Hu8pBVUM/Xn2oVyldYn5B66gAGbY/9
-	bvBvTHGuJeFCkWrAGcOUS6YuIa+FAZ+ev4hCCxs7Ola+a5itrpuk2PigVCek8VMQDxXpjI3udbW
-	yVeDDHkd+G8Ahll5v+a5GU0iRnhZDUTFMovVKwtvd0wqZDdV0AATxGpOXJCs/3zYPqEaNhlqtrT
-	R6O2qBuzib30dzKVS4lqzoc9aJDpMiikeI8a0RO/WowqtXF1MpmTA5qxCsM9utr2NPBuR8kanTl
-	IHcFjYMUOe/L/6NB41MBpZiug6NT2YkjKEUZfEO9GP0vztChVlM2LE0j5VRlvX3keuutJ5Ty3U7
-	QeWZxrgDykc2Ch57HeP5Er5cRALpScfkTWm/rSet2JvsWSkC+Brk5gig5hu3BsMP9HzCq7o85vt
-	GRtD7f+5t5GnQ==
-X-Received: by 2002:a05:6122:e22d:b0:573:a779:62cf with SMTP id 71dfb90a1353d-5b63552db9fmr1179158e0c.7.1781012281858;
-        Tue, 09 Jun 2026 06:38:01 -0700 (PDT)
-Received: from mail-vk1-f175.google.com (mail-vk1-f175.google.com. [209.85.221.175])
-        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-5a6dc44d233sm16793369e0c.10.2026.06.09.06.38.00
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 09 Jun 2026 06:38:00 -0700 (PDT)
-Received: by mail-vk1-f175.google.com with SMTP id 71dfb90a1353d-59dc1714d44so1723109e0c.3
-        for <linux-sh@vger.kernel.org>; Tue, 09 Jun 2026 06:38:00 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ/tjp0sMKn5nl2qPWpgBB2e8OEx/fjFaxPprXsW/26+aqwPzNA3F95LUUy9hmB0tArRMhgic1QDTA==@vger.kernel.org
-X-Received: by 2002:a05:6122:2a47:b0:59e:f988:51a with SMTP id
- 71dfb90a1353d-5b634763bc1mr1142689e0c.1.1781012280533; Tue, 09 Jun 2026
- 06:38:00 -0700 (PDT)
+        bh=6D7duqRcD3fdsTRow2UhPRWiLjw5TIDW3U11ZLjAtzg=;
+        b=Ckt5g5mhS8YR2cizTWbJ5Fwk8gGj6VebB+0OEJgvf02706OxaHIh/MLoWUZkdc8W2v
+         tDVO9ou14uqgirHWrZKF4TT22SL8Kw6c9cIfwgHoNv09ym9tEccqMSP/b5lQeWoqDES9
+         4Y/1fE4bs5q1c26wMjvtkzwBbmD6R5ZssJo+Ql4XeIs+Yw9IhdJtj3WObSFvTKV2NsRh
+         KdAHyJOP9ZzIAXpBIl9bEt8fkARYApQC8HuCBb+LFcyPHM7jM2nhfg7jU3w/egVF/fFg
+         eqBE7VWfKHsswmA0XGrVNRgAu6OAU+Z/4WuvEPeIm2Pew6bt4mI47RFHA/Njj5qWoKdw
+         N24g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781043956; x=1781648756;
+        h=content-transfer-encoding:mime-version:date:message-id:subject
+         :references:in-reply-to:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=6D7duqRcD3fdsTRow2UhPRWiLjw5TIDW3U11ZLjAtzg=;
+        b=Zpy0LCk/52GBClTbjJHpMYPVVCE2Y+b+VUHYKKZGC5e/Viy7/pkUwERkAueRLp1gXu
+         FOJ0v4ho9hkcrW/lTaoUnFy9q3HnSOR/1hTgtXqg7K3/Dzug98mr+20ov6MfTbZqQUpl
+         hSV0bFH6VtbiepCz439ooksZJ8XzXOpbLoAlU8MtONhsjmgz3XTIWu/v2b+Dtle8RPCa
+         VJpD8jPu5md79A0ZgOe5q4kK3DrGSIorjXAT4T8SiOt67AO7rzuvk85y2b/mCuwjP6YF
+         GQWb8T6Xo7E7/11VnvMcL4xNnfGd4yk0Q9RMzR68j2AGPC+FeoYKC28lVGvJ4YQmsjoG
+         s9yg==
+X-Forwarded-Encrypted: i=1; AFNElJ9sSkblcWdzIZit+CRdVBg1udkbUUBo1TDlx10QD8fFZaP2xwtUha9Xd/u+qD9aCDQk31MkCAUZPA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxpLRAQqnIANbsh1bSzIPLxhrASGNqjEHV9aaGRnY6rNsYIaPXC
+	qCTbAldceaOmGHHzujjq3bPIKeem+1rvItyDUHt7k3OS2kobkKoAwtCSWYlqvFUe71s=
+X-Gm-Gg: Acq92OG0JpoevkdpLzqhFtbSdtrZ6HpNrmFiJ8x+MV1aFEFjWTLXMnResBj6ZVh3iP1
+	tWEugyAisZj7dVrDmGXs7ju8Fu6ha0VUjUcf704I0PU/4/wOqdhHHxBkM9ARpFg/BKvtJlUXqqf
+	XtPiZvQUiSUzNnjN88v8fQqTZ4azGuEGTyaDt5SfMbS3utRerfaX9M4RC6jkumW8ABNWhoSisRe
+	doWYZlDwFSKYOmJX3DuiXUBNMGvScwUeqLLh32ZkZyOud/vpTdMiPrJdvTzQBaVsvCNtHAEEwB7
+	b5/AucsvZZmFssr4dsVKUxPn/ovAgcVK9EyIwL5j4sZ7UZnvP44wwvEMNnxvroSJytTTFNgD91z
+	p83WIAvCsAJwfmbr4XLSSfIjVFeK3vFjKoCIXVs8k2c1kdYlL16DnTwK3DSt5xPWSA1R22z9O/Z
+	RgUz7StUME7NETXQFtg+c3HUboGQ3MAUE=
+X-Received: by 2002:a17:903:2381:b0:2c2:27be:39a7 with SMTP id d9443c01a7336-2c2a1c9ac2emr57718625ad.29.1781043956535;
+        Tue, 09 Jun 2026 15:25:56 -0700 (PDT)
+Received: from localhost ([71.212.202.210])
+        by smtp.gmail.com with UTF8SMTPSA id d9443c01a7336-2c164f6e2adsm238181875ad.5.2026.06.09.15.25.55
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 09 Jun 2026 15:25:56 -0700 (PDT)
+From: Kevin Hilman <khilman@baylibre.com>
+To: linux-gpio@vger.kernel.org, Arnd Bergmann <arnd@kernel.org>
+Cc: linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, 
+ Christian Lamparter <chunkeey@googlemail.com>, 
+ Johannes Berg <johannes@sipsolutions.net>, 
+ Aaro Koskinen <aaro.koskinen@iki.fi>, 
+ Andreas Kemnade <andreas@kemnade.info>, Roger Quadros <rogerq@kernel.org>, 
+ Tony Lindgren <tony@atomide.com>, 
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>, 
+ Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>, 
+ x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
+ Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, 
+ Dmitry Torokhov <dmitry.torokhov@gmail.com>, Lee Jones <lee@kernel.org>, 
+ Pavel Machek <pavel@kernel.org>, Matti Vaittinen <mazziesaccount@gmail.com>, 
+ Florian Fainelli <florian.fainelli@broadcom.com>, 
+ Jonas Gorski <jonas.gorski@gmail.com>, Andrew Lunn <andrew@lunn.ch>, 
+ Vladimir Oltean <olteanv@gmail.com>, 
+ "David S. Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>, 
+ Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>, 
+ linux-wireless@vger.kernel.org, linux-omap@vger.kernel.org, 
+ linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org, 
+ linux-sh@vger.kernel.org, linux-input@vger.kernel.org, 
+ linux-leds@vger.kernel.org, netdev@vger.kernel.org
+In-Reply-To: <20260520183815.2510387-1-arnd@kernel.org>
+References: <20260520183815.2510387-1-arnd@kernel.org>
+Subject: Re: (subset) [PATCH v2 00/10] gpiolib: fence off legacy interfaces
+Message-Id: <178104395573.234140.4413143072350533512.b4-ty@b4>
+Date: Tue, 09 Jun 2026 15:25:55 -0700
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <87zf1le4fu.wl-kuninori.morimoto.gx@renesas.com>
- <178094130630.20828.12708103059145547835.b4-ty@b4> <fa7d7af8a780c27f85e29c518ba45e39ab18abad.camel@physik.fu-berlin.de>
-In-Reply-To: <fa7d7af8a780c27f85e29c518ba45e39ab18abad.camel@physik.fu-berlin.de>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 9 Jun 2026 15:37:47 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXVWPxu-5BXAgWOBoWdNXxZ2zeAfTovXxftXsKuCUUDww@mail.gmail.com>
-X-Gm-Features: AVVi8CdJQ9opFjMVwtIPNGUt6qVgHAl8SOhR-UuJZWuU9CAlreT_77PbJOB7tNs
-Message-ID: <CAMuHMdXVWPxu-5BXAgWOBoWdNXxZ2zeAfTovXxftXsKuCUUDww@mail.gmail.com>
-Subject: Re: [PATCH 0/3] ASoC: simple-card: remove platform data style
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Mark Brown <broonie@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, 
-	Geert Uytterhoeven <geert+renesas@glider.be>, Jaroslav Kysela <perex@perex.cz>, 
-	Liam Girdwood <lgirdwood@gmail.com>, Linus Walleij <linusw@kernel.org>, Rich Felker <dalias@libc.org>, 
-	Takashi Iwai <tiwai@suse.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, 
-	linux-sound@vger.kernel.org, 
-	Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: b4 0.15.2
 
-Hi Adrian,
 
-On Tue, 9 Jun 2026 at 14:21, John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Mon, 2026-06-08 at 18:55 +0100, Mark Brown wrote:
-> > On Wed, 27 May 2026 06:45:26 +0000, Kuninori Morimoto wrote:
-> > > ASoC: simple-card: remove platform data style
-> > >
-> > > Hi
-> > >
-> > > SuperH ecovec24/7724se are the last user of Simple Audio Card as
-> > > "platform data style". It is mainly supporting "DT style" in these days.
-> > >
-> > > [...]
-> >
-> > Applied to
-> >
-> >    https://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git for-7.2
-> >
-> > Thanks!
-> >
-> > [1/3] sh: ecovec24: remove FSI/DA7210/Simple-Audio-Card support
-> >       https://git.kernel.org/broonie/sound/c/9cc93ebc85e7
-> > [2/3] sh: 7724se: remove FSI/AK4642/Simple-Audio-Card support
-> >       https://git.kernel.org/broonie/sound/c/deadb855b694
-> > [3/3] ASoC: simple-card: remove platform data style
-> >       https://git.kernel.org/broonie/sound/c/325fea33e141
-> >
-> > All being well this means that it will be integrated into the linux-next
-> > tree (usually sometime in the next 24 hours) and sent to Linus during
-> > the next merge window (or sooner if it is a bug fix), however if
-> > problems are discovered then the patch may be dropped or reverted.
-> >
-> > You may get further e-mails resulting from automated or manual testing
-> > and review of the tree, please engage with people reporting problems and
-> > send followup patches addressing any issues that are reported if needed.
-> >
-> > If any updates are required or you are submitting further changes they
-> > should be sent as incremental updates against current git, existing
-> > patches will not be replaced.
-> >
-> > Please add any relevant lists and maintainers to the CCs when replying
-> > to this mail.
->
-> I actually wanted to keep the driver and convert it to using device-trees,
-> not remove it. We have an out-of-tree patch for switching SuperH to device-
-> tree support.
+On Wed, 20 May 2026 20:38:05 +0200, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> This is an update of all the patches that are still required before
+> we can actually turn off CONFIG_GPIOLIB_LEGACY for most platforms
+> in the final patch of this series.
+> 
+> I originally posted this as a series in
+> https://lore.kernel.org/all/20250808151822.536879-1-arnd@kernel.org/
+> 
+> [...]
 
-1. The sound driver is not removed at all.
-2. s/SuperH/SH7751R/.
+Applied, thanks!
 
-Gr{oetje,eeting}s,
+[09/10] ARM: dts: omap2: add stlc4560 spi-wireless node
+        commit: c5a0ac76b364bbd1d4fb7e440edabcd2a369343c
 
-                        Geert
-
+Best regards,
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Kevin Hilman (TI) <khilman@baylibre.com>
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
