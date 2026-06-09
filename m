@@ -1,106 +1,130 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ua1-f47.google.com (mail-ua1-f47.google.com [209.85.222.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF00F3DE429;
-	Tue,  9 Jun 2026 08:40:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3635738E5C5
+	for <linux-sh@vger.kernel.org>; Tue,  9 Jun 2026 09:55:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780994447; cv=none; b=gQOLYGnbruoeJN1xNietnS8ZCMM0XCrW23ko9L/ToB3GyE4IoFG+RnG4TExuBarla77p8ZtOCzDHFhAyynlFX3vk3MTCVdTtYUeDZkrl5DD0Piq0BEZm1wIebqL2UxgwIYq0MIMZnOH2ziYRiI/XDgu7vYxG0K8mO+LEzQEb//8=
+	t=1780998931; cv=none; b=FTWBO2S+NSKplWZzL/JAcTIolgbb75Y29jWI/BP9YnQUeg64hHmawqamPHfqBJDMR+smAVDr52u1oBA15zywko2uwEANdQJLXB0KlcusqGp8N7DLoNn/O2vdd/V95+c89i/zDVnVdJmZae9/WfU3rxkbQjlzQeLWoJ8IeGl8YZM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780994447; c=relaxed/simple;
-	bh=+kLQLV1248ptOYNNjnp+rwEHWHiWoKwSBi+b0jVxE+8=;
-	h=From:To:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=f2/KziNClQHGVydLKH1ywrSRrODwZZEfGFxQVCNdidy+wL+LfzcODc3DodiXwavQpTlBhoA71P03qJFvnsWxZHiaQfcQxzBkDJmTLNz8+PTsX+cJUWyQSInOkPSWBgzhFrDsNTII2T9ybcpKgBnuaxUydBxS4P9xgYKrdxAE/P8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UE3nC4DA; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UE3nC4DA"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 57B9E1F00893;
-	Tue,  9 Jun 2026 08:40:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780994444;
-	bh=bbzTi8vgEBGrGu0YxoCrG1r/RD+HuZcU9G2SCTNpP18=;
-	h=From:To:In-Reply-To:References:Subject:Date;
-	b=UE3nC4DA/FeIBG8XyQdYxp7B+aGjyUgo3b8qB6aCFmRA05vFlyVmVmu46XQGvpPKa
-	 jTtPhjcI8TM8GI8jOCoOhsZnqn40VE9LFrxcn868dcjX4MuKVbT8AI9V2i7Z/bjv6h
-	 eEyufxlb26yFp/FbvKhN5IG8EGWu8eYZlDF6e2WtDyRK1qELY01lbMXoxp8/Fm6JeJ
-	 xizr1+A/ML11JhIPDaWVi8iPdfzCwN1SdMtZyBphZi0a6bK0iBxecZEezYHr/uyojG
-	 MW9hpULUg3raQAfRQtdahqYaore02Fyq5z9vHBI1DshpS8wcP/Le1nXSVjf3q37u8F
-	 jtxss/2Tt6Heg==
-From: Mark Brown <broonie@kernel.org>
-To: Bartosz Golaszewski <brgl@kernel.org>, 
- Geert Uytterhoeven <geert+renesas@glider.be>, 
- Jaroslav Kysela <perex@perex.cz>, 
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
- Liam Girdwood <lgirdwood@gmail.com>, Linus Walleij <linusw@kernel.org>, 
- Rich Felker <dalias@libc.org>, Takashi Iwai <tiwai@suse.com>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, 
- linux-sound@vger.kernel.org, 
- Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zf1le4fu.wl-kuninori.morimoto.gx@renesas.com>
-References: <87zf1le4fu.wl-kuninori.morimoto.gx@renesas.com>
-Subject: Re: [PATCH 0/3] ASoC: simple-card: remove platform data style
-Message-Id: <178094130630.20828.12708103059145547835.b4-ty@b4>
-Date: Mon, 08 Jun 2026 18:55:06 +0100
+	s=arc-20240116; t=1780998931; c=relaxed/simple;
+	bh=LMAkeVaZptDMfPIXMRgnhcXwRYr1AtJoIiiI7hhG/Hg=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=aQMOdYtjQtyhpYHvRgX1id6EVTO+9cg8B3WG8vLvHYDTE5fTPdSEJ6LH6QVExv/QlH0FOIMMOuDDOkyTcFUWXWrYmQpe0QFsJPhQvgAwu2+pqy79uknXZ29C9vKqQr/4Wks5FUOETPRjRdQ8ab47h4NFSRKfIlCCSmRkVWag66A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ua1-f47.google.com with SMTP id a1e0cc1a2514c-96358d0a024so3661160241.3
+        for <linux-sh@vger.kernel.org>; Tue, 09 Jun 2026 02:55:30 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780998929; x=1781603729;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=J/QDHCd1pzNPKIKT6XsNCXh/My/ujozGgvsOiDCA3LA=;
+        b=lfhlmd7M8qWUOojnmIr8vVpUckcRirr3MTIUHE1eJj0WymT5QZQ03dQRsA3wSohnCK
+         LUYLKj3Ucv2jtNRXtqRkYD+qeByJZJPon9wFcZxfuOAhLG0ZAtFu1EXgzX1s73AngTuf
+         kZ7LzRdb/GQU644rQnEYccM9ax0ZA8YjWoF4sZ99S75xGvOJL1DfBn9T6uQvfU36/zFP
+         EzRNcNSeLVu66ks1cSDFg+x2zkkv9RtKyx83wDZV5VkY0EB+UlKJCJoZ0xr+dA+i/5Ku
+         tVbQULs7LBxh54a9JeSWcluViAueDetmnS3d4f/yM1GrPFtWN2One1uwzYNoBWMXrQ+S
+         mELw==
+X-Forwarded-Encrypted: i=1; AFNElJ//WQ+Gk17KGnrMHCyjGW3QaTSctQyH2mPsrOD1Q4OzRuwavdEeMiUreLmNxxy50jSvLBCTp7bDOQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy1BBOxD0NdVW6P7UhI9tZBfEWLpugyUUVpUSAoKm9W0G/LpWS7
+	6CxgQjHG1jsWWGtI5MCWxnpHozVqIQveZLw1Z1yHYmAuEi8MhW/lrjLT/Ite1Mc6
+X-Gm-Gg: Acq92OFyJAgsf3aeFV2xA3DCQBk048HqNb2VgLif8DsZPIVaDW0wGkQkgSgDhP3ZZTu
+	dsQ0xpA/xJn6yw1iV60VFa5oOV8uAaCi+VEcbgu6j4jPm+/sC0Ei2TqXepb/xiBwHisN69lRuXQ
+	ICnVzIecy+2vxf+ZX7d9Xop7mZAPqIpzbFkesVp+4q54nmR35D9lBOB+uN78P6lCHTM7rfsSsg0
+	H+XrvUr89g3GAZDkahQVsWZB3Juiv1owxaBzAX3sL5L32j4p1Lc3FXXfR5pMuLc8wFiNxbVaKyn
+	LioU97X6PW7a0Xtlx5YegvvaexIe218DF874YWCiwCSOxOGA95teupOHeX8dwCBaGFDMGUW5f10
+	DeQoa1pT+mrWwy+++YeNNz+H+t1+y0VWIOJog/O1ryB37inFbjTkiAd6Go3skxQuJqGazwbyFSv
+	ve09ux34qDTEdrP2d67kGs+JI1T+/TqQFkfGfvEV8AlYjsV2BQUHWiPGU1jRsDV9V1/ZJNooE=
+X-Received: by 2002:a05:6102:548c:b0:639:1e8b:ecd9 with SMTP id ada2fe7eead31-6fefa23308cmr9731075137.20.1780998929023;
+        Tue, 09 Jun 2026 02:55:29 -0700 (PDT)
+Received: from mail-vs1-f43.google.com (mail-vs1-f43.google.com. [209.85.217.43])
+        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-96414115a93sm15416462241.9.2026.06.09.02.55.25
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 09 Jun 2026 02:55:26 -0700 (PDT)
+Received: by mail-vs1-f43.google.com with SMTP id ada2fe7eead31-6c534af2470so3506031137.3
+        for <linux-sh@vger.kernel.org>; Tue, 09 Jun 2026 02:55:25 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ+eNALIc0EwBIbeYSc6GvB404zXXPOMrkotXzOXS34jVcXDYOw+IHBMN20mp5dbRGwDrjpLB5cYog==@vger.kernel.org
+X-Received: by 2002:a05:6102:149a:b0:636:984a:1e5d with SMTP id
+ ada2fe7eead31-6fef05f052fmr11135049137.11.1780998924802; Tue, 09 Jun 2026
+ 02:55:24 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-Mailer: b4 0.16-dev
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1530; i=broonie@kernel.org;
- h=from:subject:message-id; bh=+kLQLV1248ptOYNNjnp+rwEHWHiWoKwSBi+b0jVxE+8=;
- b=owEBbQGS/pANAwAKASTWi3JdVIfQAcsmYgBqJ9GIwAGxzD/ZtsWxpGXo98kZGj907Ua0+dI9m
- hlBF3wtThWJATMEAAEKAB0WIQSt5miqZ1cYtZ/in+ok1otyXVSH0AUCaifRiAAKCRAk1otyXVSH
- 0A2mB/4pLtPP3O8Cf2wtZymnXjuSiozk2Q5NM3kvAy2+rNJCSy/18cwEhmpuwsMdIUj5n6d8jst
- FoUSD6oKJCAgZG3UjkM3KsCqbORnaxHbEAJ48qaovaTe/pSGcY+SZ3jvwcNBvQECUQaRIng7Jir
- HO7RwAaacEJilCSyhH81vwDodmA8ydHx+W0Vca8DN6XG9pc9DWl8KmA8Ym1gxEbRGtp4ZsZwCL1
- JH++jxaeKcGTOklZpRQHEecsL3wpFLCe3CDMtxXad759+Be/hxcSkJp7LwCvDOpBk4KLqV7tvuK
- y2ieVxexqeo+qhkKlq2cXsSij/9fVkw/b1QxMXJiPUqt1pY/
-X-Developer-Key: i=broonie@kernel.org; a=openpgp;
- fpr=3F2568AAC26998F9E813A1C5C3F436CA30F5D8EB
+References: <20260529150150.1670604-17-ardb+git@google.com>
+ <20260529150150.1670604-32-ardb+git@google.com> <CGME20260609062840eucas1p1d49831bfdb3447e38a3cadc803a9afc0@eucas1p1.samsung.com>
+ <a1b27e97-182c-485d-a448-56c19c5de2c2@samsung.com> <6a9c0f55-fe98-4063-864b-8f7e1f4fefd7@samsung.com>
+In-Reply-To: <6a9c0f55-fe98-4063-864b-8f7e1f4fefd7@samsung.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 9 Jun 2026 11:55:13 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdV-rH7s6GD4FtiKP9++3c2ojwZKm=YGLM_S_+nkj+EBtw@mail.gmail.com>
+X-Gm-Features: AVVi8CfDur0wzec2mY_1awm30cbHrLvunVYojJnvz6Cb53IUltKkdZGFSORVN6A
+Message-ID: <CAMuHMdV-rH7s6GD4FtiKP9++3c2ojwZKm=YGLM_S_+nkj+EBtw@mail.gmail.com>
+Subject: Re: [PATCH v7 15/15] arm64: mm: Unmap kernel data/bss entirely from
+ the linear map
+To: Marek Szyprowski <m.szyprowski@samsung.com>
+Cc: Ard Biesheuvel <ardb+git@google.com>, linux-arm-kernel@lists.infradead.org, 
+	linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com, 
+	mark.rutland@arm.com, Ard Biesheuvel <ardb@kernel.org>, Ryan Roberts <ryan.roberts@arm.com>, 
+	Anshuman Khandual <anshuman.khandual@arm.com>, Kevin Brodsky <kevin.brodsky@arm.com>, 
+	Liz Prucka <lizprucka@google.com>, Seth Jenkins <sethjenkins@google.com>, 
+	Kees Cook <kees@kernel.org>, Mike Rapoport <rppt@kernel.org>, David Hildenbrand <david@kernel.org>, 
+	Andrew Morton <akpm@linux-foundation.org>, Jann Horn <jannh@google.com>, linux-mm@kvack.org, 
+	linux-hardening@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-sh@vger.kernel.org, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 
-On Wed, 27 May 2026 06:45:26 +0000, Kuninori Morimoto wrote:
-> ASoC: simple-card: remove platform data style
-> 
-> Hi
-> 
-> SuperH ecovec24/7724se are the last user of Simple Audio Card as
-> "platform data style". It is mainly supporting "DT style" in these days.
-> 
-> [...]
+On Tue, 9 Jun 2026 at 08:28, Marek Szyprowski <m.szyprowski@samsung.com> wrote:
+> On 09.06.2026 08:22, Marek Szyprowski wrote:
+> > On 29.05.2026 17:02, Ard Biesheuvel wrote:
+> >> From: Ard Biesheuvel <ardb@kernel.org>
+> >>
+> >> The linear aliases of the kernel text and rodata are also mapped
+> >> read-only in the linear map. Given that the contents of these regions
+> >> are mostly identical to the version in the loadable image, mapping them
+> >> read-only and leaving their contents visible is a reasonable hardening
+> >> measure.
+> >>
+> >> Data and bss, however, are now also mapped read-only but the contents of
+> >> these regions are more likely to contain data that we'd rather not leak.
+> >> So let's unmap these entirely in the linear map when the kernel is
+> >> running normally.
+> >>
+> >> When going into hibernation or waking up from it, these regions need to
+> >> be mapped, so map the region initially, and toggle the valid bit so
+> >> map/unmap the region as needed.
+> >>
+> >> Doing so is required because pages covering the kernel image are marked
+> >> as PageReserved, and therefore disregarded for snapshotting by the
+> >> hibernate logic unless they are mapped.
+> >>
+> >> Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+> > This commit landed in yesterday's linux-next as commit 63e0b6a5b693
+> > ("arm64: mm: Unmap kernel data/bss entirely from the linear map").
+> > In my tests I found that it breaks booting of RaspberryPi3 and
+> > RaspberryPi4 boards with the following kernel panic:
 
-Applied to
+Seeing the same panic on R-Car H3 ES2.0 (Cortex A57/A53), but not
+on R-Car V4M (Cortex A76).
 
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git for-7.2
+> One more comment - reverting 63e0b6a5b693 and 53205d56212c (dependent
+> change) on top of next-20260608 fixes this issue.
 
-Thanks!
+Confirmed, too.
 
-[1/3] sh: ecovec24: remove FSI/DA7210/Simple-Audio-Card support
-      https://git.kernel.org/broonie/sound/c/9cc93ebc85e7
-[2/3] sh: 7724se: remove FSI/AK4642/Simple-Audio-Card support
-      https://git.kernel.org/broonie/sound/c/deadb855b694
-[3/3] ASoC: simple-card: remove platform data style
-      https://git.kernel.org/broonie/sound/c/325fea33e141
+Gr{oetje,eeting}s,
 
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.
+                        Geert
 
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
-
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
-
-Thanks,
-Mark
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
