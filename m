@@ -1,125 +1,232 @@
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mailout2.w1.samsung.com (mailout2.w1.samsung.com [210.118.77.12])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 483BB3D7D65
-	for <linux-sh@vger.kernel.org>; Mon,  8 Jun 2026 14:28:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC2363D0BE7
+	for <linux-sh@vger.kernel.org>; Tue,  9 Jun 2026 06:22:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=210.118.77.12
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780928902; cv=none; b=ZAAMsRiWmd2ZLPieMoQOilb/HzqOU18GvLtagPRRZFfEDhJJLWVDFlnB/wZjiTv2MmNwYmOKT24mZtedzuDFl0Ih1YxPEw3iOBx/qAdeR3n6RyGpt3i0cTjcEyU+ppXavhIT/OyGJBY3baQAZRZiWAwmqaPBi+BzN34EvM7/enA=
+	t=1780986154; cv=none; b=JP5Qo0vD8WDuQB6EPyVA+0oYdj0qEjmltP65ZOYqxR35eE2iJ+rxZDxt9qlrmhIqm1+/I7AlRtT/q5Dkn/2901XE4rKAtQb4RhB+SbGZeOgOxHo/aK1MERrq6Q93Kaqx29bsRnT/4FG+7A9UPk3kqqUqQc277gYi53saw+pJjg8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780928902; c=relaxed/simple;
-	bh=T2wQkK65vboZ4IeGnr4NbeD+9D8laMYxlcwY9lW95Qo=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=CajqXclDdBJGLyphQJjz+IeKenuRALXYSqUQ/l0ECZDBMHo+jQfdrxJqNej/+Zqz6+b1QX9B7jgzSviclKwEhupdUvO907Rn74htm1FpH9cO7C6XMi0PY5XLacB6ACoHFZruT8oQUEIfPtieUBvxuDziahXKfG+Y5QKaXpZU8gk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=c4+PRLYf; arc=none smtp.client-ip=209.85.128.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1780986154; c=relaxed/simple;
+	bh=wgla+/DQxAUvLuYqJp8l8A47wiL17TD53VIYJwrn7l4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:From:In-Reply-To:
+	 Content-Type:References; b=ZFstNB/atonEhGpul13dtZYzNBM5QmWDcTfkyyXegd7pr/k+x+ytP49+CuToF1KK/AkLJiyAW8sMao5BHNEpT7TfeEXW5iFW6lmuIZ37zNKKh7kt2HOj/TtA5eGpF5n2sA6I2XvbKbz5eYBj0AhwSy3gbWDC9QJPowBTGKh3wlo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com; spf=pass smtp.mailfrom=samsung.com; dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b=kEkid4Lc; arc=none smtp.client-ip=210.118.77.12
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=samsung.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="c4+PRLYf"
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-490cf322ed0so10163575e9.1
-        for <linux-sh@vger.kernel.org>; Mon, 08 Jun 2026 07:28:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1780928900; x=1781533700; darn=vger.kernel.org;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :mime-version:subject:date:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=nCy5icZAFPKbCxn3K3WrZKHkVhOrNfCywaz2Tw/0Yng=;
-        b=c4+PRLYfSizK7opXh5cj1qYnHZKBU5HOolrz1/48cF1y3mCOrDbMK1C9CxUfYsJYqw
-         nFwyfrpmjtGiv3xlQbKtUv33/6XzyLzmL3hUi3XRHhSrzMAzNwcvmDs11knaw+mCoV5d
-         KCR3G79oQrpXz3H/bkx5axQ5AntiOCfnc3ySkzUzQ03qwpFqrpCEx3D4GLCHy5cfFZTq
-         JHPwH0Uh0cuHD4e1++rK7KclkVhGSQY69JkC3goefx+MOtsR7qy4YfIeaBy7ZnmKsfBW
-         BDxyIqb9RXOFzHPvutpfAj+wnsIMDHbSYCQ7Oev5Jle/z6izykTtfZxFVcpTzUjmFNjy
-         okSQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780928900; x=1781533700;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=nCy5icZAFPKbCxn3K3WrZKHkVhOrNfCywaz2Tw/0Yng=;
-        b=ZDZTVPDLHAwOkDsP6N5bkao3R6rKo/H80l681+5sIQcB5gfuVjIxDK05SSvhldeR8J
-         t3ESpj9hy2GDZ0QHNOSmGIp/0svU2/Wse4TXNkOjcjQLKCksBM4MPW6oOeOv+hLheVg3
-         vkzxohqbXQGvceSNG5wWp3WU4XdDK+LLXh38youlnjDtls2LMmnY+GhJTM5/nu+0iHXm
-         Mr+uJ8g7LJqYsSPosuSxilpJ2c9jjNhDsSqYQTJpG5Eugeu25t1BHFB5AFTT/VRYuQ+q
-         SFu8YFK7r+bBiPRo5bnWpAU7+g8EQ7WjQugOoh3JF5En+qHaH9KWhzLxWfGfHS1pBfi/
-         aPkQ==
-X-Forwarded-Encrypted: i=1; AFNElJ+CJm63a+amCfmByDRGkBgE82qJ2YznrA6gFksnwP7SrLULFsxW2qjs+WkDaNP/56ZySvDhUKuyTw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwhY92YU3Zw+tDKZyT31PK0JVxNlnO8TcqRLRLKdsBgxOW41kVQ
-	i56ZNQd3HXDJhWc5lh7vONfB7Sp8aGr4Q3hgnVJmyfb77VB+72jqa5R/
-X-Gm-Gg: Acq92OGGA/1A+JdtjBxqnOTJBOy3cChA52eWZI/0NhptrDzks7b7XIqeZ62cyan8sa5
-	AzL2CXpGgVPkgZpkak8E1KxCR5QFkzlSEL4/4z6X7S4eU0yk3wOww162HtfzBOi5QkTL51IVOA4
-	sTAWHxBmGQ8IcoW0AFtkdotqK9Dg6myhlV6ftprrfr9IFABTG39J0Yc98MRrB6tYXnUTwJ3lTbF
-	Ax+SfsGyEROqoRn3dkz7ZkylzefTd84OC0iat9bQ/yAGEcWWllFnpND1CHu2B8DaUcsYl06yClo
-	6Rb+Gt0QkUf2mGmcdcvgY9/X1jB2WCJB2mArhGuvEI3Uvn62eO+3fnHX3arFIvUGbKD8KH5HlNv
-	QKuvxIe3uyTZLVnXbJZN0KkuC3HW246e3h6hXiHA7+pLq2bYFAgtxD8pQFr1V09KbkRtwGUSGO7
-	3nDwOqbQd8R6pdDmvfWTUMpUZBh/t2IRtv
-X-Received: by 2002:a05:600c:1c13:b0:490:a646:9d75 with SMTP id 5b1f17b1804b1-490c25acd23mr285116345e9.9.1780928899673;
-        Mon, 08 Jun 2026 07:28:19 -0700 (PDT)
-Received: from localhost ([94.53.77.213])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4602cda3651sm41300869f8f.32.2026.06.08.07.28.19
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 08 Jun 2026 07:28:19 -0700 (PDT)
-From: Catalin Iacob <iacobcatalin@gmail.com>
-Date: Mon, 08 Jun 2026 17:29:20 +0300
-Subject: [PATCH v4 5/5] sparc: Remove remaining defconfig references to the
- pktcdvd driver
+	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="kEkid4Lc"
+Received: from eucas1p2.samsung.com (unknown [182.198.249.207])
+	by mailout2.w1.samsung.com (KnoxPortal) with ESMTP id 20260609062228euoutp025c18646a3832e72ee65fa098b39f733d~3VXde3NDQ1039710397euoutp02D
+	for <linux-sh@vger.kernel.org>; Tue,  9 Jun 2026 06:22:28 +0000 (GMT)
+DKIM-Filter: OpenDKIM Filter v2.11.0 mailout2.w1.samsung.com 20260609062228euoutp025c18646a3832e72ee65fa098b39f733d~3VXde3NDQ1039710397euoutp02D
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
+	s=mail20170921; t=1780986148;
+	bh=QNLMOTRHBXi4Z84O461LhX+rEh9cZpG943Cj00l7pcg=;
+	h=Date:Subject:To:Cc:From:In-Reply-To:References:From;
+	b=kEkid4Lc9CpRO/3yyOzVz5QUMceUdCkVZHKebqPeaNlT6tnzDo5I4F3ZPZBXOk8On
+	 5gBBhxvU8QM/nU5ODXUfDdfNgxHBxvxHcEGaliaAtVjJolwf72MxHzOQWCQV2TKj7I
+	 EB7BWOaYJ7qI4rHEe7WKsSSL3IF4YpJayVXGNTyo=
+Received: from eusmtip2.samsung.com (unknown [203.254.199.222]) by
+	eucas1p2.samsung.com (KnoxPortal) with ESMTPA id
+	20260609062228eucas1p211850bcf6ea79ef270bc6fbe29ffafdb~3VXdClAs70378003780eucas1p2G;
+	Tue,  9 Jun 2026 06:22:28 +0000 (GMT)
+Received: from [106.210.134.192] (unknown [106.210.134.192]) by
+	eusmtip2.samsung.com (KnoxPortal) with ESMTPA id
+	20260609062227eusmtip2cece3df82958ee4950f41c056ec8da55~3VXb-fGd70969909699eusmtip2E;
+	Tue,  9 Jun 2026 06:22:27 +0000 (GMT)
+Message-ID: <a1b27e97-182c-485d-a448-56c19c5de2c2@samsung.com>
+Date: Tue, 9 Jun 2026 08:22:26 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Betterbird (Windows)
+Subject: Re: [PATCH v7 15/15] arm64: mm: Unmap kernel data/bss entirely from
+ the linear map
+To: Ard Biesheuvel <ardb+git@google.com>,
+	linux-arm-kernel@lists.infradead.org
+Cc: linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com,
+	mark.rutland@arm.com, Ard Biesheuvel <ardb@kernel.org>, Ryan Roberts
+	<ryan.roberts@arm.com>, Anshuman Khandual <anshuman.khandual@arm.com>, Kevin
+	Brodsky <kevin.brodsky@arm.com>, Liz Prucka <lizprucka@google.com>, Seth
+	Jenkins <sethjenkins@google.com>, Kees Cook <kees@kernel.org>, Mike Rapoport
+	<rppt@kernel.org>, David Hildenbrand <david@kernel.org>, Andrew Morton
+	<akpm@linux-foundation.org>, Jann Horn <jannh@google.com>,
+	linux-mm@kvack.org, linux-hardening@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
+Content-Language: en-US
+From: Marek Szyprowski <m.szyprowski@samsung.com>
+In-Reply-To: <20260529150150.1670604-32-ardb+git@google.com>
+Content-Transfer-Encoding: 8bit
+X-CMS-MailID: 20260609062228eucas1p211850bcf6ea79ef270bc6fbe29ffafdb
+X-Msg-Generator: CA
 Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260608-remove-pktcdvd-references-v4-5-72f88b04cc87@gmail.com>
-References: <20260608-remove-pktcdvd-references-v4-0-72f88b04cc87@gmail.com>
-In-Reply-To: <20260608-remove-pktcdvd-references-v4-0-72f88b04cc87@gmail.com>
-To: Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
- Madhavan Srinivasan <maddy@linux.ibm.com>, 
- Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, 
- "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, 
- Rich Felker <dalias@libc.org>, 
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
- "David S. Miller" <davem@davemloft.net>, 
- Andreas Larsson <andreas@gaisler.com>, 
- "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
- "Martin K. Petersen" <martin.petersen@oracle.com>, 
- Jens Axboe <axboe@kernel.dk>
-Cc: linux-mips@vger.kernel.org, linux-kernel@vger.kernel.org, 
- linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, 
- sparclinux@vger.kernel.org, linux-scsi@vger.kernel.org, 
- Catalin Iacob <iacobcatalin@gmail.com>
-X-Mailer: b4 0.16-dev
-X-Developer-Signature: v=1; a=openpgp-sha256; l=746; i=iacobcatalin@gmail.com;
- h=from:subject:message-id; bh=T2wQkK65vboZ4IeGnr4NbeD+9D8laMYxlcwY9lW95Qo=;
- b=owGbwMvMwCX261qtXAKXKjvjabUkhiy1iwe+fN176W16YWiVeI9314lb07p6Lzj+3W/788muq
- H+7k59N6ShlYRDjYpAVU2R5ce5624Y9ZwLuJdm1wMxhZQIZwsDFKQAT2fWHkWHapXnibIku550W
- mbk6q0jxNRhGT0j+lmLZuitp3hHHL9sYGWbP0NXee8F19p7y7cxsz/zmV57RcN3f5PimMlXv5Um
- OFi4A
-X-Developer-Key: i=iacobcatalin@gmail.com; a=openpgp;
- fpr=F609BFABD84EB5C9DDDC37EDE89C6A3571CD0E33
+X-RootMTR: 20260609062228eucas1p211850bcf6ea79ef270bc6fbe29ffafdb
+X-EPHeader: CA
+X-CMS-RootMailID: 20260609062228eucas1p211850bcf6ea79ef270bc6fbe29ffafdb
+References: <20260529150150.1670604-17-ardb+git@google.com>
+	<20260529150150.1670604-32-ardb+git@google.com>
+	<CGME20260609062228eucas1p211850bcf6ea79ef270bc6fbe29ffafdb@eucas1p2.samsung.com>
 
-Commit 1cea5180f2f8 ("block: remove pktcdvd driver") left behind some
-CONFIG_CONFIG_CDROM_PKTCDVD* references in defconfigs. Remove them.
+Dear All,
 
-Signed-off-by: Catalin Iacob <iacobcatalin@gmail.com>
----
- arch/sparc/configs/sparc64_defconfig | 2 --
- 1 file changed, 2 deletions(-)
+On 29.05.2026 17:02, Ard Biesheuvel wrote:
+> From: Ard Biesheuvel <ardb@kernel.org>
+>
+> The linear aliases of the kernel text and rodata are also mapped
+> read-only in the linear map. Given that the contents of these regions
+> are mostly identical to the version in the loadable image, mapping them
+> read-only and leaving their contents visible is a reasonable hardening
+> measure.
+>
+> Data and bss, however, are now also mapped read-only but the contents of
+> these regions are more likely to contain data that we'd rather not leak.
+> So let's unmap these entirely in the linear map when the kernel is
+> running normally.
+>
+> When going into hibernation or waking up from it, these regions need to
+> be mapped, so map the region initially, and toggle the valid bit so
+> map/unmap the region as needed.
+>
+> Doing so is required because pages covering the kernel image are marked
+> as PageReserved, and therefore disregarded for snapshotting by the
+> hibernate logic unless they are mapped.
+>
+> Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+This commit landed in yesterday's linux-next as commit 63e0b6a5b693
+("arm64: mm: Unmap kernel data/bss entirely from the linear map").
+In my tests I found that it breaks booting of RaspberryPi3 and
+RaspberryPi4 boards with the following kernel panic:
 
-diff --git a/arch/sparc/configs/sparc64_defconfig b/arch/sparc/configs/sparc64_defconfig
-index 632081a262ba..4abea39281cd 100644
---- a/arch/sparc/configs/sparc64_defconfig
-+++ b/arch/sparc/configs/sparc64_defconfig
-@@ -60,8 +60,6 @@ CONFIG_CONNECTOR=m
- CONFIG_BLK_DEV_LOOP=m
- CONFIG_BLK_DEV_CRYPTOLOOP=m
- CONFIG_BLK_DEV_NBD=m
--CONFIG_CDROM_PKTCDVD=m
--CONFIG_CDROM_PKTCDVD_WCACHE=y
- CONFIG_ATA_OVER_ETH=m
- CONFIG_SUNVDC=m
- CONFIG_ATA=y
+kvm [1]: nv: 570 coarse grained trap handlers
+kvm [1]: nv: 710 fine grained trap handlers
+kvm [1]: IPA Size Limit: 40 bits
+Unable to handle kernel paging request at virtual address ffff000003a23000
+Mem abort info:
+  ESR = 0x0000000096000147
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x07: level 3 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000147, ISS2 = 0x00000000
+  CM = 1, WnR = 1, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+swapper pgtable: 4k pages, 48-bit VAs, pgdp=0000000002609000
+[ffff000003a23000] pgd=0000000000000000, p4d=180000003b3ff403, pud=180000003b3fe403, pmd=180000003b3e6403, pte=00e8000003a23f06
+Internal error: Oops: 0000000096000147 [#1]  SMP
+Modules linked in:
+CPU: 3 UID: 0 PID: 1 Comm: swapper/0 Not tainted 7.1.0-rc1+ #16768 PREEMPT
+Hardware name: Raspberry Pi 3 Model B (DT)
+pstate: 80000005 (Nzcv daif -PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : dcache_clean_inval_poc+0x24/0x48
+lr : kvm_arm_init+0xa8c/0x165c
+sp : ffff8000844bbd00
+...
+Call trace:
+ dcache_clean_inval_poc+0x24/0x48 (P)
+ do_one_initcall+0x68/0x4f4
+ kernel_init_freeable+0x24c/0x360
+ kernel_init+0x24/0x1dc
+ ret_from_fork+0x10/0x20
+Code: 9ac32042 d1000443 8a230000 d503201f (d50b7e20)
+---[ end trace 0000000000000000 ]---
+Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
+SMP: stopping secondary CPUs
+Kernel Offset: disabled
+CPU features: 0x00000000,03000008,00040000,0400421b
+Memory Limit: none
+---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b ]---
 
+
+
+> ---
+>  arch/arm64/mm/mmu.c | 45 ++++++++++++++++++--
+>  1 file changed, 41 insertions(+), 4 deletions(-)
+>
+> diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
+> index 7b18dc2f1721..07a6fa210171 100644
+> --- a/arch/arm64/mm/mmu.c
+> +++ b/arch/arm64/mm/mmu.c
+> @@ -24,6 +24,7 @@
+>  #include <linux/mm.h>
+>  #include <linux/vmalloc.h>
+>  #include <linux/set_memory.h>
+> +#include <linux/suspend.h>
+>  #include <linux/kfence.h>
+>  #include <linux/pkeys.h>
+>  #include <linux/mm_inline.h>
+> @@ -1056,6 +1057,29 @@ static void __init __map_memblock(phys_addr_t start, phys_addr_t end,
+>  				 end - start, prot, early_pgtable_alloc, flags);
+>  }
+>  
+> +static void mark_linear_data_alias_valid(bool valid)
+> +{
+> +	set_memory_valid((unsigned long)lm_alias(__init_end),
+> +			 (unsigned long)(__bss_stop - __init_end) / PAGE_SIZE,
+> +			 valid);
+> +}
+> +
+> +static int arm64_hibernate_pm_notify(struct notifier_block *nb,
+> +				     unsigned long mode, void *unused)
+> +{
+> +	switch (mode) {
+> +	default:
+> +		break;
+> +	case PM_POST_HIBERNATION:
+> +		mark_linear_data_alias_valid(false);
+> +		break;
+> +	case PM_HIBERNATION_PREPARE:
+> +		mark_linear_data_alias_valid(true);
+> +		break;
+> +	}
+> +	return 0;
+> +}
+> +
+>  void __init mark_linear_text_alias_ro(void)
+>  {
+>  	/*
+> @@ -1064,6 +1088,21 @@ void __init mark_linear_text_alias_ro(void)
+>  	update_mapping_prot(__pa_symbol(_text), (unsigned long)lm_alias(_text),
+>  			    (unsigned long)__init_begin - (unsigned long)_text,
+>  			    PAGE_KERNEL_RO);
+> +
+> +	/*
+> +	 * Register a PM notifier to remap the linear alias of data/bss as
+> +	 * valid read-only before hibernation. This is needed because the
+> +	 * snapshot logic disregards PageReserved pages (such as the ones
+> +	 * covering the kernel image) unless they are mapped in the linear
+> +	 * map.
+> +	 */
+> +	if (IS_ENABLED(CONFIG_HIBERNATION)) {
+> +		static struct notifier_block nb = {
+> +			.notifier_call = arm64_hibernate_pm_notify
+> +		};
+> +
+> +		register_pm_notifier(&nb);
+> +	}
+>  }
+>  
+>  #ifdef CONFIG_KFENCE
+> @@ -1193,10 +1232,8 @@ static void __init map_mem(void)
+>  			       flags);
+>  	}
+>  
+> -	/* Map the kernel data/bss read-only in the linear map */
+> -	__map_memblock(init_end, kernel_end, PAGE_KERNEL_RO, flags);
+> -	flush_tlb_kernel_range((unsigned long)lm_alias(__init_end),
+> -			       (unsigned long)lm_alias(__bss_stop));
+> +	/* Map the kernel data/bss as invalid in the linear map */
+> +	mark_linear_data_alias_valid(false);
+>  }
+>  
+>  void mark_rodata_ro(void)
+
+Best regards
 -- 
-2.54.0
+Marek Szyprowski, PhD
+Samsung R&D Institute Poland
 
