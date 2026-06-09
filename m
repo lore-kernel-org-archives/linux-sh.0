@@ -1,130 +1,122 @@
-Received: from mail-ua1-f47.google.com (mail-ua1-f47.google.com [209.85.222.47])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3635738E5C5
-	for <linux-sh@vger.kernel.org>; Tue,  9 Jun 2026 09:55:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CFCF24048A3;
+	Tue,  9 Jun 2026 12:21:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780998931; cv=none; b=FTWBO2S+NSKplWZzL/JAcTIolgbb75Y29jWI/BP9YnQUeg64hHmawqamPHfqBJDMR+smAVDr52u1oBA15zywko2uwEANdQJLXB0KlcusqGp8N7DLoNn/O2vdd/V95+c89i/zDVnVdJmZae9/WfU3rxkbQjlzQeLWoJ8IeGl8YZM=
+	t=1781007681; cv=none; b=V6+3TIU7Rg7BnUXHm3bU/IOb/kusKss/SZQ81xjdB3t/29CyJe2LL/ArfR3BJ8McBPlb0V0xULb1l4FD6rk4Q0dN73PT9eSkYRFKwJauPVFa5rfmDeO99N6J1sk5GfdEoEwJmtETEKomCwP+X9Rz8i7UqHXUc7ZQeIsEtoMrZow=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780998931; c=relaxed/simple;
-	bh=LMAkeVaZptDMfPIXMRgnhcXwRYr1AtJoIiiI7hhG/Hg=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=aQMOdYtjQtyhpYHvRgX1id6EVTO+9cg8B3WG8vLvHYDTE5fTPdSEJ6LH6QVExv/QlH0FOIMMOuDDOkyTcFUWXWrYmQpe0QFsJPhQvgAwu2+pqy79uknXZ29C9vKqQr/4Wks5FUOETPRjRdQ8ab47h4NFSRKfIlCCSmRkVWag66A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.47
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-ua1-f47.google.com with SMTP id a1e0cc1a2514c-96358d0a024so3661160241.3
-        for <linux-sh@vger.kernel.org>; Tue, 09 Jun 2026 02:55:30 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780998929; x=1781603729;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=J/QDHCd1pzNPKIKT6XsNCXh/My/ujozGgvsOiDCA3LA=;
-        b=lfhlmd7M8qWUOojnmIr8vVpUckcRirr3MTIUHE1eJj0WymT5QZQ03dQRsA3wSohnCK
-         LUYLKj3Ucv2jtNRXtqRkYD+qeByJZJPon9wFcZxfuOAhLG0ZAtFu1EXgzX1s73AngTuf
-         kZ7LzRdb/GQU644rQnEYccM9ax0ZA8YjWoF4sZ99S75xGvOJL1DfBn9T6uQvfU36/zFP
-         EzRNcNSeLVu66ks1cSDFg+x2zkkv9RtKyx83wDZV5VkY0EB+UlKJCJoZ0xr+dA+i/5Ku
-         tVbQULs7LBxh54a9JeSWcluViAueDetmnS3d4f/yM1GrPFtWN2One1uwzYNoBWMXrQ+S
-         mELw==
-X-Forwarded-Encrypted: i=1; AFNElJ//WQ+Gk17KGnrMHCyjGW3QaTSctQyH2mPsrOD1Q4OzRuwavdEeMiUreLmNxxy50jSvLBCTp7bDOQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy1BBOxD0NdVW6P7UhI9tZBfEWLpugyUUVpUSAoKm9W0G/LpWS7
-	6CxgQjHG1jsWWGtI5MCWxnpHozVqIQveZLw1Z1yHYmAuEi8MhW/lrjLT/Ite1Mc6
-X-Gm-Gg: Acq92OFyJAgsf3aeFV2xA3DCQBk048HqNb2VgLif8DsZPIVaDW0wGkQkgSgDhP3ZZTu
-	dsQ0xpA/xJn6yw1iV60VFa5oOV8uAaCi+VEcbgu6j4jPm+/sC0Ei2TqXepb/xiBwHisN69lRuXQ
-	ICnVzIecy+2vxf+ZX7d9Xop7mZAPqIpzbFkesVp+4q54nmR35D9lBOB+uN78P6lCHTM7rfsSsg0
-	H+XrvUr89g3GAZDkahQVsWZB3Juiv1owxaBzAX3sL5L32j4p1Lc3FXXfR5pMuLc8wFiNxbVaKyn
-	LioU97X6PW7a0Xtlx5YegvvaexIe218DF874YWCiwCSOxOGA95teupOHeX8dwCBaGFDMGUW5f10
-	DeQoa1pT+mrWwy+++YeNNz+H+t1+y0VWIOJog/O1ryB37inFbjTkiAd6Go3skxQuJqGazwbyFSv
-	ve09ux34qDTEdrP2d67kGs+JI1T+/TqQFkfGfvEV8AlYjsV2BQUHWiPGU1jRsDV9V1/ZJNooE=
-X-Received: by 2002:a05:6102:548c:b0:639:1e8b:ecd9 with SMTP id ada2fe7eead31-6fefa23308cmr9731075137.20.1780998929023;
-        Tue, 09 Jun 2026 02:55:29 -0700 (PDT)
-Received: from mail-vs1-f43.google.com (mail-vs1-f43.google.com. [209.85.217.43])
-        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-96414115a93sm15416462241.9.2026.06.09.02.55.25
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 09 Jun 2026 02:55:26 -0700 (PDT)
-Received: by mail-vs1-f43.google.com with SMTP id ada2fe7eead31-6c534af2470so3506031137.3
-        for <linux-sh@vger.kernel.org>; Tue, 09 Jun 2026 02:55:25 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ+eNALIc0EwBIbeYSc6GvB404zXXPOMrkotXzOXS34jVcXDYOw+IHBMN20mp5dbRGwDrjpLB5cYog==@vger.kernel.org
-X-Received: by 2002:a05:6102:149a:b0:636:984a:1e5d with SMTP id
- ada2fe7eead31-6fef05f052fmr11135049137.11.1780998924802; Tue, 09 Jun 2026
- 02:55:24 -0700 (PDT)
+	s=arc-20240116; t=1781007681; c=relaxed/simple;
+	bh=BWUt1+RB/jCkrdpsMBXD2NcEwLIyRgW5iHsIFh5hGtk=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=qsMGYSU9EcDgA8qVPPpcmZTge9ILBNaQH1Bozojv6Fs/xX7XqLkCqWcCIxTJNSk5A5f6hliuX1SclnfB7Q/9iX8FLpb2LogB4rV1OGuVkCUPxFnU7pN5aGGyo01QCRQNaSj6d4wrg1w1p6+9WAgjAI6d+/T0vgvUIRT+mhSvbxg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=VYk4/1zZ; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="VYk4/1zZ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=OGU1CgChEeCgPS7G5LflryCr8OO4qfeKLQ2OoufI8hw=; t=1781007678;
+	x=1781612478; b=VYk4/1zZcL0TESJA5iyFSkgJTzxmyOgxGdOuCqUMjVxjKjhpqCIek/PBtQZzI
+	ZD6BACtFjJM1P/nY1GxN6+k9N74W0YRThEvizWIZbixjyC4bUwY37/GT5ljjdaXWK1ntYBS1KfV3u
+	oAXRriuzvXPty+DTyaB2YgOswJHMqKuG9M+h26Uueeenz3DC3LFUoMsbq8d78j10KsvoL5giDmAuE
+	kq6sIzhpW1pdBmgaJoWDKzNr2Hzw7IKtIcKP2Z4gn3gSFxXNqWTaCKETvQ1J5D06vokmAjrx0NsED
+	yvbF8DXmJ9s2llfbm3eY1Ej/mBOp+fFbpPPDZmQAFCpk5Ex+xA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1wWvSD-00000002cav-3h2R; Tue, 09 Jun 2026 14:21:13 +0200
+Received: from p57bd94c1.dip0.t-ipconnect.de ([87.189.148.193] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1wWvSD-00000001us6-2Nae; Tue, 09 Jun 2026 14:21:13 +0200
+Message-ID: <fa7d7af8a780c27f85e29c518ba45e39ab18abad.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/3] ASoC: simple-card: remove platform data style
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Mark Brown <broonie@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, 
+ Geert Uytterhoeven <geert+renesas@glider.be>, Jaroslav Kysela
+ <perex@perex.cz>, Liam Girdwood <lgirdwood@gmail.com>,  Linus Walleij
+ <linusw@kernel.org>, Rich Felker <dalias@libc.org>, Takashi Iwai
+ <tiwai@suse.com>, Yoshinori Sato	 <ysato@users.sourceforge.jp>,
+ linux-sh@vger.kernel.org, 	linux-sound@vger.kernel.org, Kuninori Morimoto
+ <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 09 Jun 2026 14:21:12 +0200
+In-Reply-To: <178094130630.20828.12708103059145547835.b4-ty@b4>
+References: <87zf1le4fu.wl-kuninori.morimoto.gx@renesas.com>
+	 <178094130630.20828.12708103059145547835.b4-ty@b4>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260529150150.1670604-17-ardb+git@google.com>
- <20260529150150.1670604-32-ardb+git@google.com> <CGME20260609062840eucas1p1d49831bfdb3447e38a3cadc803a9afc0@eucas1p1.samsung.com>
- <a1b27e97-182c-485d-a448-56c19c5de2c2@samsung.com> <6a9c0f55-fe98-4063-864b-8f7e1f4fefd7@samsung.com>
-In-Reply-To: <6a9c0f55-fe98-4063-864b-8f7e1f4fefd7@samsung.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 9 Jun 2026 11:55:13 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdV-rH7s6GD4FtiKP9++3c2ojwZKm=YGLM_S_+nkj+EBtw@mail.gmail.com>
-X-Gm-Features: AVVi8CfDur0wzec2mY_1awm30cbHrLvunVYojJnvz6Cb53IUltKkdZGFSORVN6A
-Message-ID: <CAMuHMdV-rH7s6GD4FtiKP9++3c2ojwZKm=YGLM_S_+nkj+EBtw@mail.gmail.com>
-Subject: Re: [PATCH v7 15/15] arm64: mm: Unmap kernel data/bss entirely from
- the linear map
-To: Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: Ard Biesheuvel <ardb+git@google.com>, linux-arm-kernel@lists.infradead.org, 
-	linux-kernel@vger.kernel.org, will@kernel.org, catalin.marinas@arm.com, 
-	mark.rutland@arm.com, Ard Biesheuvel <ardb@kernel.org>, Ryan Roberts <ryan.roberts@arm.com>, 
-	Anshuman Khandual <anshuman.khandual@arm.com>, Kevin Brodsky <kevin.brodsky@arm.com>, 
-	Liz Prucka <lizprucka@google.com>, Seth Jenkins <sethjenkins@google.com>, 
-	Kees Cook <kees@kernel.org>, Mike Rapoport <rppt@kernel.org>, David Hildenbrand <david@kernel.org>, 
-	Andrew Morton <akpm@linux-foundation.org>, Jann Horn <jannh@google.com>, linux-mm@kvack.org, 
-	linux-hardening@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
-	linux-sh@vger.kernel.org, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Tue, 9 Jun 2026 at 08:28, Marek Szyprowski <m.szyprowski@samsung.com> wrote:
-> On 09.06.2026 08:22, Marek Szyprowski wrote:
-> > On 29.05.2026 17:02, Ard Biesheuvel wrote:
-> >> From: Ard Biesheuvel <ardb@kernel.org>
-> >>
-> >> The linear aliases of the kernel text and rodata are also mapped
-> >> read-only in the linear map. Given that the contents of these regions
-> >> are mostly identical to the version in the loadable image, mapping them
-> >> read-only and leaving their contents visible is a reasonable hardening
-> >> measure.
-> >>
-> >> Data and bss, however, are now also mapped read-only but the contents of
-> >> these regions are more likely to contain data that we'd rather not leak.
-> >> So let's unmap these entirely in the linear map when the kernel is
-> >> running normally.
-> >>
-> >> When going into hibernation or waking up from it, these regions need to
-> >> be mapped, so map the region initially, and toggle the valid bit so
-> >> map/unmap the region as needed.
-> >>
-> >> Doing so is required because pages covering the kernel image are marked
-> >> as PageReserved, and therefore disregarded for snapshotting by the
-> >> hibernate logic unless they are mapped.
-> >>
-> >> Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
-> > This commit landed in yesterday's linux-next as commit 63e0b6a5b693
-> > ("arm64: mm: Unmap kernel data/bss entirely from the linear map").
-> > In my tests I found that it breaks booting of RaspberryPi3 and
-> > RaspberryPi4 boards with the following kernel panic:
+Hello Mark,
 
-Seeing the same panic on R-Car H3 ES2.0 (Cortex A57/A53), but not
-on R-Car V4M (Cortex A76).
+On Mon, 2026-06-08 at 18:55 +0100, Mark Brown wrote:
+> On Wed, 27 May 2026 06:45:26 +0000, Kuninori Morimoto wrote:
+> > ASoC: simple-card: remove platform data style
+> >=20
+> > Hi
+> >=20
+> > SuperH ecovec24/7724se are the last user of Simple Audio Card as
+> > "platform data style". It is mainly supporting "DT style" in these days=
+.
+> >=20
+> > [...]
+>=20
+> Applied to
+>=20
+>    https://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git for-=
+7.2
+>=20
+> Thanks!
+>=20
+> [1/3] sh: ecovec24: remove FSI/DA7210/Simple-Audio-Card support
+>       https://git.kernel.org/broonie/sound/c/9cc93ebc85e7
+> [2/3] sh: 7724se: remove FSI/AK4642/Simple-Audio-Card support
+>       https://git.kernel.org/broonie/sound/c/deadb855b694
+> [3/3] ASoC: simple-card: remove platform data style
+>       https://git.kernel.org/broonie/sound/c/325fea33e141
+>=20
+> All being well this means that it will be integrated into the linux-next
+> tree (usually sometime in the next 24 hours) and sent to Linus during
+> the next merge window (or sooner if it is a bug fix), however if
+> problems are discovered then the patch may be dropped or reverted.
+>=20
+> You may get further e-mails resulting from automated or manual testing
+> and review of the tree, please engage with people reporting problems and
+> send followup patches addressing any issues that are reported if needed.
+>=20
+> If any updates are required or you are submitting further changes they
+> should be sent as incremental updates against current git, existing
+> patches will not be replaced.
+>=20
+> Please add any relevant lists and maintainers to the CCs when replying
+> to this mail.
 
-> One more comment - reverting 63e0b6a5b693 and 53205d56212c (dependent
-> change) on top of next-20260608 fixes this issue.
+I actually wanted to keep the driver and convert it to using device-trees,
+not remove it. We have an out-of-tree patch for switching SuperH to device-
+tree support.
 
-Confirmed, too.
+Adrian
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
