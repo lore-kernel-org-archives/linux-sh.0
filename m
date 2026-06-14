@@ -1,121 +1,97 @@
-Received: from mail-dl1-f67.google.com (mail-dl1-f67.google.com [74.125.82.67])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4562F946A
-	for <linux-sh@vger.kernel.org>; Sat, 13 Jun 2026 21:05:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.67
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A03B3955E5;
+	Sun, 14 Jun 2026 10:33:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781384714; cv=none; b=D+mvkvj1+98cm0fmDCTLbz+IfEhYqiYIOsgggdil7F2TxMmqTbfHbanqdY8UR8CmGDVKpaP9gftIXoYO9fiHd44cVyorr312unGqKvloxcgv/XYyTotb4eFQZDh6Y1wm5bv3tUrBsKXEx+xBHDOzmK67ItYQFrdzV+XAmlq8PDM=
+	t=1781433236; cv=none; b=t9pcoPgoIGU7UicjX8xuJiDqrcmdrCaF4i0htV7WBYbG1hEdcx1qdZsHLLJA0yLJP07O32Jfs41REKBl5e0ViqauyKzZ+RXoY/b823NTJ3xTQ2HC+CqeEg73OTy8YUP2RM2ByPXnbu3K5EvOzFyZOTH95gbUNwM0s8Wr8UClZpU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781384714; c=relaxed/simple;
-	bh=sQ1bHeXlmv2zvCrmFzv0dQ6WZkwe7KorVnbWqi6TovE=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=fBmCPpRqg4uckOt6baSN5qHcvDZ8L0IlgL4xniNw1v5EiubgLY/zqMNIOYUIoJlrlKGiKiPfqPTfK4Zf/lCkywO9X29APbvbra8weXG69/ay+mfeSj8j9K2JM67CLKpVBISV0+A2lQ+GRIOeprLc4QmM+P5SftNvRnp+OMUy7yY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=i3tKKIuA; arc=none smtp.client-ip=74.125.82.67
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1781433236; c=relaxed/simple;
+	bh=7yCTHQvaHgTR9R09RzhiFDRkvW0mVPNNaN8Ar5I4NqE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=HZRD4648F82bJfljOVYY5j78BRfp/fE409i7gtTzhtrrcfRGqTNgxlkuB9qzVm/9ARhhtxVGgD2YcgA2/gR/xXAAMBX7/PICLd6qtcTGowwO1jku0bGG+woDvWvJ6rdaI69PC8By6W0OegPmAFOKDH9D3xGcfBuUtsguBDO/ngY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=D4O033mF; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="i3tKKIuA"
-Received: by mail-dl1-f67.google.com with SMTP id a92af1059eb24-13817614cd3so4455434c88.0
-        for <linux-sh@vger.kernel.org>; Sat, 13 Jun 2026 14:05:13 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1781384712; x=1781989512; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=mTL4bCKNzFCC7f7clVeIyBIMDmq1NZNC6ZSIw8RM0DQ=;
-        b=i3tKKIuAc97rHGIeeBpLWne1Gn4glANygwxd4H1oOBkC8JY5XycOXn8d1fn3inhiZL
-         4lgAlufS3VlUuDzHc+qOOOfXKU0SP4c5zK9EpHtw0XznGkERs9z+LI0ewV+kmqd8zT1Y
-         q5jbGfLPalSteCadIVNgijIjvYHpLxry9vqYWsjbBx9yhpMmkYoHxUs2mreHZ67ulwJN
-         fYddF0qVgSc/we0/gxcoz2h04Z7lFRH8FlpLLkNzyzVL8KyyYLxp3bbwbr0cVfCBess4
-         otMGqbz9hiJo6YarlgrKnpbZnJnRednHPqq+2UTHzZd0Y+S+hci8eHO9tJvccGURM/tG
-         uZwA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781384712; x=1781989512;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=mTL4bCKNzFCC7f7clVeIyBIMDmq1NZNC6ZSIw8RM0DQ=;
-        b=nPem2n9ezC5grcfXXyMvgULrf4EiePyPlBhWBkvqs3o9QmSJmy884PPGb53hN0yf8B
-         l/EiY+V8dQ050cZY11piVAriKQuDgxKa+hoEdNsSOPFBtOQjUlqhe0yCbSXL8dkYG4pz
-         UoYLOeP6LzjV5f8dTtxV/FtghOqdZCrMy9iFDeY9BjxJdgXUCrbExMvp7kDcLvEULIfX
-         YEeveaONDrp/3gZZR/9kXtgMAh1AuIhX9fJJ9I6IhO3upppkbcdA9Uazys963gRZWjoc
-         CrYAmvklq3xM9V+wzJSyyBciEoAMigHvcFm8V+AacJls7W9MBxYvk9vOQPm0Ba7XnGNO
-         mi6Q==
-X-Forwarded-Encrypted: i=1; AFNElJ9KhhfDHqyzKujH1Z4u1giANxUgVY0LrKBNWwp89wMy7uginzOxSm0Yj0aTmqlx/rzOx6nW6L9EYA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yx5dz/fg0miaYLMNvIZuUAKL6Cw6IvKWIXGuOhEpF1UkV7P/7TS
-	sV7oxhP+zr6hTIz/N03wcfva1oTmTv23ei0jAqDgfVQmOU5OwEWmCKpJ
-X-Gm-Gg: Acq92OGF/eJiNnP0phx6GZv5sa5Uef3YcHdQQPnskX7xMEc3DIdUPwkgzY5u7W7zOgL
-	BTPpnu6Arq8cbGJbdXfxcZjj3CVSoy5x0Not6aL0lX7Qlpk1db5rIPdS9eMSPlcGh9UsAAt0Gvy
-	LSegRYN5S1RLoHgXiY/7ULMgbJifZ2HTu6nzkpTAz/tL0ZCGkF5BCUeVVfaIOgCTyOWhiFfdueU
-	SX1MrdbyTy5/a4G1YA/otqEBeLDvQp9bixYheKtBK/eLwY1NddRGQwfKy4+vxHzkYZrn6TIfxNw
-	cLWhm6XBmmP6N7kgUxEt4OsKrOfHaXFvEdIonaoSN8/WfHrWIeVeB5JBem0U/QwZTNivmfr0vCy
-	BFca7ZCyXByTlJ2V5DBpo4/TzwqLSHGdKfpf6vyizv13uttvMVHsEYGc7fJlmwGeqzryud9nf+G
-	sOWgfKuZCjOQV5bSgKnaKCUO8VDsWUFhtfZ4i1eUf1ZZIhMiBnFr0EkknfcTEEpgAvtqJlSAdnk
-	cX3eCGP+He/u903PTLMSzasJiZnyWm8Rv2PUMKk1U2u6UdfAFSLYrqX0kR6pDQKCVtDkCMNoi8Z
-	635BSAncwNeushAPPg==
-X-Received: by 2002:a05:7022:61a3:b0:12d:de3e:cbfe with SMTP id a92af1059eb24-1386f3a0e82mr2304469c88.37.1781384712221;
-        Sat, 13 Jun 2026 14:05:12 -0700 (PDT)
-Received: from ethan-latitude5420.. (host-127-24.cafrjco.fresno.ca.us.clients.pavlovmedia.net. [68.180.127.24])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1384b97bf09sm6174994c88.14.2026.06.13.14.05.11
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 13 Jun 2026 14:05:11 -0700 (PDT)
-From: Ethan Nelson-Moore <enelsonmoore@gmail.com>
-To: "GitAuthor: Ethan Nelson-Moore" <enelsonmoore@gmail.com>,
-	linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Subject: [PATCH] sh: mm: Remove checks for nonexistent CONFIG_CPU_SUBTYPE_ST40
-Date: Sat, 13 Jun 2026 14:05:04 -0700
-Message-ID: <20260613210507.83434-1-enelsonmoore@gmail.com>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="D4O033mF"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 10AD01F000E9;
+	Sun, 14 Jun 2026 10:33:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1781433233;
+	bh=fNZGt5jAdvGJ9FE8m2dMOVkQl0H6oyUWqUmCHO4bEDo=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=D4O033mFlKeba1PLOGOiRmaKT0HE5hCywAb2SmHaWTLg7Si9bZXSFsGSHQ2W5zmqQ
+	 ys03YqOtdxF4fiW61Q7KcV8HbOnyBKxBgn95LV/qvejr8YcPGFLfykFMYKao9DmxIh
+	 QSmkssstKxU22KEdn6XIPYm8omxvYWxxIVeh31P5IMP6p93MOWrlHgBD/00hQSuS+4
+	 8u/nCwXfb4s7Lr/quIEefgn3MuMlBtPNP57E34hRse3Dzti0yLPt/ngnQOhg+UDG+w
+	 zT5HCGNe7QMMaCdgWcJRrG6ut0rmGxAbJds9ctsWLOSmxhHdR+0u0H4buLOVBx3nkg
+	 mMyv6PUIGqE2g==
+Date: Sun, 14 Jun 2026 13:33:47 +0300
+From: Mike Rapoport <rppt@kernel.org>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>, Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-kernel@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH v2 00/10] sh: remove NUMA and SPARSEMEM support
+Message-ID: <ai6Diz0UgSGccbhY@kernel.org>
+References: <20260510135546.13554-1-rppt@kernel.org>
+ <agr7XvoWn_-axX1-@kernel.org>
+ <adb1db8d1fbb9d219fa041776ae863aa2fc09270.camel@physik.fu-berlin.de>
+ <aiBI_QEmeVSBb2HY@kernel.org>
+ <865aaa7aa64ab69ca9020d64d86baa8d9b700bcb.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <865aaa7aa64ab69ca9020d64d86baa8d9b700bcb.camel@physik.fu-berlin.de>
 
-The CONFIG_CPU_SUBTYPE_ST40 option was removed in commit f96691872439
-("sh: Kill off the remaining ST40 cruft."), but a check for it remained
-in arch/sh/include/cpu-sh4/cpu/mmu_context.h. Remove this dead code.
-Also remove the definition of and references to the MMUCR_SE bit mask,
-because it is defined as zero on all CPUs other than ST40.
+Hi Adrian,
 
-Discovered while searching for CONFIG_* symbols referenced in code but
-not defined in any Kconfig file.
+On Tue, Jun 09, 2026 at 09:21:37AM +0200, John Paul Adrian Glaubitz wrote:
+> Hi Mike,
+> 
+> On Wed, 2026-06-03 at 18:32 +0300, Mike Rapoport wrote:
+> > On Mon, May 18, 2026 at 02:05:39PM +0200, John Paul Adrian Glaubitz wrote:
+> > > Hi Mike,
+> > > 
+> > > On Mon, 2026-05-18 at 14:43 +0300, Mike Rapoport wrote:
+> > > > Gentle ping?
+> > > 
+> > > It's on my TODO list for this week!
+> > 
+> > It's sad to see this being dragged since mid April (if we count v1 and
+> > there were really minor changes in v2).
+> 
+> I apologize. I am doing the maintenance as a hobby in my free time, it's
+> not my primary job and it can sometimes take me a bit longer to take up
+> changes.
+>
+> > If you don't have time to take care of that, just say so and we'll take
+> > this via one of the mm trees in the next cycle.
+> 
+> It should be better this week. I've been recently busy with CVE fixes during
+> my dayjob and the workload was extremely high.
+> 
+> I am not going to let this slip, don't worry. It's just been a bit too much
+> stress the past weeks due to the AI CVE reporting.
 
-Signed-off-by: Ethan Nelson-Moore <enelsonmoore@gmail.com>
----
- arch/sh/include/cpu-sh4/cpu/mmu_context.h | 8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
-
-diff --git a/arch/sh/include/cpu-sh4/cpu/mmu_context.h b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-index 421b56d5c595..4a6148e1ea84 100644
---- a/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-+++ b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
-@@ -43,12 +43,6 @@
- #define MMUCR_URC		0x0000FC00
- #define MMUCR_URC_SHIFT		10
+I understand that this is a hobby for you and there are a day job and other
+obligations and you don't have time for timely responses for arch/sh
+patches.
  
--#if defined(CONFIG_32BIT) && defined(CONFIG_CPU_SUBTYPE_ST40)
--#define MMUCR_SE		(1 << 4)
--#else
--#define MMUCR_SE		(0)
--#endif
--
- #ifdef CONFIG_CPU_HAS_PTEAEX
- #define MMUCR_AEX		(1 << 6)
- #else
-@@ -69,7 +63,7 @@
+I just don't understand why do you insist on taking this via sh tree given
+you don't have the resources to timely deal with the patches.
+
+This set can perfectly go via mm tree as it cleanups a memory management
+feature that should not have been added to sh at the first place.
  
- #define MMU_NTLB_ENTRIES	64
- #define MMU_CONTROL_INIT	(MMUCR_AT | MMUCR_TI | MMUCR_SQMD | \
--				 MMUCR_ME | MMUCR_SE | MMUCR_AEX)
-+				 MMUCR_ME | MMUCR_AEX)
- 
- #define TRA	0xff000020
- #define EXPEVT	0xff000024
+> Adrian
+
 -- 
-2.43.0
-
+Sincerely yours,
+Mike.
