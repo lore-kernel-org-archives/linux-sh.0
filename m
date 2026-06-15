@@ -1,99 +1,127 @@
-Received: from mail-vk1-f171.google.com (mail-vk1-f171.google.com [209.85.221.171])
+Received: from mail-dl1-f65.google.com (mail-dl1-f65.google.com [74.125.82.65])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 921D115A864
-	for <linux-sh@vger.kernel.org>; Mon, 15 Jun 2026 12:35:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1EE183B9929
+	for <linux-sh@vger.kernel.org>; Mon, 15 Jun 2026 22:41:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.65
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781526953; cv=none; b=L+x7qPHGp5zx3hbZ7aNx/CopYP+3HqqxgjQSPhNnu62Qj1mgPdPstVo2giQZ/NSoZAuqRHblkINcJBFFMnJCQl70zvW3THPUc4HSpK4KAwxvffef1efoZT03IiwmQ0bVzMdCtmrvmOpbDs9cOdw/SfJKa6S/VuxiElTJjMKSD40=
+	t=1781563271; cv=none; b=utoFZ8STz+HcTkQLEswvSCrELDE9/cBQBEsG+u5MvnVkkEW3F9WTZNowQNTigQifEjfwBILJsNUYSt2jlDUnw+T1TSbZ+2tOWORn5IAx1OTaLtt0R/gj5E6LCMGFv88EbAn004GXyrkZx4iOblio1/NLpV9AQHIqqB3LmdtjTAg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781526953; c=relaxed/simple;
-	bh=ZxxbUIAchJR3cP+k2TmINVvV5KvbqL5mo6wnHVLaKKQ=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=WLvAo0LcifgBL6au35AtarmR7FLa6MYL0GUL4Bs05L9rffa95oD6/fdD+wMvNKbDefz7qMm1tsUhnwJa0jpgfHm07Ti57eY9zzMvBtNnNVHymSuqmECltmH8Zs41H+owIdszQ2VaA6qxbzzn7+ccMpJgyOIKtcoL7wiY7R3HfuQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+	s=arc-20240116; t=1781563271; c=relaxed/simple;
+	bh=tI5z0nPgDSY8GNZiGBwBMs7QuHhlWzL2L6aDMk7tof8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Y8FkAoRrF/IltWi8wzWO5157yFPFChqtWv+WVsSoxrN2ofV5KG7TlLcWOPpqHPrMe40GfTZQtHvO0PUMH2jMjgHnM29stuRlXA+KG1PukczP5shN6lALPIrmxjsdWselixF3CWmY4NnYuvAK73eJ31sIs/4l8WXpbgN16TXsOsQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=B2zhzwy4; arc=none smtp.client-ip=74.125.82.65
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vk1-f171.google.com with SMTP id 71dfb90a1353d-59ebcbfb2b0so1142324e0c.2
-        for <linux-sh@vger.kernel.org>; Mon, 15 Jun 2026 05:35:48 -0700 (PDT)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="B2zhzwy4"
+Received: by mail-dl1-f65.google.com with SMTP id a92af1059eb24-13986d61b4eso320077c88.0
+        for <linux-sh@vger.kernel.org>; Mon, 15 Jun 2026 15:41:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1781563269; x=1782168069; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=sluTHDdEFnjsZhTNB5XteUlBeqYlx2vBtEHvRnRLYHY=;
+        b=B2zhzwy4+KtlBGopE8MI30E21kdGRbaynoNPl/+TRNeEzD+awcpldnpjqID2TPOdi2
+         LVlg1uE/x1mfCRsOK8vYSNbDQ/TMZo12OcNI42T+coWb8r2LHcvLT/CJKuaMHlM1WlLQ
+         w/0ZUe959sIJ7kCUG8O8XMu6hBWQ35DmUu0Eg1K5K+Tbm7iI0AgzAl3up3HFRq6mf5Yd
+         QEHlL7Hb8x5yRg9SeiQWLBtM2luMLAgHdokkrFWsC5Jur/8mhMNXVRxhiGyy9t/sYv2i
+         +gZxUklj5uPfPDJjhbciTagXLU1DqAUpOSV2rFt7IHBUMPVVbdscpgrflXOGF36F7i6w
+         9iIg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781526947; x=1782131747;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20251104; t=1781563269; x=1782168069;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=2gxVEv+iNOheSBHEFKvja9Fp92xq6/wCgbx9bqoVAHM=;
-        b=AZWu+UTf5+SkNy94fDmHoMmsmZjePlneezGLznr1awmilRmJTBeCLwzW2KT9FTM6H+
-         FHEsMuxwuENhpmVvvVlzntDabw/02iOmHupMFAQD0iMRAyEetjSc7Tirfv9zSjnNBbBS
-         0+KLir9MFxEdllGZVRlbOP6UBLMHTrxG6s5zYYIDA7hQDrHpLw3YVLsDN7pdEu+fxd0C
-         JLkwwmnLVLaPbTc+QdUq2odfxBHm2Qgpc44b7oY1cKFcfiIRUz2nCpOb1Ve6LR9T07li
-         jhaiCF3cpmbP/kMGwVf1bhPFaS9/P79VciEgvAKGXooEkmFxpdMiIWYNZ1xavXYDkauN
-         akbA==
-X-Gm-Message-State: AOJu0Ywls9RljNXaCwqWKvp2pAGw6VaUC7zxU2dM8XIHuJYeRAVt+2YL
-	umFoJp4seexFrN9BesZcxyfhQpTmgLXtm4LRj87g4rj5FgzZudIt2pMETr6hCR0y
-X-Gm-Gg: Acq92OE/x7fgo+zUaWLDTf0GXSjzVDMFNhBTFiARii2BxpkJkY0IGjlX5J/noBmMFNQ
-	C9oce6yDzZA0tQ/8SNmMg2Dg7aQWv16iivFbGeuNMZr2WdwuqvCVl5hcOQdqg/ZynJmedwGKnv2
-	3yPgmulXwJ5MwwUDJTj0Aq0RfmzPfzI9nu3THrJSptR5b3dalJkceH1xAfYsP9Hfs2KYxwYOe6/
-	YPLzMgiFLftcTEbpQmLGX+DRLcBLwvuEPJwSAUrkx/+4zO1dn+D4A+hNAUcX/cdv3RTjFli87Wh
-	TZgrU3lrGCVyjTu9xegJSjG1E5aKdqVtGp4x8NcBKtav+5Gbd4WMKkUNrowCIEYTZTnhiFkmmcC
-	WUDJZnCAX6qJLkQuIUJVeZ2i/Tv3C51j4sR+j4WKD0dX/AOKVUPGahp6G1AthuNPMTBJWfv1qSr
-	G39F4v+Cm1hWCBCp/K8SX8jKd1Vdpqk37NnwAZZPmBiLuOlHeSQlWgqrTl6OD2
-X-Received: by 2002:a05:6122:a1e:b0:575:29ef:7e13 with SMTP id 71dfb90a1353d-5bb79a36480mr4386708e0c.3.1781526946940;
-        Mon, 15 Jun 2026 05:35:46 -0700 (PDT)
-Received: from mail-vs1-f44.google.com (mail-vs1-f44.google.com. [209.85.217.44])
-        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-5bb901b8a45sm3266758e0c.15.2026.06.15.05.35.44
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 15 Jun 2026 05:35:45 -0700 (PDT)
-Received: by mail-vs1-f44.google.com with SMTP id ada2fe7eead31-6efdb57d98fso702610137.3
-        for <linux-sh@vger.kernel.org>; Mon, 15 Jun 2026 05:35:44 -0700 (PDT)
-X-Received: by 2002:a05:6102:809f:b0:631:4cda:3e86 with SMTP id
- ada2fe7eead31-71f60e104cdmr4374130137.24.1781526944245; Mon, 15 Jun 2026
- 05:35:44 -0700 (PDT)
+        bh=sluTHDdEFnjsZhTNB5XteUlBeqYlx2vBtEHvRnRLYHY=;
+        b=ldHTO6pZADQHlrNVdmfe/VgyoOcgVxIzSNjAGn1bw/DsOVknDan8lffV3gnSSPExd8
+         LgoUTZx20zO8+niLivEusjv7uFu5M3wLH7k5KE67o6z8B/Lpk0K2eF7r9Vvk13VRAjPk
+         KHXgkg6XXjL19idTu8U9YunvPkEvttIo0e83wRZKTt8EHeYwYMVbzJz5NormjqwAIWvC
+         pmL2ujNZV0ITHUDXLpNLLiEXjDOJ9jt/hLj0s5XMWE93FznF1wr8aPpy7L7HJK3TRWcU
+         1/OfmTFm22DSjAgoozRvoTAt/nMh9ZC+n78p4fAwxborAm2GylrrtmRXFDGLpNukCt4B
+         i1CQ==
+X-Forwarded-Encrypted: i=1; AFNElJ/sfo+tedxTCLQ+f5fDwC7wE0YYLol0FjgLsfrJe3GlCMJxcGcIoXhZhyToceYA6/6WAFiYkWMCrw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwfvrVX8Pmrzxg3p5OhlDjaFgmZ5YGt8k97MZ9clugeu5D+LKHS
+	4SofUXHXYDhiNVk2wvEF02HKkhN+6BjUE/7vzVO1/YLOvId/TzI3gG88v40yzWqDPwc=
+X-Gm-Gg: Acq92OHPl5+2m0cq9tMtBhakw6CSAg8S+21Eb5Zu9dp684dFpKwjljBliFpalmNwjEd
+	k7v5bnR/CqaUrzLlr2+Y6vvcI2o0AjMtqFPpnKcoHOq/BW9DYIYIBlLqS+rje3VaC2WKHhkkGNe
+	DkEtweGVaYXUH54nSmqMw3gQ5JT+WUM39dPm3UuNk5gzl5kyD6FJFjgfbeQRNrt+ipBdyQ90Qj6
+	G50oOF3jHVmqVV3DvlGfHy/A+y37qKwJLliVhXVrKer39DWVaB678RZ/qHpxZUlm5LCXcOVIhU+
+	G0SCpac8dqDTtXRgR0+jnJ6pxpJ58wPXiuAlhL0JaA+Fm5d7G50Z2xWit5N2/9/BHnI/hmfKD7c
+	LauyXwIfJe6j11NnVjGEW6BIWM7k4ydIInbxocjZaFRICJqwzRQhCPq4DUF4wLiTU26WZPWk+be
+	65kAKBSvF8LRsBlIOExrgZ+KE+JEOSOV3zbUDyqBedNatT2Qk715ecHGSakceCeBiGT7/xl1KJS
+	b682A7QuZmmlDNipmfa2S5X38HVq4x84w5Z8E2PgYZ72z27yJ0TvDoe8PEfIlUX2F4djQaTLBNw
+	cXPo32Ro6g+yizyH8Q==
+X-Received: by 2002:a05:7022:6890:b0:12d:c730:c7f with SMTP id a92af1059eb24-13985f391b7mr451449c88.33.1781563269073;
+        Mon, 15 Jun 2026 15:41:09 -0700 (PDT)
+Received: from ethan-latitude5420.. (host-127-24.cafrjco.fresno.ca.us.clients.pavlovmedia.net. [68.180.127.24])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1384b9815a6sm11911466c88.15.2026.06.15.15.41.08
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 15 Jun 2026 15:41:08 -0700 (PDT)
+From: Ethan Nelson-Moore <enelsonmoore@gmail.com>
+To: Geert Uytterhoeven <geert+renesas@glider.be>,
+	Ethan Nelson-Moore <enelsonmoore@gmail.com>,
+	linux-sh@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Subject: [PATCH v2] sh: mm: Remove checks for nonexistent CONFIG_CPU_SUBTYPE_ST40
+Date: Mon, 15 Jun 2026 15:40:48 -0700
+Message-ID: <20260615224049.19649-2-enelsonmoore@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260613205657.82194-1-enelsonmoore@gmail.com>
-In-Reply-To: <20260613205657.82194-1-enelsonmoore@gmail.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 15 Jun 2026 14:35:33 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdU3Tc54Sr2UOSK0N+=0TC2DhxMzeS7rccBCSNTo1fWJUw@mail.gmail.com>
-X-Gm-Features: AVVi8CfwEnwCLUbawwLX3Vm6ScjfNhFWdtwLnJwMWEH_PNxj06WCqI2TFJV0rS8
-Message-ID: <CAMuHMdU3Tc54Sr2UOSK0N+=0TC2DhxMzeS7rccBCSNTo1fWJUw@mail.gmail.com>
-Subject: Re: [PATCH] sh: dma: Remove checks for nonexistent CONFIG_CPU_SUBTYPE_SH7730
-To: Ethan Nelson-Moore <enelsonmoore@gmail.com>
-Cc: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hi Ethan,
+The CONFIG_CPU_SUBTYPE_ST40 option was removed in commit f96691872439
+("sh: Kill off the remaining ST40 cruft."), but a check for it was
+added later in commit d02b08f6e8b184ff ("sh: Clean up places that make
+29-bit physical assumptions."). Remove this dead code. Also remove the
+definition of and references to the MMUCR_SE bit mask, because it is
+defined as zero on all CPUs other than ST40.
 
-On Sat, 13 Jun 2026 at 22:57, Ethan Nelson-Moore <enelsonmoore@gmail.com> wrote:
-> Two headers in arch/sh/include contain references to
-> CONFIG_CPU_SUBTYPE_SH7730, which has never existed in the kernel.
-> Remove these references.
->
-> Discovered while searching for CONFIG_* symbols referenced in code but
-> not defined in any Kconfig file.
->
-> Signed-off-by: Ethan Nelson-Moore <enelsonmoore@gmail.com>
-
-Thanks for your patch!
-
-I did some diving into git history, and none of these seem to be a
-typo a different symbol.
+Discovered while searching for CONFIG_* symbols referenced in code but
+not defined in any Kconfig file.
 
 Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ethan Nelson-Moore <enelsonmoore@gmail.com>
+---
+Changes in v2: Correctly indicate that the check was added after ST40
+support was removed (thanks Geert)
 
-Gr{oetje,eeting}s,
+ arch/sh/include/cpu-sh4/cpu/mmu_context.h | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-                        Geert
-
+diff --git a/arch/sh/include/cpu-sh4/cpu/mmu_context.h b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
+index 421b56d5c595..4a6148e1ea84 100644
+--- a/arch/sh/include/cpu-sh4/cpu/mmu_context.h
++++ b/arch/sh/include/cpu-sh4/cpu/mmu_context.h
+@@ -43,12 +43,6 @@
+ #define MMUCR_URC		0x0000FC00
+ #define MMUCR_URC_SHIFT		10
+ 
+-#if defined(CONFIG_32BIT) && defined(CONFIG_CPU_SUBTYPE_ST40)
+-#define MMUCR_SE		(1 << 4)
+-#else
+-#define MMUCR_SE		(0)
+-#endif
+-
+ #ifdef CONFIG_CPU_HAS_PTEAEX
+ #define MMUCR_AEX		(1 << 6)
+ #else
+@@ -69,7 +63,7 @@
+ 
+ #define MMU_NTLB_ENTRIES	64
+ #define MMU_CONTROL_INIT	(MMUCR_AT | MMUCR_TI | MMUCR_SQMD | \
+-				 MMUCR_ME | MMUCR_SE | MMUCR_AEX)
++				 MMUCR_ME | MMUCR_AEX)
+ 
+ #define TRA	0xff000020
+ #define EXPEVT	0xff000024
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.43.0
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
