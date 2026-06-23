@@ -1,76 +1,43 @@
-Received: from mail-pl1-f180.google.com (mail-pl1-f180.google.com [209.85.214.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from m16.mail.163.com (m16.mail.163.com [220.197.31.2])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 035CB344044
-	for <linux-sh@vger.kernel.org>; Tue, 16 Jun 2026 18:30:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.180
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9BCCB3A7F45;
+	Tue, 23 Jun 2026 04:29:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=220.197.31.2
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781634627; cv=none; b=hAVtyhsSJjWk9JpNnhDKA58bZUkB2mW2jvJbWEYmThdlTHLk0LsaYH3iF2F4T6S4sitp0avQg5Cs2BUMR9Rd+7SlOS+CB6XHEehew/rx2se9yg9LzFcT5UNi17Q07q9Ci42bjgzt2QKDnke2Johq7lFnpu8mE89pxvMA4cagrC4=
+	t=1782188987; cv=none; b=S+YMbx2233Gqa6JahqeYDgpvY03EHn8uj4/uOl7Chq3Km6vRdTn5EPhXSeAk39dCP3jXyl5xfHWWnJlMP2OVX3nOZA/voGS4BozLRJLUep6wq0gRz9+P6OY1sO6prs1n3slccvcoqBKuvonalbgrmhVgRnPh1J0GfYCUDq1rIU4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781634627; c=relaxed/simple;
-	bh=dybo8/HrHeGrJGasUpHRaqT8xbB02VCrzfApuMlEzCs=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=NPZQObsRdhPkb5GStCJ8egzSYKu7KiPTRwAMnblI5EbFXToeuQgw/0R7RPOHBACB/LUG1WhCfpEgPScnPyjocpeHdIYI/i5cuGGxnL6VGyopGxa8xae0NEpZWVH79jSv+BohR/ydAFG5suCZSrLfWbotNVNdT3R2VPkUJji9FLw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iO9AK9QN; arc=none smtp.client-ip=209.85.214.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1782188987; c=relaxed/simple;
+	bh=bmpLJSgX+RIY1ri9NWuJ6HCMJlhYQM2bPINuA4Vurow=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=Gtn1ww8um9gSjGFyMF24bArA2fOr6nQJJNL6DUDjWybJr363+20hgB3eRbXZKIkZl80UkSrKlb4C7AtwQ1/j8WGr9L7F+bCBdLhLv+rEYABpPhdZxmHD+QxY+2eLvLeggGePzNE1AMzWzRHonpx/tpMhzQy38dtfus3u1vKcJLI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=cgOIxT+S; arc=none smtp.client-ip=220.197.31.2
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iO9AK9QN"
-Received: by mail-pl1-f180.google.com with SMTP id d9443c01a7336-2c0c1e0b0faso31092685ad.0
-        for <linux-sh@vger.kernel.org>; Tue, 16 Jun 2026 11:30:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1781634625; x=1782239425; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=VtnXNaxn+fspW0Xw1nKXB6TGSGdVBv01OAGdj8wNpN0=;
-        b=iO9AK9QNKZ1IT2DAT8O1Mcvvx2XZ5Yr327SVGETMj6+5xFRx7/Bx90Jqvjt7WViJhI
-         qbFJC3Dun40Yj4SaS7b6t7RGzznpcJhMIU/ZURvOyM+HXqZJk7w9Guspb67dFvapISMO
-         NYq0dGS8YsC3K/Dj1mEi3Idgn9mFImY3YV2sVEOA9CJxY931JmCiK2tkZnvydgwe9lwq
-         WfxlPBanBfAdjoZZb7erSgSIhsVJ2Nlnqkd7cMRe79dusfxADMV60DX00cKcRXHuvUEA
-         koKOvdQ0B9iJjS8mAPWYy3G1SUnQTh3Jv6WohZ7ayK99HxEpNqSCjjrpxWcTe3JNXUsx
-         9sJg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781634625; x=1782239425;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=VtnXNaxn+fspW0Xw1nKXB6TGSGdVBv01OAGdj8wNpN0=;
-        b=bKvfzGrUQCLY4AsvseK9c+Mbm0ZFakY6fpnYU0+iFSPFMWf/EPDbH0CM/q4jG4l8hr
-         s2MN4M9fO0lN53SnCWBblu0scfCK+QVQGs/yOm3Jfr4rPFBaaimo6zM6MlwsELUoc8kk
-         rgKFfjIDAwb8wYe1yn/rRg85lFUq3BoHuMTR1gEaxh2+2I4qXoBagIpJhdrjTFjZ8owB
-         LuxH9T3HLY22fkhCvT4TUH/XEnKjmpQMJo+Eu+T9J/pXS2YSgoABHXL1OdJRAqKHS+yk
-         FUI0sK1GTJvAVwNFj1bjJEAZGdv0d40xdG2S7XLMPsfn0KN/bFTh/ZU8NP20uM14i0IL
-         7cZA==
-X-Forwarded-Encrypted: i=1; AFNElJ+yZz0Sge9pv01Fl0Ud5JU715YvNx38jWjOYUNTcz8xsIvlvRFAuUV1JR31ij6HpHPLGAKh8eY1Hg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwDM4/vlcQbLH33NqFconhZGh6KMFI1/XyqPGF908QQOoWHq/A4
-	vX2KoUIXl0wEdmCj+q5932EpO4jmj+ReB7ZWply2+RCFyopPDgkB01WPwk5oDmcP
-X-Gm-Gg: AfdE7clZk0CusRCuh3dL4JCOSdIBweilXZYBJPDLqkzY3VtJGNXBdi8ME9ZTbjWNFkv
-	VOytDtkyeDwyOJpSM45z8AU3XH/WoiF0v32K0vVQkRKplYlqlH9zg4+VqoE1Qb7qAPJnuxoBrpF
-	oEFnWj5FyIB7WTjKDud2JEmKOHwRmACnce3M3cfhG4Jn0+70BEFFAVBtZH+sdog+0JbSFcqJfOI
-	7gAJfRy6WR5FjgxUIhr/+2+wU0ntd/6RK2Muj9g1vdmav9IpCgf+8atHZS0zU7P8zzFpXcXaViv
-	4tcEkr7y7Ujvv+p2YlhstwvqkfBvXNyJF/d+Q1IQh1Uy8Y+w97fYqA2j1AVmU+DuF5WL20K+NDo
-	3dtd05Spzkf1i3Ljz4gM8B4m5QIpfSuCFt/mEGUeU0Wve38siCJ/p02VDtJVg+Ta9MXxPIcILg5
-	nnV4OLiSsyO4q4TME6WA==
-X-Received: by 2002:a17:903:32d1:b0:2bc:f1ef:2e64 with SMTP id d9443c01a7336-2c6bc0c8905mr2089075ad.12.1781634625343;
-        Tue, 16 Jun 2026 11:30:25 -0700 (PDT)
-Received: from ubuntu.. ([110.9.142.4])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c43345e3ffsm141092685ad.71.2026.06.16.11.30.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 16 Jun 2026 11:30:24 -0700 (PDT)
-From: Sang-Heon Jeon <ekffu200098@gmail.com>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Sang-Heon Jeon <ekffu200098@gmail.com>,
+	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="cgOIxT+S"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
+	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=cz
+	DA/l/r6tobiENhQQytmV9iR2dM6o13JMKGj1WvYFs=; b=cgOIxT+SnF//zAk16C
+	EeTxkkW3K5IvEI9UIdWV9NXDbcdD8VFoUM+sl1icGZGVl08kshfg8qmatNMcr2Xc
+	DEtGzFCAk6dgmpSuwwrmnM+XP/cKlYWjQ1KejfSNLrRI+hDXrSR1JIxwxTZFFkAy
+	aSeNjJT2jt1rOd5wT8me11AtQ=
+Received: from localhost.localdomain (unknown [])
+	by gzsmtp1 (Coremail) with SMTP id PCgvCgAH7ElRCzpqavWXDA--.46123S2;
+	Tue, 23 Jun 2026 12:28:03 +0800 (CST)
+From: Haoxiang Li <haoxiang_li2024@163.com>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	lethal@linux-sh.org,
+	damm@igel.co.jp
+Cc: linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	linux-sh@vger.kernel.org
-Subject: [PATCH 2/5] sh: remove unreachable memblock_reserve() return value check
-Date: Wed, 17 Jun 2026 03:29:53 +0900
-Message-ID: <20260616182959.2429774-3-ekffu200098@gmail.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260616182959.2429774-1-ekffu200098@gmail.com>
-References: <20260616182959.2429774-1-ekffu200098@gmail.com>
+	Haoxiang Li <haoxiang_li2024@163.com>,
+	stable@vger.kernel.org
+Subject: [PATCH] sh: kfr2r09: Fix USB gadget I2C adapter reference leak
+Date: Tue, 23 Jun 2026 12:28:00 +0800
+Message-Id: <20260623042800.1848398-1-haoxiang_li2024@163.com>
+X-Mailer: git-send-email 2.25.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -78,39 +45,63 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-CM-TRANSID:PCgvCgAH7ElRCzpqavWXDA--.46123S2
+X-Coremail-Antispam: 1Uf129KBjvJXoW7try3Gr45tw4kKr13JFWrZrb_yoW8Xr45pa
+	yDuFs5CFyjvr9Yyr48Zrs2vw45urs7trW3CFsrKasrC3ZYq34UXw1rXr9avF15JryIva48
+	Gw4DKr1rXa1jkF7anT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
+	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x0pRBnm_UUUUU=
+X-CM-SenderInfo: xkdr5xpdqjszblsqjki6rwjhhfrp/xtbC7RMAbmo6C1MLPgAA3t
 
-reserve_crashkernel() runs from early_reserve_mem() in paging_init(),
-before the same function calls memblock_allow_resize(). At that point
-memblock_reserve() either succeeds or panics, never returning an error.
+kfr2r09_usb0_gadget_i2c_setup() gets I2C adapter 0 with
+i2c_get_adapter(), but returns without dropping the reference.
+Release the adapter with i2c_put_adapter() before returning
+from all paths after i2c_get_adapter() succeeds.
 
-Therefore the return value check is unreachable, so remove it and the
-related logic.
-
-No functional change.
-
-Signed-off-by: Sang-Heon Jeon <ekffu200098@gmail.com>
+Fixes: 5a1c4cb5bc22 ("sh: add r8a66597 usb0 gadget to the kfr2r09 board")
+Cc: stable@vger.kernel.org
+Signed-off-by: Haoxiang Li <haoxiang_li2024@163.com>
 ---
- arch/sh/kernel/machine_kexec.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ arch/sh/boards/mach-kfr2r09/setup.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/kernel/machine_kexec.c b/arch/sh/kernel/machine_kexec.c
-index 37073ca1e0ad..ba9c412f14d9 100644
---- a/arch/sh/kernel/machine_kexec.c
-+++ b/arch/sh/kernel/machine_kexec.c
-@@ -165,12 +165,7 @@ void __init reserve_crashkernel(void)
- 			goto disable;
- 		}
- 	} else {
--		ret = memblock_reserve(crashk_res.start, crash_size);
--		if (unlikely(ret < 0)) {
--			pr_err("crashkernel reservation failed - "
--			       "memory is in use\n");
--			goto disable;
--		}
-+		memblock_reserve(crashk_res.start, crash_size);
- 	}
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 70236859919d..66c0015ec726 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -368,7 +368,7 @@ static int kfr2r09_usb0_gadget_i2c_setup(void)
+ 	msg.flags = 0;
+ 	ret = i2c_transfer(a, &msg, 1);
+ 	if (ret != 1)
+-		return -ENODEV;
++		goto err;
  
- 	crashk_res.end = crashk_res.start + crash_size - 1;
+ 	buf[0] = 0;
+ 	msg.addr = 0x09;
+@@ -377,7 +377,7 @@ static int kfr2r09_usb0_gadget_i2c_setup(void)
+ 	msg.flags = I2C_M_RD;
+ 	ret = i2c_transfer(a, &msg, 1);
+ 	if (ret != 1)
+-		return -ENODEV;
++		goto err;
+ 
+ 	buf[1] = buf[0] | (1 << 1);
+ 	buf[0] = 0x13;
+@@ -387,9 +387,14 @@ static int kfr2r09_usb0_gadget_i2c_setup(void)
+ 	msg.flags = 0;
+ 	ret = i2c_transfer(a, &msg, 1);
+ 	if (ret != 1)
+-		return -ENODEV;
++		goto err;
+ 
++	i2c_put_adapter(a);
+ 	return 0;
++
++err:
++	i2c_put_adapter(a);
++	return -ENODEV;
+ }
+ 
+ static int kfr2r09_serial_i2c_setup(void)
 -- 
-2.43.0
+2.25.1
 
