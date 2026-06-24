@@ -1,21 +1,21 @@
 Received: from cstnet.cn (smtp81.cstnet.cn [159.226.251.81])
 	(using TLSv1.2 with cipher DHE-RSA-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC3571E5207;
-	Wed, 24 Jun 2026 08:18:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 03585346AE3;
+	Wed, 24 Jun 2026 08:19:32 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=159.226.251.81
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782289133; cv=none; b=ZL0THwrl9D6JQTdBGBk8K46VzP8vjy1lFnA8aDKDNA959vdwMFe5iRi4p3XdVGVtV75zTH59aJAj52KS5R8kdGIvaxmFicVaAT6NtaO40XoBAnb+2E2KZe4wBiutRk1vycwXvh6oUbcX7gOzHL8feuCyaFWKh22MQtXVjWWk3Do=
+	t=1782289174; cv=none; b=MydYMxFsoq9ivWdfY+aICLhvM95KdvMrz1jQNyzu9dtcCkuI8xyfvcbk6BlHlOwlISDbZqrzB+lVJIC7/ewZ1ddZ1pwc+1OuLoE30p8EPfhHk6+idT5GGLxCeUhdxcPrD4fw2+QzVxKPXHpkf5OpsbmKoLnR2oXU8j8RPhaRPNs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782289133; c=relaxed/simple;
-	bh=MR6VI1/CYg46dyGjc6VG+3i7HWt54TmY9g8Sfr8Pj78=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=nmZj/hS65fxN8K8BEgPlwJcOc8J99jhSzMmVIFckU96NKuWOK+Gsth223cc9eUrUxy2B11NE1D9fjnsKqv6snwr+U7X58Au2eKYXm76Jbmrq/kxSTAuHl9HidCuyAOfjKi+OfM6aIx9dGXxkFJKUxbUZF0Mly2E/Vby9lTk/6fo=
+	s=arc-20240116; t=1782289174; c=relaxed/simple;
+	bh=WMCfETlY6On4NXbfxcoFIMzb5TnxnRSu4dU3fAplPs4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=bi68X0cxfC0g8obZF0T51SaLPdjZlQNL93UAGicl5cximg+tZmuNGe2aCENz5GQAd75fMXIfARPD94U/6NLq289XexHmvVPFb5ATnUIiVFA/CXWKSjVEjF8NjKe3nSqt2bpGrBbynNGZ/BrS2DItSA5bKwdEyFY1TS+wTCnJoc4=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=iscas.ac.cn; spf=pass smtp.mailfrom=iscas.ac.cn; arc=none smtp.client-ip=159.226.251.81
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=iscas.ac.cn
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=iscas.ac.cn
 Received: from localhost.localdomain (unknown [111.196.245.140])
-	by APP-03 (Coremail) with SMTP id rQCowABnPJPjkjtqbhGwFQ--.14676S2;
-	Wed, 24 Jun 2026 16:18:44 +0800 (CST)
+	by APP-03 (Coremail) with SMTP id rQCowAAH5pwOkztqsBWwFQ--.24089S2;
+	Wed, 24 Jun 2026 16:19:26 +0800 (CST)
 From: Pengpeng Hou <pengpeng@iscas.ac.cn>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
@@ -23,9 +23,9 @@ To: Yoshinori Sato <ysato@users.sourceforge.jp>,
 Cc: Pengpeng Hou <pengpeng@iscas.ac.cn>,
 	linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH] sh: defconfig: Enable the current M66592 UDC symbol
-Date: Wed, 24 Jun 2026 16:18:43 +0800
-Message-ID: <20260624081843.7864-1-pengpeng@iscas.ac.cn>
+Subject: [PATCH] sh: Use generic OHCI platform provider symbol
+Date: Wed, 24 Jun 2026 16:19:26 +0800
+Message-ID: <20260624081926.12426-1-pengpeng@iscas.ac.cn>
 X-Mailer: git-send-email 2.50.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -34,10 +34,10 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:rQCowABnPJPjkjtqbhGwFQ--.14676S2
-X-Coremail-Antispam: 1UD129KBjvJXoWxJry5Cr17Ar1rGr15Ww4fAFb_yoW8AFW7pr
-	W8JrZxtF4kAFnYyFW7CFZ2gFZ8tFnrAryUZF4UZr13Ary8A3yUZws8tr17ArsFqrZ3JFW0
-	vF93K3ZIya18Ca7anT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
+X-CM-TRANSID:rQCowAAH5pwOkztqsBWwFQ--.24089S2
+X-Coremail-Antispam: 1UD129KBjvJXoW7uFy3Cr4rZF1kJr13AryrJFb_yoW8tFWUpr
+	Zayw13WrykXFsavay7CrWkK3yrXas7JFZrCwsYyF17Jrykt34rZw4kXrWxJryDGr93Ja4r
+	GFyrKa43Ja1UA3JanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
 	9KBjDU0xBIdaVrnRJUUUkK14x267AKxVWUJVW8JwAFc2x0x2IEx4CE42xK8VAvwI8IcIk0
 	rVWrJVCq3wAFIxvE14AKwVWUJVWUGwA2ocxC64kIII0Yj41l84x0c7CEw4AK67xGY2AK02
 	1l84ACjcxK6xIIjxv20xvE14v26w1j6s0DM28EF7xvwVC0I7IYx2IY6xkF7I0E14v26r4U
@@ -53,54 +53,66 @@ X-Coremail-Antispam: 1UD129KBjvJXoWxJry5Cr17Ar1rGr15Ww4fAFb_yoW8AFW7pr
 	UUUUU==
 X-CM-SenderInfo: pshqw1xhqjqxpvfd2hldfou0/
 
-The M66592 UDC provider object is built under `CONFIG_USB_M66592`:
+The old SuperH-specific `USB_OHCI_SH` provider symbol no longer carries
+an OHCI provider object.  The current platform OHCI provider is
+`USB_OHCI_HCD_PLATFORM`, which builds ohci-platform.o.
 
-  obj-$(CONFIG_USB_M66592) += m66592-udc.o
-
-Several SuperH defconfigs still enable the stale
-`CONFIG_USB_GADGET_M66592` symbol.  Replace it with the current provider
-symbol so the intended UDC remains enabled.
+Several SH CPU subtypes still select `USB_OHCI_SH`, and the
+sh7757lcr defconfig still enables it directly.  Switch both the subtype
+selects and the defconfig to `USB_OHCI_HCD_PLATFORM` so the intended OHCI
+provider remains reachable when `USB_OHCI_HCD` is enabled.
 
 Signed-off-by: Pengpeng Hou <pengpeng@iscas.ac.cn>
 ---
- arch/sh/configs/migor_defconfig   | 2 +-
- arch/sh/configs/sdk7786_defconfig | 2 +-
- arch/sh/configs/shx3_defconfig    | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+ arch/sh/Kconfig                  | 8 ++++----
+ arch/sh/configs/sh7757lcr_defconfig | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/configs/migor_defconfig b/arch/sh/configs/migor_defconfig
---- a/arch/sh/configs/migor_defconfig
-+++ b/arch/sh/configs/migor_defconfig
-@@ -72,7 +72,7 @@ CONFIG_LOGO=y
- # CONFIG_LOGO_LINUX_VGA16 is not set
- # CONFIG_LOGO_LINUX_CLUT224 is not set
- CONFIG_USB_GADGET=y
--CONFIG_USB_GADGET_M66592=y
-+CONFIG_USB_M66592=y
- CONFIG_USB_G_SERIAL=m
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_RS5C372=y
-diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
---- a/arch/sh/configs/sdk7786_defconfig
-+++ b/arch/sh/configs/sdk7786_defconfig
-@@ -147,7 +147,7 @@ CONFIG_USB_MON=y
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -331,7 +331,7 @@ config CPU_SUBTYPE_SH7720
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+ 	select SYS_SUPPORTS_SH_CMT
+-	select USB_OHCI_SH if USB_OHCI_HCD
++	select USB_OHCI_HCD_PLATFORM if USB_OHCI_HCD
+ 	select PINCTRL
+ 	help
+ 	  Select SH7720 if you have a SH3-DSP SH7720 CPU.
+@@ -341,6 +341,6 @@ config CPU_SUBTYPE_SH7721
+ 	bool "Support SH7721 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select USB_OHCI_SH if USB_OHCI_HCD
++	select USB_OHCI_HCD_PLATFORM if USB_OHCI_HCD
+ 	help
+ 	  Select SH7721 if you have a SH3-DSP SH7721 CPU.
+@@ -426,5 +426,5 @@ config CPU_SUBTYPE_SH7763
+ 	bool "Support SH7763 processor"
+ 	select CPU_SH4A
+-	select USB_OHCI_SH if USB_OHCI_HCD
++	select USB_OHCI_HCD_PLATFORM if USB_OHCI_HCD
+ 	help
+ 	  Select SH7763 if you have a SH4A SH7763(R5S77631) CPU.
+@@ -452,5 +452,5 @@ config CPU_SUBTYPE_SH7786
+ 	select CPU_HAS_PTEAEX
+ 	select GENERIC_CLOCKEVENTS_BROADCAST if SMP
+-	select USB_OHCI_SH if USB_OHCI_HCD
++	select USB_OHCI_HCD_PLATFORM if USB_OHCI_HCD
+ 	select USB_EHCI_SH if USB_EHCI_HCD
+ 	select PINCTRL
+diff --git a/arch/sh/configs/sh7757lcr_defconfig b/arch/sh/configs/sh7757lcr_defconfig
+--- a/arch/sh/configs/sh7757lcr_defconfig
++++ b/arch/sh/configs/sh7757lcr_defconfig
+@@ -58,8 +58,8 @@ CONFIG_HWMON is not set
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_EHCI_SH=y
  CONFIG_USB_OHCI_HCD=y
+-CONFIG_USB_OHCI_SH=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
  CONFIG_USB_STORAGE=y
- CONFIG_USB_GADGET=y
--CONFIG_USB_GADGET_M66592=y
-+CONFIG_USB_M66592=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_MAX6900=y
- CONFIG_RTC_DRV_SH=y
-diff --git a/arch/sh/configs/shx3_defconfig b/arch/sh/configs/shx3_defconfig
---- a/arch/sh/configs/shx3_defconfig
-+++ b/arch/sh/configs/shx3_defconfig
-@@ -79,6 +79,6 @@ CONFIG_USB_MON=y
- CONFIG_USB_R8A66597_HCD=m
- CONFIG_USB_GADGET=y
--CONFIG_USB_GADGET_M66592=y
-+CONFIG_USB_M66592=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_SH=y
- CONFIG_UIO=m
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
 
