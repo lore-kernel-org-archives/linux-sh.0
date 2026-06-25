@@ -1,102 +1,98 @@
-Received: from mail-ua1-f52.google.com (mail-ua1-f52.google.com [209.85.222.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 172513242B2
-	for <linux-sh@vger.kernel.org>; Wed, 24 Jun 2026 18:16:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CF3A12C534;
+	Thu, 25 Jun 2026 06:45:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782324997; cv=none; b=GqBgbsDXWHB6N8Pei+2XBoEvPiNXhZoDudVWCJnMzQ/3PCAes2VuXozm1V24ya0hc65OvixReqYF+poe2NDey2zym+qORZR6ouWFOqVaruFCTAA7UPggzrgyNmXxHEkEAJUSEfrJsFwrpCEnBPlKSLaWSDeiqyNp88X/qbdMOrs=
+	t=1782369923; cv=none; b=Pj44yiX8STvwvqjjH0Y6XWjX6Qa0qk+k10W3lAX2j00qzSafDXWU15J0r0Z/Qg/7ANPnxaOymGh/jPUqI+KkSg34F8GHxoO8prYFe7BBSkRyHNJXIovxNanh9seC9w9RkkGQqM+mOwTC245MjHz3v/5wYUxyut9veu3x9EmslMU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782324997; c=relaxed/simple;
-	bh=si2MsK86RKsAVxCGmSGxaqdFuqqha87EfQYHc/flpzc=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=EXW7RWxm2+ch69+vqGZOwqJVAlJwmXOSfZbzwqXBg3COKnvs++NpravMoW+h0ffz6oE9FU1p9ub7+WkxKfSzdvs1pyIxe3wqy9F74e4TOaQxrPcAR/viN7+RfrNJtVIH0uo1dWt1EeWwb3fu2e+cHABGuhOw1uvgZQAFzV9BxrA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-ua1-f52.google.com with SMTP id a1e0cc1a2514c-96757a30368so233285241.3
-        for <linux-sh@vger.kernel.org>; Wed, 24 Jun 2026 11:16:35 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782324995; x=1782929795;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=OxSrwJpDjC3/fB6S9qNc2EAdtDOl/HY8Vjw/qQYpH8k=;
-        b=WebVAgnoYQ5j4uIMqeM33Bl1COHyZF5B7EPleMl68xLAMpZcsji7DcNlFMJaBC2WcY
-         J+eJ70+CTFUA2dgGoaEpfoekJxxdy9UBSwtctfYtjwjFwDjF/Qy1Vk1MqhesJx4FUa9U
-         imV7o6CcEgOHJZ2pKAaPj1B1rPLrKA7zdduKWVX084r4u1AoB3oUVeQ19ZD6bUb24r9A
-         Nx/PPpkp60jQFsOBHsAlMLV0wzBFdbwAy8SCJK2oylKCtZmduxV4dx/Lv0gCYU1hwjO9
-         eD8M6/13DC4cfgn7lsKMBP3jAeX51ZLp1uZO3MnORSKGPUuI8InZcrS2nx9p76Jz3llM
-         /T7g==
-X-Forwarded-Encrypted: i=1; AHgh+RrCeuM/RJKyeGIGnMDrJFRs3MkyIa19FP4FtKCd/H2F6LqhWgXmtCIehIpQXclBBSLQVy6anYU0rw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwG6HTXQ9Co2Cezv6siK22TpLyig+SFJz79gj1I7lrWu7HmkOkp
-	RgAfcvBXo5SQ/BGbIa5fzUF54U6P00CKx6++K6eTX9R1KrYnl5HZKQcfz8oVkkIt
-X-Gm-Gg: AfdE7ckocuWDN/XUGnKquvtobLZlVybz7rLGXr9cq3VPOMmq/yiEsjuPFoyczCwtmUJ
-	nvAY7mZdHa1R0m2iel9KXHCqIpD6hjpUDYSYrVyW9PiPY/2cNw+HH5+Q6v8HSQnyimLqWWuSPnm
-	tvKqMQ2PrEa4XLklrSYdO5x6brM4vWNMC24Db4kkaCQN2Qailgx27qpcV/cgjYoYqo8hvXpCjag
-	ccwdn2ZogYGA5t9mnbh6sZtub74kfwJww/MDrrJfspbaxRqKQ/T5U+i7B7ep+T1v39UDOefMJQ+
-	QJ+WTAjUJDH9kiHQ1ENB4njZ5EKM07aX7fBs/e9IyVglrMiiIa7hjwOOedfIhxk+qDC9er53S+r
-	dw8oHJOwYW5ucKREAbJTVAp5sYmP5JmfMEppQ5AIFJ9tiTUbw8Hd8fXWEc9wVZ+RCmfd0N6bOTJ
-	IPqERAalyKM+n6PwOb+rvMA3WHnCmyWVf1Hradfs18dHixNtAvIa79HAp1S2oI
-X-Received: by 2002:a05:6102:4bce:b0:6cc:f252:6929 with SMTP id ada2fe7eead31-73114d070d4mr2714239137.16.1782324990051;
-        Wed, 24 Jun 2026 11:16:30 -0700 (PDT)
-Received: from mail-vs1-f54.google.com (mail-vs1-f54.google.com. [209.85.217.54])
-        by smtp.gmail.com with ESMTPSA id ada2fe7eead31-730e0090ef7sm1881104137.1.2026.06.24.11.16.29
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 24 Jun 2026 11:16:29 -0700 (PDT)
-Received: by mail-vs1-f54.google.com with SMTP id ada2fe7eead31-730ac3bec38so492895137.2
-        for <linux-sh@vger.kernel.org>; Wed, 24 Jun 2026 11:16:29 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+Rox7A7TcR06msnsJPaDsBrb0wqT3YwAtfjFhJg9EPc3Yie5TmvkptEDIz/e80oODuVvJSuEEp+jUw==@vger.kernel.org
-X-Received: by 2002:a05:6102:290e:b0:650:94b2:3839 with SMTP id
- ada2fe7eead31-731133d26e1mr2822267137.7.1782324988834; Wed, 24 Jun 2026
- 11:16:28 -0700 (PDT)
+	s=arc-20240116; t=1782369923; c=relaxed/simple;
+	bh=dy89IrAXyiN+3qymd4TLpp3KL+bih7ajv9Uc5kldx1U=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=eM1EnRM7amMnrc3SIsepMQaDD1vRlNO6kC5KVphJYEv2+SCdkewLCwt1NmN7/U93DD19GWdyc3/ZxQPU6RUpVUv7Yg0M4lk28xOCCnZkSpJlTg8UfEY1XzdsZTUk+sO8+SlpeEwNpAIDK6N4D8yaWVPvuAYLKiKq5acLDHBBQdU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lExvJuq/; arc=none smtp.client-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lExvJuq/"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F13421F00A3A;
+	Thu, 25 Jun 2026 06:45:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1782369922;
+	bh=YP2XyFFXsHLCVZz2NxjVBRA/Nqt+Ro2yGNjctsi32KA=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=lExvJuq/VOLgATG0xvY4jcvwc94FyB82KN4d09MBMjR8/K8tPxtWHlekqZomwZG03
+	 5CrJEyhR49+ho9CT1/o7YNcnez6ggNPMhQgywanD7aTG8W55/BIylcEGTxWG3mBT6d
+	 KCeLiYnGisWZrpJsgQ6MOGyKU6PseOr2HttbqXKfUEpMYlglpoVFn0YRDNBIE1ZtS6
+	 bX21ZAMrThqoCxj/eRs/DlVYrY8ehqF5NWp1MsyVBxK4B9FcOxe9QtSY3H+f+A+Li6
+	 jiVVYhhE5RNcRj1m1xJfV4aeEc10evNMN1OF4Cm8SDQj144JoiMEMQ7Vsmdjiu1REy
+	 TN9m7MhVIO9pg==
+Received: from johan by xi.lan with local (Exim 4.99.3)
+	(envelope-from <johan@kernel.org>)
+	id 1wcdpv-00000001wXB-2v9n;
+	Thu, 25 Jun 2026 08:45:19 +0200
+Date: Thu, 25 Jun 2026 08:45:19 +0200
+From: Johan Hovold <johan@kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+	stable@vger.kernel.org, Magnus Damm <damm@igel.co.jp>
+Subject: Re: [PATCH 1/2] sh: kfr2r09: fix i2c adapter leak on USB gdaget setup
+Message-ID: <ajzOfzITQffmfOV6@hovoldconsulting.com>
+References: <20260508120601.426115-1-johan@kernel.org>
+ <20260508120601.426115-2-johan@kernel.org>
+ <CAMuHMdXAoZ6+Ch-qUhwbV=47PDHfgkARnZpo4h8y0h_uZP73Qw@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260624081926.12426-1-pengpeng@iscas.ac.cn>
-In-Reply-To: <20260624081926.12426-1-pengpeng@iscas.ac.cn>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 24 Jun 2026 20:16:16 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVkL629ps2mmD3XRXM-BYWXZ-6GQGM7tKf6vEvhK--LBg@mail.gmail.com>
-X-Gm-Features: AVVi8Cf3W_4FbqpF_JVxZghC61csTLgIbd27NjlVAgMvdm19aiC1higi1zSH8ts
-Message-ID: <CAMuHMdVkL629ps2mmD3XRXM-BYWXZ-6GQGM7tKf6vEvhK--LBg@mail.gmail.com>
-Subject: Re: [PATCH] sh: Use generic OHCI platform provider symbol
-To: Pengpeng Hou <pengpeng@iscas.ac.cn>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdXAoZ6+Ch-qUhwbV=47PDHfgkARnZpo4h8y0h_uZP73Qw@mail.gmail.com>
 
-On Wed, 24 Jun 2026 at 19:56, Pengpeng Hou <pengpeng@iscas.ac.cn> wrote:
-> The old SuperH-specific `USB_OHCI_SH` provider symbol no longer carries
-> an OHCI provider object.  The current platform OHCI provider is
-> `USB_OHCI_HCD_PLATFORM`, which builds ohci-platform.o.
->
-> Several SH CPU subtypes still select `USB_OHCI_SH`, and the
-> sh7757lcr defconfig still enables it directly.  Switch both the subtype
-> selects and the defconfig to `USB_OHCI_HCD_PLATFORM` so the intended OHCI
-> provider remains reachable when `USB_OHCI_HCD` is enabled.
->
-> Signed-off-by: Pengpeng Hou <pengpeng@iscas.ac.cn>
+Hi Geert,
 
-Fixes: 4f6dfc2136fb2e8d ("usb: remove the dead USB_OHCI_SH option")
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Wed, Jun 24, 2026 at 10:29:41AM +0200, Geert Uytterhoeven wrote:
 
-It's a pity people sometimes don't take into account review comments
-before applying patches...
-https://lore.kernel.org/CAMuHMdVM3BpvVD3c4gp1OidnwF5zFd4MJecij7zWBnahzNaSNw@mail.gmail.com/
+> On Fri, 8 May 2026 at 14:06, Johan Hovold <johan@kernel.org> wrote:
+> > Make sure to drop the reference taken to the I2C adapter (and its
+> > module) when enabling USB gadget mode which prevents the adapter from
+> > ever being deregistered.
+> >
+> > Fixes: 5a1c4cb5bc22 ("sh: add r8a66597 usb0 gadget to the kfr2r09 board")
+> > Cc: stable@vger.kernel.org      # 2.6.32
+> > Cc: Magnus Damm <damm@igel.co.jp>
+> > Signed-off-by: Johan Hovold <johan@kernel.org>
 
-Gr{oetje,eeting}s,
+> > @@ -387,9 +387,16 @@ static int kfr2r09_usb0_gadget_i2c_setup(void)
+> >         msg.flags = 0;
+> >         ret = i2c_transfer(a, &msg, 1);
+> >         if (ret != 1)
+> > -               return -ENODEV;
+> > +               goto err_put_adapter;
+> > +
+> > +       i2c_put_adapter(a);
+> >
+> >         return 0;
+> > +
+> > +err_put_adapter:
+> > +       i2c_put_adapter(a);
+> > +
+> > +       return -ENODEV;
+> 
+> I case i2c_transfer() returns a negative error code (the other
+> possible value is zero, right?), you might want to propagate that to
+> the caller. However, the single caller replaces it by -ENODEV anyway,
+> so I guess your patch is fine.
 
-                        Geert
+Yes, indeed, but that's arguably a separate change. And in this case it
+doesn't really matter currently as you point out.
+ 
+> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Thanks for reviewing.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Johan
