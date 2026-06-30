@@ -1,101 +1,148 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4CEC421F10
-	for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 14:17:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A6A9143E49A;
+	Tue, 30 Jun 2026 15:32:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=193.142.43.55
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782829059; cv=none; b=SBgFbhcuya3XZTJ6iNeAUFoL2zXq2qg44crFgO/CditrV6vF/zZRTdSmZBBfcmgo1x9MOTZsJJj4o41NYNiL4K0dV8skecLbqcrc/Y5I2/ew1QumzizW0FjWXT4ZlrsUoqhWsiCtJ/GF/cBaDfvyAPs6Jhqe2rAef11aF9RO2HQ=
+	t=1782833530; cv=none; b=i62AOpdES65e/I3nxZHlPhRpdtUEDKOePF2HcnLZ/z3gG4D5YCqPuU+pquv+g6BehL/Vqc1EMjjrUg053BOXOiK+U8YGuGvxDJN6T4AgWEHOsqjm+KcateTjcmPoz3TezW7edFLD0zDhiTrr4Bqm/n+0vOWFtuQgb6kjd5xTAsk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782829059; c=relaxed/simple;
-	bh=kzGbN6aMPEi6epmc0Dym/QucqWf60zZaYskH3TdzwNw=;
-	h=From:In-Reply-To:MIME-Version:References:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=nbd3vtB9j79Ndu5pqzmYaooLPRo95k0ikoV3evkjPqLg8pGIGtHk+v7D3zSjgpqDrHwa/rz0RmurWbWm4CI9kJ3Aiem/+CzNII3pP9mf3aBtP8kgSZXzTjSgmBvKI0dLbNSk+yHKkDYTRxbN7WJVt0ixQ8b6HIOpaWbIJp/RuIc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=P637Hau/; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782833530; c=relaxed/simple;
+	bh=xVA+WbEs3JYKQUWaIl/ijOJ73egy9kjACamyC88+dUI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=K5Cs3SibS7SFeUa68bUGC6bZu7MFSWYzEd4Q7nXuHXbSOmUX2HG9R3LPm2puexUNFlzljZu3muOUN5o7VVZ6P7NrDnD2jehRPCYNC8jydkH6tSLliFcVECQpt4dk+abA//uV5QOuag+vu+LOjK2q+YH4kTQMaeLubZUt3bsMFJM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de; spf=pass smtp.mailfrom=linutronix.de; dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=qu/1s0nH; dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=vVSU3b5g; arc=none smtp.client-ip=193.142.43.55
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="P637Hau/"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 677831F00ACF
-	for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 14:17:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782829058;
-	bh=3RVh7ELT7+ihJdj5fgzKjSJM96uGbDJC2dUuDhp5cEw=;
-	h=From:In-Reply-To:References:Date:Subject:To:Cc;
-	b=P637Hau/niy511z7KS9YXNOCl/Dbi3sP9CPxfVkhCzCIaT2kVOmowDD1rqQ+tiGon
-	 NvzB7ud8I+Mbxp47bo/GtEfWLx3S1T4dKLecht1Fjh9ueOnr9b8zmO9oHSe8giKfD9
-	 yEZEY+GB96wOQjB9xmx4lotOZV1RxnU3Lk+aJYSAE3SULx+QPTwyFzxY9q4K07Bvbl
-	 Qtc/1Ssh5y5w0RbT74x4pvCuIhyqqUjp4Jjbo1tGezZ36eKXCzpTsiusEA0U4wPuko
-	 xkMbrqaubNskzx+ic8J1sIu9R/nCZp6PyznqBCaZInuJP8xdeTLVs5xbu/APu71HVy
-	 ZvM+mjFeTc9Yg==
-Received: by mail-lj1-f171.google.com with SMTP id 38308e7fff4ca-39669bcaadfso49970971fa.0
-        for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 07:17:38 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+Rri8cLXM3iJc1cz22sRZLH5nqVYSsouMjxisbLzm4ZzvxjC43xPSeggrj1K0Z9uWsgZshGVp4nEvA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwUehBn0H7NJH1kCW1GzDDP1bclflR++rrEb8OzPeDHNY2aRlzQ
-	w+k/mbnPLBOwDVulOuqG9q+fDGNVF9wj0UP0LpNVX2+2sFKasU+qyZ++94KpojRtNbJL8HJ6SHD
-	gMvByHBKSdqEK540fVf74SEsQ91kz0MJQBeFokUi5Hw==
-X-Received: by 2002:a05:6512:ba6:b0:5ae:b900:15b7 with SMTP id
- 2adb3069b0e04-5aebdbd3532mr1090636e87.55.1782829055964; Tue, 30 Jun 2026
- 07:17:35 -0700 (PDT)
-Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Tue, 30 Jun 2026 07:17:33 -0700
-Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Tue, 30 Jun 2026 07:17:33 -0700
-From: Bartosz Golaszewski <brgl@kernel.org>
-In-Reply-To: <20260629130329.1291953-1-arnd@kernel.org>
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="qu/1s0nH";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="vVSU3b5g"
+Date: Tue, 30 Jun 2026 17:32:04 +0200
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1782833526;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=RdsRgNbVkI3Xb/bXMSfj+yw5lewzrynD2xqGGnGzV8Y=;
+	b=qu/1s0nHQC6KFpDGuKrxXJLqBTdl1FoH/4yCYl34ohT2guoTuARwKQEULMNqdYWydigyrj
+	UQsxj+D6QvmsMUbHcM7u3rM86IjWKPJT39xqCzzGIvsLgqe2Hz4HBOvbz7iysNXKPy5W/u
+	R/GUuEzOAf1ZZdsDdNL4Jr6q/bCrdt9+3kstOwvKETmQg7hIqCfC8XESzPiKTthZJ9Oc09
+	xpBcumA8KxG/PCdAqz4l1iGj82SI/tB9ALWL8NP8tofOtWsr179TrHBkKBYCmCED0scKGL
+	24UnriDqIvgBJ16vM4xBQFbAgoL54zsV+WuM26JgtD+5w8qeomuxalv2Kqf/NA==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1782833526;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=RdsRgNbVkI3Xb/bXMSfj+yw5lewzrynD2xqGGnGzV8Y=;
+	b=vVSU3b5gGX9pyXfPgfu3YTbbfDnrmDCkQKRUwm+vxUCIXLFG0mbsTHQglZDx4c5OUPi7Tu
+	n00gEBCaZoE4kFBg==
+From: Thomas =?utf-8?Q?Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
+To: Jinjie Ruan <ruanjinjie@huawei.com>
+Cc: oleg@redhat.com, richard.henderson@linaro.org, mattst88@gmail.com, 
+	linmag7@gmail.com, linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org, 
+	kees@kernel.org, guoren@kernel.org, chenhuacai@kernel.org, kernel@xen0n.name, 
+	geert@linux-m68k.org, tsbogend@alpha.franken.de, James.Bottomley@hansenpartnership.com, 
+	deller@gmx.de, maddy@linux.ibm.com, mpe@ellerman.id.au, npiggin@gmail.com, 
+	chleroy@kernel.org, pjw@kernel.org, palmer@dabbelt.com, aou@eecs.berkeley.edu, 
+	alex@ghiti.fr, hca@linux.ibm.com, gor@linux.ibm.com, agordeev@linux.ibm.com, 
+	borntraeger@linux.ibm.com, svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org, 
+	glaubitz@physik.fu-berlin.de, richard@nod.at, anton.ivanov@cambridgegreys.com, 
+	johannes@sipsolutions.net, luto@kernel.org, tglx@kernel.org, mingo@redhat.com, bp@alien8.de, 
+	dave.hansen@linux.intel.com, hpa@zytor.com, chris@zankel.net, jcmvbkbc@gmail.com, 
+	peterz@infradead.org, wad@chromium.org, thuth@redhat.com, mark.rutland@arm.com, 
+	ada.coupriediaz@arm.com, kevin.brodsky@arm.com, linusw@kernel.org, yeoreum.yun@arm.com, 
+	song@kernel.org, james.morse@arm.com, anshuman.khandual@arm.com, 
+	broonie@kernel.org, liqiang01@kylinos.cn, pengcan@kylinos.cn, ryan.roberts@arm.com, 
+	yangtiezhu@loongson.cn, sshegde@linux.ibm.com, mchauras@linux.ibm.com, 
+	austin.kim@lge.com, jchrist@linux.ibm.com, arnd@arndb.de, sohil.mehta@intel.com, 
+	andrew.cooper3@citrix.com, jgross@suse.com, kas@kernel.org, x86@kernel.org, 
+	linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linux-csky@vger.kernel.org, 
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-um@lists.infradead.org
+Subject: Re: [PATCH v16 18/18] arm64: vdso: Expose sigreturn address on vdso
+ to the kernel
+Message-ID: <20260630172619-6c78c2e2-c2d3-44be-88e6-6c82de12baf4@linutronix.de>
+References: <20260629130616.642022-1-ruanjinjie@huawei.com>
+ <20260629130616.642022-19-ruanjinjie@huawei.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260629130329.1291953-1-arnd@kernel.org>
-Date: Tue, 30 Jun 2026 07:17:33 -0700
-X-Gmail-Original-Message-ID: <CAMRc=Mfh_2CDcq19XLozgZbyq=u4o+KjnBNi1HAOec0gW3CGDg@mail.gmail.com>
-X-Gm-Features: AVVi8CfXTc1e_mSHjfkWFS-QUSVUX85SudluvtZvZQ5siNjxDoww7y3bpjgfSpk
-Message-ID: <CAMRc=Mfh_2CDcq19XLozgZbyq=u4o+KjnBNi1HAOec0gW3CGDg@mail.gmail.com>
-Subject: Re: [PATCH v5 0/6] gpiolib: fence off legacy interfaces
-To: Arnd Bergmann <arnd@kernel.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, 
-	"H. Peter Anvin" <hpa@zytor.com>, Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, 
-	Dmitry Torokhov <dmitry.torokhov@gmail.com>, Lee Jones <lee@kernel.org>, 
-	Pavel Machek <pavel@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-input@vger.kernel.org, linux-leds@vger.kernel.org, 
-	linux-gpio@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260629130616.642022-19-ruanjinjie@huawei.com>
 
-On Mon, 29 Jun 2026 15:03:23 +0200, Arnd Bergmann <arnd@kernel.org> said:
-> From: Arnd Bergmann <arnd@arndb.de>
->
-> This is the remainder of the series previously posted as v2
-> in [1]. I've changed the version to v5 for all patches to
-> not confuse b4 too much, but the patches are mostly unchanged.
->
-> The patch "Input: soc_button_array - select CONFIG_GPIOLIB_LEGACY"
-> was not part of the series last time, but the build bots reported
-> this as a regression since I had dropped that since v1.
->
-> I hope that all that remains now can just get merged through the
-> gpio tree. The gpio-keys patch needs a bit coordination with
-> another patch addressing the same issue that is already in
-> flight, so I expect that I'll rebase my series once more when
-> that is in a stable branch, but the state I have here should
-> just work as-is on top of v7.2-rc1.
->
->      Arnd
->
-> [1] https://lore.kernel.org/all/20260520183815.2510387-1-arnd@kernel.org/
->
-> Arnd Bergmann (6):
->   [v5] sh: select legacy gpiolib interface
->   [v5] x86/olpc: select GPIOLIB_LEGACY
->   [v5] Input: soc_button_array - select CONFIG_GPIOLIB_LEGACY
->   [v5] Input: gpio-keys: make legacy gpiolib optional
->   [v5] leds: gpio: make legacy gpiolib interface optional
->   [v5] gpiolib: turn off legacy interface by default
+On Mon, Jun 29, 2026 at 09:06:16PM +0800, Jinjie Ruan wrote:
+> Syscall User Dispatch (SUD) requires the signal trampoline code to not be
+> intercepted. This is necessary to support returning with a locked selector
+> while avoiding infinite recursion back into the signal handler.
+> 
+> Implement arch_syscall_is_vdso_sigreturn() for arm64 to support this
+> exclusion mechanism. For native 64-bit tasks, it checks whether the current
+> PC matches the 'svc #0' instruction inside the vDSO sigreturn trampoline.
+> 
+> 	SYM_CODE_START(__kernel_rt_sigreturn)
+> 	        mov     x8, #__NR_rt_sigreturn
+> 	        svc     #0
+> 	SYM_CODE_END(__kernel_rt_sigreturn)
+> 
+> For COMPAT tasks, it verifies if the instruction falls within
+> the architecture's 'sigpage' range, allowing the kernel to safely bypass
+> dispatching syscalls originating from these areas back to userspace.
+> 
+> Suggested-by: Kevin Brodsky <kevin.brodsky@arm.com>
+> Suggested-by: kemal <kmal@cock.li>
+> Signed-off-by: Jinjie Ruan <ruanjinjie@huawei.com>
+> ---
+>  arch/arm64/include/asm/elf.h |  1 +
+>  arch/arm64/kernel/vdso.c     | 16 ++++++++++++++++
+>  2 files changed, 17 insertions(+)
+> 
+> diff --git a/arch/arm64/include/asm/elf.h b/arch/arm64/include/asm/elf.h
+> index d2779d604c7b..f43d4dea916a 100644
+> --- a/arch/arm64/include/asm/elf.h
+> +++ b/arch/arm64/include/asm/elf.h
+> @@ -185,6 +185,7 @@ do {									\
+>  struct linux_binprm;
+>  extern int arch_setup_additional_pages(struct linux_binprm *bprm,
+>  				       int uses_interp);
+> +extern bool arch_syscall_is_vdso_sigreturn(struct pt_regs *regs);
 
-Why this weird formatting?
+A header for that?
 
-Anyway, for the series:
+>  /* 1GB of VA */
+>  #ifdef CONFIG_COMPAT
+> diff --git a/arch/arm64/kernel/vdso.c b/arch/arm64/kernel/vdso.c
+> index 592dd8668de4..5a0314a3c26e 100644
+> --- a/arch/arm64/kernel/vdso.c
+> +++ b/arch/arm64/kernel/vdso.c
+> @@ -343,3 +343,19 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+>  
+>  	return ret;
+>  }
+> +
+> +bool arch_syscall_is_vdso_sigreturn(struct pt_regs *regs)
+> +{
+> +	unsigned long sigtramp;
+> +
+> +#ifdef CONFIG_COMPAT
+> +	if (is_compat_task()) {
+> +		unsigned long sigpage = (unsigned long)current->mm->context.sigpage;
+> +
+> +		return regs->pc >= sigpage && regs->pc < (sigpage + PAGE_SIZE);
+> +	}
+> +#endif
+> +	sigtramp = (unsigned long)VDSO_SYMBOL(current->mm->context.vdso, sigtramp);
+> +
+> +	return regs->pc == (sigtramp + 8);
 
-Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Instead of hardcoding 'sigtramp + 8' you could add a new label to the 'svc #0'
+instruction and use that with VDSO_SYMBOL().
+
+
+Thomas
