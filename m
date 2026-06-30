@@ -1,102 +1,101 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1048C3E6385
-	for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 07:53:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4CEC421F10
+	for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 14:17:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782806033; cv=none; b=XeWaM/jqPXPDP8FncRxu38st0nT4fo3QuCl5pZ9tj1d6WXU2YWg9YS4ymRW7WW9z64NJbS1ftxvnLUbEVubgwvB3KXGjCIZPxN3MwESys2Gf+PCs5usgjZmjktCi47Ks13VUiaH/7XeZLtKIOpKOxWF4dGPDG+fnjh2+5wKw2Ds=
+	t=1782829059; cv=none; b=SBgFbhcuya3XZTJ6iNeAUFoL2zXq2qg44crFgO/CditrV6vF/zZRTdSmZBBfcmgo1x9MOTZsJJj4o41NYNiL4K0dV8skecLbqcrc/Y5I2/ew1QumzizW0FjWXT4ZlrsUoqhWsiCtJ/GF/cBaDfvyAPs6Jhqe2rAef11aF9RO2HQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782806033; c=relaxed/simple;
-	bh=DKWuHMD8ADL0zKU3qzM6I+0+Ls324mTKAtUCV8uTQCo=;
+	s=arc-20240116; t=1782829059; c=relaxed/simple;
+	bh=kzGbN6aMPEi6epmc0Dym/QucqWf60zZaYskH3TdzwNw=;
 	h=From:In-Reply-To:MIME-Version:References:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=P4HbXiuq4oSerAEY6vqQmYl7aShsYOVjTDbfME4GKuy48AboVfqRKPtnToq+eH16q4UQFshCzEmFlvtjMrQI+1P+AgS7wP4YvX6rCA1Fr6Fkyz6pfBbtmQh8vilU4V0St2zl+WBrPVy8xs4tjfE52mgZsGPozYdG4tN1+y1LHxw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SzEeikn2; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=nbd3vtB9j79Ndu5pqzmYaooLPRo95k0ikoV3evkjPqLg8pGIGtHk+v7D3zSjgpqDrHwa/rz0RmurWbWm4CI9kJ3Aiem/+CzNII3pP9mf3aBtP8kgSZXzTjSgmBvKI0dLbNSk+yHKkDYTRxbN7WJVt0ixQ8b6HIOpaWbIJp/RuIc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=P637Hau/; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SzEeikn2"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8B0171F01563
-	for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 07:53:50 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="P637Hau/"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 677831F00ACF
+	for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 14:17:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782806030;
-	bh=QLk1TuOjiNPuCpTV4xCdDTaOjHQTK3QruyZKcZY7x1Q=;
+	s=k20260515; t=1782829058;
+	bh=3RVh7ELT7+ihJdj5fgzKjSJM96uGbDJC2dUuDhp5cEw=;
 	h=From:In-Reply-To:References:Date:Subject:To:Cc;
-	b=SzEeikn298ntM12mqrr6eeAuWBznUx8HGeKI8OO6J1rAXqZe+DG8eH3kpdxS2Qwc/
-	 BEgTe/7fHp8h71X6sCGG3fIihS5C6QKcHYkMaNYrgPUk3rcaSPmJDnw8ZoM5yrlTQE
-	 KvW3inqTRly1yX4cupxJ6KIIy4QWzwTYakuwLMqpuMM/p2OaqREIyxEYDMqln50mnE
-	 C1NSCn+lHyKd79yClTWWWIpGeXloq0qHFR7J5NJc/x4YvTZ2+1E8CMWE8qqPT9V+G8
-	 G9xFlM4DvUB/S9Qvyumv8uzp49Hn1jyEjfrRcGIK8Lu7u5c1SmS6vDV9TdRuWHIBZh
-	 32YpQJymIWJ5Q==
-Received: by mail-lj1-f173.google.com with SMTP id 38308e7fff4ca-39b0c6488e6so17246851fa.3
-        for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 00:53:50 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RpIveagoPc0R6RV42ROK1hP1p2UlGIoLhirlZ9MrLEpMQysHiyQaqolPtdeRYQ9ffgQtwE1EkNJlg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxiGbVvFnu1KI4LX9kdXf0FOTDv9H+Lt/bQbBgi9c81FPeUpbVj
-	SgeTH1z4LIB2PtEltW1KjnCOQP+Le8YyO6PtErtJyu4Z1BQobE6SXD4pnTq9IC4zhG6nDhUdGro
-	Vdtx60uy21Q+lb3INvjmtbPVajOp+PH51jbpEPad6bQ==
-X-Received: by 2002:a05:651c:2203:b0:39b:d0:e992 with SMTP id
- 38308e7fff4ca-39b1da26188mr5158341fa.4.1782806029201; Tue, 30 Jun 2026
- 00:53:49 -0700 (PDT)
+	b=P637Hau/niy511z7KS9YXNOCl/Dbi3sP9CPxfVkhCzCIaT2kVOmowDD1rqQ+tiGon
+	 NvzB7ud8I+Mbxp47bo/GtEfWLx3S1T4dKLecht1Fjh9ueOnr9b8zmO9oHSe8giKfD9
+	 yEZEY+GB96wOQjB9xmx4lotOZV1RxnU3Lk+aJYSAE3SULx+QPTwyFzxY9q4K07Bvbl
+	 Qtc/1Ssh5y5w0RbT74x4pvCuIhyqqUjp4Jjbo1tGezZ36eKXCzpTsiusEA0U4wPuko
+	 xkMbrqaubNskzx+ic8J1sIu9R/nCZp6PyznqBCaZInuJP8xdeTLVs5xbu/APu71HVy
+	 ZvM+mjFeTc9Yg==
+Received: by mail-lj1-f171.google.com with SMTP id 38308e7fff4ca-39669bcaadfso49970971fa.0
+        for <linux-sh@vger.kernel.org>; Tue, 30 Jun 2026 07:17:38 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AHgh+Rri8cLXM3iJc1cz22sRZLH5nqVYSsouMjxisbLzm4ZzvxjC43xPSeggrj1K0Z9uWsgZshGVp4nEvA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwUehBn0H7NJH1kCW1GzDDP1bclflR++rrEb8OzPeDHNY2aRlzQ
+	w+k/mbnPLBOwDVulOuqG9q+fDGNVF9wj0UP0LpNVX2+2sFKasU+qyZ++94KpojRtNbJL8HJ6SHD
+	gMvByHBKSdqEK540fVf74SEsQ91kz0MJQBeFokUi5Hw==
+X-Received: by 2002:a05:6512:ba6:b0:5ae:b900:15b7 with SMTP id
+ 2adb3069b0e04-5aebdbd3532mr1090636e87.55.1782829055964; Tue, 30 Jun 2026
+ 07:17:35 -0700 (PDT)
 Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Tue, 30 Jun 2026 00:53:46 -0700
+ HTTPREST; Tue, 30 Jun 2026 07:17:33 -0700
 Received: from 969154062570 named unknown by gmailapi.google.com with
- HTTPREST; Tue, 30 Jun 2026 00:53:46 -0700
+ HTTPREST; Tue, 30 Jun 2026 07:17:33 -0700
 From: Bartosz Golaszewski <brgl@kernel.org>
-In-Reply-To: <20260629132633.1300009-1-arnd@kernel.org>
+In-Reply-To: <20260629130329.1291953-1-arnd@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260629132633.1300009-1-arnd@kernel.org>
-Date: Tue, 30 Jun 2026 00:53:46 -0700
-X-Gmail-Original-Message-ID: <CAMRc=McnpZK+XeMcVfrBeh8SWa44UsVSJD0GJ1pXYhiFqzdpaQ@mail.gmail.com>
-X-Gm-Features: AVVi8CcPrvp2PMd39-Ep5NDuNXP5lZT9A5toOBbKSjeAVmB0_7rIggX2JLATmJ0
-Message-ID: <CAMRc=McnpZK+XeMcVfrBeh8SWa44UsVSJD0GJ1pXYhiFqzdpaQ@mail.gmail.com>
-Subject: Re: [PATCH 00/13] treewide: replace linux/gpio.h
+References: <20260629130329.1291953-1-arnd@kernel.org>
+Date: Tue, 30 Jun 2026 07:17:33 -0700
+X-Gmail-Original-Message-ID: <CAMRc=Mfh_2CDcq19XLozgZbyq=u4o+KjnBNi1HAOec0gW3CGDg@mail.gmail.com>
+X-Gm-Features: AVVi8CfXTc1e_mSHjfkWFS-QUSVUX85SudluvtZvZQ5siNjxDoww7y3bpjgfSpk
+Message-ID: <CAMRc=Mfh_2CDcq19XLozgZbyq=u4o+KjnBNi1HAOec0gW3CGDg@mail.gmail.com>
+Subject: Re: [PATCH v5 0/6] gpiolib: fence off legacy interfaces
 To: Arnd Bergmann <arnd@kernel.org>
-Cc: linux-gpio@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, 
-	Bartosz Golaszewski <brgl@kernel.org>, Andrew Lunn <andrew@lunn.ch>, 
-	Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, 
-	Gregory Clement <gregory.clement@bootlin.com>, Frank Li <Frank.Li@nxp.com>, 
-	Robert Jarzmik <robert.jarzmik@free.fr>, Krzysztof Kozlowski <krzk@kernel.org>, 
-	Greg Ungerer <gerg@linux-m68k.org>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
-	Hauke Mehrtens <hauke@hauke-m.de>, =?UTF-8?B?UmFmYcWCIE1pxYJlY2tp?= <zajec5@gmail.com>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Linus Walleij <linusw@kernel.org>, 
-	Dmitry Torokhov <dmitry.torokhov@gmail.com>, Jakub Kicinski <kuba@kernel.org>, 
-	Paolo Abeni <pabeni@redhat.com>, Dominik Brodowski <linux@dominikbrodowski.net>, 
-	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-samsung-soc@vger.kernel.org, patches@opensource.cirrus.com, 
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
-	linux-sh@vger.kernel.org, linux-input@vger.kernel.org, 
-	linux-media@vger.kernel.org, netdev@vger.kernel.org, 
-	linux-sunxi@lists.linux.dev, linux-phy@lists.infradead.org, 
-	linux-rockchip@lists.infradead.org, linux-sound@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, 
+	"H. Peter Anvin" <hpa@zytor.com>, Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, 
+	Dmitry Torokhov <dmitry.torokhov@gmail.com>, Lee Jones <lee@kernel.org>, 
+	Pavel Machek <pavel@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-input@vger.kernel.org, linux-leds@vger.kernel.org, 
+	linux-gpio@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 
-On Mon, 29 Jun 2026 15:26:20 +0200, Arnd Bergmann <arnd@kernel.org> said:
+On Mon, 29 Jun 2026 15:03:23 +0200, Arnd Bergmann <arnd@kernel.org> said:
 > From: Arnd Bergmann <arnd@arndb.de>
 >
-> The linux/gpio.h header used to be the global definition for the gpio
-> interfaces, with 1100 users back in linux-3.17. In linux-7.2, only about
-> 130 of those remain, so this series cleans out the rest.
+> This is the remainder of the series previously posted as v2
+> in [1]. I've changed the version to v5 for all patches to
+> not confuse b4 too much, but the patches are mostly unchanged.
 >
-> In each subsystem, we can replace the header either with
-> linux/gpio/consumer.h for users of the modern gpio descriptor interface,
-> or linux/gpio/legacy.h for the few remaining users of the old number
-> based interface.
+> The patch "Input: soc_button_array - select CONFIG_GPIOLIB_LEGACY"
+> was not part of the series last time, but the build bots reported
+> this as a regression since I had dropped that since v1.
 >
-> All patches in this series can get applied independently, so my
-> preference would be for each subsystem maintainer to apply these
-> directly, with the rest going into the gpio tree at some point.
+> I hope that all that remains now can just get merged through the
+> gpio tree. The gpio-keys patch needs a bit coordination with
+> another patch addressing the same issue that is already in
+> flight, so I expect that I'll rebase my series once more when
+> that is in a stable branch, but the state I have here should
+> just work as-is on top of v7.2-rc1.
 >
-> The final patch here obviously needs to wait for all the others
-> to get merged first.
+>      Arnd
 >
->       Arnd
+> [1] https://lore.kernel.org/all/20260520183815.2510387-1-arnd@kernel.org/
+>
+> Arnd Bergmann (6):
+>   [v5] sh: select legacy gpiolib interface
+>   [v5] x86/olpc: select GPIOLIB_LEGACY
+>   [v5] Input: soc_button_array - select CONFIG_GPIOLIB_LEGACY
+>   [v5] Input: gpio-keys: make legacy gpiolib optional
+>   [v5] leds: gpio: make legacy gpiolib interface optional
+>   [v5] gpiolib: turn off legacy interface by default
 
-Thanks for doing this Arnd!
+Why this weird formatting?
 
-For the series:
+Anyway, for the series:
 
 Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
