@@ -1,35 +1,90 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pf1-f170.google.com (mail-pf1-f170.google.com [209.85.210.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8EFF3368BA;
-	Wed,  1 Jul 2026 00:00:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D8E2A355F47
+	for <linux-sh@vger.kernel.org>; Wed,  1 Jul 2026 17:19:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782864031; cv=none; b=kAmhrsAfXa2uhnckYz5DNAchoVcC3xbZzLhkn6nxhmDPK6bBDWEXxfUFe0ZDA47Heq8kqNbOLRsdcUc7xTbVtpsJSkrIQ/06q+SfbotZ/FDDfkYp52qMRAYdU404cIIPotnJqgaDhpmxqbC07i8hpbnr7Ey1epy98vAZl6tegTI=
+	t=1782926347; cv=none; b=t9LSpuH6oL7eSUhSD0hrN7IZScZIm3+eFhdWZwesDxrPrJqjIXhAfWe/jnoPWGPKMUkTQb1N7Kz80QUxmJbV4IMAHmddFZhv9mR1SSDRjCYsrQzlZBI+DQZeVyKsDlpbSNxo7p/Su3YFqmI2fHVteNLiAyYq19L4ZRjm5XqTQtU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782864031; c=relaxed/simple;
-	bh=aDd6xnbNXHwGM13+mfbTZqc1/QPJzS5RFcPsKU4bTP0=;
-	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
-	 In-Reply-To:To:Cc; b=ON6lalgqWpigkeE+34eEtYwKoVpDjGEUwiMsQRde93WjmswqazBCrM1J4s+KxX+dd3BGVI0ohp0yBXBq93Bof4kdff6g57vS78uAfBt91dTUu0HIs3A7fCNN8d+LrSdz6mvMCeyUjLAAkOjm00+L39weykoIsAzKOversISGP0s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=D2aridIB; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782926347; c=relaxed/simple;
+	bh=MaidzqW4SYY2w5nPLJFXk4d1eOTnnMSprzH6YDrQ5RI=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pm161j3kujgM6cf1jBdDQ8pyTv8gS7p52jWQzYdDGuyF1nkASGZomwXFmzIolwXZAKoO/MvwUV5GZ0tzaBwImOAqpyhp+rJ28pwWOkZSi6GG3fd4y96tAyTvYUTrIFtGZNrc4UzGhOs/3KQip3J3XCRqcucmgGyv8Yy5kVCFlZc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=EdG0kIlk; arc=none smtp.client-ip=209.85.210.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="D2aridIB"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8A0A91F000E9;
-	Wed,  1 Jul 2026 00:00:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782864029;
-	bh=/q/M4iftPwXwOXkuB442nTPnYH/p2eAZGJdhwDTouz8=;
-	h=Subject:From:Date:References:In-Reply-To:To:Cc;
-	b=D2aridIB3ZeNJJR3QUrliEur8twz15o6NHQ3r4VfEqZ4ETR7iR4Pcmpw5QOls9KWg
-	 ltdTxZYZRZUW7G04XshPf1tQrDKzMzGzkUSCpoRrq01HHBFl6KI1ZNg+A0EihUDQ85
-	 Nn9/j5cFtBd93A8542gMmvRvLNPhVlsZlGm/unA5oSqjRfx0Sssw6SyErZ08s5sS0r
-	 wdXiV9NryfEhhimef0etZQj0seb/z8TTI9ZjY0OFngTzUGWG5UiWq5EZlaVgH5tvzo
-	 7uagUhv9ei4cRcZc7VrB0c2q7hSjQx6n5p1nbz8XvvSHDY8gNuo7YLSf228yTJeONP
-	 M3PWol6eIbbXA==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 939E5393A963;
-	Wed,  1 Jul 2026 00:00:14 +0000 (UTC)
-Content-Type: text/plain; charset="utf-8"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="EdG0kIlk"
+Received: by mail-pf1-f170.google.com with SMTP id d2e1a72fcca58-845b6d9bf39so582026b3a.1
+        for <linux-sh@vger.kernel.org>; Wed, 01 Jul 2026 10:19:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1782926345; x=1783531145; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=OVZjtpTrxXxAVguXYAz4E7mi5sWPqKxrHjlHEoMDU8Q=;
+        b=EdG0kIlkhGC8EnTihdJY2Nj93DPMO66F0YuNlRDNppazDleeOZnyE0SLqeby21Dt/i
+         Z88JImxGPI4JLM0h5XGQkcc9SitodWpyPwF1+cs6OAhFvWcF84qYs/Iiqi8m41CxDH5f
+         biUljY2YWie0PtsXucfRTBpv/3na4DP4bqWrttTUgf7E+S9midmaHc+DJTaOTUDA7nGw
+         9gqzMM3Gt6gXma7OuoepFsL9xrMuZZEDSr+GvQwX+GBzojRU0+yJ+VBBX9lP2JXUnlHd
+         x/qQseJwLUH7D89BaFBxsqon5aF01NndG7Cy/Srp7wmu+CeV4IkjELHcABS+NbdZEfox
+         FHMg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782926345; x=1783531145;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=OVZjtpTrxXxAVguXYAz4E7mi5sWPqKxrHjlHEoMDU8Q=;
+        b=mGVHUebtIDtkWwd2KY0SmQLGKjF4fppBYk733AHBmEfdmrw9UE0MXllvheXksBYzbF
+         Vvuh/GDZ4Czak8sa5cj0TWKcPlQ0EF7OpJuntuBu9ySWEIzejAswTA+R6EMDGL9ddttP
+         96CQlUNWteu1ek2OFPz8Nau1IDdCA8Kzm25o+3n18qvbHn3DgQF5adGEen1KDxaiQIDK
+         TOay/IrKOHZipH7kezQ9At1v0rxSQXYU9hQGqF7aKh5KljnvtlEDLzdcXQpJQkxnqXmL
+         moPewV/qbmgy9I02hvrDidDPSFDx8TKmBKuLWN9H0hPdIf8qdec1ul8MqgEbKhH8KUiX
+         mH8w==
+X-Forwarded-Encrypted: i=1; AHgh+RoiZIuaCusEB/O/jlx3rGAnPrAcf2JbVQphElY30ET6Zq1FKZxQkQ+/knKH2PI4rmm+5ZD4Fj4qUg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxN1D52Nkudqzdch83MkSZfQo/T8w2d3Ujq6Hg+6wCB8VO6mFXe
+	G8j8CdE6zae8KEI2VjXdKlSZNXAjuFzgZ0Bv2hKOf3eN+K0fSkPMmrcS
+X-Gm-Gg: AfdE7cnmMh8Th8lpn1+lLAaZ3jah95p8jTkW47mOzHCbyAuXHQCXD3VYCSEMQY8/MOn
+	8hSUyLmK55JORPKiReM3OlIAAbXjYsQWfiiTw4lljgJolBSNRQuDpWJbwX8yZiTas+c7gGkxIV8
+	k2IVIncQZjkiXfDeGQcrUN2sCGnFxArMCRbJjyyzajeEb0An0ZFxeOTXqvupjL3nJwnM1V6UxZ2
+	5zfCLWBu2ykAKMXp1EPK9N7qRuSNcOvwo698K2ckA61L9zAZaS50aOHrMitfH6Q1Pg0ZifPUuVK
+	6VbMp5HXHmFQizIavXUhSsY9hM71auckwGJ0juER+q4CYJg8VIBP923g1QsXJNfjeEY9IELLz73
+	Y6IJ2Rq6bFJvx/d231rq1SEXV90Z/BeGHSidFBXDT8E3DpOgDP8NFWxohtqV2pvCPOYFJvT/DAu
+	xrj4hWIro=
+X-Received: by 2002:a05:6a00:948e:b0:846:a04:acdc with SMTP id d2e1a72fcca58-847a831fb33mr4758788b3a.26.1782926345049;
+        Wed, 01 Jul 2026 10:19:05 -0700 (PDT)
+Received: from ubuntu.. ([110.9.142.4])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-847cb94ab79sm105719b3a.31.2026.07.01.10.19.00
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 01 Jul 2026 10:19:04 -0700 (PDT)
+From: Sang-Heon Jeon <ekffu200098@gmail.com>
+To: akpm@linux-foundation.org,
+	Andreas Larsson <andreas@gaisler.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Rich Felker <dalias@libc.org>,
+	Vlastimil Babka <vbabka@kernel.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Yury Norov <yury.norov@gmail.com>
+Cc: linux-mm@kvack.org,
+	Sang-Heon Jeon <ekffu200098@gmail.com>,
+	Brendan Jackman <jackmanb@google.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Johannes Weiner <hannes@cmpxchg.org>,
+	linux-kernel@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-sh@vger.kernel.org,
+	Michal Hocko <mhocko@suse.com>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+	sparclinux@vger.kernel.org,
+	Suren Baghdasaryan <surenb@google.com>,
+	Zi Yan <ziy@nvidia.com>
+Subject: [PATCH 0/4] treewide, mm: initialize node_possible_map like the other node maps
+Date: Thu,  2 Jul 2026 02:18:47 +0900
+Message-ID: <20260701171851.2447626-1-ekffu200098@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -37,79 +92,52 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-Subject: Re: [PATCH 00/13] treewide: replace linux/gpio.h
-From: patchwork-bot+netdevbpf@kernel.org
-Message-Id: 
- <178286401313.341356.16335263979724856348.git-patchwork-notify@kernel.org>
-Date: Wed, 01 Jul 2026 00:00:13 +0000
-References: <20260629132633.1300009-1-arnd@kernel.org>
-In-Reply-To: <20260629132633.1300009-1-arnd@kernel.org>
-To: Arnd Bergmann <arnd@kernel.org>
-Cc: linux-gpio@vger.kernel.org, arnd@arndb.de, brgl@kernel.org,
- andrew@lunn.ch, sebastian.hesselbarth@gmail.com, gregory.clement@bootlin.com,
- Frank.Li@nxp.com, robert.jarzmik@free.fr, krzk@kernel.org,
- gerg@linux-m68k.org, tsbogend@alpha.franken.de, hauke@hauke-m.de,
- zajec5@gmail.com, ysato@users.sourceforge.jp, glaubitz@physik.fu-berlin.de,
- linusw@kernel.org, dmitry.torokhov@gmail.com, kuba@kernel.org,
- pabeni@redhat.com, linux@dominikbrodowski.net, linux-kernel@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, linux-samsung-soc@vger.kernel.org,
- patches@opensource.cirrus.com, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-sh@vger.kernel.org,
- linux-input@vger.kernel.org, linux-media@vger.kernel.org,
- netdev@vger.kernel.org, linux-sunxi@lists.linux.dev,
- linux-phy@lists.infradead.org, linux-rockchip@lists.infradead.org,
- linux-sound@vger.kernel.org
 
-Hello:
+While reviewing an earlier series [1], Andrew asked why we carefully
+initialize node_possible_map at compile time, then zero it within __init
+code anyway.
 
-This series was applied to netdev/net-next.git (main)
-by Jakub Kicinski <kuba@kernel.org>:
+node_possible_map, aliased by node_states[N_POSSIBLE], is initialized to
+NODE_MASK_ALL at compile time, unlike the other entries, which are
+initialized with only node 0 set.
 
-On Mon, 29 Jun 2026 15:26:20 +0200 you wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
-> 
-> The linux/gpio.h header used to be the global definition for the gpio
-> interfaces, with 1100 users back in linux-3.17. In linux-7.2, only about
-> 130 of those remain, so this series cleans out the rest.
-> 
-> In each subsystem, we can replace the header either with
-> linux/gpio/consumer.h for users of the modern gpio descriptor interface,
-> or linux/gpio/legacy.h for the few remaining users of the old number
-> based interface.
-> 
-> [...]
+Architectures that use numa_memblks set node_possible_map from
+numa_nodes_parsed, so the compile-time value is meaningless for them.
 
-Here is the summary with links:
-  - [01/13] ARM: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [02/13] m68k/coldfire: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [03/13] mips: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [04/13] sh: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [05/13] mfd: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [06/13,net-next] net: replace linux/gpio.h inclusions
-    https://git.kernel.org/netdev/net-next/c/a53d1872f2be
-  - [07/13] ASoC: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [08/13] pcmcia: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [09/13] phy: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [10/13] media: replace linux/gpio.h inclusions
-    (no matching commit)
-  - [11/13] Input: matrix_keyboard - replace linux/gpio.h inclusion
-    (no matching commit)
-  - [12/13] gpib: gpio: replace linux/gpio.h inclusion
-    (no matching commit)
-  - [13/13] gpiolib: remove linux/gpio.h
-    (no matching commit)
+However, a few architectures that do not use numa_memblks do not set
+node_possible_map on their own. Once these architectures set
+node_possible_map to match their own topology, the NODE_MASK_ALL
+initialization can be removed.
 
-You are awesome, thank you!
+Patches 1-2 handle sparc64 and sh, which do not set node_possible_map
+themselves. Both set node_online_map from their topology, so set
+node_possible_map from node_online_map.
+
+Patch 3 handles powerpc, which sets node_possible_map by intersecting it
+with node_online_map. Nothing sets node_possible_map before this, so it is
+still NODE_MASK_ALL and the intersection is just node_online_map. Once
+patch 4 changes that initial value, the intersection would no longer be
+node_online_map, so assign node_online_map directly.
+
+Patch 4 initializes node_possible_map with only node 0 set, like the other
+node_states[] entries. NODE_MASK_ALL is then no longer used, so remove it
+and its only helper NODE_MASK_LAST_WORD.
+
+[1] https://lore.kernel.org/all/20260624204030.3c8baa67713b6ca1d537baba@linux-foundation.org/
+
+Sang-Heon Jeon (4):
+  sparc64: set node_possible_map in bootmem_init_numa()
+  sh: set node_possible_map in do_init_bootmem()
+  powerpc/numa: set node_possible_map from node_online_map
+  mm/page_alloc: initialize node_possible_map like the other node maps
+
+ arch/powerpc/mm/numa.c   |  2 +-
+ arch/sh/mm/init.c        |  2 ++
+ arch/sparc/mm/init_64.c  |  2 ++
+ include/linux/nodemask.h | 20 --------------------
+ mm/page_alloc.c          |  2 +-
+ 5 files changed, 6 insertions(+), 22 deletions(-)
+
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/patchwork/pwbot.html
-
+2.43.0
 
