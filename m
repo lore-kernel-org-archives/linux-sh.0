@@ -1,115 +1,139 @@
-Received: from mail-pf1-f181.google.com (mail-pf1-f181.google.com [209.85.210.181])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0AE8638E8AB
-	for <linux-sh@vger.kernel.org>; Wed,  1 Jul 2026 17:19:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.181
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 718F32C3251;
+	Thu,  2 Jul 2026 09:37:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782926355; cv=none; b=cL/adeLOQ+ytHGixtpGtm7YOWJQCX1n6qpUtk5gaYBNGH5C8IDLbtUBYHoLJGOTsw8lmuAESGemxJO5BdI9JhOIx4dHUGhK3gRvbnujfmuil+tLKQ3Qis6bJ6GT4QSP64GwAT09Rj5RrAzNYT38WX9pCOef7MEsk/uCTQE1EjVY=
+	t=1782985080; cv=none; b=GhKK0cD9D4skVlQhlbCMJLezCo2jrOJaTM+Vd9TBybwXWdIn3H9YatBJ/gKCTK+w9TORwJ3uSUydu9CJsLGX7iPgMwpfsMCJFJ911C3qOdSR8F+XI/6j43kKG/05qVJouPMWf5xiH12cHRP2yR5QhZDZ8NnUNxwIAMj3PjMj0tk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782926355; c=relaxed/simple;
-	bh=fJw3Kzl9q84XLSiaTk5SPS5D2dM+Vl8FRhyKh6B/k7E=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=mkv/rKG9d7WH0kBLbNkZDWzDt9kDRupH8O57x3hc7aittdRqK3AoTLJ6wmWbPiHp6T6ZHZf6s1lDxlIbzAgtmLejl1u4YdIudVv+g+mpkUWSpS0fMPipgt0A+4wCuWRMpLfHSk0lkwZcmcR7qcav5YhdRercLTSyd/N5dV72KNM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=CgzkFD2a; arc=none smtp.client-ip=209.85.210.181
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1782985080; c=relaxed/simple;
+	bh=yDCdzmRsBm94G7BcAj5zhHim5FEWFIte9e/nqvCWk+E=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=t2zqSlHfSggWXFsJ7bWmZM2gXJ6JKqdAAQBIb6owuvGm2DLvdj/T2eSUi/Bsdv8dBt9Gjre9iLkBLxgAB94a+ichwPG0h0NJmMI8iUoouZMTGnq8XkssLpzSa2hDLUZfGrZBAYVcW9OZuLp1C6XjG8ZnfilFal5+Mw9MJ6OYXBM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=k0TjpYu6; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CgzkFD2a"
-Received: by mail-pf1-f181.google.com with SMTP id d2e1a72fcca58-845b6d9bf39so582151b3a.1
-        for <linux-sh@vger.kernel.org>; Wed, 01 Jul 2026 10:19:13 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1782926353; x=1783531153; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=xEAivEsfeo8Fq0sNWZpHlLBA/MD5F/SkLxOz2gsFyHM=;
-        b=CgzkFD2aCsek6aGGFf6J6Pqf0aKL9zfAHDi15jUNeFqQi4zddFtLMTbeN+BhceBcJK
-         lJmIMb/KK6Wl/k8fbWFtp7tkOIDfkDmfwRJviAzpzcJ+cj9BlSz1sROH1OkQhvrk/K6q
-         4jpfaVLyN5PvnQtWO+s3gwUs8SI0kAUd4+gmL3epm6NPkNY9WF/qOPfq5N6siJzuHXS6
-         Pt7l9uyDuuCIdQu+2+6Z8jWhf0670ydTTjQK4g4ac8dfCwPMBrV3x7vlxIncdJhNiPYL
-         BiVUxFWop4LZjijDtUfH5AnHccC9bTAYr+liW7YWKRFIMg5HaO+Yf4b6aUpHhPH6MpCG
-         xItg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782926353; x=1783531153;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=xEAivEsfeo8Fq0sNWZpHlLBA/MD5F/SkLxOz2gsFyHM=;
-        b=iHa/w9G/XL5sghgI88Ohr6KTpLEdEbCIsmt/Ny+3Ma8rl02Ja4GbyMqKwE+yK5nggI
-         hvlrKeJSPPneOh7Vt/KoydtzT/HLrsFWd25l2LieQ3DLMPGxdC+i+mVjz9dJG9BlI6p4
-         MSL/Eka++yq53C33PZ8/S19qLz07KFUnu1rjS8hiN6m9/AxiteP/oGZpucTekBC/712D
-         GhV/dFnlSYKsb+yQnIGVZWV+E5S/4+tLRSbMw+U2QKx5Lzcp/GvEJPM6Wr5s9Ji1o944
-         Govjp5dQcjvGVA6Bbi4pOUPcn7Zu/eOjaProCIzMDl26OD9HP6tv6dxBMoXGQzfNw9fu
-         y14Q==
-X-Forwarded-Encrypted: i=1; AFNElJ9rct/auTV0JcjgwRWnmNe3eEg4q2fU0SrJK9fzJVUyEQ9kAQMUCwSeUvvwkCl+Wo46KFQIQ8HpMw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yx5eC2UKX1TFZFqtTy14VHOoPEElF7wI2I6GKQMoj++V3KFIcGY
-	vCkZOdTLxHQ3Mu6m3ULjduDPGUgmodEJ3aSXIiBjX3HkDxD0m6y6ValM
-X-Gm-Gg: AfdE7cmuv1i0Vj1or9cCCZIuaiEOFYXH/nUl07G79E1+6y/cMm+3QBGlY7vgHNvhpCK
-	FkzvZIgZ1+tEc/GtFyLHQ0UN5igzp+tBDwRHMYr2aj8y5eo8D5jOY2mNZkX78X4gBEHsSUUVp/j
-	8Z90zx9Idrw3PA46N7gtQ3hjJHETIRpdatuWMU6gP5sn2oJutaqeSeAQFbWpTEE6o40bo/Lq4/j
-	SsCQm/gIQlA5nWiJ4D9ODxtPutdaRjAC5WU0jaPkhdp7C4a2JvRm/UQggppYp5Lqp61doR5W2+l
-	sKL3uI2qSiO0JaU4MP4Ntl6dSaQ9SSUyXZPg6kltjtVeBM2B5z82ZqPy7D+c4go6oSFgXG1wqtM
-	K3yk1O5zS5xhC03e2llDjdAaaeqaAtek3/1pEKadvXQ+4nv/kKGrqGqDD2SF6DsLTKctpApxVjb
-	9SnpsuhgI=
-X-Received: by 2002:a05:6a00:1910:b0:845:a390:fed6 with SMTP id d2e1a72fcca58-847bf944a71mr2486907b3a.17.1782926353391;
-        Wed, 01 Jul 2026 10:19:13 -0700 (PDT)
-Received: from ubuntu.. ([110.9.142.4])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-847cb94ab79sm105719b3a.31.2026.07.01.10.19.10
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 01 Jul 2026 10:19:12 -0700 (PDT)
-From: Sang-Heon Jeon <ekffu200098@gmail.com>
-To: akpm@linux-foundation.org,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-mm@kvack.org,
-	Sang-Heon Jeon <ekffu200098@gmail.com>,
-	Andreas Larsson <andreas@gaisler.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	linux-kernel@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Vlastimil Babka <vbabka@kernel.org>,
-	Yury Norov <yury.norov@gmail.com>
-Subject: [PATCH 2/4] sh: set node_possible_map in do_init_bootmem()
-Date: Thu,  2 Jul 2026 02:18:49 +0900
-Message-ID: <20260701171851.2447626-3-ekffu200098@gmail.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260701171851.2447626-1-ekffu200098@gmail.com>
-References: <20260701171851.2447626-1-ekffu200098@gmail.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="k0TjpYu6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2807C1F000E9;
+	Thu,  2 Jul 2026 09:37:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1782985079;
+	bh=IEP1okcIZa2gmpJL6sublzBeIdAff9WVYBP7uD2+POM=;
+	h=From:Subject:Date:To:Cc;
+	b=k0TjpYu6civgnHj1E3YNEIjKJ3z1Cn6dgmNf4mMxcSCeVn8Qj++5+jlMhzsXiOXvv
+	 gUoT97ls1dVyBPUziCuuhQ31Q612iS8Xo8kHkeuXmTwu0o9Sof8X9LQH0PwSrN3GU0
+	 +s4AMWes5Ijecxa/KfuBe4hlMSylNlwUlZU0aWNTp7+XtjtBS+GeulWqiIO+eojb+S
+	 wX33xDGTorol/758UyFEWQXKGvmW9Q9hBwydJ4Fro5xNCPvxFskVZM6IfuWaZegAEs
+	 Shtay7eXNDEZiLR+xlru7QX0CeDN5/IZaMu628rszlfNLnPzcPHdkquqYyKf2LsGkA
+	 3epe8Qcu2y+Xw==
+From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+Subject: [PATCH v3 00/10] sh: remove NUMA and SPARSEMEM support
+Date: Thu, 02 Jul 2026 12:37:49 +0300
+Message-Id: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAG0xRmoC/5WOTRKCMAyFr+J0bbEtP4or7+G4aDFCVFomLR0dh
+ rtL4QSuMl9e3nuZmAdC8Oy8mxhBRI/OLpDvd6zptG2B431hpoSqxFEo7jtux17zqHgtzamCvBb
+ SFGwxDAQP/Kxh19vGfjRPaEJKSBdGe+CGtG26tHKELdpDr30ASnqHPjj6rt9EmXK24lIKmZdlU
+ WXr4JLTMITLC8jCO3PUstQX1V+OeZ5/ysHc9v8AAAA=
+X-Change-ID: 20260702-sh-numa-v2-91b86e3901b4
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ Mike Rapoport <rppt@kernel.org>, Rich Felker <dalias@libc.org>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, linux-mm@kvack.org
+X-Mailer: b4 0.16-dev
 
-Unlike other NUMA architectures, sh never sets node_possible_map.
-do_init_bootmem() marks node 0 online and plat_mem_setup() marks the
-rest online, after which node_online_map does not change, so set
-node_possible_map from node_online_map.
+Hi,
 
-Signed-off-by: Sang-Heon Jeon <ekffu200098@gmail.com>
+NUMA support for SuperH was introduced a long time ago by commit
+b241cb0c885e ("sh: Support for multiple nodes.")
+
+        "... for boards with many different memory blocks that are
+         otherwise unused (SH7722/SH7785 URAM and so forth)"
+
+In reality, this added 128K of memory on sh7722 and sh7785 and 256K on
+shx3 at the expense of all the NUMA related code in the kernel.
+
+For build of v7.0-rc7 with defconfig and the same configuration with
+CONFIG_NUMA disabled, bloat-o-meter reports difference of ~76k. Disabling
+CONFIG_SPARSMEM on top increases the difference to ~94k. And that's only
+overhead in code and static data that does not take into the account data
+structures allocated at run time.
+
+And all this overhead has been there for nothing for almost 8 years
+because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
+those additional "nodes" could not be used by the core MM because the
+maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
+
 ---
- arch/sh/mm/init.c | 2 ++
- 1 file changed, 2 insertions(+)
+It's been another few weeks without updates from Adrian and I don't see
+why it should wait more.
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 110308bdef01..13954d7bbdae 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -227,6 +227,8 @@ static void __init do_init_bootmem(void)
- 	node_set_online(0);
- 
- 	plat_mem_setup();
-+
-+	node_possible_map = node_online_map;
- }
- 
- static void __init early_reserve_mem(void)
--- 
-2.43.0
+@Andrew, please take it to the mm tree.
+
+v3 changes:
+* rebased on v7.2-rc1
+
+v2: https://patch.msgid.link/20260510135546.13554-1-rppt@kernel.org
+* remove stale SYS_SUPPORTS_NUMA
+* add Arnd's Reviewed-by
+
+v1: https://patch.msgid.link/20260510135546.13554-1-rppt@kernel.org
+
+---
+Mike Rapoport (Microsoft) (10):
+      sh: remove CONFIG_NUMA and realted configuration options
+      sh: mm: remove numa.c
+      sh: mm: drop allocate_pgdat()
+      sh: remove setup_bootmem_node() and plat_mem_setup()
+      sh: drop dead code guarded by #ifdef CONFIG_NUMA
+      sh: drop include/asm/mmzone.h
+      init/Kconfig: drop ARCH_WANT_NUMA_VARIABLE_LOCALITY
+      sh: init: remove call the memblock_set_node()
+      sh: remove SPARSEMEM related entries from Kconfig
+      sh: drop include/asm/sparsemem.h
+
+ arch/sh/Kconfig                        | 12 --------
+ arch/sh/configs/migor_defconfig        |  1 -
+ arch/sh/configs/sdk7786_defconfig      |  1 -
+ arch/sh/configs/se7722_defconfig       |  1 -
+ arch/sh/configs/shx3_defconfig         |  1 -
+ arch/sh/configs/ul2_defconfig          |  1 -
+ arch/sh/include/asm/mmu.h              |  2 ++
+ arch/sh/include/asm/mmzone.h           | 42 ---------------------------
+ arch/sh/include/asm/setup.h            |  3 ++
+ arch/sh/include/asm/sparsemem.h        | 12 --------
+ arch/sh/include/asm/topology.h         | 13 ---------
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  5 ----
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  7 -----
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  5 ----
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  7 -----
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  5 ----
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   | 18 ------------
+ arch/sh/kernel/setup.c                 |  7 -----
+ arch/sh/kernel/topology.c              | 12 --------
+ arch/sh/kernel/vmcore_info.c           |  4 ---
+ arch/sh/mm/Kconfig                     | 29 -------------------
+ arch/sh/mm/Makefile                    |  1 -
+ arch/sh/mm/init.c                      | 24 ---------------
+ arch/sh/mm/numa.c                      | 53 ----------------------------------
+ arch/sh/mm/sram.c                      |  3 +-
+ init/Kconfig                           |  7 -----
+ 28 files changed, 6 insertions(+), 272 deletions(-)
+---
+base-commit: dc59e4fea9d83f03bad6bddf3fa2e52491777482
+change-id: 20260702-sh-numa-v2-91b86e3901b4
+
+--
+Sincerely yours,
+Mike.
 
