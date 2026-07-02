@@ -1,34 +1,34 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62FDE47DD43;
-	Thu,  2 Jul 2026 09:38:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D67FF47ECCF;
+	Thu,  2 Jul 2026 09:38:06 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782985085; cv=none; b=EQqK+rgDBhMl+K3czrvMbFEYh3qv9pq3u80uzxlXMpLtZ0F0nBizHFwADb2OgY80aAuS66sIZVcoNShoZv78iC6k8N9E6g3j23w5GwCXjmBk4T5aSO2Uj2DkwTLTlzWxg0jY6ZaLVVyUqFGaYHsNfLmYwBnJAGQT76BUMYhNvzY=
+	t=1782985087; cv=none; b=TFM5B84JF+/m81I7GhbDbgMOT12TAZOjnpNQpxUIN1Dnj5AqFbnymOYNj0oFLbVV9LU6WDCbrtMPBwlGe2FaCPfnYt2hV1y0Zcc3Zg47AQpndJSw6IqR3gfrAXqbPuDhlM/+Rct4A7DPSrdazpjCHzwM0PYZnPXV6Ec39y7SOvg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782985085; c=relaxed/simple;
-	bh=/MhZhrCKOpiCaDzjf5dHkcSJpuDahoaX1MKdCGFEs+Y=;
+	s=arc-20240116; t=1782985087; c=relaxed/simple;
+	bh=wWcelrpex8MZS1PYfhbg5GLpu0feR4WvREbRE7F0d/4=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=CIre41JTmuhbUlPU84+CgLfbhsvDoh68frQs0ign7pfDcxgHQ9ox7586RjDloIMJ/4OhFddzMe1URioplvXjbxnnLXd7wn3x6XbYz5CP0T+PNOrH+iJXZ+GZN342Xuv9rLdGGPIyd5FEPlix8za75qZm17chlpXzDEckwy2MDcc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lGtHZost; arc=none smtp.client-ip=100.103.45.18
+	 In-Reply-To:To:Cc; b=Qgtky2pB+BShiZx91FLOnAtMKt/OvnAv0ItBCxR+8HQ90HwUPXw3CuhI31IF6nu3xz8LmkkE9yMnnojGKxm/q3H5VZ0dUGlujkpm+6ANJqAY4ZzBUK6IoW/sdCWmye45CTHE+g+a0J+cFZJ7NG6eJ0vrT09fYMnx+/ZnIGNrx0Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Bq43KTtM; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lGtHZost"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1A1E81F000E9;
-	Thu,  2 Jul 2026 09:38:01 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Bq43KTtM"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C4671F00A3A;
+	Thu,  2 Jul 2026 09:38:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782985084;
-	bh=LrpGSzkebyRoftqxwiVWzBaNDevQuXrPGCTzKZQff20=;
+	s=k20260515; t=1782985086;
+	bh=wZXeAn79cKmdl5LXbKx9qlBHPdx6/mdKPw9evIgJrM0=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=lGtHZostTemB6LvowT+RGCSgQRIV/vqHHKY2+GvfUKpBJ2m8ICjNfKPziI4XrGkBG
-	 2AITdlwdrgyOpRGngMne8FGcFtWOqtkl1cZv2XMFqFTmGVYp7SvIaTRp71cnZJCrqj
-	 DiKSibd0vinNTIE+m5ewbbAmsMydZ+5tAYET8Q4eh+0WJCKyh9UaaokOKK1tDsIyz5
-	 x8vaZq6oT3QNGOTGjDuNtfD542NsN/xTVo6+0RZKPEvXczMNo+x4xoGphBZKO5x7dv
-	 hUzGsYKBqBE2jyTieFRdqkrvZ9/0iqSYc8nR675njYFtKg2Xa5pGXNnoAW3+8KZJuo
-	 Crbz8MoiIuHkA==
+	b=Bq43KTtMrktf3DiWqyaK3HJ7eER+U0mKYoZjhRFXDtKD6loPT3Kmtso9AkjpGGGR6
+	 y5aFFTA6PR5GbeeVKftOVnPjz7aVqy2pzrSpzr/X+iPnL1vIe2hnj8GiSq9QsLTY39
+	 EkBalUd06aP5lZZs+TiHrjz3bDYcY1OgS5t2gfPP0e7u7mY8lJ0/s00WeSLFZwV4qo
+	 peCJ4Q8cKSYkKGHrCpQyxQCv2NRLakbe+jY3XdLxtR7szkYPFOULF/fTNkntxZBQDx
+	 pLVJlZ5UEU57Vc+pXoVZjmWJ5ff3XhVI64n2fnBQcxCiMjB8aDoaM2shzEPXgOl+V1
+	 1dg4UypH3xg3g==
 From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-Date: Thu, 02 Jul 2026 12:37:51 +0300
-Subject: [PATCH v3 02/10] sh: mm: remove numa.c
+Date: Thu, 02 Jul 2026 12:37:52 +0300
+Subject: [PATCH v3 03/10] sh: mm: drop allocate_pgdat()
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -37,7 +37,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260702-sh-numa-v2-v3-2-57e2435603de@kernel.org>
+Message-Id: <20260702-sh-numa-v2-v3-3-57e2435603de@kernel.org>
 References: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
 In-Reply-To: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
 To: Andrew Morton <akpm@linux-foundation.org>
@@ -48,88 +48,55 @@ Cc: Arnd Bergmann <arnd@arndb.de>,
  linux-kernel@vger.kernel.org, linux-mm@kvack.org
 X-Mailer: b4 0.16-dev
 
-Since CONFIG_NUMA is removed, numa.c won't be ever compiled.
+allocate_pgdat() function used to allocate the node data structure and
+initialize its node_start_pfn and node_spanned_pages fields.
 
-Remove it.
+Without CONFIG_NUMA there is no need to allocate the node data and
+setting node_start_pfn and node_spanned_pages are redundant because they
+are anyway overwritten later by core MM.
+
+Remove allocate_pgdat() function.
 
 Reviewed-by: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 ---
- arch/sh/mm/Makefile |  1 -
- arch/sh/mm/numa.c   | 53 -----------------------------------------------------
- 2 files changed, 54 deletions(-)
+ arch/sh/mm/init.c | 16 ----------------
+ 1 file changed, 16 deletions(-)
 
-diff --git a/arch/sh/mm/Makefile b/arch/sh/mm/Makefile
-index f69ddc70b146..7033947955d6 100644
---- a/arch/sh/mm/Makefile
-+++ b/arch/sh/mm/Makefile
-@@ -37,7 +37,6 @@ endif
- obj-$(CONFIG_DEBUG_FS)		+= $(debugfs-y)
- obj-$(CONFIG_HUGETLB_PAGE)	+= hugetlbpage.o
- obj-$(CONFIG_PMB)		+= pmb.o
--obj-$(CONFIG_NUMA)		+= numa.o
- obj-$(CONFIG_IOREMAP_FIXED)	+= ioremap_fixed.o
- obj-$(CONFIG_UNCACHED_MAPPING)	+= uncached.o
- obj-$(CONFIG_HAVE_SRAM_POOL)	+= sram.o
-diff --git a/arch/sh/mm/numa.c b/arch/sh/mm/numa.c
-deleted file mode 100644
-index 9bc212b5e762..000000000000
---- a/arch/sh/mm/numa.c
-+++ /dev/null
-@@ -1,53 +0,0 @@
--/*
-- * arch/sh/mm/numa.c - Multiple node support for SH machines
-- *
-- *  Copyright (C) 2007  Paul Mundt
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- */
--#include <linux/module.h>
--#include <linux/memblock.h>
--#include <linux/mm.h>
--#include <linux/numa.h>
--#include <linux/pfn.h>
--#include <asm/sections.h>
--
--/*
-- * On SH machines the conventional approach is to stash system RAM
-- * in node 0, and other memory blocks in to node 1 and up, ordered by
-- * latency. Each node's pgdat is node-local at the beginning of the node,
-- * immediately followed by the node mem map.
-- */
--void __init setup_bootmem_node(int nid, unsigned long start, unsigned long end)
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 110308bdef01..fb728906a83f 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -199,20 +199,6 @@ void __init page_table_range_init(unsigned long start, unsigned long end,
+ }
+ #endif	/* CONFIG_MMU */
+ 
+-void __init allocate_pgdat(unsigned int nid)
 -{
 -	unsigned long start_pfn, end_pfn;
 -
--	/* Don't allow bogus node assignment */
--	BUG_ON(nid >= MAX_NUMNODES || nid <= 0);
+-	get_pfn_range_for_nid(nid, &start_pfn, &end_pfn);
 -
--	start_pfn = PFN_DOWN(start);
--	end_pfn = PFN_DOWN(end);
--
--	pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
--			 PAGE_KERNEL);
--
--	memblock_add(start, end - start);
--
--	__add_active_range(nid, start_pfn, end_pfn);
--
--	/* Node-local pgdat */
--	NODE_DATA(nid) = memblock_alloc_node(sizeof(struct pglist_data),
--					     SMP_CACHE_BYTES, nid);
--	if (!NODE_DATA(nid))
--		panic("%s: Failed to allocate %zu bytes align=0x%x nid=%d\n",
--		      __func__, sizeof(struct pglist_data), SMP_CACHE_BYTES,
--		      nid);
+-#ifdef CONFIG_NUMA
+-	alloc_node_data(nid);
+-#endif
 -
 -	NODE_DATA(nid)->node_start_pfn = start_pfn;
 -	NODE_DATA(nid)->node_spanned_pages = end_pfn - start_pfn;
--
--	/* It's up */
--	node_set_online(nid);
 -}
+-
+ static void __init do_init_bootmem(void)
+ {
+ 	unsigned long start_pfn, end_pfn;
+@@ -222,8 +208,6 @@ static void __init do_init_bootmem(void)
+ 	for_each_mem_pfn_range(i, MAX_NUMNODES, &start_pfn, &end_pfn, NULL)
+ 		__add_active_range(0, start_pfn, end_pfn);
+ 
+-	/* All of system RAM sits in node 0 for the non-NUMA case */
+-	allocate_pgdat(0);
+ 	node_set_online(0);
+ 
+ 	plat_mem_setup();
 
 -- 
 2.53.0
