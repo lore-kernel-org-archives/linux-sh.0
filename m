@@ -1,34 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 718F32C3251;
-	Thu,  2 Jul 2026 09:37:59 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0468B365A14;
+	Thu,  2 Jul 2026 09:38:01 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782985080; cv=none; b=GhKK0cD9D4skVlQhlbCMJLezCo2jrOJaTM+Vd9TBybwXWdIn3H9YatBJ/gKCTK+w9TORwJ3uSUydu9CJsLGX7iPgMwpfsMCJFJ911C3qOdSR8F+XI/6j43kKG/05qVJouPMWf5xiH12cHRP2yR5QhZDZ8NnUNxwIAMj3PjMj0tk=
+	t=1782985083; cv=none; b=pVroe2fdNssiP07DZQESRieQwbihbVoOeZrcTI7zrB+FMmFfRyddUkCQRlu+45xGb1QqQISbebbAYooJF6T5nz4FNVfOW4QLxnGNm8FBh/cmYWbvORCp54x9+AxURMMKFsWTLOHK2cs0ohGNXyGGk29nX6FE7bkO7QVfoHjfUZA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782985080; c=relaxed/simple;
-	bh=yDCdzmRsBm94G7BcAj5zhHim5FEWFIte9e/nqvCWk+E=;
-	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=t2zqSlHfSggWXFsJ7bWmZM2gXJ6JKqdAAQBIb6owuvGm2DLvdj/T2eSUi/Bsdv8dBt9Gjre9iLkBLxgAB94a+ichwPG0h0NJmMI8iUoouZMTGnq8XkssLpzSa2hDLUZfGrZBAYVcW9OZuLp1C6XjG8ZnfilFal5+Mw9MJ6OYXBM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=k0TjpYu6; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782985083; c=relaxed/simple;
+	bh=Eqi1W+I7E7XzXQqzOzC6YOggyVMuNjfIDOXZXWHlh00=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=nKwUcCX0mUImOhvzVkWfo8FoFFpn0zgIDTqpzn7vXHJf5G/1bTgUE6igpMutXMvgJGQD9gakF2Z9Dd4foZJJWW4cpEUSss2QTAV/i2khuG8v5RJlMbTILESqwpy7SoO/SFZkoov+kTMe+ByTYN2X8le1AEXU7tb2brXOqYjI4UQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LU/ioZ9y; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="k0TjpYu6"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2807C1F000E9;
-	Thu,  2 Jul 2026 09:37:56 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LU/ioZ9y"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9BAF21F00A3A;
+	Thu,  2 Jul 2026 09:37:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782985079;
-	bh=IEP1okcIZa2gmpJL6sublzBeIdAff9WVYBP7uD2+POM=;
-	h=From:Subject:Date:To:Cc;
-	b=k0TjpYu6civgnHj1E3YNEIjKJ3z1Cn6dgmNf4mMxcSCeVn8Qj++5+jlMhzsXiOXvv
-	 gUoT97ls1dVyBPUziCuuhQ31Q612iS8Xo8kHkeuXmTwu0o9Sof8X9LQH0PwSrN3GU0
-	 +s4AMWes5Ijecxa/KfuBe4hlMSylNlwUlZU0aWNTp7+XtjtBS+GeulWqiIO+eojb+S
-	 wX33xDGTorol/758UyFEWQXKGvmW9Q9hBwydJ4Fro5xNCPvxFskVZM6IfuWaZegAEs
-	 Shtay7eXNDEZiLR+xlru7QX0CeDN5/IZaMu628rszlfNLnPzcPHdkquqYyKf2LsGkA
-	 3epe8Qcu2y+Xw==
+	s=k20260515; t=1782985081;
+	bh=E/c1SOuyI2ZwNrsWlz7tWHsdjKB4oWHRlH6Aj5ZUsD4=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc;
+	b=LU/ioZ9yzq46P072FD9/QEe9PEJ4Um3uVGJqxfO+toh3+O7LZCdXTIISBh+FnR1A9
+	 9t/17RlvO9Sh/ZUkz0wad8Dr3W2ldjRL+xoXJPU5qnWm699/yR+zkTly3Y2EMABtU0
+	 UO86qa0GBV4dJmIPPmiJjIeAEj4Kj3+dbJ+zsGYH7egtIvJCz2SIIzltfoQMe1mmyl
+	 gfrDx/JiCRtm8si0bKFZjDDAAWEn4YcjNh7qvWLnY2c0w+xV5WQX5j24QDiVpQ6E0/
+	 wBmlPOp1OsTuP2JuyRr9ZuWrGdXIXA/r004u7l07biRQVK6pV+VndXsdl2U6g9UCRh
+	 88orZJKAal2/g==
 From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-Subject: [PATCH v3 00/10] sh: remove NUMA and SPARSEMEM support
-Date: Thu, 02 Jul 2026 12:37:49 +0300
-Message-Id: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
+Date: Thu, 02 Jul 2026 12:37:50 +0300
+Subject: [PATCH v3 01/10] sh: remove CONFIG_NUMA and realted configuration
+ options
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -37,11 +38,9 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAG0xRmoC/5WOTRKCMAyFr+J0bbEtP4or7+G4aDFCVFomLR0dh
- rtL4QSuMl9e3nuZmAdC8Oy8mxhBRI/OLpDvd6zptG2B431hpoSqxFEo7jtux17zqHgtzamCvBb
- SFGwxDAQP/Kxh19vGfjRPaEJKSBdGe+CGtG26tHKELdpDr30ASnqHPjj6rt9EmXK24lIKmZdlU
- WXr4JLTMITLC8jCO3PUstQX1V+OeZ5/ysHc9v8AAAA=
-X-Change-ID: 20260702-sh-numa-v2-91b86e3901b4
+Message-Id: <20260702-sh-numa-v2-v3-1-57e2435603de@kernel.org>
+References: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
+In-Reply-To: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Arnd Bergmann <arnd@arndb.de>, 
  John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
@@ -50,13 +49,11 @@ Cc: Arnd Bergmann <arnd@arndb.de>,
  linux-kernel@vger.kernel.org, linux-mm@kvack.org
 X-Mailer: b4 0.16-dev
 
-Hi,
-
 NUMA support for SuperH was introduced a long time ago by commit
 b241cb0c885e ("sh: Support for multiple nodes.")
 
-        "... for boards with many different memory blocks that are
-         otherwise unused (SH7722/SH7785 URAM and so forth)"
+	"... for boards with many different memory blocks that are
+	 otherwise unused (SH7722/SH7785 URAM and so forth)"
 
 In reality, this added 128K of memory on sh7722 and sh7785 and 256K on
 shx3 at the expense of all the NUMA related code in the kernel.
@@ -72,68 +69,152 @@ because since commit ac21fc2dcb40 ("sh: switch to NO_BOOTMEM")
 those additional "nodes" could not be used by the core MM because the
 maximal pfn for ZONE_NORMAL was cut out at the end of the normal memory.
 
+Start removing NUMA support on sh with removing CONFIG_NUMA and related
+configuration options in arch/sh/Kconfig and arch/sh/mm/Kconfig.
+
+Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 ---
-It's been another few weeks without updates from Adrian and I don't see
-why it should wait more.
+ arch/sh/Kconfig                   |  6 ------
+ arch/sh/configs/migor_defconfig   |  1 -
+ arch/sh/configs/sdk7786_defconfig |  1 -
+ arch/sh/configs/se7722_defconfig  |  1 -
+ arch/sh/configs/shx3_defconfig    |  1 -
+ arch/sh/configs/ul2_defconfig     |  1 -
+ arch/sh/mm/Kconfig                | 19 -------------------
+ 7 files changed, 30 deletions(-)
 
-@Andrew, please take it to the mm tree.
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index d5795067befa..d0ba91eba71a 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -106,9 +106,6 @@ config SYS_SUPPORTS_APM_EMULATION
+ config SYS_SUPPORTS_SMP
+ 	bool
+ 
+-config SYS_SUPPORTS_NUMA
+-	bool
+-
+ config STACKTRACE_SUPPORT
+ 	def_bool y
+ 
+@@ -197,7 +194,6 @@ config CPU_SHX3
+ 	bool
+ 	select DMA_COHERENT
+ 	select SYS_SUPPORTS_SMP
+-	select SYS_SUPPORTS_NUMA
+ 
+ config ARCH_SHMOBILE
+ 	bool
+@@ -443,7 +439,6 @@ config CPU_SUBTYPE_SH7785
+ 	select CPU_SH4A
+ 	select CPU_SHX2
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_NUMA
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7786
+@@ -478,7 +473,6 @@ config CPU_SUBTYPE_SH7722
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_NUMA
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select PINCTRL
+ 
+diff --git a/arch/sh/configs/migor_defconfig b/arch/sh/configs/migor_defconfig
+index 1d9d543eef4c..db993616f14e 100644
+--- a/arch/sh/configs/migor_defconfig
++++ b/arch/sh/configs/migor_defconfig
+@@ -9,7 +9,6 @@ CONFIG_MODULES=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SH7722=y
+ CONFIG_MEMORY_START=0x0c000000
+-CONFIG_NUMA=y
+ # CONFIG_MIGRATION is not set
+ CONFIG_SH_MIGOR=y
+ # CONFIG_SH_TIMER_CMT is not set
+diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
+index d6fa3a422e24..36e6dd0622f7 100644
+--- a/arch/sh/configs/sdk7786_defconfig
++++ b/arch/sh/configs/sdk7786_defconfig
+@@ -41,7 +41,6 @@ CONFIG_CPU_SUBTYPE_SH7786=y
+ CONFIG_MEMORY_START=0x40000000
+ CONFIG_MEMORY_SIZE=0x20000000
+ CONFIG_PMB=y
+-CONFIG_NUMA=y
+ CONFIG_HUGETLB_PAGE_SIZE_64MB=y
+ CONFIG_KSM=y
+ CONFIG_SH_STORE_QUEUES=y
+diff --git a/arch/sh/configs/se7722_defconfig b/arch/sh/configs/se7722_defconfig
+index 85b8eb013b79..2908611b118e 100644
+--- a/arch/sh/configs/se7722_defconfig
++++ b/arch/sh/configs/se7722_defconfig
+@@ -10,7 +10,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SH7722=y
+ CONFIG_MEMORY_START=0x0c000000
+-CONFIG_NUMA=y
+ CONFIG_SH_STORE_QUEUES=y
+ CONFIG_SH_7722_SOLUTION_ENGINE=y
+ # CONFIG_SH_TIMER_CMT is not set
+diff --git a/arch/sh/configs/shx3_defconfig b/arch/sh/configs/shx3_defconfig
+index 0cb69a0b92cb..22c242cf89f7 100644
+--- a/arch/sh/configs/shx3_defconfig
++++ b/arch/sh/configs/shx3_defconfig
+@@ -29,7 +29,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SHX3=y
+ CONFIG_MEMORY_START=0x0c000000
+-CONFIG_NUMA=y
+ CONFIG_PAGE_SIZE_64KB=y
+ CONFIG_SH_STORE_QUEUES=y
+ CONFIG_SH_X3PROTO=y
+diff --git a/arch/sh/configs/ul2_defconfig b/arch/sh/configs/ul2_defconfig
+index 00a37944b043..1740a6465280 100644
+--- a/arch/sh/configs/ul2_defconfig
++++ b/arch/sh/configs/ul2_defconfig
+@@ -10,7 +10,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_CPU_SUBTYPE_SH7366=y
+ CONFIG_MEMORY_SIZE=0x01f00000
+-CONFIG_NUMA=y
+ # CONFIG_MIGRATION is not set
+ # CONFIG_SH_DSP is not set
+ # CONFIG_SH_TIMER_CMT is not set
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index 1862411665ab..71fecbbb080e 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -112,27 +112,8 @@ config VSYSCALL
+ 	  For systems with an MMU that can afford to give up a page,
+ 	  (the default value) say Y.
+ 
+-config NUMA
+-	bool "Non-Uniform Memory Access (NUMA) Support"
+-	depends on MMU && SYS_SUPPORTS_NUMA
+-	select ARCH_WANT_NUMA_VARIABLE_LOCALITY
+-	default n
+-	help
+-	  Some SH systems have many various memories scattered around
+-	  the address space, each with varying latencies. This enables
+-	  support for these blocks by binding them to nodes and allowing
+-	  memory policies to be used for prioritizing and controlling
+-	  allocation behaviour.
+-
+-config NODES_SHIFT
+-	int
+-	default "3" if CPU_SUBTYPE_SHX3
+-	default "1"
+-	depends on NUMA
+-
+ config ARCH_FLATMEM_ENABLE
+ 	def_bool y
+-	depends on !NUMA
+ 
+ config ARCH_SPARSEMEM_ENABLE
+ 	def_bool y
 
-v3 changes:
-* rebased on v7.2-rc1
-
-v2: https://patch.msgid.link/20260510135546.13554-1-rppt@kernel.org
-* remove stale SYS_SUPPORTS_NUMA
-* add Arnd's Reviewed-by
-
-v1: https://patch.msgid.link/20260510135546.13554-1-rppt@kernel.org
-
----
-Mike Rapoport (Microsoft) (10):
-      sh: remove CONFIG_NUMA and realted configuration options
-      sh: mm: remove numa.c
-      sh: mm: drop allocate_pgdat()
-      sh: remove setup_bootmem_node() and plat_mem_setup()
-      sh: drop dead code guarded by #ifdef CONFIG_NUMA
-      sh: drop include/asm/mmzone.h
-      init/Kconfig: drop ARCH_WANT_NUMA_VARIABLE_LOCALITY
-      sh: init: remove call the memblock_set_node()
-      sh: remove SPARSEMEM related entries from Kconfig
-      sh: drop include/asm/sparsemem.h
-
- arch/sh/Kconfig                        | 12 --------
- arch/sh/configs/migor_defconfig        |  1 -
- arch/sh/configs/sdk7786_defconfig      |  1 -
- arch/sh/configs/se7722_defconfig       |  1 -
- arch/sh/configs/shx3_defconfig         |  1 -
- arch/sh/configs/ul2_defconfig          |  1 -
- arch/sh/include/asm/mmu.h              |  2 ++
- arch/sh/include/asm/mmzone.h           | 42 ---------------------------
- arch/sh/include/asm/setup.h            |  3 ++
- arch/sh/include/asm/sparsemem.h        | 12 --------
- arch/sh/include/asm/topology.h         | 13 ---------
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  5 ----
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  7 -----
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  5 ----
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  7 -----
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  5 ----
- arch/sh/kernel/cpu/sh4a/setup-shx3.c   | 18 ------------
- arch/sh/kernel/setup.c                 |  7 -----
- arch/sh/kernel/topology.c              | 12 --------
- arch/sh/kernel/vmcore_info.c           |  4 ---
- arch/sh/mm/Kconfig                     | 29 -------------------
- arch/sh/mm/Makefile                    |  1 -
- arch/sh/mm/init.c                      | 24 ---------------
- arch/sh/mm/numa.c                      | 53 ----------------------------------
- arch/sh/mm/sram.c                      |  3 +-
- init/Kconfig                           |  7 -----
- 28 files changed, 6 insertions(+), 272 deletions(-)
----
-base-commit: dc59e4fea9d83f03bad6bddf3fa2e52491777482
-change-id: 20260702-sh-numa-v2-91b86e3901b4
-
---
-Sincerely yours,
-Mike.
+-- 
+2.53.0
 
