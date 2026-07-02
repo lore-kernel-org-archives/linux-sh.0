@@ -1,35 +1,34 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 81A9248AE11;
-	Thu,  2 Jul 2026 09:38:16 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39A5148BD44;
+	Thu,  2 Jul 2026 09:38:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782985097; cv=none; b=I20Xg52lYwkeDNiOEKAwVP3HZJNNlk/fVDQa3XsdtYbMHYroOqhL7eCTnYLvb8jyjKd58DvaXrQrfdjeZ2+X2AzHhioVFQTRJnNKL83wh2A+PGOM6bRqFkt3eI0me00NBc9VLTD0WVAtaJli7BomwHSKUE9hE8cEhrfFQgUPNyc=
+	t=1782985100; cv=none; b=SAHLdW6Kt4kbUz/Vaeolx2sGOQ418X9ZN+1I4uwt06A/pfDaExiZ+IfxAwl3bTHrB/KAt2Gs7CeWlQj1lTH/dZzWlTqS9jucRq8ALzIDyrS4riiczdUio0ZzsJU2HuscEY77iq6zqb1DFZk/Ol2lCr7XQ5j+Z0jNpdHwVWClwjA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782985097; c=relaxed/simple;
-	bh=u8MugJLwFkbGKRHYFPPeJDXzFp0R8NHuiatxr+m7Plk=;
+	s=arc-20240116; t=1782985100; c=relaxed/simple;
+	bh=DgRWmMzCMTi6Gkg8jwVtJ0G3ZHkNgPcP3SO+TpSVxBc=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=i5BSgkANDvOb1oaTF9LzSSRrGeFXazFuk29hjlkPIiUl4M2G+jtWAJ1KbYtpzUfhJj7nJ0OH9DITGxwIohC5dkhKASkuh17Rn4OznRnoL849vCjeme5EB33vyqM9uanyJVz/WZ1MBk8RdfvclObwyMfdNRGs4s7acX+8XHzU/2E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=OL/JsLxb; arc=none smtp.client-ip=100.103.45.18
+	 In-Reply-To:To:Cc; b=jAMbdrBkM4M7OKzbAJcGk8g2dYUkNqW0UCrxoKG4M4NiSlkRKWyhZAuhtBA2lR4m1E1pMXcor5P0Bwlq4j4MGtbQoO00eAvsE/5bnA6TYsRMoF0a0W8yqyou8t/ii5KX09qxTXUT4fHohmtGxgX0apGaba63+BqkttQ0Y6Ym7Io=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Jw8WuTfQ; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="OL/JsLxb"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6E9FB1F00A3A;
-	Thu,  2 Jul 2026 09:38:14 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Jw8WuTfQ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E0BB71F000E9;
+	Thu,  2 Jul 2026 09:38:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782985096;
-	bh=LuNp6PoxicBFh9epmeKx1f4XkMKVUuWTDnBIrOcUr68=;
+	s=k20260515; t=1782985098;
+	bh=n1C3FBGZLJxzF0zbehgPaJJTy3zzicAWlgey4IEjIG0=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=OL/JsLxbnEDzY4iM9kZaNHx7Xsr1Z2jV1xCxEYSxjEPueoSOQ80Tj6dPFw7NezoJZ
-	 C0am4Vs2drFQA+HT1wSgmwEaLmeyTP0Q3FPruDGylc4z+HRsir4fxS4YVtjRnYifGd
-	 2E+ljprNELN3w9eZ1w68ztAk7lOBYnSqjah2fpceNWip4cahCoMOCgAsyAoF8U+/6n
-	 4QhhBUVGy94gdCNH/UYrcqn4jE4MSfGsMkNFGsDfSOCD5yhaX0DQbp53vCADSklNTs
-	 78t5JUM4nFKD0jKJu5HRd1BXXHamzw7oIHzEzYuX179v2D1cnstIUF96YxPnrWF4E2
-	 qhGnq4C6Lp1Vw==
+	b=Jw8WuTfQmPaeB9yqjf3FM6+tqciMyZa3uJd57fPqZpBm0pKOA3L8/lyKY+AwtFj/A
+	 GrEhMACFY8Os0Q7HsfYJOfIv4wSxdWPf3PVcmGJ28lwf5AOelFyJkika0T0cDJ0NSw
+	 4QDoDmheLmBHo5k4Fi8lzJikZpJvAVSby1nudk5g7ckiRIcijAPuto/T49dvZwCqty
+	 JwOC7u2Gf0/bbCjp2lNsZW3Hh4UbZso6EnYFsBdgg6i/nVU6kyomDJGGtVEjA18JYx
+	 fCDpX5wtyiLLsW7+1WDW5+shIqDfMZQbZilC6XJLP+9nU/d/iLCzWmwqdXLZx5J8Xf
+	 NXq1Pd9beQaqg==
 From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-Date: Thu, 02 Jul 2026 12:37:56 +0300
-Subject: [PATCH v3 07/10] init/Kconfig: drop
- ARCH_WANT_NUMA_VARIABLE_LOCALITY
+Date: Thu, 02 Jul 2026 12:37:57 +0300
+Subject: [PATCH v3 08/10] sh: init: remove call the memblock_set_node()
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -38,7 +37,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260702-sh-numa-v2-v3-7-57e2435603de@kernel.org>
+Message-Id: <20260702-sh-numa-v2-v3-8-57e2435603de@kernel.org>
 References: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
 In-Reply-To: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
 To: Andrew Morton <akpm@linux-foundation.org>
@@ -49,40 +48,30 @@ Cc: Arnd Bergmann <arnd@arndb.de>,
  linux-kernel@vger.kernel.org, linux-mm@kvack.org
 X-Mailer: b4 0.16-dev
 
-sh was the only architecture that selected ARCH_WANT_NUMA_VARIABLE_LOCALITY.
-
-With NUMA support on sh gone, there is no need in this configuration
-option.
+Without CONFIG_NUMA, the call to memblock_set_node() is not needed.
 
 Remove it.
 
 Reviewed-by: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 ---
- init/Kconfig | 7 -------
- 1 file changed, 7 deletions(-)
+ arch/sh/kernel/setup.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index 5230d4879b1c..e8ea2d7697bf 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1001,16 +1001,9 @@ config CC_STRINGOP_OVERFLOW
- config ARCH_SUPPORTS_INT128
- 	bool
- 
--# For architectures that (ab)use NUMA to represent different memory regions
--# all cpu-local but of different latencies, such as SuperH.
--#
--config ARCH_WANT_NUMA_VARIABLE_LOCALITY
--	bool
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 2f2764061003..43d0f7b62b03 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -228,9 +228,6 @@ void __init __add_active_range(unsigned int nid, unsigned long start_pfn,
+ 	 */
+ 	pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
+ 			 PAGE_KERNEL);
 -
- config NUMA_BALANCING
- 	bool "Memory placement aware NUMA scheduler"
- 	depends on ARCH_SUPPORTS_NUMA_BALANCING
--	depends on !ARCH_WANT_NUMA_VARIABLE_LOCALITY
- 	depends on SMP && NUMA_MIGRATION && !PREEMPT_RT
- 	help
- 	  This option adds support for automatic NUMA aware memory/task placement.
+-	memblock_set_node(PFN_PHYS(start_pfn), PFN_PHYS(end_pfn - start_pfn),
+-			  &memblock.memory, nid);
+ }
+ 
+ void __init __weak plat_early_device_setup(void)
 
 -- 
 2.53.0
