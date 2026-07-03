@@ -1,71 +1,45 @@
-Received: from mail-pj1-f53.google.com (mail-pj1-f53.google.com [209.85.216.53])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A7813009D6
-	for <linux-sh@vger.kernel.org>; Fri,  3 Jul 2026 05:46:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC468331ECD;
+	Fri,  3 Jul 2026 06:16:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783057589; cv=none; b=DHplSCGPfn5oXr+pqxL6uWiNJ6WYRvasO+3D+aij/7U1sHAFTFetVkrRzBJRszmGVXp3c2DsQNPnH7zh0EUU29meNvR/Yozfh9zNaglbKlK3x23U/lZo4BNnELbIn9sIWF5u//hWhmL8UW0aEhjmE9xFNsWNKeBBQgbXLqPF0N8=
+	t=1783059406; cv=none; b=u4UaFTuntFp31N2y+l6XQgG7Vn0ssWkHMuqYxALK8eI/FSLrAcSoJzHH1Mjd5KFyddvJ5GEGptRWbOF2A0V/I7EBlF5E1qeDUl3xOZQca9dmdR0n0Ty5oPuFBzyCgDpQ0zaPwb5WvSSTY2mgDH4jl/64SZC+aYuHzVCTF8CD/94=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783057589; c=relaxed/simple;
-	bh=Dv8Nw2p67ddP0dKnVf9qrd2Us/sMLgUELm4HJzxUUzs=;
+	s=arc-20240116; t=1783059406; c=relaxed/simple;
+	bh=K3XKmzfG7U56TWp/AwPZk1YQfFMpM4tVk0iMGMS9MJs=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=fnuwYvBDjPMcA1ZbjURq+a2rapw1IB/in7G8xcZDfK6rV3Ewo4h7T5wtLkYKlhQqBL3mjyNt6BQgPCMJqK9d7LjCcKNSdf4oBWEPpJFbqJsjxeO4N3N+vopiiljmhext2BUslM2gWkfkboczLcd7N5JuRIfduFVuCdN1iXpuxLk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=f/n0NoZy; arc=none smtp.client-ip=209.85.216.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	 Content-Type:Content-Disposition:In-Reply-To; b=Rxee3i713s7z4QzxYgsor2axk65WgeTaprDSxctDIwXqtKxails+jnecQbJTNQUo/l5RP1+3wykD7Tc/h3ZUaRENZp2TqUQWMwkZw4FQNzH6HZH89mG+VGGbFjUPmjQGehlc086tE6aoMgMxegc1n/KAWUDAxDEas8dWx64Y+G8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=eikfK/WR; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="f/n0NoZy"
-Received: by mail-pj1-f53.google.com with SMTP id 98e67ed59e1d1-38005a36edbso153316a91.1
-        for <linux-sh@vger.kernel.org>; Thu, 02 Jul 2026 22:46:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1783057587; x=1783662387; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=VgOfL6jUNL98zK671Fx4+N1S0EFaelQIFQrG9658iRA=;
-        b=f/n0NoZyGOYbidIDRCCijapdeR1GIX21MOTutFMpKSov8YCYrTYhqwKBCCc/4D0a97
-         jczXjqQ1QGL7HK3C8g46uBOM1qGWIvGb0QSoJiVQtSP5AoMjYVch+HGkcq07qLQSoyb0
-         X0H9Ct4L9fA4/PvYyRuhUtcQGRnbARFQXe5m5RG1jDPtCk/IPl8z4U4vdM2H6MGXy8k/
-         p5IMBmMKPwiSv9oOQERvHQ370iLa8qyN/BotnBGwwc/aBN9JB2490sVU6/yaBRJJe5hd
-         TzwMR8rvF/5HS/OapwKS9EOqDmVJcZmXYTM/K4qHTGxJD1pQiO3p4wvN04Dbwbq3vtdl
-         EjUw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783057587; x=1783662387;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=VgOfL6jUNL98zK671Fx4+N1S0EFaelQIFQrG9658iRA=;
-        b=nSzebfjG8jbvyg7Nx5SAjNIJeBvdmCzB/R5wONVt6rjBo7flIfPzQ4GEqLeyzYmBDy
-         VrpqqWC3Ke7MeANKuA6ZIAOdypAWOR0feLNAas3kFqKOW0PX/w3t16CcqO3x3/A06Lrw
-         2Jhee8kASfuyNVkkp503G12ama7q1xGFFwZsBGlnJU+6my7nfKej1Ln0ebYzTP8FKj+T
-         PErhrdnkJIDDvTrAvzueFMcgyPs8vwqpZSF+PjgvLy0tH5jBQNbQ4cegLcXpFhOYuX7o
-         LI5tDvMakgnmTEHKHTw3YDu8WFitwzQAm3jfme2Qq0riNtLHotCZeH7I15fgL0J3GFVq
-         NMkQ==
-X-Forwarded-Encrypted: i=1; AFNElJ8EmgRKYUUmfC93TeQ0zo4X5v0vx26Nm4n1LGa/2KRP8UvAzW89KNsUR6cLO2pGoC36kzG/q5kFXQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzpV/AW4GlEOzEhnRR3ur5NaBFrN0cuzWZUMGdSl+z5UC6+ec2c
-	0oHKCtJxJQGmsGwIFNED3siUzcAfiL6pWMUNCBjCGQQ9VlsqF3leirH/c3q5zg==
-X-Gm-Gg: AfdE7ckoyZ91TkVacescJ8WJ7eLbnTKr+5A1o4pk5sMMLgytKP4mGY+6zZIyTePFyvv
-	aqZSn8/An7N8zMT0osCzxBO7o875UGfdjp8LNtXCR7CkMvmiUHQgFSk817ywqLMFL93JHujAIxa
-	h8EY7ZqjB/BCd8gz2fICo4RIZiYvH1EQz8oK4To4OsCFjHbNURcWTNh9bI9dH0ocO4t7+n5++Uk
-	Rj7C245LeHTpTSEKgFyIlDzOUzifJysgyq+WCfaldb/Yew8A94jMdL8kAwggpwgpRPYbzhsSs8V
-	9dQ2FS0cm+8MgN3GrpyH59DjKOI8dqALeDCgXLpdujcgW+fo8heghEq03v+t2ABim82utfRLjKy
-	z5qSxXjMWBZq30KZGgq/rJ2rHE4lpZplfu/C42yBRPj+Ixc9jcnqi3ijSAA4YxaiI4ckwAgYo9z
-	l9JCTQFqyBkW8eT8umkcKllSfpu6w1dnunN1wpeJweRamdvwMqjWRcPA==
-X-Received: by 2002:a05:6a21:3987:b0:3bf:ae43:4d26 with SMTP id adf61e73a8af0-3bfed0e1385mr11025011637.5.1783057587300;
-        Thu, 02 Jul 2026 22:46:27 -0700 (PDT)
-Received: from google.com ([2a00:79e0:2ebe:8:66dd:f357:cb25:7bd5])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b85de12sm16655180eec.12.2026.07.02.22.46.26
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 02 Jul 2026 22:46:26 -0700 (PDT)
-Date: Thu, 2 Jul 2026 22:46:23 -0700
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-To: Florian Fuchs <fuchsfl@gmail.com>
-Cc: linux-input@vger.kernel.org, linux-sh@vger.kernel.org, 
-	Guenter Roeck <linux@roeck-us.net>, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] Input: maplemouse - fix NULL pointer dereference in
- open()
-Message-ID: <akNZDbI4UoGxfuzq@google.com>
-References: <20260628230715.2982552-1-fuchsfl@gmail.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="eikfK/WR"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B49BE1F000E9;
+	Fri,  3 Jul 2026 06:16:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1783059405;
+	bh=i1VdzkvxjcNef3On+ZEjzz2EDquI+okMGLXMK9XiBFI=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=eikfK/WRMW1shSu7Vfe5dev3QsRjEOBjj0z1KEjlVI2LphWAt7BZWWJ/AcUy0/Htz
+	 vb+BU8hD2fihc/CDag80L3VoXn2ci/MB+k9ec96BWtTsOy2EOM6zbpCP7x1wlAO2WQ
+	 CmPDUXNI+vO8nnRYBX7Lp3jVO2elXZ1isI4uIc0yXSaRT/QojByRyO06itkZawo0mm
+	 pdGEj5T3d55tZQAbssqygdzyzCg3uDhIKP3BAJXlMhXCe3m3rl/dbGkl1L0kkAeFwO
+	 qSzQ+G0TzzKLoA1MWaljllceMdQ9uKMz4JGn4U3Cz4WERn4qhRcCDdd9lL2mWLB4FX
+	 2dbGLzK/YIivA==
+Date: Fri, 3 Jul 2026 09:16:38 +0300
+From: Mike Rapoport <rppt@kernel.org>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>, Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-mm@kvack.org
+Subject: Re: [PATCH v3 00/10] sh: remove NUMA and SPARSEMEM support
+Message-ID: <akdTxsulVwWP0jgF@kernel.org>
+References: <20260702-sh-numa-v2-v3-0-57e2435603de@kernel.org>
+ <fe0e2ca854db64b1bb169ce47aaa2ce1e796b023.camel@physik.fu-berlin.de>
+ <akY7VSgIhorP54vh@kernel.org>
+ <eab1aaff6f37089d46401059ad7ff056aa5195c1.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -74,31 +48,36 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260628230715.2982552-1-fuchsfl@gmail.com>
+In-Reply-To: <eab1aaff6f37089d46401059ad7ff056aa5195c1.camel@physik.fu-berlin.de>
 
-Hi Florian,
+Hi Adrian,
 
-On Mon, Jun 29, 2026 at 01:07:15AM +0200, Florian Fuchs wrote:
-> Commit 555c765b0cc2 ("Input: mouse - drop unnecessary calls to
-> input_set_drvdata") dropped the input_set_drvdata() call in probe
-> because the data appeared to be unused. However, dc_mouse_open() and
-> dc_mouse_close() were using maple_get_drvdata(to_maple_dev(&dev->dev)).
-> This actually retrieves driver data from the input device's embedded
-> struct device. After input_set_drvdata() was removed, that lookup started
-> returning NULL and opening the input device dereferences mse->mdev.
+On Thu, Jul 02, 2026 at 12:25:47PM +0200, John Paul Adrian Glaubitz wrote:
+> Hello Mike,
 > 
-> Restore input_set_drvdata() and convert open() and close() to use
-> input_get_drvdata() so the dependency is no longer hidden.
+> On Thu, 2026-07-02 at 13:20 +0300, Mike Rapoport wrote:
+> > > I feel like this is an attempt to force me to give up as a maintainer.
+> > 
+> > This isn't an attempt to force you to give up, this is an attempt to merge
+> > patches that have been out there for long time.
+> 
+> You posted these patches the first time in April. This isn't a long time.
 
-Thank you for the patch. While the patch itself is correct I believe the
-main culprit is actually 6b3480855aad ("maple: input: fix up maple mouse driver")
-that introduced incorrect use of
-maple_get_drvdata() and to_maple_dev() on instance of input_dev instead
-of maple_device.
+It is by mm standards.
+ 
+> > This isn't about sh, this is about reducing NUMA and SPARSEMEM_STATIC
+> > footprint to ease the maintenance.
+> 
+> Yes, and I will eventually pick up those patches to rectify this.
 
-I added another Fixes: tag and applied.
+Why do you insist that these patches must go via sh-linux tree?
 
-Thanks.
+If you don't have time right now because of other commitments, Andrew is
+here to help in exactly these cases: let patches move upstream when a
+subsystem maintainer is too overloaded.
+ 
+> Adrian
 
 -- 
-Dmitry
+Sincerely yours,
+Mike.
