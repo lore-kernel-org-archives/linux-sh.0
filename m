@@ -1,109 +1,154 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj1-f48.google.com (mail-pj1-f48.google.com [209.85.216.48])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA2B4313E24
-	for <linux-sh@vger.kernel.org>; Fri,  3 Jul 2026 21:32:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2E4C38888C
+	for <linux-sh@vger.kernel.org>; Sat,  4 Jul 2026 05:57:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783114356; cv=none; b=WbnaOCQCaIUXeFNVvWgT5mzpSqlp45kqdzKTv8o/jB/wMKfPgi5ngTb1JzI47B6xmb0lJQg69F3A19Kp/5gHm3NOVRiW7YYyg4ysiluKz/8/8nwAFk6/jCJ10dHPPwafezu3XEHF/GPQx2PwfvBzZEUk3e7O1jurZUmKymwgWEI=
+	t=1783144655; cv=none; b=HmwBWdrZpyb0TGaqCQ+6c7uUP+heOW7EOKA9Pwwfi4+53amLvjdIor1olKEG+1J+E/p9vX0XuE2wx5aG/ML+V9fXq7yWSp5+yuoLN4dRdOt4Pt1cxu58tNzauIWZ7o0K3c7qtBHWS1Z5a0ED/woxfriDanOgYgLvUBcXrVTNZ+Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783114356; c=relaxed/simple;
-	bh=2Xe0OMXeeYc9/S4+5LxR1blLhyrbF1Lgb0xGUfI7zl4=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=g1ibMCLqtfD0dSnHABnghqviyDC3ts6UPS6a3lC0QndkU1p2fgRAR1+3H9/abZJOU/85mae/ZdFfIr6xlplUJ2z2aU+Me4/czoHLTkgI52sZlq3hZ2CqjBrGE2cbgpFgjl8mLa+6R4Kg41Ky9QA5GUCKf+VV/veD3l3yiNUxX5A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=L+X+Ve5r; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1783144655; c=relaxed/simple;
+	bh=Ix7/Y+EVEU+dwYPaF05H+bOo4qBH5GMr0TAV7TzgV/0=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=jS7J3SmJGnM8Fwc01CfeWw5CJQiawjTK5YiKqeey6wXglv2kjiTSvWQcFjCLOB+/Ioe99t02JMyi1stR5QDTv1lE4iVcv7NacWZQNIVsfUNNTkBnWH5ale4bOrJxLhXnmgj8rWdLuNX9vrWIbhjnTR5/5c49yBx6yokT93hSlk8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=sirSMUFy; arc=none smtp.client-ip=209.85.216.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="L+X+Ve5r"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5DB2D1F01565
-	for <linux-sh@vger.kernel.org>; Fri,  3 Jul 2026 21:32:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1783114355;
-	bh=OKSIV0oOxnrYHCfPO5lAQhnCzHPQePBOMJ0ktW8HRY4=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=L+X+Ve5rFFmAbHC8BOi+ZIIcP1cQ+6P0y9xuzBuOhkmJ2QjJzMsScrnLbDWzVOq2F
-	 CDRw2e90XyAgpu6/TyMFoNgZzEENGTgomFDlUcRuJm9oewwWG9q5ETEjSU6LqIhsGT
-	 RknHnNUy5yyQndrBMUliVhBzY0Qn/NmCqHjYaJCADLnWhwzXCHKOuadPuwGNjxwDtA
-	 egtpUpasm4nM/6WjRe5gSPw3czVm2DxmoU+KdoEpFKeTbOVDwjgFoFvjj0A5eoNhxe
-	 CvE2MRoo/X9U67HLSaLEtE3VRR7CyjJyzx+odq7ir+bVHPCL6tick8FTkJRObVbtD3
-	 9rin1/KYJiA0g==
-Received: by mail-lf1-f51.google.com with SMTP id 2adb3069b0e04-5aebd52488cso1084266e87.2
-        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 14:32:35 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RoRXCy31J9ISIdMsgKwB0zXipp2MeyjssGSDD2MEWVNQXsCzsaXusNEzzrUYOVGnYzLWofnq1m0Pw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxnGAIdectK5AZrPHx9/u5KI8KlthSHgBK2t0Eakrm/hm9XhImx
-	H/Deqwnh9zbAXDcAjpmuVjtdbjaA+nD5bIjj1f0LQQSQ9pra/HQXiyEYpUPTOIEP0BBuLpgjXtX
-	UjallXk+OQR5Zs7xjOgtSTOeg4UsiuG8=
-X-Received: by 2002:a05:6512:8391:b0:5ae:ba2b:b469 with SMTP id
- 2adb3069b0e04-5aed5092745mr72984e87.18.1783114353971; Fri, 03 Jul 2026
- 14:32:33 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sirSMUFy"
+Received: by mail-pj1-f48.google.com with SMTP id 98e67ed59e1d1-37f816d01e3so1292902a91.2
+        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 22:57:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1783144653; x=1783749453; darn=vger.kernel.org;
+        h=cc:to:content-transfer-encoding:mime-version:message-id:date
+         :subject:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=5+rvElI5DJc+LADkj/yI5i5ZTCILlIx+N3s68Xcqphs=;
+        b=sirSMUFyc+mPqhNdNVT4usAvQ6eTAPsTEAYqeiUD7wzSPDPvw355bFs2iO7Sb01BA9
+         HLRBm6KHqqr9BfI6QXa2OjyTL04RVO1MFskDl1unSH00IyQwH6Jx9BSofL5BrhdYnayw
+         vZzvJeuCkdE/w0VZpzt7eDGil1MsY5x5Kao668Tz2kBTrL6xKTSgl0K6o976PfFb8TFq
+         TEBp9Jr6Gsu+s7wiIvedTIsJQNQgY6dwvlQq1wdx8Dd3OgrVnic6VLcyryXtRn6s/Qz5
+         XnoB+dpbzHqcAWDkViV4qsajYAorobYQUfSc5TPG7KiRHXIqw12j5a8RzNMER9wTqhOY
+         m9lA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783144653; x=1783749453;
+        h=cc:to:content-transfer-encoding:mime-version:message-id:date
+         :subject:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=5+rvElI5DJc+LADkj/yI5i5ZTCILlIx+N3s68Xcqphs=;
+        b=SNExQoGPok5gaspB8Vu4EkokH4iNYHEODNCTcZRCuF8kGLoglEDl0Ql2mv9Sz0uPpg
+         9CBFcUlHsfqdRD6RMbJn0nTYezNhR3tzBWj8O9AXSpLjmpsG7NMWoKLsZx9N3fneoZPm
+         5QiTX7oOYtsH/o5JcKbrCBmfLCyIK4PoQ01VSG5P6+YOmt1ibBnO88eh4B0ltojWmjVL
+         8vwR91P0mtNs168Q/aRigNuhyXjINIXyadJDQfbC9gWwK0BWLZoJnJtf1dMrsH/j+6gO
+         wA3sjXFVzUO0M6VKYh7fTtaGdtn+I1t2YvDJyXe9Z/3Vdmi2waJCc1E93+coBJBqg6A4
+         2Tpw==
+X-Forwarded-Encrypted: i=1; AHgh+RpfiQsqMB67r3cA+W7zknUu49XhBT29mBWkB20esEaZb2D48sGex9E/4gjSTrOycRNFFuwco/WiHA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyUjBip5EC+Puqlluqp7baHOUkiH9sltIcXrnsoGBpoFx/wYcu+
+	2D5HYAj1/WmaFQ/eUcywBWprGuweyun0S5epfx4iD5qrW8VdYqUX2VR5
+X-Gm-Gg: AfdE7ckMIQtyLrUOQGKnVVNCRfn1wVQLEtlfs8c+4nz6tcaizR+DIH6X8ClZaxS7lzM
+	Zew6lDHIA2/Xy89ZByrZK4J4h2vbIOLCUaxx9f+0GP5dM0mS4/MWBkTglhYTAmu0KeEl/hddnii
+	+FGq0dybVxcWeVApudzVy43ntkQ7SjwVpkEo9EZK/00ejxt2uS1NxRVNEh94ja3TytHjnUEx5HM
+	P4i6o+5p3cJxKq16k4cIuOyKl96Ogaa9s1ilUJ48t1blcNawgH8ss9VhNaLC/rozGcbbMT3MKfc
+	pqj2gdTRZGKsRVCWN+7D4n1X48An1BnrH8JxN2QgmaGWK5WTDpa9VoVqjX6SP57Xn8G6xrUaQt1
+	Ug/GXb5Y6KkawiIowKqzIngBI9s2RxmEvlaFCqKg2stc8TQflvppVzscOQnBhEJwCvsXOJiKCbj
+	RJVFj+yPgIho9A1eAf69yNPYdjVKPyO/63le9MWmXVq3lSl+Ms/pnSM6EvO2u0UwvV8AN6FeNK2
+	7E=
+X-Received: by 2002:a17:90b:17c4:b0:380:40b:f30a with SMTP id 98e67ed59e1d1-38280d99e12mr2630038a91.13.1783144652797;
+        Fri, 03 Jul 2026 22:57:32 -0700 (PDT)
+Received: from dtor-ws.sjc.corp.google.com ([2a00:79e0:2ebe:8:880:86f9:3b00:6746])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b813cd9sm26262412eec.8.2026.07.03.22.57.31
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 03 Jul 2026 22:57:32 -0700 (PDT)
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Subject: [PATCH 00/26] sh: maple: cleanup and modernize input drivers
+Date: Fri, 03 Jul 2026 22:57:23 -0700
+Message-Id: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260629130616.642022-1-ruanjinjie@huawei.com>
- <20260629130616.642022-2-ruanjinjie@huawei.com> <akdp6GAu77-ipsXA@kunlun.suse.cz>
- <87cxx4mmim.ffs@fw13> <akeIK5TRCjlKbzbp@J2N7QTR9R3>
-In-Reply-To: <akeIK5TRCjlKbzbp@J2N7QTR9R3>
-From: Linus Walleij <linusw@kernel.org>
-Date: Fri, 3 Jul 2026 23:32:21 +0200
-X-Gmail-Original-Message-ID: <CAD++jLn0Pfhx0bY9XywVkDVU-nyAbvrnf9Wr8TSkuV4hgJL=8w@mail.gmail.com>
-X-Gm-Features: AVVi8CegcPVBpxUBhMgaVmjHkjMbMgWpKQVd4voTgZ2p1M7BcZ7lo9TMo7bB8LM
-Message-ID: <CAD++jLn0Pfhx0bY9XywVkDVU-nyAbvrnf9Wr8TSkuV4hgJL=8w@mail.gmail.com>
-Subject: Re: [PATCH v16 01/18] seccomp: Convert __secure_computing() to return boolean
-To: Mark Rutland <mark.rutland@arm.com>
-Cc: Thomas Gleixner <tglx@kernel.org>, =?UTF-8?Q?Michal_Such=C3=A1nek?= <msuchanek@suse.de>, 
-	Jinjie Ruan <ruanjinjie@huawei.com>, oleg@redhat.com, richard.henderson@linaro.org, 
-	mattst88@gmail.com, linmag7@gmail.com, linux@armlinux.org.uk, 
-	catalin.marinas@arm.com, will@kernel.org, kees@kernel.org, guoren@kernel.org, 
-	chenhuacai@kernel.org, kernel@xen0n.name, geert@linux-m68k.org, 
-	tsbogend@alpha.franken.de, James.Bottomley@hansenpartnership.com, 
-	deller@gmx.de, maddy@linux.ibm.com, mpe@ellerman.id.au, npiggin@gmail.com, 
-	chleroy@kernel.org, pjw@kernel.org, palmer@dabbelt.com, aou@eecs.berkeley.edu, 
-	alex@ghiti.fr, hca@linux.ibm.com, gor@linux.ibm.com, agordeev@linux.ibm.com, 
-	borntraeger@linux.ibm.com, svens@linux.ibm.com, ysato@users.sourceforge.jp, 
-	dalias@libc.org, glaubitz@physik.fu-berlin.de, richard@nod.at, 
-	anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net, luto@kernel.org, 
-	mingo@redhat.com, bp@alien8.de, dave.hansen@linux.intel.com, hpa@zytor.com, 
-	chris@zankel.net, jcmvbkbc@gmail.com, peterz@infradead.org, wad@chromium.org, 
-	thuth@redhat.com, ada.coupriediaz@arm.com, kevin.brodsky@arm.com, 
-	yeoreum.yun@arm.com, song@kernel.org, james.morse@arm.com, 
-	anshuman.khandual@arm.com, broonie@kernel.org, liqiang01@kylinos.cn, 
-	pengcan@kylinos.cn, ryan.roberts@arm.com, yangtiezhu@loongson.cn, 
-	sshegde@linux.ibm.com, mchauras@linux.ibm.com, austin.kim@lge.com, 
-	jchrist@linux.ibm.com, arnd@arndb.de, thomas.weissschuh@linutronix.de, 
-	sohil.mehta@intel.com, andrew.cooper3@citrix.com, jgross@suse.com, 
-	kas@kernel.org, x86@kernel.org, linux-alpha@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-mm@kvack.org, linux-csky@vger.kernel.org, loongarch@lists.linux.dev, 
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
-	linux-sh@vger.kernel.org, linux-um@lists.infradead.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAMSgSGoC/yXMQQrCMBBG4auUWTuQhhKGXqW4SOKvTmljSKwIp
+ Xc36vJbvLdTRVFUGrudCl5a9ZEa+lNH8e7TDayXZrLGOuOscBh49XkBxwU+bZlFBifWozcSqGW
+ 54Krv33I6/123MCM+vx86jg9nwHB4dAAAAA==
+X-Change-ID: 20260628-b4-maple-cleanup-884682ae108b
+To: Miquel Raynal <miquel.raynal@bootlin.com>, 
+ Richard Weinberger <richard@nod.at>, Vignesh Raghavendra <vigneshr@ti.com>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Florian Fuchs <fuchsfl@gmail.com>, 
+ Adrian McMenamin <adrianmcmenamin@gmail.com>, linux-kernel@vger.kernel.org, 
+ Dmitry Torokhov <dtor@mail.ru>, linux-input@vger.kernel.org, 
+ linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+X-Mailer: b4 0.16-dev-6911d
 
-On Fri, Jul 3, 2026 at 12:00=E2=80=AFPM Mark Rutland <mark.rutland@arm.com>=
- wrote:
+This series aims to modernize the Maple bus core and its input drivers
+(keyboard, mouse, joystick/controller), addressing build failures, race
+conditions, and coding style issues:
 
-> Bikeshedding below; sorry.
->
-> I think the bigger problem is just that secure_computing() is a terrible
-> name that does not express the intended semantic -- it's not clear
-> whether "secure computing" means "seccomp permit the syscall" or
-> "seccomp is enabled and some special rules now apply" or something else
-> entirely.
->
-> If we're changing the return type, it might be worth renaming the
-> function something like:
->
->         seccomp_permits_syscall()
+- fixes a build failure in vmu-flash.c due to missing include
+- fixes keyboard press detection logic (eliminating a 1-poll delay and
+  redundant press events)
+- corrects D-pad axis limits and optimizes event reporting using
+  branchless calculations
+- implements open() and close() in maple_keyb so all Maple input drivers
+  only poll when actively open
+- introduces callback_mutex in the Maple bus core to avoid potential UAF
+  when stopping/unbinding the drivers
+- removes the unused driver field from struct maple_device (write-only
+  since 2008) and eliminates the redundant maple_unsupported_device dummy
+  driver
+- implements standard bus-level probe() and remove() methods for the
+  Maple bus
+- converts all three Maple input drivers to use managed resources, and
+  fixes style issues reported by checkpatch.
 
-Yeah that's way better, let's do this.
-(I also had problems with this function!!)
+This compiles but has not been tested on real hardware.
 
-Rusty Russel's API design manifesto tells us to do this:
-https://gist.github.com/mjball/9cd028ac793ae8b351df1379f1e721f9
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+---
+Dmitry Torokhov (26):
+      sh: maple: include linux/device.h in linux/maple.h
+      Input: maple_keyb - fix key press detection
+      Input: maplecontrol - only enable present axes
+      Input: maplemouse - stop polling and clear callback on close
+      Input: maplecontrol - stop polling and clear callback on close
+      Input: maplecontrol - simplify maple_device retrieval in open/close
+      Input: maple_keyb - implement open and close methods
+      Input: maplemouse - remove redundant drvdata resetting
+      Input: maple_keyb - remove redundant drvdata resetting
+      Input: maplecontrol - remove redundant drvdata resetting
+      Input: maplemouse - remove unused mdev->driver assignment
+      Input: maplecontrol - remove unused mdev->driver assignment
+      Input: maple_keyb - remove unused mdev->driver assignment
+      mtd: maps: vmu-flash: remove unused mdev->driver assignment
+      sh: maple: remove not needed maple_unsupported_device driver
+      sh: maple: remove unused driver field from struct maple_device
+      sh: maple: implement bus-level probe/remove
+      sh: maple: introduce callback_mutex in maple_device
+      Input: maple_keyb - remove redundant mutex and remove method
+      Input: maple_keyb - convert to devm
+      Input: maplemouse - convert to devm
+      Input: maplecontrol - convert to devm
+      Input: maple_keyb - fix style issues
+      Input: maplemouse - fix style issues
+      Input: maplecontrol - fix style issues
+      Input: maple_keyb - remove redundant 'new' buffer from struct dc_kbd
 
-Yours,
-Linus Walleij
+ drivers/input/joystick/maplecontrol.c |  98 +++++++++------------------
+ drivers/input/keyboard/maple_keyb.c   | 124 +++++++++++++---------------------
+ drivers/input/mouse/maplemouse.c      |  55 ++++-----------
+ drivers/mtd/maps/vmu-flash.c          |  15 ++--
+ drivers/sh/maple/maple.c              |  61 ++++++++++-------
+ include/linux/maple.h                 |   8 ++-
+ 6 files changed, 140 insertions(+), 221 deletions(-)
+---
+base-commit: 2b763db0c2763d6bf73d7d3e69665222d1f377cf
+change-id: 20260628-b4-maple-cleanup-884682ae108b
+
+Thanks.
+
+-- 
+Dmitry
+
