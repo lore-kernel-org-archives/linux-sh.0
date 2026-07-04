@@ -1,69 +1,67 @@
-Received: from mail-pj1-f41.google.com (mail-pj1-f41.google.com [209.85.216.41])
+Received: from mail-pj1-f50.google.com (mail-pj1-f50.google.com [209.85.216.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 81D28377561
-	for <linux-sh@vger.kernel.org>; Sat,  4 Jul 2026 05:57:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2ADF438C2B0
+	for <linux-sh@vger.kernel.org>; Sat,  4 Jul 2026 05:57:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783144669; cv=none; b=Vg1Fy4ZpFs/E/fB5IUqYs/5h2t35YveMaEot9H1D6mKHhIKpnDu7QwJiL1/CXz4ni93o8ArJhoGsSg9TOr11gZYnGMnVtLl+ASD3+6s0ojSDmHzac9WlVQiSQ3Hf5qFRSkRqgR+TTWOdM4FWzWjBs6FHQsmvg1MSdPneAGX4SNM=
+	t=1783144669; cv=none; b=dgxBgMxEg6ldbBglxxi3Z26QZmcco9CVUI1sYSjGDTCCJ1p0lyyE2WLh8ti6ztg9TDZEOv5jYpJwJqYbTDsKLdmvRgir0odWQo1/QKxOBK8aDHERL1sbpxQ7LRYQa86voae869Di+1avZzoWQvqOZaXKT1r9FGpXcMaOXkCi0V8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1783144669; c=relaxed/simple;
-	bh=Iui5gWYSUynRCagIZf1r+I5yOOQ4yuu5YgE0mJR5/24=;
+	bh=a8jRBRl/22LOCeRI2rwXY5+djprns8HyM7TedOnmb/I=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=VC2g2lAW7G/KqD9KP1B9nEkbitYo/xU2EiSVbgp/X8HIqMvgdprGM9GWFuBqnuL/ejUUM7REmds/PpaXEv4C03DVAK+o8RxFHUHabs8KivxNVkNJl705MtgT1q+VHFff+FX4nDAJ83rKP8H8aePtaSuI+0z3Azyo8w2l3KO+PzA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=cET15dzt; arc=none smtp.client-ip=209.85.216.41
+	 In-Reply-To:To:Cc; b=PxwaVrY6wOJIqf/tegEYvWwG49iBw/o7alFJbMIR8GLcG4jMs8Vzs7nKrB1PAFABEaKHnvrMF/g5T4+sSSX2pf/nsweRURiw7W4pUVuIMcySnq8cFIB9sQFgqPcnDGsEYDmhMHEAQbG6nTh46rS4E1+L8K/buzeesUAzT2ZeEGA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MrfjbyaL; arc=none smtp.client-ip=209.85.216.50
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="cET15dzt"
-Received: by mail-pj1-f41.google.com with SMTP id 98e67ed59e1d1-37d70036426so808820a91.3
-        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 22:57:48 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MrfjbyaL"
+Received: by mail-pj1-f50.google.com with SMTP id 98e67ed59e1d1-382ef647e20so424349a91.1
+        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 22:57:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1783144668; x=1783749468; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1783144664; x=1783749464; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :content-type:mime-version:subject:date:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=/P2FegzAbUFBaPcGw6l/wNkWF21hDcB/lwqrEd+3RkY=;
-        b=cET15dzt8Edk9DYPrWDJRrFyyPQooFwN7rnoBYHNgF3LUkrRXajWM+4Dg7kuRKY1av
-         vV2DmeMXQ6T1J2Eha/rRvWLSZ9WCPbTrVitcUmRA/umxjzZ+CCqnhUho2ufOTyjbrvWS
-         VsUcwIlzEMQRUNcV9Yp1HOkzSY+jkEIiTJbudl6Rs0LHD4NJbLO268QFGZWdLDjtDB8l
-         Gd3WUgDORNMqib0CqTfR1Ivku5nyAyyW3+C4jFsK7Vx3I2rU3PGPLB7HSltkbPd/OavD
-         NO3KeIMpTFo+FyjH+liAKeGQMTmaf1T8L/YEEI8fI/TjzcAOGJz6XePzdc/7PvWfh52b
-         sGjA==
+         :mime-version:subject:date:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=As+a+oXMaauuXL6cjX0g2Fcb3J4Vh+vaEl8MbjsXlXU=;
+        b=MrfjbyaLypr0OgKC96y6tkkbkvgex8ArGeWrWb7knEyL16mTLAoty9GJaruwImOQSD
+         xZ7dtVHfnL9G4VphQP+JEAafyceCNyy0DL78rgsUlzECQKqheEqBWmMjXBvK9bjlIjkR
+         ZWEAUz5rBQtyHuoRzOB1K7iwQ8tKdilfcxdp0A+i3sl97jnGssoe1Wixp5UzK/mUY9Qz
+         hFAyNpPJ47hFSCBfCraonPkXZqUO9N7BCw52sBeN6l/gsfS/MK64zg08f9J8Td2Rmety
+         jBe1emNmHAYT5n+aSuvNu8/xdL1EhCQYiDApuXChQ/q/u7kC39RHsDgA+ZMKK748K6Z/
+         2yRQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783144668; x=1783749468;
+        d=1e100.net; s=20251104; t=1783144664; x=1783749464;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :content-type:mime-version:subject:date:from:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=/P2FegzAbUFBaPcGw6l/wNkWF21hDcB/lwqrEd+3RkY=;
-        b=jepAnt9kqoiMwXWwHjOBqoCFtFdAajAR4fcpmqHF3HeY/FGK9IrcWYZ2uMBgOG1o1v
-         FkFan0zYo47ygM+BQge6FSgT2QUipav5QDOSHhF+ihxhAEsOoUcb2D/wpvsTURLob8YQ
-         mB+NNXecwOFjz2VHUeyrgIlxMNLIc5ar/Xq0y3aZ9PnsTCxP8VtZGEad2cyGVOUPg3q/
-         f9eJu4dyv+6ThLA24T84BXZ83htfQ0edW+uY+juBOjiG3uFGiO7u7pxcetktoHXzdE8U
-         cKiOw8b1BBiXWIZaSNdLX1O+pArLXkv4Cq9ThIu3CvhbhUlweOgUW6AC26xl4z/gfm/L
-         qCvw==
-X-Forwarded-Encrypted: i=1; AHgh+Ro+vsGIF+oFdpWSUWkeNzruFGd3D5gOYX08qXjESwB1R75zyc5zd8swKwYPiWXf2aCvUGSRCKYswQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxZo5YQDMpqIDS4gKe34KXzPiikanC5xkjTkoSLbRk8w8bljupV
-	h1tFB75KlHD+wrWyTP9F4HciGVCIozAnTX0BxRT2gKtkhwInnWVg9U7s
-X-Gm-Gg: AfdE7ckrjdJJw19z8AolH4ALqQmuyBrofX1NoNbsB9ZllQ/yxeMRAx5joB12XEVQlAp
-	sbkmLY7u4xVBbURY7Sts21u+qPMKHmjLmSe79+/cNjYpwMl9F1Nn3OZzg5u1TxLSBF0OR9Zkri2
-	9fXBhxLfbLIbiZDLQAczR7QInLuVJ88c5vEre6y4eRbAe/+u1W9n6vPyNsJ6+uAB5ajvtUXRH24
-	9tmDWmP5fmOMgHkLbwJg4NN2KaYv1oO3TV3mNBaK5s11eGt9zR1hsi+KqoucTKuRSG2A9SViVhe
-	lOKCfiWRDjCbMFNThE1gIOgD3lSLYFWp6/8zrFgkpm1NNTLhgw9O4CGXMMkedWa0GkOBPX4QNUx
-	Vt0JfYkvGr9Q1hTYHH6D1l8qF0CxAWMI30atHf8my0TfPMnievyAFQUDim3EnPMqWfvW3XPuGig
-	Izb1PJNavYlRXbA/eoZME1CSjd2dor1olRe25EXVbADYEX3fjMnJndobJJlLMsox8K1FXYrKzYc
-	ps=
-X-Received: by 2002:a17:90b:4ec5:b0:380:f389:447b with SMTP id 98e67ed59e1d1-38280a9fefemr2264979a91.11.1783144667531;
-        Fri, 03 Jul 2026 22:57:47 -0700 (PDT)
+         :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=As+a+oXMaauuXL6cjX0g2Fcb3J4Vh+vaEl8MbjsXlXU=;
+        b=gQYCGPtqVRT5iH7IER0vp/EsjXEM7ZVtplog520JuD0AvuYxUxNDuibPwodc1R5XqQ
+         yUbbYJXJkrsQgkXOctX4J4jI0y8GrJTZvsMH7RKe/NNlsrGc4xFjPCdsAVtRSYkNBGQ4
+         JO0+uCTW89b1zlG3iLe/D3oWLvMhSFbz14eFuNPSdRyhBnndQ2TDQXUlYs1hchNLhe9M
+         bp0Ur5xRi6+2C9MVnyu84a6O4ANFq9ltz59zVo8xVImng4FVTVukfwKAE1/nB4BraROF
+         G4vTW5xFWl6OxTIrOykpm9Tu5WY2ui0Wo1Dtym5hrfO8SRpduwgymM6c92s3CUz8HFzE
+         e7PQ==
+X-Forwarded-Encrypted: i=1; AHgh+Rob1UIFZEkHYOSog1+YdtF6Bo4laO56XEUghOTzT6tf4MlSUYrUt0x31vblwNmLLjuy6ZfEKy+m0g==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwMFYphNxor4rsUB2uhstZMGii3QbVnKrxcwn65VnYMdte8lV6j
+	zhMlUHFQE5HGbJj354UCGZRVt8JKXC/VQWht5jArsS30zWFRiPyrZx8W
+X-Gm-Gg: AfdE7cnvPaUAPmWhLyb1qgrX5JM0Pr0gom9e37N420lDO/zlj8qs5PAfHFQr59xWsVP
+	kd+GvOPTaUmxkRHzz7g7i7OwxOZGkOx8mZt3orZHVZim5wuW2ZDkeDKRManWkl3qyDDdPOwEKYy
+	UP6oRqmy8v67kK8xVnEYe4XBSQk2FzPwW/829l9BriKlixsLbxTK+Obbxfj12c6FgXW3/7sU4yc
+	6wdEe1C89gNYQC0YMuGdtSBqTyyvK4pmJHYAjOz9uTaXg2yyKgTQIySggDdbmjztLwYr8LBJ1Dk
+	jybYjj/nJfZQELZsfOWGZ/SA9bgB8jLhHtVGaczDOfF1kUULeRB7iJRQHdMcf5auS5zG0UhItcb
+	CpjzdrfvOaXjSj/jdUrlvu5Jco1sfjLMKUpIgLeOTw+Qtlkx5xtCWFdxIIhgw4rMhBmnLxNqwO6
+	AkpKu1lKVklFQjmXkzmXl/ZvSKUFId4c6uP0m7Px9VEOOQ5YDJUAKw4ImrUFS+yLuMGHdw+PXq2
+	f23w8oePaz6QQ==
+X-Received: by 2002:a17:90b:58e8:b0:37f:b16a:cc23 with SMTP id 98e67ed59e1d1-3829f5ea622mr2048940a91.23.1783144664401;
+        Fri, 03 Jul 2026 22:57:44 -0700 (PDT)
 Received: from dtor-ws.sjc.corp.google.com ([2a00:79e0:2ebe:8:880:86f9:3b00:6746])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b813cd9sm26262412eec.8.2026.07.03.22.57.46
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b813cd9sm26262412eec.8.2026.07.03.22.57.42
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 03 Jul 2026 22:57:46 -0700 (PDT)
+        Fri, 03 Jul 2026 22:57:43 -0700 (PDT)
 From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Fri, 03 Jul 2026 22:57:32 -0700
-Subject: [PATCH 09/26] Input: maple_keyb - remove redundant drvdata
- resetting
+Date: Fri, 03 Jul 2026 22:57:30 -0700
+Subject: [PATCH 07/26] Input: maple_keyb - implement open and close methods
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -72,7 +70,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260703-b4-maple-cleanup-v1-9-41e424964da5@gmail.com>
+Message-Id: <20260703-b4-maple-cleanup-v1-7-41e424964da5@gmail.com>
 References: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
 In-Reply-To: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
 To: Miquel Raynal <miquel.raynal@bootlin.com>, 
@@ -85,35 +83,76 @@ Cc: Florian Fuchs <fuchsfl@gmail.com>,
  linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
 X-Mailer: b4 0.16-dev-6911d
 
-The driver core automatically resets driver data to NULL on probe
-failures and device removal, so we can remove it from the driver.
+Instead of polling the keyboard constantly from probe, implement open
+and close methods for the input device to only start polling when the
+device is actually opened by userspace, and stop polling when it is
+closed.
+
+This matches the behavior of maplemouse and maplecontrol drivers.
 
 Assisted-by: Antigravity:gemini-3.5-flash
 Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 ---
- drivers/input/keyboard/maple_keyb.c | 2 --
- 1 file changed, 2 deletions(-)
+ drivers/input/keyboard/maple_keyb.c | 25 +++++++++++++++++++++----
+ 1 file changed, 21 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/input/keyboard/maple_keyb.c b/drivers/input/keyboard/maple_keyb.c
-index a245774acc55..0c92138bcc77 100644
+index 623d7951405b..a245774acc55 100644
 --- a/drivers/input/keyboard/maple_keyb.c
 +++ b/drivers/input/keyboard/maple_keyb.c
-@@ -212,7 +212,6 @@ static int probe_maple_kbd(struct device *dev)
- 	return error;
- 
- fail_register:
--	maple_set_drvdata(mdev, NULL);
- 	input_free_device(idev);
- fail_idev_alloc:
- 	kfree(kbd);
-@@ -230,7 +229,6 @@ static int remove_maple_kbd(struct device *dev)
- 	input_unregister_device(kbd->dev);
- 	kfree(kbd);
- 
--	maple_set_drvdata(mdev, NULL);
- 	return 0;
+@@ -140,6 +140,24 @@ static void dc_kbd_callback(struct mapleq *mq)
+ 	}
  }
  
++static int dc_kbd_open(struct input_dev *dev)
++{
++	struct maple_device *mdev = input_get_drvdata(dev);
++
++	/* Maple polling is locked to VBLANK - which may be just 50/s */
++	maple_getcond_callback(mdev, dc_kbd_callback, HZ / 50,
++			       MAPLE_FUNC_KEYBOARD);
++
++	return 0;
++}
++
++static void dc_kbd_close(struct input_dev *dev)
++{
++	struct maple_device *mdev = input_get_drvdata(dev);
++
++	maple_getcond_callback(mdev, NULL, 0, MAPLE_FUNC_KEYBOARD);
++}
++
+ static int probe_maple_kbd(struct device *dev)
+ {
+ 	struct maple_device *mdev;
+@@ -167,6 +185,7 @@ static int probe_maple_kbd(struct device *dev)
+ 	memcpy(kbd->keycode, dc_kbd_keycode, sizeof(kbd->keycode));
+ 
+ 	maple_set_drvdata(mdev, kbd);
++	input_set_drvdata(idev, mdev);
+ 
+ 	idev->name = mdev->product_name;
+ 	idev->evbit[0] = BIT(EV_KEY) | BIT(EV_REP);
+@@ -175,6 +194,8 @@ static int probe_maple_kbd(struct device *dev)
+ 	idev->keycodemax = ARRAY_SIZE(kbd->keycode);
+ 	idev->id.bustype = BUS_HOST;
+ 	idev->dev.parent = &mdev->dev;
++	idev->open = dc_kbd_open;
++	idev->close = dc_kbd_close;
+ 
+ 	for (i = 0; i < NR_SCANCODES; i++)
+ 		__set_bit(dc_kbd_keycode[i], idev->keybit);
+@@ -186,10 +207,6 @@ static int probe_maple_kbd(struct device *dev)
+ 	if (error)
+ 		goto fail_register;
+ 
+-	/* Maple polling is locked to VBLANK - which may be just 50/s */
+-	maple_getcond_callback(mdev, dc_kbd_callback, HZ/50,
+-		MAPLE_FUNC_KEYBOARD);
+-
+ 	mdev->driver = mdrv;
+ 
+ 	return error;
 
 -- 
 2.55.0.rc0.799.gd6f94ed593-goog
