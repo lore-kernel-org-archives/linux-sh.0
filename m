@@ -1,68 +1,68 @@
-Received: from mail-pl1-f173.google.com (mail-pl1-f173.google.com [209.85.214.173])
+Received: from mail-pg1-f177.google.com (mail-pg1-f177.google.com [209.85.215.177])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 368EA38BF61
-	for <linux-sh@vger.kernel.org>; Sat,  4 Jul 2026 05:57:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 05068388E43
+	for <linux-sh@vger.kernel.org>; Sat,  4 Jul 2026 05:57:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783144663; cv=none; b=d7GfI0l1jxNKgp/xiFKArPqLRYqZfdlhL9xtlRruwaE2RJQV8JB0NXh08tJs4TObB8AS2ZeXmNgnXBOqfRqeb/zhQeafSN4FmbWFa5NxMErXi0EfmzaMNYgiNbXsh8XlA8xXKOXAfscenhorbF5lLArbzGE3gMtrd1oH9XdZGYM=
+	t=1783144663; cv=none; b=Hv960IEq1DAu4ZfFyXn8S0b2jajreg5GwSwzjzZ/dHIVIZu2Zow3uGKFEPoa1Qk+XoRBo8fH1WvWBjCx1pAQcYuDmdtPe8qm9l8wRiXhSCc9U5o61DpVyaxbOiuLyPqWh6gS/FrfuChRrycp09gfaeF43XUkla4S30IxYul9BNE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1783144663; c=relaxed/simple;
-	bh=DdlG5IdkoCXBQ907RBiN6XiEFgItuIUy9eJMTMGaJEc=;
+	bh=UZSM3eWv9Q5ewCC7Mf4OpTsyzSqpcOfv7jMvg20ynLg=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=k9E0mztUshwVx1xkqPBihezm3oE/BdQGGO5+/TKJLzeRE+JMv7umu1rgu9Oi5fcI+qmgiQAYtRvthk3QIdOUz/s30n9/QfYH4buM04aZ8YTOIwIRQl47cmGRGXPCYYLp30wtiqy7vRG6YPrjvhM0h3aGNFhuaVevyFDoh0rdhLw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=e2fEraH3; arc=none smtp.client-ip=209.85.214.173
+	 In-Reply-To:To:Cc; b=XKpSogZu1ljigtFWFexwhiwq2FDageXy+R1d01U6KAUSW6foGgdizlpFdztgHD1ZPEKcvhKzgrFJC5LhLQ5dqXshJTp7vw6FukncwBGXFbyTehqCwS00XUnP/OzBIKwNsL442yYHlbVsufbzHQwhnY90b4J9CawtISWAVlepYZ4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=EBQ660tP; arc=none smtp.client-ip=209.85.215.177
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="e2fEraH3"
-Received: by mail-pl1-f173.google.com with SMTP id d9443c01a7336-2cc61541f8cso2655225ad.0
-        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 22:57:40 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="EBQ660tP"
+Received: by mail-pg1-f177.google.com with SMTP id 41be03b00d2f7-c9d1fc053e0so967525a12.1
+        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 22:57:41 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1783144659; x=1783749459; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1783144661; x=1783749461; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=ZpRM5xO2P6CrGv5fZ5v8OZOm8BQmO2xLbX7VVDuxobU=;
-        b=e2fEraH3wg1AbdS1O2L9iUT6PRowvs9aZUOZZjeJg0pd+nRm3owQDX0+ko6XioW8y3
-         jnSRzFRNpp6rwWgAV5TH3/qfEiiWf9MBw0CHxdWvFbeRJcbevgdM1JDHCTzGnQK+MjId
-         Ya8LxFSD/E7knlZzh9lTSC+oot/Axm1c9i0l/dOV0VkdRhEvN+TVxg90VaN1zmaSq71J
-         xMBbNvZgKw/ZQmbOlYK40cFJihnpcZB452X6hqAGqs3D9kV3J0n1SElvr8WT8FNQmuQl
-         n/2SyAYFWeR5SUA30GmzjRvGlz8JBU2k1RxYwz+oeDSePFg4isf66ahJAFtHCDYih/gf
-         KzPA==
+        bh=15hSQeEEYahDoHIjuKW6WN5DINg66LHxIgPA/aX6Wqk=;
+        b=EBQ660tPO+qC77gimM2m6DI0qfLh0hXUUlNlAye+sAF6tbl2tTK22GlPT+Lk/VVZhx
+         iLoTCplTHhttB1eDSn48C0nFpud98oIhFypd/bACqAhgyXaS2hqUvzmRyrf7i2iRvN2Z
+         qExcMzx0H6FX+P2pon5LD90i7BS1277002N3udbKYpIVpvoJlbgVJUbyr7aEnnezW8rG
+         tGijeP19gXhqkFmj3X8Z2B/WxAGJL6a9JnoozPWrjJ3IuzG+P3gxizO8AQh+KdNbihrI
+         Cw2+XMVENZK3ij8lJzODRK9ytfZUuWYKi1M/qxiHu7ngfYlnGgO4JB1b0H3GaBF3NlRv
+         4QvA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783144659; x=1783749459;
+        d=1e100.net; s=20251104; t=1783144661; x=1783749461;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
          :cc:subject:date:message-id:reply-to;
-        bh=ZpRM5xO2P6CrGv5fZ5v8OZOm8BQmO2xLbX7VVDuxobU=;
-        b=k0BiOGhRDzFfZ4xuPHR5ePRYY7oH7aqi1V6ZLc412zQhvzp+fdI+6K4Bu65MhQNwLt
-         mJ4pe09OKxMpC9B/dPaqVhGAUBRHFauX49SxZspVSD3PtlmeFcCLXsPrJ0f2c/4Zkwga
-         lIncXjJoJnkebzb1HILnog9QoqcyZElrdTJCfS0ZFjyQJVsvWOr7xYPt++14bDK2mnL9
-         monzDSFHJGnfl0J3Qhi4oObXig16MSxH9Vb39W3i4CvIMiZlomZS8Bf3eY4eaN6XmdCJ
-         YMl9YTZMZQJWRRN4PaEbeQfLf04W1KbnT7b94rogtHO2ZYqGbftRTPpkYGTxVL3/DZja
-         sIrw==
-X-Forwarded-Encrypted: i=1; AHgh+RqhlNIWgKpoKR+Np1q8WKxGA02XxD0S3Can28EjSP2m6SQD4aEhLxYWHHpPE5XClcZyp9sdcmb7Ng==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxnQ78+fUQAhjsDco+3MUuOaEu1oCkE62srY3KK2PHuBW6iieie
-	XxjEDeiLibdp1CiibCElRmL9X5LOYJFXxWgQi0eGFD3CPLjy3nQ4IDA5
-X-Gm-Gg: AfdE7cm3/HLLLYybAi5783YLzl4hEw80DuMOxYPcs5yowOLmKCYGt39EgQDrTDRa/eL
-	uWDPB1/QeT8lFp6TtJNQAALbbJ2vFwEr7fRI6oSnnMM0jMg0tzosDsoqNwiNK2RUqVzy2SW+Ij0
-	PZ4/D6fmS7XTwbTXHsBA/MgE4fnAdrqVbXjpJm9gfmnePJ0jhFhpvaMWXkiTWRl4vCTKfjXcPz/
-	75SckaE0GZCE4Fm/ePBCfCVIHz08xveuhi1u9Q/RFZVhds7Hzni9BEynmJqwAIBCOQXTKLaqUl5
-	dodtzKF5oWj+bSo+8UAqwAuoxW3+/jQcBtltE1E4yyRaNKuTOMkk3WLZhu8X4OUY8gDq8OXraNs
-	9bVcg6wNzthhXEk8fHaDw2d4EAlKSfh5Itck5GKtLfRVmGR37zXRB6ZOckGyiTsuI0cxsz2u3FW
-	PfSANKwOHKzrneIGIzCECa5UeYmTkvM0tb2GnYCHa94ZmwUZFIt1RdVgyrc3Hf5f3OExODqRdGC
-	/k=
-X-Received: by 2002:a17:90b:5251:b0:380:8bb9:aba9 with SMTP id 98e67ed59e1d1-38112063c22mr7851183a91.3.1783144659437;
-        Fri, 03 Jul 2026 22:57:39 -0700 (PDT)
+        bh=15hSQeEEYahDoHIjuKW6WN5DINg66LHxIgPA/aX6Wqk=;
+        b=YrvSrAwKIlk88xIp5Ay+llEXilDE33YFcI+YPeC6463QwTTbfOP2JPHIO33uHVbnpK
+         M60Q9VwgFgrw/zBDDlsxmf1182fx5TB3GF7KYUvU/slxxlsn2r41f/Ums6G2yYUpjzDD
+         UNCvELykeF3uuZh+v9wnL8bCArRo1/GEOy/LSNPLrXTdt9s/EZ5ORyNK0jo6fBGpCFJ0
+         aPNXok9H5d1pq7df3YaZ6yYrSt0iDQCersYR6kBl9Uax5H4AwFgY6GU3Ptr3iyQaSqK4
+         N37Ay0Bo0eoDf+0cDW47TtKMgz6zfU1Pn1cpDzcJR//9ZHSdYkjDwBOkIt/5XzkImK76
+         WOdw==
+X-Forwarded-Encrypted: i=1; AFNElJ+WxSWV0kfPn0ursahf3FTJCpLyT7z8ON+TMDUpMGwKzUqnXF/j7glgba5ql6FBwZzYKuadbcjheQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxtrMyCnBFSVQjqrwt3g11fDp0K8nuZcUm5J8GxJcmFm0Koh8xz
+	9lb6RQ0AE9PD2K1YZzFTFsd7x7pofeDefk7gZBtim04GMR5VMyL1HdEv
+X-Gm-Gg: AfdE7ckFq48Nt1K/w2wu/HSWF9l9/UFWhwtcfOEo+Bn7lPqIQmvZ9QVEqAaCr2c07El
+	8q+kDbD0ep0RMSk9V66OitgQuLd4LwhS0ES++btRZJ50Ntp+SirEkPEcAHVvkKxe4XfVeKIEvi2
+	0xg4m2pbaTYtydBl69TCZX9J6+GNSiYT6Qt5INdf96Cc9/XbwZTDEcvihvXiEEAaKYyZKHGG1uQ
+	+hBLxpVpCGCwpwx/5nmz+TV1Nth6V2OmZ4CSKYomT6+yz1pZIT4xz7Q7bA3Zw+uMwjBuHjJPCH3
+	IEnSVnN6efbcDPxVPggjI2erjwdGwziYKJoBxQwUdlMJEZJ3sOmq9DV+XcwZJmGQI+zNgEdENOk
+	a/tJSdeEXlBJGUP1roAmfuiBaac/pOjXpLXVwRrpDOJ0FDSPJRsrvuWfDKLPdusSaSG2vENOcrz
+	98mwDGDHiDHJYdjtieEtXl58k0nDD+QihQ1kOQ/qSjc/DhcoyZGRh2WDF5b6SpWfrLnJi0ynYLB
+	DM=
+X-Received: by 2002:a05:6a21:44c8:b0:3bf:6c08:2849 with SMTP id adf61e73a8af0-3c03e540d9dmr2322074637.56.1783144661119;
+        Fri, 03 Jul 2026 22:57:41 -0700 (PDT)
 Received: from dtor-ws.sjc.corp.google.com ([2a00:79e0:2ebe:8:880:86f9:3b00:6746])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b813cd9sm26262412eec.8.2026.07.03.22.57.37
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b813cd9sm26262412eec.8.2026.07.03.22.57.39
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 03 Jul 2026 22:57:38 -0700 (PDT)
+        Fri, 03 Jul 2026 22:57:40 -0700 (PDT)
 From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Fri, 03 Jul 2026 22:57:27 -0700
-Subject: [PATCH 04/26] Input: maplemouse - stop polling and clear callback
- on close
+Date: Fri, 03 Jul 2026 22:57:28 -0700
+Subject: [PATCH 05/26] Input: maplecontrol - stop polling and clear
+ callback on close
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -71,7 +71,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260703-b4-maple-cleanup-v1-4-41e424964da5@gmail.com>
+Message-Id: <20260703-b4-maple-cleanup-v1-5-41e424964da5@gmail.com>
 References: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
 In-Reply-To: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
 To: Miquel Raynal <miquel.raynal@bootlin.com>, 
@@ -84,43 +84,43 @@ Cc: Florian Fuchs <fuchsfl@gmail.com>,
  linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
 X-Mailer: b4 0.16-dev-6911d
 
-In dc_mouse_close(), pass NULL instead of dc_mouse_callback to
+In dc_pad_close(), pass NULL instead of dc_pad_callback to
 maple_getcond_callback() to both stop polling and clear the callback
 pointer when the input device is closed.
 
 This makes the manual clearing of mdev->callback in
-remove_maple_mouse() redundant, as input_unregister_device()
+remove_maple_controller() redundant, as input_unregister_device()
 automatically closes the device if it was open. Remove the redundant
 assignment.
 
 Assisted-by: Antigravity:gemini-3.5-flash
 Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 ---
- drivers/input/mouse/maplemouse.c | 4 +---
+ drivers/input/joystick/maplecontrol.c | 4 +---
  1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/drivers/input/mouse/maplemouse.c b/drivers/input/mouse/maplemouse.c
-index 0c8f7d1b02aa..97d520e7d66d 100644
---- a/drivers/input/mouse/maplemouse.c
-+++ b/drivers/input/mouse/maplemouse.c
-@@ -60,8 +60,7 @@ static void dc_mouse_close(struct input_dev *dev)
+diff --git a/drivers/input/joystick/maplecontrol.c b/drivers/input/joystick/maplecontrol.c
+index a498fc322c4d..c66b2614e298 100644
+--- a/drivers/input/joystick/maplecontrol.c
++++ b/drivers/input/joystick/maplecontrol.c
+@@ -74,8 +74,7 @@ static void dc_pad_close(struct input_dev *dev)
  {
- 	struct dc_mouse *mse = input_get_drvdata(dev);
+ 	struct dc_pad *pad = dev_get_platdata(&dev->dev);
  
--	maple_getcond_callback(mse->mdev, dc_mouse_callback, 0,
--		MAPLE_FUNC_MOUSE);
-+	maple_getcond_callback(mse->mdev, NULL, 0, MAPLE_FUNC_MOUSE);
+-	maple_getcond_callback(pad->mdev, dc_pad_callback, 0,
+-		MAPLE_FUNC_CONTROLLER);
++	maple_getcond_callback(pad->mdev, NULL, 0, MAPLE_FUNC_CONTROLLER);
  }
  
- /* allow the mouse to be used */
-@@ -122,7 +121,6 @@ static int remove_maple_mouse(struct device *dev)
+ /* allow the controller to be used */
+@@ -156,7 +155,6 @@ static int remove_maple_controller(struct device *dev)
  	struct maple_device *mdev = to_maple_dev(dev);
- 	struct dc_mouse *mse = maple_get_drvdata(mdev);
+ 	struct dc_pad *pad = maple_get_drvdata(mdev);
  
 -	mdev->callback = NULL;
- 	input_unregister_device(mse->dev);
+ 	input_unregister_device(pad->dev);
  	maple_set_drvdata(mdev, NULL);
- 	kfree(mse);
+ 	kfree(pad);
 
 -- 
 2.55.0.rc0.799.gd6f94ed593-goog
