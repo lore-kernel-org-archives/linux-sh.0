@@ -1,67 +1,67 @@
-Received: from mail-pg1-f173.google.com (mail-pg1-f173.google.com [209.85.215.173])
+Received: from mail-pj1-f46.google.com (mail-pj1-f46.google.com [209.85.216.46])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 029993955D7
-	for <linux-sh@vger.kernel.org>; Sat,  4 Jul 2026 05:58:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90D81395AF7
+	for <linux-sh@vger.kernel.org>; Sat,  4 Jul 2026 05:58:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783144694; cv=none; b=nbI+5mbybqTqC/DhQk69spK/e5ePAcx5iT01OxcQk4ZusWlhd0eyysreGitIQrv7M6coHNSf8+op05le1AkXBW99AS+Ijql21V6wa0lkLkQZGUX0uPOaVEYztOEaeXc81EWqqDH1j24eR6tkivBKhAi2kRHg/LHxNACNQDbyBfs=
+	t=1783144694; cv=none; b=s2s3yDoJbjKxF8V+ssGN4wfRqjYn81dl51a5h6SRu6XBHLcY/SzUmfiLTT1cBq5WZWODdSsAJQLHgsOO5Y/8+3qNe+YF1x5WFq17N/liIFOLGv6+4vySm5h61g8G2rSlywawLv5jr/ZvZZ0pmsa4Jw/nlAnn8Jl5lfGle6vaafk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1783144694; c=relaxed/simple;
-	bh=bJdwpjh8bt5egacgW4GkSSVLDN/CuQe6AaNTKlGoUdY=;
+	bh=+bsOwx9nTrOYEXFntbGCVjJcg5PLsYu5S2ZCTM7LJUg=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=LfOxGWoI6DUSCHJSumpv0TG5WEw6c4jNnhGmqN//zkLSa3rLV718MqyYhvFUKcb/zKUxnrpZBfCUN6zsczZIOc2KMtsYSrA3agfW+ervvufg0v/m9IpnEN6KvmDt7U2sqsRe50uyBZJc1O2piMnaF+19ymBZwpVXpj5Cqn5ILEU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=QfOpz4cy; arc=none smtp.client-ip=209.85.215.173
+	 In-Reply-To:To:Cc; b=gxwLeDZHzgXv9See3ojqwIVOtsrYKyuwAJDGAI+i31QdJRxH+M+ugS5CJa6rUGna2XLd+4rNCQwsjNODTqWqOHBY5faq5y6NyhvPn++Wz032P/fSO+dD1VicPqQ+wSnptCTqoGzdBvCvtdmjHms65wihbzCn0KKLJHrEi+ncIeY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=W5DB4iPF; arc=none smtp.client-ip=209.85.216.46
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="QfOpz4cy"
-Received: by mail-pg1-f173.google.com with SMTP id 41be03b00d2f7-c85b73ffb52so614812a12.3
-        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 22:58:11 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="W5DB4iPF"
+Received: by mail-pj1-f46.google.com with SMTP id 98e67ed59e1d1-381b831d535so993854a91.0
+        for <linux-sh@vger.kernel.org>; Fri, 03 Jul 2026 22:58:13 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1783144691; x=1783749491; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1783144693; x=1783749493; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=cWjg7UC3W2OY/ypUpA0NQNYwI2Wk9GMT1X28efRSy2Q=;
-        b=QfOpz4cyGxJpis6I4NEzMWQRgKptixEMXgb4+beT7NmMIOhlcYkTr0F7sNdo3Fvmlb
-         fzdPpd2KAGGNmHD7qzTQhjJxqvZvrc5RaVCZq7ScQVvSBZ419/UqthVizQRtYNfwFqzn
-         3w9nNWEfW/ueU497XsRgSTD3MmGGaCYUl6nK5AczgAjzOj3Dc5y46XpO9W1Kv9//g8s4
-         nYTfRJiW8FppIlvlSgnwe55yhCfYD7ZpszJmgpys7f+pf05kKvgQhTgdGgspz5ah5Pl0
-         1WNsdIJHWlSFBq47gwhZvdBCP4K5LEkeWD7uTtiLNWjHNYglU0h5L28a7VedgXAY60y4
-         18rQ==
+        bh=U4acdNVktMdF/ZdKGXVy9IqprAtt4e6vm+MUIpvJ+to=;
+        b=W5DB4iPFgvIZdwcj8RFIQvb7l9ya/cb8I6lAr8agXnoOs3eJuE8hg1SK9P7Ns+qc+K
+         O+4kQduNIISzSQD7FM2U/w2IUqjXkwzGVAnDZnrwSkJk3AMa2ky7r1iFrMwZlO21w4Ps
+         Pp9WqcbQWHAc6iJoEqRJeceJbxSkeC8cmU08O8ActvABzq6nwZgq8L+TWe/XY3meackt
+         mx/IZrC97WrBnufMliw+blso3tz5jdkTS7uU5+voY1Iy8KwrYn8BL8m1v3IUaXIQYjHa
+         6KNd2Y+1Ht59FC5lRFwV1NBWEtZkJ0HvyABxZp2uav4x8HsfJHxMtx1UMeEas6ekitpx
+         HSJw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783144691; x=1783749491;
+        d=1e100.net; s=20251104; t=1783144693; x=1783749493;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
          :cc:subject:date:message-id:reply-to;
-        bh=cWjg7UC3W2OY/ypUpA0NQNYwI2Wk9GMT1X28efRSy2Q=;
-        b=UfRs7X7/ydNuMjthH9nCtLPB0SnAFhcSUWujfmS7L1jfKJ+an/FwHrVS3dWPoUvDO1
-         pijHp+NreXxRBQaO3y15bzirLwahC2u38rIB9WsMO73Ro7A+srnWuUyrrHTEtn/EFBe7
-         crX0dfMOJpInYRI9fDN+iM7TWgcMTTAoh4TGbbi3OYztTfUdg1FHarrI+Gf41BUsJx0j
-         892sc9kZrNJdZvdDviiK9ZwCknV3IgwMeARDU89M/5ymNxVIsP9TDDnVKE6H3lgbO24b
-         +412rMVEs8SoyhYouG6vjjljl9kcnOOONdxZ8YrAPkucwFMUZ76mQz+Yq500mUSCx/xV
-         waBQ==
-X-Forwarded-Encrypted: i=1; AFNElJ/+yGQcbmHGxQfMKAELfrOst2SmhGfiWBAySjA3IKleNktfUBwIQ9QaGGeXpgL+VHhYuh2nIU8AdA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyR2F2htd98O04Wv1WX86saYbe7xFlOzhD3ffd9IAUk+OboFW4s
-	7BH0wJzvtRMqyoNDuCTGzZI8sqE5frZ2WCMu8x0DHs/9bIanL7nRnACZ
-X-Gm-Gg: AfdE7cmZ5/1Y+st55OHbn2HKLUpSGfTVcyzb/79GF7vmxqgJT4MXj3ARQsMcwez3M4k
-	XcKRPisMgjiw3niEW8pCaKWR1ZzcVPKjyXs18/gUAadgwrCg6JbgCu49H8gEfnVqCC2+Sm6pvbU
-	zuhINGHXPtNlsh1NVvATfXITEgvM+TU+ga30RLJMVy4zqlMd6QKLGk6I0E4TcsTc5r3GP/XOJxp
-	WDLbS/t17t1wjDDgferW3qJa6zfCSYjN2lDGGUd6eYPJuDCd14izb7QnL5aBEdjjCA5UYEL1lde
-	zBytrZ5IsffETURidzb5eXfx7TbnVpkg/RKX3fa7nQT7q7iKfMbu1/a4uYXPQ9fFqCV+NC59Aal
-	y1/s8TOZn1xUGTzOwoO8Gsg0MPi9lPC24dJbAHxwGHyFqECp8bX/fhi9GWUai4u63CiVKzvN6m/
-	5CFXFeL3OvB1r2IswYVjiJ8FZOP545GbiA6QrHMmJ/NEIng1xyYJq16o0RJDQdSj6BwfmF7QDWJ
-	PA=
-X-Received: by 2002:a05:6a20:3c90:b0:3bf:6c04:a817 with SMTP id adf61e73a8af0-3c03e4dee8fmr2742445637.56.1783144691289;
-        Fri, 03 Jul 2026 22:58:11 -0700 (PDT)
+        bh=U4acdNVktMdF/ZdKGXVy9IqprAtt4e6vm+MUIpvJ+to=;
+        b=dtqPdlD/JhBnudohzv5hAVppDnWeytp0TOuMKEJxYCSyJCxiaKwFKeYlAwmJiX+rR0
+         +NXHveffnFm9B5LRtYFg51KJ1IsOH/o0DmhSmjX62yxrUO+capx5vUhd7iS1r28yQb/n
+         Mwu46aRmWJeFapPc0wJhUik/f/H3Fa6QGiNZMyG8c5W+uuseUPkFkOZyNS8wWXo7X/iT
+         DSWudN/TRSkSOJgDQCQGBcp6SNAdXu6eLwn+D8R2mveFi3xGYmUbj3WwsEVxucQvi6fS
+         TwRylhryWIGBEOl54443i+2kQgLxKvbDUWLsI7CeKhxXxo9hzfY+76qI+gCZOVU8+VgI
+         Nglw==
+X-Forwarded-Encrypted: i=1; AHgh+RoJMQG8KjV5oVy1zhNSjUi4RKWz4AC5XQTL5W45di1TdPzMVLbEuQynqSae44++w+8gc7EWOB7gpg==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy1VQQdAnsffB8uknJucFqlK9rpUf3FjflwvHgw2BrvEwM6CfWE
+	bxV8fI5+7lsHyXwhXKfVZZAqXY5zrKy/d2ZKJyu/omMfob99u4r3KH43
+X-Gm-Gg: AfdE7cl7v4fhC3TYGYW1Y/FRL6dtgEU9Y1gS7n/kPuI9Qhik/3DKs9a0Sq3VdCSddUA
+	nH8Hnm7+xQdEnG9Qt19XUw3DNLn1H1YzB5dKE0EkPt4Gky5o72FezsFKjpuIRrcSMlFUX9e0apG
+	y7OsRAvZe/m5myKUrOx2//pVKsM0GC0ANslf8AjwkSFWa1PTUeGzH+KnB3CkVJL+10p9d86Qp3Q
+	pSWaCjpldb5v/FjUhIRT+mLg3XXkxdjmq/2HchJfdmx/KZ+z8tF2shdallRNHhMsM4JNn7uTMZo
+	IJqCd/mefiA0XWHdtifwQ7IJI0KlREAaBsTGDcVSAvOQ/1ov3AFjV24nGt+/pb+AKp4kCDK0kpJ
+	njxvcbh1lALvzo6KBHfo2PPUz+lFm8/5QRjt9US3g9k4AWKeCrTgeYEerqszzmYskSiH/oOJ5zZ
+	z1BdW4MkE1Tlhw3yOQCXdEATBV5YYt7li7mWDAMz1H3X31hxXY0XeGmCg/bABfddOY6cue5OVTh
+	kU=
+X-Received: by 2002:a17:90a:d406:b0:37e:144d:7f6e with SMTP id 98e67ed59e1d1-382802becaamr2576630a91.3.1783144692874;
+        Fri, 03 Jul 2026 22:58:12 -0700 (PDT)
 Received: from dtor-ws.sjc.corp.google.com ([2a00:79e0:2ebe:8:880:86f9:3b00:6746])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b813cd9sm26262412eec.8.2026.07.03.22.58.09
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f0b813cd9sm26262412eec.8.2026.07.03.22.58.11
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 03 Jul 2026 22:58:10 -0700 (PDT)
+        Fri, 03 Jul 2026 22:58:12 -0700 (PDT)
 From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Fri, 03 Jul 2026 22:57:46 -0700
-Subject: [PATCH 23/26] Input: maple_keyb - fix style issues
+Date: Fri, 03 Jul 2026 22:57:47 -0700
+Subject: [PATCH 24/26] Input: maplemouse - fix style issues
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -70,7 +70,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260703-b4-maple-cleanup-v1-23-41e424964da5@gmail.com>
+Message-Id: <20260703-b4-maple-cleanup-v1-24-41e424964da5@gmail.com>
 References: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
 In-Reply-To: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
 To: Miquel Raynal <miquel.raynal@bootlin.com>, 
@@ -88,64 +88,24 @@ Fix coding style and formatting issues reported by checkpatch.pl.
 Assisted-by: Antigravity:gemini-3.5-flash
 Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 ---
- drivers/input/keyboard/maple_keyb.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ drivers/input/mouse/maplemouse.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/input/keyboard/maple_keyb.c b/drivers/input/keyboard/maple_keyb.c
-index bd4ce803a13e..1d99ed5bad1e 100644
---- a/drivers/input/keyboard/maple_keyb.c
-+++ b/drivers/input/keyboard/maple_keyb.c
-@@ -48,7 +48,7 @@ static const unsigned short dc_kbd_keycode[NR_SCANCODES] = {
- 	KEY_F23, KEY_F24, KEY_OPEN, KEY_HELP, KEY_PROPS, KEY_FRONT, KEY_STOP,
- 	KEY_AGAIN, KEY_UNDO, KEY_CUT, KEY_COPY, KEY_PASTE, KEY_FIND, KEY_MUTE,
- 	KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
--	KEY_KPCOMMA, KEY_RESERVED, KEY_RO, KEY_KATAKANAHIRAGANA , KEY_YEN,
-+	KEY_KPCOMMA, KEY_RESERVED, KEY_RO, KEY_KATAKANAHIRAGANA, KEY_YEN,
- 	KEY_HENKAN, KEY_MUHENKAN, KEY_KPJPCOMMA, KEY_RESERVED, KEY_RESERVED,
- 	KEY_RESERVED, KEY_HANGEUL, KEY_HANJA, KEY_KATAKANA, KEY_HIRAGANA,
- 	KEY_ZENKAKUHANKAKU, KEY_RESERVED, KEY_RESERVED, KEY_RESERVED,
-@@ -92,15 +92,16 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
- 	for (i = 2; i < 8; i++) {
- 		ptr = memchr(kbd->new + 2, kbd->old[i], 6);
- 		code = kbd->old[i];
--		if (code > 3 && ptr == NULL) {
-+		if (code > 3 && !ptr) {
- 			keycode = kbd->keycode[code];
- 			if (keycode) {
- 				input_event(dev, EV_MSC, MSC_SCAN, code);
- 				input_report_key(dev, keycode, 0);
--			} else
-+			} else {
- 				dev_dbg(&dev->dev,
- 					"Unknown key (scancode %#x) released.",
- 					code);
-+			}
- 		}
- 		ptr = memchr(kbd->old + 2, kbd->new[i], 6);
- 		code = kbd->new[i];
-@@ -109,10 +110,11 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
- 			if (keycode) {
- 				input_event(dev, EV_MSC, MSC_SCAN, code);
- 				input_report_key(dev, keycode, 1);
--			} else
-+			} else {
- 				dev_dbg(&dev->dev,
- 					"Unknown key (scancode %#x) pressed.",
- 					code);
-+			}
- 		}
- 	}
- 	input_sync(dev);
-@@ -191,9 +193,6 @@ static int probe_maple_kbd(struct maple_device *mdev)
+diff --git a/drivers/input/mouse/maplemouse.c b/drivers/input/mouse/maplemouse.c
+index 7842bd46c9a1..691cf334ae9c 100644
+--- a/drivers/input/mouse/maplemouse.c
++++ b/drivers/input/mouse/maplemouse.c
+@@ -50,8 +50,8 @@ static int dc_mouse_open(struct input_dev *dev)
+ {
+ 	struct dc_mouse *mse = input_get_drvdata(dev);
+ 
+-	maple_getcond_callback(mse->mdev, dc_mouse_callback, HZ/50,
+-		MAPLE_FUNC_MOUSE);
++	maple_getcond_callback(mse->mdev, dc_mouse_callback, HZ / 50,
++			       MAPLE_FUNC_MOUSE);
+ 
  	return 0;
  }
- 
--
--
--
- static struct maple_driver dc_kbd_driver = {
- 	.function = MAPLE_FUNC_KEYBOARD,
- 	.probe =	probe_maple_kbd,
 
 -- 
 2.55.0.rc0.799.gd6f94ed593-goog
