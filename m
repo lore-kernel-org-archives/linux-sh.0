@@ -1,116 +1,208 @@
-Received: from mail-pj1-f50.google.com (mail-pj1-f50.google.com [209.85.216.50])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from szxga04-in.huawei.com (szxga04-in.huawei.com [45.249.212.190])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2784C3570AD
-	for <linux-sh@vger.kernel.org>; Sun,  5 Jul 2026 20:26:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B079238889B;
+	Mon,  6 Jul 2026 02:58:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.190
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783283203; cv=none; b=j3izHotheZbZVxurcRj9enRixodSjb4Inl2py9BlIBca0ZwFojKAdM/XOifBhBbMp++ocwiXS6nQLFjMmFCqzc5S48THkfJwhEjVzUqvmIYYf80yjJzvA6Pbmh+roGBw6ewSgYuA7oBfgY1iKdeBKyXMmhfWM9Ncw1wXZtgxvXI=
+	t=1783306722; cv=none; b=gI+Y1r1i9jXzYIRw1vt4GqHPMJ5l0sDvMzEvgGvmQO/L2qqQbfdoBVtHYnLUIqXW/6UpJ5dwRLJuJ5pNy6F0PIcJiVOWu9mqpYydEuQHRfOcN6wNUeNqdW5X41Mwf181psOe0s+eYWJshixPsPSFc/BbWybTSSrhmb/QLOEZ7tk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783283203; c=relaxed/simple;
-	bh=cOeJsDEtRMNDJCLsBLMsRmiTuNsQyfI3SUCZYl6u/WI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=VRXHGzJEP9dUyv1+NvCjwj9eDdj8m8LHMa3bObsU9KcawQsBm8Y4wETAiB3SDgHFeR8UuexRYQYM4JxIjwHqgMy6FMAyeUQOTCgMcjWW9wocRcZUsH5ze6GtzOEWrLTyAZMKr/h+bcS5uWb5QPqdCui0iHu0ywpdNuYPhxtIb3M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=PLrDSVOL; arc=none smtp.client-ip=209.85.216.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1783306722; c=relaxed/simple;
+	bh=zWMLAltis/gGzTCBAkuWo6mi2BsY773R0tgyf3USLhs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:CC:References:From:
+	 In-Reply-To:Content-Type; b=SNxjgpxhWnd2LNWSi7+vNvcV0evl7SVASMOuC+w8aLEObFgaynVEYdMsJ2Q3Y0abeRfomtEwSlpsN0K6/4ocaC5pQ61eFLxImxdGbonlCJ1O4VMonADc7t7botXnHTBScPG0uqfgzZ2A63xsBqY59C/2lKINif3CbcEjxIuJ7vQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; dkim=pass (1024-bit key) header.d=huawei.com header.i=@huawei.com header.b=6kW0tTks; dkim=pass (1024-bit key) header.d=huawei.com header.i=@huawei.com header.b=6kW0tTks; arc=none smtp.client-ip=45.249.212.190
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PLrDSVOL"
-Received: by mail-pj1-f50.google.com with SMTP id 98e67ed59e1d1-37e0a189b0bso1389922a91.1
-        for <linux-sh@vger.kernel.org>; Sun, 05 Jul 2026 13:26:40 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1783283200; x=1783888000; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=GsgfJZ0NjzP8ZPKGtPWCLANSMMngsdofAxBSh+8zVRQ=;
-        b=PLrDSVOL+4Xc66iOiaOn5TYFsx78Abc5ssdEQ6yvuYzzUNpldHMK+Le+AJuPYhTHMK
-         vvxC3arm1OaRVZi3iobzr7gL4DrKGBy4kmC0tNsgokfOz7nOj4xHhwYz0y8wrQLq2AFL
-         wmHEcVm4tlst+mIKGPMoWyR6xmAKC1VGx0Uulm4QtlZMCFESsGoYeWxaJm9pHnq3Cfm+
-         PYqls55968ljKZDpUHrcI26/rDhYu5VO2SxaJZpinLH+tpsidaPhBGXbcdXQlqKkZTT2
-         NcrZglNcjq67Xame///L/rlENNXnbrpq9cl5jp5PqnLoRL8nd5ZZAC4Gt1fhzM6viqS+
-         b2lw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783283200; x=1783888000;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=GsgfJZ0NjzP8ZPKGtPWCLANSMMngsdofAxBSh+8zVRQ=;
-        b=WwJCL7QU0KRHVoEhJeB3CSTRtKcbTZc16dreR8mhTs8O5/JsieVikGTXxR2pr1tlqi
-         ml95ji7dwmq1Vdif4Jd+W8971aLSbqnY90ZdTTstjJ4g9H8LeKE3pMkNetzNG9mc5GUP
-         T8FifLQ9AlUwEZvemci83kTSZb6k7git2DlSLmSvv+yHACsWik7Q7SPqPNvTRDcYQOtS
-         015cBbxG68OEBuiYSE51voMn8BoYIqdmNvpxCANgMvkNdYvR4pCezicRjtQ4D4nFiPtm
-         YMVv6gtAUJI6Uqt+aX+eU6zJ9HxxrCT/7o6p0QLfSP7gxqGRw0oNNBLbalB7hxsf93Yn
-         YwFw==
-X-Forwarded-Encrypted: i=1; AHgh+RrEsKquuKr3iltFG80jkXfdC3SUUfQPQ/XC55Lvcqhd/NZEUTs+Ar17hn/Ecxv1tl0tX5NHUD5xuA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzU5Wx2Hg+vV1qItSQNG8geAyYbAU4ZR55CHM7MKQ0AGKYK9qXS
-	85dhk08Y+8d9kcgY5jYfCnNrZXdyyFXbIerLZgkW4sRu7hExhAPHjQLw
-X-Gm-Gg: AfdE7cmqI0p8pYu+a7ztXy8RY2gVNRzXPZDbccq2au2NSgZBPwvPeOgfzZaEdzWSqOt
-	flZEVSmiUKNHQqoXWyS1yEXSfy3OJwpRZyoUvH6PURyPfQle86fkWRm0lZgkSWKu1NWMzfN5qu4
-	iJ/OkCZUleqe3NzvVC+Ts2IsyeqOcVL2/7UTlus+1tUbk4sP8761x08+fXSHgM09W/NC9oBpujN
-	wa2fgLavIcczyYcegIPEObCZVRxrKoDNVSUepfdAVlrONh7d5pXw9Ypq7G6lG2Qxy5jISkSxTN2
-	nEfQLdO3Bup6wkYObxpvRtFYECKX0wV2RadNb6pRXqX3NwH2elyslTBKZ8aruLjFRQNsSODCL/3
-	gjK+ZFo0hLNzEiiqZAq4tHwdkHhZxEjbERQozEXvO9FksUTp3fcmJj/psHikokMWqdQkiIidAj7
-	Dmd1q+oMtTjfsOnsmgrjeCiXrWh+vIl8ZzEXcNwDrVrjIIJb075wfBaw==
-X-Received: by 2002:a17:90b:1c81:b0:37f:9cdf:f03a with SMTP id 98e67ed59e1d1-3829f4e8836mr6779812a91.29.1783283200446;
-        Sun, 05 Jul 2026 13:26:40 -0700 (PDT)
-Received: from google.com ([2a00:79e0:2ebe:8:480e:1643:32ae:124b])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30f38ee1333sm29592829eec.24.2026.07.05.13.26.38
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 05 Jul 2026 13:26:39 -0700 (PDT)
-Date: Sun, 5 Jul 2026 13:26:36 -0700
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-To: Adrian McMenamin <adrianmcmenamin@gmail.com>
-Cc: Miquel Raynal <miquel.raynal@bootlin.com>, 
-	Richard Weinberger <richard@nod.at>, Vignesh Raghavendra <vigneshr@ti.com>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Florian Fuchs <fuchsfl@gmail.com>, linux-kernel@vger.kernel.org, 
-	linux-input@vger.kernel.org, linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH 25/26] Input: maplecontrol - fix style issues
-Message-ID: <akq9m7oDV0y_sWzx@google.com>
-References: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
- <20260703-b4-maple-cleanup-v1-25-41e424964da5@gmail.com>
- <CACwZE5RfhwhOoVSPqibM9+XaPJCf-TdnJxi_UT7Dgv71OJPsFQ@mail.gmail.com>
+	dkim=pass (1024-bit key) header.d=huawei.com header.i=@huawei.com header.b="6kW0tTks";
+	dkim=pass (1024-bit key) header.d=huawei.com header.i=@huawei.com header.b="6kW0tTks"
+dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
+	c=relaxed/relaxed; q=dns/txt;
+	h=From;
+	bh=tLzU64zcWCpCqtKqdJfi72+8jOLqHwm6rAX9TlEnpBE=;
+	b=6kW0tTks7I4JJHDfBVjF8dEaDL2J766PtNvpdA6LbQQFpMfTqMznvyBNQeh9wxbc/IYSzn3ZU
+	f2djYQecToR3moTosPPfqQapkuoiHKQieMFK0sbmqWZPM62GXgOZ9REO2UonKr5TBLANxucel3h
+	3onSIAA/PUlP2PaW4QIuLbU=
+Received: from canpmsgout05.his.huawei.com (unknown [172.19.92.145])
+	by szxga04-in.huawei.com (SkyGuard) with ESMTPS id 4gtpWs5S8Wz126M0b;
+	Mon,  6 Jul 2026 10:41:13 +0800 (CST)
+dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
+	c=relaxed/relaxed; q=dns/txt;
+	h=From;
+	bh=tLzU64zcWCpCqtKqdJfi72+8jOLqHwm6rAX9TlEnpBE=;
+	b=6kW0tTks7I4JJHDfBVjF8dEaDL2J766PtNvpdA6LbQQFpMfTqMznvyBNQeh9wxbc/IYSzn3ZU
+	f2djYQecToR3moTosPPfqQapkuoiHKQieMFK0sbmqWZPM62GXgOZ9REO2UonKr5TBLANxucel3h
+	3onSIAA/PUlP2PaW4QIuLbU=
+Received: from mail.maildlp.com (unknown [172.19.163.0])
+	by canpmsgout05.his.huawei.com (SkyGuard) with ESMTPS id 4gtpL20K7Pz12LHv;
+	Mon,  6 Jul 2026 10:32:42 +0800 (CST)
+Received: from dggpemf500011.china.huawei.com (unknown [7.185.36.131])
+	by mail.maildlp.com (Postfix) with ESMTPS id 836134057A;
+	Mon,  6 Jul 2026 10:41:22 +0800 (CST)
+Received: from [10.67.109.254] (10.67.109.254) by
+ dggpemf500011.china.huawei.com (7.185.36.131) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.1544.11; Mon, 6 Jul 2026 10:41:17 +0800
+Message-ID: <e53b3d1f-c9fe-428c-bf1c-6505b3bcb894@huawei.com>
+Date: Mon, 6 Jul 2026 10:41:16 +0800
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CACwZE5RfhwhOoVSPqibM9+XaPJCf-TdnJxi_UT7Dgv71OJPsFQ@mail.gmail.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v16 01/18] seccomp: Convert __secure_computing() to return
+ boolean
+To: Ada Couprie Diaz <ada.coupriediaz@arm.com>
+CC: <oleg@redhat.com>, <richard.henderson@linaro.org>, <mattst88@gmail.com>,
+	<linmag7@gmail.com>, <linux@armlinux.org.uk>, <catalin.marinas@arm.com>,
+	<will@kernel.org>, <kees@kernel.org>, <guoren@kernel.org>,
+	<chenhuacai@kernel.org>, <kernel@xen0n.name>, <geert@linux-m68k.org>,
+	<tsbogend@alpha.franken.de>, <James.Bottomley@HansenPartnership.com>,
+	<deller@gmx.de>, <maddy@linux.ibm.com>, <mpe@ellerman.id.au>,
+	<npiggin@gmail.com>, <chleroy@kernel.org>, <pjw@kernel.org>,
+	<palmer@dabbelt.com>, <aou@eecs.berkeley.edu>, <alex@ghiti.fr>,
+	<hca@linux.ibm.com>, <gor@linux.ibm.com>, <agordeev@linux.ibm.com>,
+	<borntraeger@linux.ibm.com>, <svens@linux.ibm.com>,
+	<ysato@users.sourceforge.jp>, <dalias@libc.org>,
+	<glaubitz@physik.fu-berlin.de>, <richard@nod.at>,
+	<anton.ivanov@cambridgegreys.com>, <johannes@sipsolutions.net>,
+	<luto@kernel.org>, <tglx@kernel.org>, <mingo@redhat.com>, <bp@alien8.de>,
+	<dave.hansen@linux.intel.com>, <hpa@zytor.com>, <chris@zankel.net>,
+	<jcmvbkbc@gmail.com>, <peterz@infradead.org>, <wad@chromium.org>,
+	<thuth@redhat.com>, <mark.rutland@arm.com>, <kevin.brodsky@arm.com>,
+	<linusw@kernel.org>, <yeoreum.yun@arm.com>, <song@kernel.org>,
+	<james.morse@arm.com>, <anshuman.khandual@arm.com>, <broonie@kernel.org>,
+	<liqiang01@kylinos.cn>, <pengcan@kylinos.cn>, <ryan.roberts@arm.com>,
+	<yangtiezhu@loongson.cn>, <sshegde@linux.ibm.com>, <mchauras@linux.ibm.com>,
+	<austin.kim@lge.com>, <jchrist@linux.ibm.com>, <arnd@arndb.de>,
+	<thomas.weissschuh@linutronix.de>, <sohil.mehta@intel.com>,
+	<andrew.cooper3@citrix.com>, <jgross@suse.com>, <kas@kernel.org>,
+	<x86@kernel.org>, <linux-alpha@vger.kernel.org>,
+	<linux-kernel@vger.kernel.org>, <linux-arm-kernel@lists.infradead.org>,
+	<linux-mm@kvack.org>, <linux-csky@vger.kernel.org>,
+	<loongarch@lists.linux.dev>, <linux-m68k@lists.linux-m68k.org>,
+	<linux-mips@vger.kernel.org>, <linux-parisc@vger.kernel.org>,
+	<linuxppc-dev@lists.ozlabs.org>, <linux-riscv@lists.infradead.org>,
+	<linux-s390@vger.kernel.org>, <linux-sh@vger.kernel.org>,
+	<linux-um@lists.infradead.org>
+References: <20260629130616.642022-1-ruanjinjie@huawei.com>
+ <20260629130616.642022-2-ruanjinjie@huawei.com>
+ <b8f3b5cd-8d8a-4396-ba0c-011a83234dd9@arm.com>
+From: Jinjie Ruan <ruanjinjie@huawei.com>
+In-Reply-To: <b8f3b5cd-8d8a-4396-ba0c-011a83234dd9@arm.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: kwepems500002.china.huawei.com (7.221.188.17) To
+ dggpemf500011.china.huawei.com (7.185.36.131)
 
-On Sun, Jul 05, 2026 at 08:28:39PM +0100, Adrian McMenamin wrote:
-> On Sat, 4 Jul 2026 at 06:58, Dmitry Torokhov <dmitry.torokhov@gmail.com> wrote:
-> >
-> > Fix coding style and formatting issues reported by checkpatch.pl and
-> > switch to using BIT(). When reporting D-PAD events avoid conditionals.
-> >
-> > Assisted-by: Antigravity:gemini-3.5-flash
-> > Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> > ---
-> >  drivers/input/joystick/maplecontrol.c | 25 ++++++++++++-------------
-> >  1 file changed, 12 insertions(+), 13 deletions(-)
-> >
-> > diff --git a/drivers/input/joystick/maplecontrol.c b/drivers/input/joystick/maplecontrol.c
-> > index 3ef6652d40cb..457a73d91239 100644
-> > --- a/drivers/input/joystick/maplecontrol.c
-> > +++ b/drivers/input/joystick/maplecontrol.c
-> > @@ -35,22 +35,22 @@ static void dc_pad_callback(struct mapleq *mq)
-> >         buttons = ~le16_to_cpup((__le16 *)(res + 8));
-> >
-> >         input_report_abs(dev, ABS_HAT0Y,
-> > -               (buttons & 0x0010 ? -1 : 0) + (buttons & 0x0020 ? 1 : 0));
-> > +                        !!(buttons & BIT(5)) - !!(buttons & BIT(4)));
-> >         input_report_abs(dev, ABS_HAT0X,
-> > -               (buttons & 0x0040 ? -1 : 0) + (buttons & 0x0080 ? 1 : 0));
-> > +                        !!(buttons & BIT(7)) - !!(buttons & BIT(6)));
+
+
+On 7/1/2026 12:37 AM, Ada Couprie Diaz wrote:
+> Hi Jinjie,
+> 
+> On 29/06/2026 14:05, Jinjie Ruan wrote:
+>> The return value of __secure_computing() currently uses 0 to indicate
+>> that a system call should be allowed, and -1 to indicate that it should
+>> be blocked/killed. This 0/-1 pattern is non-intuitive for a security
+>> check function and makes the control flow at the call sites less
+>> readable.
+>>
+>> Furthermore, any potential future changes to these return values would
+>> require a high-risk, error-prone audit of all its users across different
+>> architectures.
+>>
+>> Sanitize this logic by converting the return type of __secure_computing()
+>> to a proper boolean, where 'true' explicitly means 'allow' and 'false'
+>> means 'fail/deny'.
+>>
+>> Update all the two dozen or so call sites across the tree to align with
+>> this new boolean semantic. No functional changes are intended, as the
+>> callers still return -1 to the lower-level assembly entry code upon
+>> seccomp denial.
+> Would it be relevant to mention that this fixes the unsound return value of
+> `syscall_trace_enter()` in generic entry, which motivated the patch
+> initially[0] ?
+
+That's a very good point. It's definitely worth mentioning
+
+>> Suggested-by: Thomas Gleixner <tglx@kernel.org>
+>> Signed-off-by: Jinjie Ruan <ruanjinjie@huawei.com>
+>> ---
+>>   arch/alpha/kernel/ptrace.c            |  2 +-
+>>   arch/arm/kernel/ptrace.c              |  2 +-
+>>   arch/arm64/kernel/ptrace.c            |  2 +-
+>>   arch/csky/kernel/ptrace.c             |  2 +-
+>>   arch/m68k/kernel/ptrace.c             |  2 +-
+>>   arch/mips/kernel/ptrace.c             |  2 +-
+>>   arch/parisc/kernel/ptrace.c           |  2 +-
+>>   arch/sh/kernel/ptrace_32.c            |  2 +-
+>>   arch/um/kernel/skas/syscall.c         |  2 +-
+>>   arch/x86/entry/vsyscall/vsyscall_64.c |  2 +-
+>>   arch/xtensa/kernel/ptrace.c           |  3 +--
+>>   include/linux/entry-common.h          |  7 +++---
+>>   include/linux/seccomp.h               | 10 ++++----
+>>   kernel/seccomp.c                      | 34 +++++++++++++--------------
+>>   14 files changed, 36 insertions(+), 38 deletions(-)
+> 
+> This is missing an update to the Kconfig documentation, a possible
+> suggestion :
+
+Will update it.
+
+> 
+> diff --git a/arch/Kconfig b/arch/Kconfig
+> index fa7507ac8e13..9e3d40088afb 100644
+> --- a/arch/Kconfig
+> +++ b/arch/Kconfig
+> @@ -637,7 +637,7 @@ config HAVE_ARCH_SECCOMP_FILTER
+>           - syscall_set_return_value()
+>           - SIGSYS siginfo_t support
+>           - secure_computing is called from a ptrace_event()-safe context
+> -         - secure_computing return value is checked and a return value
+> of -1
+> +         - secure_computing return value is checked and if false
+>             results in the system call being skipped immediately.
+>           - seccomp syscall wired up
+>           - if !HAVE_SPARSE_SYSCALL_NR, have SECCOMP_ARCH_NATIVE,
+> 
+>> [...]
+>> diff --git a/include/linux/entry-common.h b/include/linux/entry-common.h
+>> index 416a3352261f..3f66320e46d3 100644
+>> --- a/include/linux/entry-common.h
+>> +++ b/include/linux/entry-common.h
+>> @@ -100,9 +100,8 @@ static __always_inline long
+>> syscall_trace_enter(struct pt_regs *regs, unsigned l
+>>         /* Do seccomp after ptrace, to catch any tracer changes. */
+>>       if (work & SYSCALL_WORK_SECCOMP) {
+>> -        ret = __secure_computing();
+>> -        if (ret == -1L)
+>> -            return ret;
+>> +        if (!__secure_computing())
+>> +            return -1L;
+>>       }
+>>         /* Either of the above might have changed the syscall number */
+>> @@ -113,7 +112,7 @@ static __always_inline long
+>> syscall_trace_enter(struct pt_regs *regs, unsigned l
+>>         syscall_enter_audit(regs, syscall);
+>>   -    return ret ? : syscall;
+>> +    return syscall;
+>>   }
+>> [...]
+> 
+> Otherwise this feels like a more appropriate change with regards to
+> "safeguarding against new `secure_computing()` return value" !
+> 
+> With the updated Kconfig :
+> Reviewed-by: Ada Couprie Diaz <ada.coupriediaz@arm.com>
+> 
+> Thanks,
+> Ada
+> 
+> [0]: https://lore.kernel.org/r/20260511092103.1974980-2-
+> ruanjinjie@huawei.com
 > 
 > 
-> Maybe I have missed something but what is this !! operator?
 
-Double negation to coerce the value to [0, 1] range avoiding
-conditional/branching?
-
--- 
-Dmitry
