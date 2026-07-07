@@ -1,110 +1,122 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from fout-a3-smtp.messagingengine.com (fout-a3-smtp.messagingengine.com [103.168.172.146])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CC1F41D4D7;
-	Tue,  7 Jul 2026 13:40:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D6A03161A1;
+	Tue,  7 Jul 2026 14:56:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.146
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783431637; cv=none; b=DfU/pz+yVn7Ux9ZDp9U2SrfJfRnWsd9sPxaVEViB516/JWQwfkJayuhK28r9XkfavHE9fjFF1NDFNsIbURvVhBAjCnUKmo+6bbKoNnBBEnP0+0l8ZBBsDPWL3lRqCVwjrexS4lbNMFUgIOM33sss7v+CShIp7/eFbK6373NBoeI=
+	t=1783436170; cv=none; b=J9ii+r8/G0fGBgzcvWQI/CDpgJDtrBYiJjvm3OfBmNEyg5l4W3nJZSF3XcHN7NP2i7OBkyr+380DTtuWRjt+m1BKZpYC0iqABp5Y7StT/Y6h0COGlthSAdB5Ler9kl67P/tguSV287HmX0TJiRxuvkHsxVhDz2rI8wJEl/eXkzI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783431637; c=relaxed/simple;
-	bh=OFDPPY7kR+ZKFxYAzeZMG3uqE+PPGueomySwECaLpCA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=DsscsXDlkbatAY68/QFVCLMNFzTDfshfu/pYeJMPdFlg1MXrjsdab8UAOOkwY/xWRERByMUnwu4/+DNxmVwHbMc0hOgn3mvBG9u+NGwjfUDjrhMPC5rwOcgDK3uZD7j8V2d4t/luAGd9uOjVpt/LFirmjGsEK8dbA8xciVpOURw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Rt1U2lb9; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1783436170; c=relaxed/simple;
+	bh=ZOXYlp0jM4yRQtB0bkcG1hg7jnlZbj+tfWaD/aCHUlo=;
+	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
+	 Subject:Content-Type; b=Ry9SyIiXscPnAwrIGjDIOz38gVHxCDREX4JZwDQsMKvvS6Vbky9FVzEJzMckRUjkvWHns3QFo1XncwRGVYW8VefSaT87vIAffcBBoUBQZkET/BxqzlLIn1g83yykaR+V1tSUhelT5uJ9IJ9baSKLioT2e4Vpg9jzWv5DTRERreY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=Gq9ljCrB; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=VnOMufr6; arc=none smtp.client-ip=103.168.172.146
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Rt1U2lb9"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 034A91F000E9;
-	Tue,  7 Jul 2026 13:40:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1783431635;
-	bh=bmqUt+g9FyWmU6ipf2GuV7nDUiq2yVCFHD4qz2spAaQ=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=Rt1U2lb9H02UccHpTsgdX7JQcUo66j+coktV1nVn/mBIWyNGO3PhZsxunbAcW83Ka
-	 54kp8+S5mjCXn5HtTbFjhDCYTzAdkkwPBpUFbX0whVqiC8ziFubhi2qlHdvdByzzms
-	 4nk7JcTLdxAPhNaMIaOAMEP7QNAVNRRGmeyfScH9xe6waEQmbq1NpGJX8K/HDsBUo1
-	 jZp37rBWM92UU7LoN9B13cTA39ZGzZ/6ZDrqSbEYvuEk2nbD/lABU1ulNRDnib41Nn
-	 I/8pmobomED2Vl4XQIHtRfuJ7Fmt57A8Nf7iLZmzqpRpxKxZGyTtorI+eccftmIKR9
-	 GazRqD5MT+VKQ==
-Date: Tue, 7 Jul 2026 16:40:25 +0300
-From: Mike Rapoport <rppt@kernel.org>
-To: Sang-Heon Jeon <ekffu200098@gmail.com>
-Cc: Ard Biesheuvel <ardb@kernel.org>, Borislav Petkov <bp@alien8.de>,
-	Chris Zankel <chris@zankel.net>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	Ingo Molnar <mingo@redhat.com>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Max Filippov <jcmvbkbc@gmail.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Rich Felker <dalias@libc.org>, Thomas Gleixner <tglx@kernel.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>, linux-mm@kvack.org,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Ilias Apalodimas <ilias.apalodimas@linaro.org>,
-	linux-efi@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-	Nicholas Piggin <npiggin@gmail.com>, x86@kernel.org
-Subject: Re: [PATCH v2 0/5] treewide: remove unreachable memblock_reserve()
- return value checks in early boot
-Message-ID: <ak0BycosiHcaZLqg@kernel.org>
-References: <20260706163753.193875-1-ekffu200098@gmail.com>
- <akyZ5DhIV_Grn1Kc@kernel.org>
- <CABFDxME7ig1SQDB39TUeUXoAOA2jSRhg6h-bm0kUHrHzGYeE-A@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="Gq9ljCrB";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="VnOMufr6"
+Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
+	by mailfout.phl.internal (Postfix) with ESMTP id 89ADFEC021E;
+	Tue,  7 Jul 2026 10:56:08 -0400 (EDT)
+Received: from phl-imap-05 ([10.202.2.95])
+  by phl-compute-04.internal (MEProxy); Tue, 07 Jul 2026 10:56:08 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+	:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to; s=fm1; t=1783436168;
+	 x=1783522568; bh=VRSzkiO75jHk1CVYNukpjqr9eHc0JnAAWEpWm+VODRg=; b=
+	Gq9ljCrBpBKGz1vzhzn8yD/AEd4gEcbANHDqCwCQt0a122rulFDUR/gkTO6sAY8T
+	TtaatWq+OnmrKa59IrgOjGgaoFjNEm1sk8nnbuOn5B2Vz+tfmkL4KbA1bTk0Kg9T
+	5yYOXho8j89IyrFu8SkGnVkibOXakS5QW9Brs33Qt657oxC9PqB+LVYOSVkOFUcm
+	q3cMr8Ta+35401RvPzO9E8hjE/iqhv69//cmVdJkEyQ6Srf7T7IYd1wAux+07iga
+	lUfum2zxk65t3kJFnL83uh7u+n4u7YxAAP9pW4ksYnkKbEgkEfXXWX8ejXrhEiY/
+	PUzbjBQ4QixpXIXaq1AflA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1783436168; x=
+	1783522568; bh=VRSzkiO75jHk1CVYNukpjqr9eHc0JnAAWEpWm+VODRg=; b=V
+	nOMufr6TFJRtLUsMHArzIvJHvh38Acd/lCBYABn/rxUJlvnvcwr6kC73iRIIDKuC
+	eFMNwtCraSuQycSbVoZVM4LfR0024rA64Onh0EGNTvCPbSNHPdlCPwYI9ybNtfpZ
+	O7sEQumDIB/7nk9AS4Qg9bE5txY1XF2YcVhZNbTC86Y91grfL4rnovSmFDSbJzMB
+	XMzoWM6iQhejKuXRld/bK5bxLHTrWijfonyLaSlvEef2Z37rEZryMNXr0Mhmr8ri
+	ZBsCBdbV8HPQwEPyHuU5g1qYrT8EBpGUkJiomb+lIVq42gthCU/sjqJdkBHDRjPA
+	a8qnWnEqM4l6IjEYxG2fQ==
+X-ME-Sender: <xms:hxNNaqUibPlQj5adz_qbtt7clM4Z1cU7v_jrAVJ1fw7jCyV-zrjv3g>
+    <xme:hxNNahbS1TvwT8PX3HlkdQgSwRaeal2wo1kAoABqDXfhbHGKUk5ydUJeRGpu1FdUe
+    ebUAOHXK8xxumZ62EEBO8Bnl032fm2I28Vg2-wb52kBw3TDyMTOJ3kY>
+X-ME-Proxy-Cause: dmFkZTGzJDFyzooW5HxT05/lmH0C2SnjFp3hXK73hgm4N4JAp8ZYGIoTCbbZKv6mSVLC6G
+    H/nVzJlUCXzZfy3XIcIF3zGaEQJSCNU2j0ZIeQ+l8uRrmPScvW87lZ8+5ZkJ8WrUGhebcE
+    +cflaaMiWJ4bzpWxO8W6ia8sRfJcvpamwCjK2X4i9ahdIPbl6wsVkXdz6uI7lhUtbLjejF
+    az3pxue182Ql22u3qr/axy6yyLAUQ4d84yyPnvr25jF8RS8qvIJ2Bj5IYL5XJOk17mmpgU
+    qutJTwdrxwLOo6bcyYK8xrROG5A3wEbUG/BFPO3r5rOkHMaaz595cXHyr195zXmrv5qKNg
+    oDc6fnKp1pEcXCnf4ANiUlTaZhGdEMBe3atX0fGk+ttZlMDm79PBB7l0n0FRQ+1jjVFfcH
+    Yyezh2MTIuX4yT0GVdGprLq1sPQtPrmK521ps06ZaZ9DHnnmKwyxRIBR5Rp9nFJ6YLkaa3
+    jRRrv+rti/rHpXnL4jdJ38PUEsJzWaeSoIPKuPr3UpvAO8p+Gey7P+RgXzPilcRltRv6E3
+    ZcXYRQLay8YLdPOBN1KwlbjzqcqK+UXqCeyJKzgK+7n2kwgSPWc7I/bawUZoS5fp97wuKb
+    bfqA5cZvz8A8bDO15kOc9zqejqBWR31OoQRj/43pFihfkDl4ksqSEOoF/5Tg
+X-ME-Proxy: <xmx:hxNNas071d8d51LzdckyilQ3fY5-DygAey2GGbCSti1xc_IgLR0H0Q>
+    <xmx:hxNNasOY3-I6Nb5BA0DszkEsV7QXy8C-XplmUBVNWR-v9r04_-mdSw>
+    <xmx:hxNNan0UCecf-2X6lg4ZS7Eo7FnMtcyGA5rdu-rCewmdnlnpCphqTg>
+    <xmx:hxNNar1PzgMQ-maUB3D_EeRtFWYtinDdLLd9FEeS8cE0vbGmiF-F0A>
+    <xmx:iBNNarnYVpU_-wsqBXc7O3HJJ5b487skRjyjf6UNI8gnNg-5QCkdIEba>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.phl.internal (Postfix, from userid 501)
+	id CBD8F182007E; Tue,  7 Jul 2026 10:56:07 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CABFDxME7ig1SQDB39TUeUXoAOA2jSRhg6h-bm0kUHrHzGYeE-A@mail.gmail.com>
+X-ThreadId: AUKPAdC25nmJ
+Date: Tue, 07 Jul 2026 16:55:37 +0200
+From: "Arnd Bergmann" <arnd@arndb.de>
+To: "Dmitry Torokhov" <dmitry.torokhov@gmail.com>,
+ "Arnd Bergmann" <arnd@kernel.org>
+Cc: "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
+ "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
+ "Thomas Gleixner" <tglx@kernel.org>, "Ingo Molnar" <mingo@redhat.com>,
+ "Borislav Petkov" <bp@alien8.de>,
+ "Dave Hansen" <dave.hansen@linux.intel.com>, x86@kernel.org,
+ "H. Peter Anvin" <hpa@zytor.com>, "Linus Walleij" <linusw@kernel.org>,
+ "Bartosz Golaszewski" <brgl@kernel.org>, "Lee Jones" <lee@kernel.org>,
+ "Pavel Machek" <pavel@kernel.org>, linux-sh@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-input@vger.kernel.org,
+ linux-leds@vger.kernel.org
+Message-Id: <6dd3e87f-44a4-4740-a81a-c4e459e3921e@app.fastmail.com>
+In-Reply-To: <akxjQtCTcx2TOQMk@google.com>
+References: <20260629130329.1291953-1-arnd@kernel.org>
+ <akxjQtCTcx2TOQMk@google.com>
+Subject: Re: [PATCH v5 0/6] gpiolib: fence off legacy interfaces
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 
-On Tue, Jul 07, 2026 at 10:24:09PM +0900, Sang-Heon Jeon wrote:
-> Hi Mike,
-> 
-> On Tue, Jul 7, 2026 at 3:17 PM Mike Rapoport <rppt@kernel.org> wrote:
-> >
-> > Hi Sang-Heon,
-> >
-> > On Tue, Jul 07, 2026 at 01:37:48AM +0900, Sang-Heon Jeon wrote:
-> > > memblock_reserve() can only return an error after memblock_allow_resize()
-> > > has been called. Before that it either succeeds or panics, never returning
-> > > an error.
-> > >
-> > > Before memblock_allow_resize() is called, the return value checks of
-> > > memblock_reserve() are unreachable and can be removed.
-> >
-> > I'd rather keep these checks.
-> >
-> > Removing them relies on internal details of memblock_reserve() implementation
-> > and the existing event sequence. If the code would move around relying on
-> > panic in memblock_reserve() may not be correct.
-> >
-> > And the few bytes and cycles the change saves do not worth the churn.
-> 
-> Makes sense to me.
-> 
-> But most early boot callers of memblock_reserve() don't check the
-> return value, so I thought we already rely on its internal behavior
-> anyway. So the few remaining checks just looked a bit inconsistent to
-> me.
+On Tue, Jul 7, 2026, at 04:25, Dmitry Torokhov wrote:
+> On Mon, Jun 29, 2026 at 03:03:23PM +0200, Arnd Bergmann wrote:
+>> 
+>> I hope that all that remains now can just get merged through the
+>> gpio tree. The gpio-keys patch needs a bit coordination with
+>> another patch addressing the same issue that is already in
+>> flight, so I expect that I'll rebase my series once more when
+>> that is in a stable branch, but the state I have here should
+>> just work as-is on top of v7.2-rc1.
+>
+> Acked-by: Dmitry Torokhov <dmitry.torokhov@gmail.com> # for input
 
-In reality it's very unlikely for memblock_reserve() to fail, especially
-after resize is allowed. 
-And if it does fail, the system would trip on a memory error, usually
-sooner than later.
+Thanks
 
-> Would you still prefer to keep these checks? If so, I'm fine with
-> dropping this patch series. It's not a big deal :)
+> Could this be done as an immutable branch?
 
-Let's keep the checks as they are now.
- 
-> Best Regards,
-> Sang-Heon Jeon
+Probably, yes. How about I send v6 now, with the two input
+patches moved to the front of the series? Then all six of my
+patches can go into the gpio tree, while Lee merges the bottom
+two into the mfd tree as an immutable branch to resolve the
+conflict with your rohm patches.
 
--- 
-Sincerely yours,
-Mike.
+      Arnd
