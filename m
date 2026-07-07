@@ -1,81 +1,77 @@
-Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
+Received: from mail-pj1-f47.google.com (mail-pj1-f47.google.com [209.85.216.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E04A386C36
-	for <linux-sh@vger.kernel.org>; Mon,  6 Jul 2026 18:09:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93BA21ABED9
+	for <linux-sh@vger.kernel.org>; Tue,  7 Jul 2026 02:25:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783361346; cv=none; b=Twj2ehm/rTzhfZXuNYSgXnlyKWC+F1T5/sC+rHsIDaEryc3WDELetk+//4rSTENSEytqc8d3bsN2ybH8OxU1+dc+P037cm9ElOsujI6zNsgUMdQ+IiIQ1bZ2Jxnh2cpA3N82Hp/HKxoH2kZgOgukajM4ml9rMgaAQzu6HukNkG0=
+	t=1783391110; cv=none; b=D5QbyGHuNbIw5nTAi6iMmLWpvAfnh76iSn4FQL6h0x1ZWQW5Rvi+Wqzaf+7Lg2B3ogJu1TK64VYfkFa57I3cZHXbfHL5v9Wb6f87nVAjyTQb/VUOW6f+RmFwwG4BHFFVXMEnag/AeUsiGLLcL+G+wZONYo7CT+So4qtmrJ6XTfw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783361346; c=relaxed/simple;
-	bh=hIJpKmWn3KefUAGdo0LDPdlAvhZwYVBzXAeeKjQ1xm8=;
+	s=arc-20240116; t=1783391110; c=relaxed/simple;
+	bh=2KmZ7Hb3On5nh1GAU6ccvCHBoNxXzKsIit/vgYPVkic=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=tftJLfk1O9z9snQfJzDwmonDw2H0se/+Oo4QUyHTBRtzNsyeqmHX8obB8/5QqN2ql9WcOit31LXeOODjKWMoZsIxlAxRoiOgn+Wn25jAOrjE3p7y2XpD2EB6X1yrkb1Gp2hYj3R+ETxw6IxEdUq0eDr+xTx6HEO3tQAUds/BsA0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=hfO4Oqrm; arc=none smtp.client-ip=209.85.128.47
+	 Content-Type:Content-Disposition:In-Reply-To; b=ItbrGtAPTzWG7GaGrZFp2T07yM7T8bSnHaFMIp6906wAc9lnmoC9wjGYx2/6xAlLzMcWRtvGWDe9ze4gONn3a9C5TQxNODpZpKMqYyjNaV5GVuMwRgnMkI7jxBRFGwJQAXf9QZ0PXMKk83z9P/D16uQuk8Mlfe0B0wLtL+78h2I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=n7szU3LS; arc=none smtp.client-ip=209.85.216.47
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hfO4Oqrm"
-Received: by mail-wm1-f47.google.com with SMTP id 5b1f17b1804b1-493c486f012so14275025e9.3
-        for <linux-sh@vger.kernel.org>; Mon, 06 Jul 2026 11:09:04 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="n7szU3LS"
+Received: by mail-pj1-f47.google.com with SMTP id 98e67ed59e1d1-381018b9375so3750539a91.0
+        for <linux-sh@vger.kernel.org>; Mon, 06 Jul 2026 19:25:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1783361343; x=1783966143; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1783391109; x=1783995909; darn=vger.kernel.org;
         h=in-reply-to:content-disposition:content-type:mime-version
          :references:message-id:subject:cc:to:from:date:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=cPaGqcrIwUHb7Vzhi3ZnBUWMwxvshiDblLgHxtklATA=;
-        b=hfO4OqrmKcnPZprwHAXc/xN0sN74VO5aLcIFqwlU8naay4MmpD/fcegRfS419sDOvm
-         HmPR3aa1NQ4jSyKwWRP/YhfC1Rk5quGkf3OEtBgoBREJpeKHNLzomqmhUAchSSMfAfYg
-         6U6zuTTNJvttHUncin4jqJcMpWR5qhqtKDR24HZbiyqFyC2fZ24TGKSGFjZ4245u6EOM
-         R1bNqitqDJlc0SNjBRd7RtJnyyl9W+FeddWKvbhK2JlJy6o0voMwQDU0z2zllk3kzDvg
-         ITJlCXa4eznXSj6/Ro1B5gmfYSHRYbhUJYvPjETd+qZAOERG98CcgqE88NMJZsMSVj1O
-         a/RA==
+        bh=IWwXV2NoQ084hyR/IchuMFSWerplFFVpf5f6Ij6vjU0=;
+        b=n7szU3LS+bhgNJgWgskrhYxfjug4wTGvWS6pWZWrj10H12XKcFhFmU3Et+ChAhmd4Y
+         W8xgQTCdf2q1RxOuNf4MMgTerSGTQSNR3SQdp7pv5p0YkyGMHPMU/onPJA6Xj2M+lKBf
+         hncDXR83ASEMnJLnRB3woWx/ccnfMIbKBhAfh6kPvaZboAKcSrXiqrgWiSn0G0/8JWMm
+         FmrCa1+A7ugbOWIS/bDnv44cOvOb69JAAlCEx7ePexjO62C5OSARwOjBl5tAQnhQacUi
+         XMq1spAZqezMq04lxhv95kg2bfIliKGqXS2DfVKcZx+aJj481FHv03OLh2vEbq/CcFIr
+         tulA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783361343; x=1783966143;
+        d=1e100.net; s=20251104; t=1783391109; x=1783995909;
         h=in-reply-to:content-disposition:content-type:mime-version
          :references:message-id:subject:cc:to:from:date:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=cPaGqcrIwUHb7Vzhi3ZnBUWMwxvshiDblLgHxtklATA=;
-        b=MYUxM1dFKt8Cr2fES/6TSmvunzeqDFUN4f13hhPavb4Xjbcr43ih44rNtSWTTaRoKZ
-         OPEE3EceLoNRCvUkFiRZ0Qy5zrpSS2kC7/KTG7i0JMPAk/MTbWPe0SYekh40P/sZQZMb
-         zkjAsWKEMoe1qX8fKZSiUSGMzVfAk/reqbw+zeakcfS2V21GEJuI0JP0Wf2og9iG2cfv
-         RbHr023dUzXPkH/3Zy+TwzLSr8orxWVeX+FYoKxJJo2JopsZZRL+xE+6A2FqKKt67Fpn
-         G6JmaLVllWQSfMS4zTQzBarC+S82DxiALsignERPBjfLfIIehnE9ETEihQvCkdkDOix8
-         YVsQ==
-X-Forwarded-Encrypted: i=1; AHgh+RrnMx4p7NDQ6R8ARQRzXj8DNqkCFl5KT43y+ufZnXkz9fvmD5CzXIXkqaTTW4POcZDMk57BElqM0g==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yzv6o/vlLZ7aEDLb6pvZx/GJ+fnlQAvzDFuonUnE0ismJyA+kwA
-	phi+2VB5CCa4bGz+kErrkzh+ceLOVbKWE6yhI4a26Qg5T1V/DSREgIQ=
-X-Gm-Gg: AfdE7ck68B8IZBFYUzXAAbcNG+45EYqUtGcE42CccFFJTvKbEkOMbUH/AVj3p6e/YyU
-	OTHasxEsgXEY/0AE1b3W0LPv5pl3/1fbYV4SCHWFkWkbayOlGsWzFKbb5KZEAtK+VsCv/qnbGxf
-	eNnaIITxNMrk6PxAo6ecZEOHKKu/tvVZpy5hYikKsBR6Yd61qXwcdHGkngiIeh7uTn/47cJkTlZ
-	8ex7vdEmnPUIelBpJFSfabiB/VCRe7eVe9zz6bF3Hy4JNU5h7997z0K8uzz5mScZ8lqZCvTrirb
-	wZIjr+FvZxfjVL9Jf1WgF/WLoXYb2e5GOJH9vAVs4QS3mGCBF6DyEPeWdzdIFuZT2IBNU5NmWfv
-	l6Y2wc8oaQ92cXfXvb7GHoLsclb3pUenaY0jYCZIfQGlcCIT3Gh8gd0W80HMHE0NRqaYdwq7Y0Y
-	FpSszCgb7vGI57T0gX2C1BQKGZSzt3Rtt8aI2T5h7NrYapKLOTuZR+TmT4w2LBmUtHtA==
-X-Received: by 2002:a05:600c:4585:b0:493:bc4a:fb55 with SMTP id 5b1f17b1804b1-493df09e3cbmr20223435e9.38.1783361342554;
-        Mon, 06 Jul 2026 11:09:02 -0700 (PDT)
-Received: from lithos ([2a02:810d:4a94:b300:2d45:3978:fa0d:bf54])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-493e01c00afsm1353555e9.4.2026.07.06.11.09.01
+        bh=IWwXV2NoQ084hyR/IchuMFSWerplFFVpf5f6Ij6vjU0=;
+        b=ei/qVLs0e9nc6AVRHKeSywN3DUniv1jiIBYPY9ePyyN5LpMsuAPFW3VgiB2FlXklax
+         J1OfRPtb29LMjb1fFxv4aKmAuQkT2Q+eCM5ZT1S9DuqsFYizMgTd+EfpN6xz+BLtPCke
+         oLSthA4K71p3yzeREY1Vu338d8T81bU1jyu5urwLceRLaAl8KbDCmxuPpMt0nJb3rAEs
+         pxRFnbNRxD+x24trwpIglJw22SW4Q7gd8iKAuA06VyGquS1Su+vcsHoI8WE261xd9ti6
+         PaazMajt9DjghIM2GSuLJ1BFJJihFQWu/8hIFdgOMjLpz8blH4P5z6YdBLSoAg4j0whM
+         cjiA==
+X-Forwarded-Encrypted: i=1; AHgh+RoiZR33SeOmWpRVgD8OwTJWTF6TRHQ4M4Jtk8A+vc6yxrB3J0xy57W4NZpuGU4DpR/Slv/U1S9NaQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzTZSkN4ve8Xqg2+AyOB+reZwjV5CEDmIK36kw9Zbj0gNq370Zn
+	UGXu9+QfcaDzgArfuXaSkTo6IVbrX3E8xHwNW+EUAY1MXr58xJPA7Va4BMEznQ==
+X-Gm-Gg: AfdE7cl6oYdZDErP2etzJ97K3cRSDiMbeAhFlas8F3gyUZVyfHaEemfi5dxchY60u5B
+	cqtL3VZlwT5nAXQxE6mE+ztyTeWdnVRJ3aTL+0YObaS6uGiRWroSlJfAmGd/6gXAjUbLzh/vs6C
+	XbSRML/BSNQBt8q2T/pvV8Kk/w+l0k0u5FiMnM2HIN2NERd+63PL57YfTGWXLS+kWeYYHU7L3xo
+	ijFudeNcKuMC32G7/w9/EHrgRZCdglWEPzRV3faiRItKPldyv+bm5PInDIPhWQtj7BgSU7CUkbO
+	15pPqKrlvcPaVY/DdxEBAuULj4ZuNJ53h2zU31V+BESoZncKxs3/TRM8tqzw5rYMblXwS3WkLRW
+	BiCemfhGr0ayf8X6oh38Pfx/oTMVLMItYRreR0bmeBPkMiZH1w/YdDSUl7HY00Mas9xIJGfomRe
+	atf/k5+q3o8TYmzl22D9pEFH0KpjVC0IjNCSm2g2/NuzS8Q96n8u/hvw==
+X-Received: by 2002:a17:90b:2dcd:b0:37f:c683:e643 with SMTP id 98e67ed59e1d1-3875920ccabmr3345962a91.24.1783391108945;
+        Mon, 06 Jul 2026 19:25:08 -0700 (PDT)
+Received: from google.com ([2a00:79e0:2ebe:8:d89b:1fdd:a8f2:dbeb])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-31174a56848sm2378094eec.16.2026.07.06.19.25.07
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 06 Jul 2026 11:09:02 -0700 (PDT)
-Date: Mon, 6 Jul 2026 20:08:56 +0200
-From: Florian Fuchs <fuchsfl@gmail.com>
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Miquel Raynal <miquel.raynal@bootlin.com>,
-	Richard Weinberger <richard@nod.at>,
-	Vignesh Raghavendra <vigneshr@ti.com>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Adrian McMenamin <adrianmcmenamin@gmail.com>,
-	linux-kernel@vger.kernel.org, Dmitry Torokhov <dtor@mail.ru>,
-	linux-input@vger.kernel.org, linux-mtd@lists.infradead.org,
-	linux-sh@vger.kernel.org
-Subject: Re: [PATCH 02/26] Input: maple_keyb - fix key press detection
-Message-ID: <akvvOA972XsT9Ifo@lithos>
-References: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
- <20260703-b4-maple-cleanup-v1-2-41e424964da5@gmail.com>
+        Mon, 06 Jul 2026 19:25:08 -0700 (PDT)
+Date: Mon, 6 Jul 2026 19:25:04 -0700
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+To: Arnd Bergmann <arnd@kernel.org>
+Cc: linux-gpio@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Thomas Gleixner <tglx@kernel.org>, 
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
+	Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, 
+	Lee Jones <lee@kernel.org>, Pavel Machek <pavel@kernel.org>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-input@vger.kernel.org, linux-leds@vger.kernel.org
+Subject: Re: [PATCH v5 0/6] gpiolib: fence off legacy interfaces
+Message-ID: <akxjQtCTcx2TOQMk@google.com>
+References: <20260629130329.1291953-1-arnd@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -84,62 +80,55 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260703-b4-maple-cleanup-v1-2-41e424964da5@gmail.com>
+In-Reply-To: <20260629130329.1291953-1-arnd@kernel.org>
 
-Hi Dmitry,
+On Mon, Jun 29, 2026 at 03:03:23PM +0200, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> This is the remainder of the series previously posted as v2
+> in [1]. I've changed the version to v5 for all patches to
+> not confuse b4 too much, but the patches are mostly unchanged.
+> 
+> The patch "Input: soc_button_array - select CONFIG_GPIOLIB_LEGACY"
+> was not part of the series last time, but the build bots reported
+> this as a regression since I had dropped that since v1.
+> 
+> I hope that all that remains now can just get merged through the
+> gpio tree. The gpio-keys patch needs a bit coordination with
+> another patch addressing the same issue that is already in
+> flight, so I expect that I'll rebase my series once more when
+> that is in a stable branch, but the state I have here should
+> just work as-is on top of v7.2-rc1.
+> 
+>      Arnd
+> 
+> [1] https://lore.kernel.org/all/20260520183815.2510387-1-arnd@kernel.org/
+> 
+> Arnd Bergmann (6):
+>   [v5] sh: select legacy gpiolib interface
+>   [v5] x86/olpc: select GPIOLIB_LEGACY
+>   [v5] Input: soc_button_array - select CONFIG_GPIOLIB_LEGACY
+>   [v5] Input: gpio-keys: make legacy gpiolib optional
+>   [v5] leds: gpio: make legacy gpiolib interface optional
+>   [v5] gpiolib: turn off legacy interface by default
+> 
+>  arch/sh/Kconfig                           |  1 +
+>  arch/sh/boards/Kconfig                    |  8 ++++
+>  arch/sh/boards/mach-highlander/Kconfig    |  1 +
+>  arch/sh/boards/mach-rsk/Kconfig           |  3 ++
+>  arch/x86/Kconfig                          |  1 +
+>  arch/x86/platform/olpc/olpc-xo1-sci.c     |  2 +-
+>  drivers/gpio/Kconfig                      |  9 +++-
+>  drivers/input/keyboard/gpio_keys.c        |  9 ++--
+>  drivers/input/keyboard/gpio_keys_polled.c |  4 +-
+>  drivers/input/misc/Kconfig                |  3 ++
+>  drivers/input/misc/soc_button_array.c     |  2 +-
 
-On 03 Jul 22:57, Dmitry Torokhov wrote:
-> The key press detection logic was using ptr instead of !ptr (where ptr is
-> the result of memchr searching for the new key in the old keys).
-> 
-> If ptr is not NULL, it means the key was already pressed in the previous
-> report, so it is not a new press. If ptr is NULL, it means the key was
-> not pressed before, so it is a new press.
-> 
-> Using ptr instead of !ptr caused new presses to be ignored in the first
-> poll cycle (only reported in the second cycle if still held, because
-> then it was in 'old'), and caused redundant press events to be sent
-> on every subsequent poll while the key was held.
-> 
-> Fix this by using !ptr for press detection, matching the release
-> detection logic.
-> 
-> Fixes: b11d2127c489 ("Input: add support for SEGA Dreamcast keyboard")
-> Assisted-by: Antigravity:gemini-3.5-flash
-> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> ---
->  drivers/input/keyboard/maple_keyb.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/input/keyboard/maple_keyb.c b/drivers/input/keyboard/maple_keyb.c
-> index 3d5538dd4f23..623d7951405b 100644
-> --- a/drivers/input/keyboard/maple_keyb.c
-> +++ b/drivers/input/keyboard/maple_keyb.c
-> @@ -107,7 +107,7 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
->  		}
->  		ptr = memchr(kbd->old + 2, kbd->new[i], 6);
->  		code = kbd->new[i];
-> -		if (code > 3 && ptr) {
-> +		if (code > 3 && !ptr) {
->  			keycode = kbd->keycode[code];
->  			if (keycode) {
->  				input_event(dev, EV_MSC, MSC_SCAN, code);
-> 
-> -- 
-> 2.55.0.rc0.799.gd6f94ed593-goog
-> 
+Acked-by: Dmitry Torokhov <dmitry.torokhov@gmail.com> # for input
 
-For patches 1-17, 21, 22, 24, 25 you can add:
-Tested-by: Florian Fuchs <fuchsfl@gmail.com>
+Could this be done as an immutable branch?
 
-I applied the patches without the mutex-related ones, and dropped
-the 18, 19 (the mutex ones) and the depending 20, 23, 26 (as didn't
-apply then).
+Thanks.
 
-The mouse, keyboard, controller is still detected and working like
-expected. All buttons, sticks, wheel and knobs work. Patch 2 seems
-indeed to make the keyboard feel more reliable while typing.
-
-Thank you,
-Regards
-Florian
+-- 
+Dmitry
