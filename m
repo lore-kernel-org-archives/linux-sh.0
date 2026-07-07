@@ -1,122 +1,239 @@
-Received: from fout-a3-smtp.messagingengine.com (fout-a3-smtp.messagingengine.com [103.168.172.146])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D6A03161A1;
-	Tue,  7 Jul 2026 14:56:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.146
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D3962F12A5;
+	Tue,  7 Jul 2026 19:05:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783436170; cv=none; b=J9ii+r8/G0fGBgzcvWQI/CDpgJDtrBYiJjvm3OfBmNEyg5l4W3nJZSF3XcHN7NP2i7OBkyr+380DTtuWRjt+m1BKZpYC0iqABp5Y7StT/Y6h0COGlthSAdB5Ler9kl67P/tguSV287HmX0TJiRxuvkHsxVhDz2rI8wJEl/eXkzI=
+	t=1783451159; cv=none; b=pkEvgJ/wGEQHYxNTnXDdjRAdNZ6ke0tREY3EjUFeQGyP17E4byRSUqaFmG0xcXuEyqA2krjEvKEwANDQ9XKDbSp6HHkHRhDc0KH03YiiuNba8/qiZW3ZDqUL9fliqA/etdXvesJbA5zZvnK4WFTpOexSr+LCHPs4xeV9VUJTp50=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783436170; c=relaxed/simple;
-	bh=ZOXYlp0jM4yRQtB0bkcG1hg7jnlZbj+tfWaD/aCHUlo=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=Ry9SyIiXscPnAwrIGjDIOz38gVHxCDREX4JZwDQsMKvvS6Vbky9FVzEJzMckRUjkvWHns3QFo1XncwRGVYW8VefSaT87vIAffcBBoUBQZkET/BxqzlLIn1g83yykaR+V1tSUhelT5uJ9IJ9baSKLioT2e4Vpg9jzWv5DTRERreY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=Gq9ljCrB; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=VnOMufr6; arc=none smtp.client-ip=103.168.172.146
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
+	s=arc-20240116; t=1783451159; c=relaxed/simple;
+	bh=QXLUt1TPzW5KUIfT+EbS13frXZWcSnBhPA0WRti5QHo=;
+	h=Date:Message-ID:From:To:Cc:Subject; b=POA9D7ZKW0/zNUHuA5rKB3WkMniTIJteB8EAENg8NhbVwtwBt1fg1LHd6lLxJcr0qlUrf1Pmg0JlU1I6ZWzgY3/UX05uHHb/AeEgLfHkg2qeTewX/n0KReX/MxrzlfZTfT3AJBHZflxvsHuI+ljeIgwraSElD/x/7CLYHHxXlTE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VFkWTdo5; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="Gq9ljCrB";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="VnOMufr6"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfout.phl.internal (Postfix) with ESMTP id 89ADFEC021E;
-	Tue,  7 Jul 2026 10:56:08 -0400 (EDT)
-Received: from phl-imap-05 ([10.202.2.95])
-  by phl-compute-04.internal (MEProxy); Tue, 07 Jul 2026 10:56:08 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm1; t=1783436168;
-	 x=1783522568; bh=VRSzkiO75jHk1CVYNukpjqr9eHc0JnAAWEpWm+VODRg=; b=
-	Gq9ljCrBpBKGz1vzhzn8yD/AEd4gEcbANHDqCwCQt0a122rulFDUR/gkTO6sAY8T
-	TtaatWq+OnmrKa59IrgOjGgaoFjNEm1sk8nnbuOn5B2Vz+tfmkL4KbA1bTk0Kg9T
-	5yYOXho8j89IyrFu8SkGnVkibOXakS5QW9Brs33Qt657oxC9PqB+LVYOSVkOFUcm
-	q3cMr8Ta+35401RvPzO9E8hjE/iqhv69//cmVdJkEyQ6Srf7T7IYd1wAux+07iga
-	lUfum2zxk65t3kJFnL83uh7u+n4u7YxAAP9pW4ksYnkKbEgkEfXXWX8ejXrhEiY/
-	PUzbjBQ4QixpXIXaq1AflA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1783436168; x=
-	1783522568; bh=VRSzkiO75jHk1CVYNukpjqr9eHc0JnAAWEpWm+VODRg=; b=V
-	nOMufr6TFJRtLUsMHArzIvJHvh38Acd/lCBYABn/rxUJlvnvcwr6kC73iRIIDKuC
-	eFMNwtCraSuQycSbVoZVM4LfR0024rA64Onh0EGNTvCPbSNHPdlCPwYI9ybNtfpZ
-	O7sEQumDIB/7nk9AS4Qg9bE5txY1XF2YcVhZNbTC86Y91grfL4rnovSmFDSbJzMB
-	XMzoWM6iQhejKuXRld/bK5bxLHTrWijfonyLaSlvEef2Z37rEZryMNXr0Mhmr8ri
-	ZBsCBdbV8HPQwEPyHuU5g1qYrT8EBpGUkJiomb+lIVq42gthCU/sjqJdkBHDRjPA
-	a8qnWnEqM4l6IjEYxG2fQ==
-X-ME-Sender: <xms:hxNNaqUibPlQj5adz_qbtt7clM4Z1cU7v_jrAVJ1fw7jCyV-zrjv3g>
-    <xme:hxNNahbS1TvwT8PX3HlkdQgSwRaeal2wo1kAoABqDXfhbHGKUk5ydUJeRGpu1FdUe
-    ebUAOHXK8xxumZ62EEBO8Bnl032fm2I28Vg2-wb52kBw3TDyMTOJ3kY>
-X-ME-Proxy-Cause: dmFkZTGzJDFyzooW5HxT05/lmH0C2SnjFp3hXK73hgm4N4JAp8ZYGIoTCbbZKv6mSVLC6G
-    H/nVzJlUCXzZfy3XIcIF3zGaEQJSCNU2j0ZIeQ+l8uRrmPScvW87lZ8+5ZkJ8WrUGhebcE
-    +cflaaMiWJ4bzpWxO8W6ia8sRfJcvpamwCjK2X4i9ahdIPbl6wsVkXdz6uI7lhUtbLjejF
-    az3pxue182Ql22u3qr/axy6yyLAUQ4d84yyPnvr25jF8RS8qvIJ2Bj5IYL5XJOk17mmpgU
-    qutJTwdrxwLOo6bcyYK8xrROG5A3wEbUG/BFPO3r5rOkHMaaz595cXHyr195zXmrv5qKNg
-    oDc6fnKp1pEcXCnf4ANiUlTaZhGdEMBe3atX0fGk+ttZlMDm79PBB7l0n0FRQ+1jjVFfcH
-    Yyezh2MTIuX4yT0GVdGprLq1sPQtPrmK521ps06ZaZ9DHnnmKwyxRIBR5Rp9nFJ6YLkaa3
-    jRRrv+rti/rHpXnL4jdJ38PUEsJzWaeSoIPKuPr3UpvAO8p+Gey7P+RgXzPilcRltRv6E3
-    ZcXYRQLay8YLdPOBN1KwlbjzqcqK+UXqCeyJKzgK+7n2kwgSPWc7I/bawUZoS5fp97wuKb
-    bfqA5cZvz8A8bDO15kOc9zqejqBWR31OoQRj/43pFihfkDl4ksqSEOoF/5Tg
-X-ME-Proxy: <xmx:hxNNas071d8d51LzdckyilQ3fY5-DygAey2GGbCSti1xc_IgLR0H0Q>
-    <xmx:hxNNasOY3-I6Nb5BA0DszkEsV7QXy8C-XplmUBVNWR-v9r04_-mdSw>
-    <xmx:hxNNan0UCecf-2X6lg4ZS7Eo7FnMtcyGA5rdu-rCewmdnlnpCphqTg>
-    <xmx:hxNNar1PzgMQ-maUB3D_EeRtFWYtinDdLLd9FEeS8cE0vbGmiF-F0A>
-    <xmx:iBNNarnYVpU_-wsqBXc7O3HJJ5b487skRjyjf6UNI8gnNg-5QCkdIEba>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id CBD8F182007E; Tue,  7 Jul 2026 10:56:07 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VFkWTdo5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 113781F000E9;
+	Tue,  7 Jul 2026 19:05:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1783451156;
+	bh=sKaa6jqJcnZ3kixdUKctGHCLE8bgvUhOgv/iQQ4U2eg=;
+	h=Date:From:To:Cc:Subject;
+	b=VFkWTdo5yhgpXx9sxvRHZ3HlP4xSZ4aHXa1zsGtMnp9mQpMvU4qieroT0K0+AUmNe
+	 mH4Zbvrp37BWRtV+WSrFvOBwzQyMx5YfHARXuOrmubRPkhjAk6NgYYQTWgkAhazAju
+	 1djGcOQc2V77x2qVXGFvC6BkwM/+Iezw2J7QhqUY7M9Y5saOvbXsETd73JhuSwTJ1e
+	 Hk7rq39ys7eddzm/Skk6nfXmoJIZBJVZnDdD7rbJtFga+XVDyFyYEDjJyfJdP9Y2Vt
+	 rb/jER5CfvGmtQfb87VuvQHb1UgZTCkpnw26sWY8rQ0z0x4vkc0U56YUbxw1o0tQkB
+	 6sQc63NXlLiVQ==
+Date: Tue, 07 Jul 2026 21:05:53 +0200
+Message-ID: <20260707181957.433213175@kernel.org>
+User-Agent: quilt/0.69
+From: Thomas Gleixner <tglx@kernel.org>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Peter Zijlstra <peterz@infradead.org>,
+ Michael Ellerman <mpe@ellerman.id.au>,
+ Shrikanth Hegde <sshegde@linux.ibm.com>,
+ linuxppc-dev@lists.ozlabs.org,
+ Kees Cook <kees@kernel.org>,
+ Huacai Chen <chenhuacai@kernel.org>,
+ loongarch@lists.linux.dev,
+ Paul Walmsley <pjw@kernel.org>,
+ Palmer Dabbelt <palmer@dabbelt.com>,
+ linux-riscv@lists.infradead.org,
+ Sven Schnelle <svens@linux.ibm.com>,
+ linux-s390@vger.kernel.org,
+ x86@kernel.org,
+ Mark Rutland <mark.rutland@arm.com>,
+ Jinjie Ruan <ruanjinjie@huawei.com>,
+ Andy Lutomirski <luto@kernel.org>,
+ Oleg Nesterov <oleg@redhat.com>,
+ Richard Henderson <richard.henderson@linaro.org>,
+ Russell King <linux@armlinux.org.uk>,
+ Catalin Marinas <catalin.marinas@arm.com>,
+ Guo Ren <guoren@kernel.org>,
+ Geert Uytterhoeven <geert@linux-m68k.org>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ Helge Deller <deller@gmx.de>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>,
+ Richard Weinberger <richard@nod.at>,
+ Chris Zankel <chris@zankel.net>,
+ linux-arm-kernel@lists.infradead.org,
+ linux-alpha@vger.kernel.org,
+ linux-csky@vger.kernel.org,
+ linux-m68k@lists.linux-m68k.org,
+ linux-mips@vger.kernel.org,
+ linux-parisc@vger.kernel.org,
+ linux-sh@vger.kernel.org,
+ linux-um@lists.infradead.org,
+ Arnd Bergmann <arnd@arndb.de>,
+ Vineet Gupta <vgupta@kernel.org>,
+ Will Deacon <will@kernel.org>,
+ Brian Cain <bcain@kernel.org>,
+ Michal Simek <monstr@monstr.eu>,
+ Dinh Nguyen <dinguyen@kernel.org>,
+ "David S. Miller" <davem@davemloft.net>,
+ Andreas Larsson <andreas@gaisler.com>,
+ linux-snps-arc@lists.infradead.org,
+ linux-hexagon@vger.kernel.org,
+ linux-openrisc@vger.kernel.org,
+ sparclinux@vger.kernel.org,
+ linux-arch@vger.kernel.org,
+ =?UTF-8?q?Michal=20Such=C3=A1nek?= <msuchanek@suse.de>,
+ Jonathan Corbet <corbet@lwn.net>,
+ linux-doc@vger.kernel.org
+Subject: [patch 00/18] entry: Consolidate and rework syscall entry handling
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-ThreadId: AUKPAdC25nmJ
-Date: Tue, 07 Jul 2026 16:55:37 +0200
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Dmitry Torokhov" <dmitry.torokhov@gmail.com>,
- "Arnd Bergmann" <arnd@kernel.org>
-Cc: "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "Thomas Gleixner" <tglx@kernel.org>, "Ingo Molnar" <mingo@redhat.com>,
- "Borislav Petkov" <bp@alien8.de>,
- "Dave Hansen" <dave.hansen@linux.intel.com>, x86@kernel.org,
- "H. Peter Anvin" <hpa@zytor.com>, "Linus Walleij" <linusw@kernel.org>,
- "Bartosz Golaszewski" <brgl@kernel.org>, "Lee Jones" <lee@kernel.org>,
- "Pavel Machek" <pavel@kernel.org>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-input@vger.kernel.org,
- linux-leds@vger.kernel.org
-Message-Id: <6dd3e87f-44a4-4740-a81a-c4e459e3921e@app.fastmail.com>
-In-Reply-To: <akxjQtCTcx2TOQMk@google.com>
-References: <20260629130329.1291953-1-arnd@kernel.org>
- <akxjQtCTcx2TOQMk@google.com>
-Subject: Re: [PATCH v5 0/6] gpiolib: fence off legacy interfaces
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
 
-On Tue, Jul 7, 2026, at 04:25, Dmitry Torokhov wrote:
-> On Mon, Jun 29, 2026 at 03:03:23PM +0200, Arnd Bergmann wrote:
->> 
->> I hope that all that remains now can just get merged through the
->> gpio tree. The gpio-keys patch needs a bit coordination with
->> another patch addressing the same issue that is already in
->> flight, so I expect that I'll rebase my series once more when
->> that is in a stable branch, but the state I have here should
->> just work as-is on top of v7.2-rc1.
->
-> Acked-by: Dmitry Torokhov <dmitry.torokhov@gmail.com> # for input
+Sorry for the long CC list, but this is a treewide change.
 
-Thanks
+Michal recently posted a RFC patch to separate the potential syscall number
+modifications in syscall_enter_user_mode_work() from the information
+whether the syscall should be processed and the return value modified:
 
-> Could this be done as an immutable branch?
+  https://lore.kernel.org/lkml/CE1qW@kunlun.suse.cz
 
-Probably, yes. How about I send v6 now, with the two input
-patches moved to the front of the series? Then all six of my
-patches can go into the gpio tree, while Lee merges the bottom
-two into the mfd tree as an immutable branch to resolve the
-conflict with your rohm patches.
+The existing logic is:
 
-      Arnd
+arch_syscall()
+	regs->result = -ENOSYS;
+
+	syscallnr = syscall_enter_from_user_mode(regs, syscall);
+
+	if (syscallnr != -1L)
+		regs->result = invoke_syscall(regs, syscall;
+
+syscall_enter_from_user_mode() invokes ptrace, seccomp and
+tracing/BPF/Probes. All of them can modify the syscall number.
+
+ptrace and seccomp explicitly set the syscall number to -1L to indicate
+that the syscall invocation needs to be skipped and the result has not to
+be modified as it might have been modified by ptrace or seccomp. The
+tracer/BPF/Probes mechanism can modify the syscall number as well and
+relies implicitly on the -1L logic.
+
+This can obviously not be differentiated from a syscall invocation where
+userspace provided -1 as syscall number.
+
+The general agreement of the discussion was that the current mechanism,
+while functionally correct is non-intuitive and something like Michals
+proposal would make that code clearer and easier to handle on the
+architecture side:
+
+arch_syscall()
+	regs->result = -ENOSYS;
+
+	if (syscall_enter_from_user_mode(regs, &syscall)) 
+		regs->result = invoke_syscall(regs, syscall;
+
+That discussion made me look deeper into the related code and as usual
+there were a lot of other things to discover.
+
+  1) Stack randomization
+
+     add_random_kstack_offset() can only be invoked after
+     enter_from_user_mode() established proper state as it calls into
+     instrumentable code.
+
+     PowerPC got that wrong and the other architectures either invoke it
+     after enter_from_user_mode() or after syscall_enter_from_user_mode().
+
+     The latter is suboptimal as the randomization takes place after all
+     the user mode entry work. Aside of that add_random_kstack_offset()
+     uses get/put_cpu_var(), which makes it usable in preemptible code, but
+     when invoked in the interrupt disabled region that's pointless
+     overhead.
+
+  2) As discussed in the above thread just changing the function signature
+     of syscall_enter_from_user_mode[_work]() so they take a pointer
+     argument for the syscall and then return 0 on success is not really
+     intuitive either. Aside of that this breaks the implicit assumption of
+     the tracer when setting the syscall number to -1.
+
+  3) The x86 entry code has some historically accumulated oddities
+
+The following series addresses this by:
+
+  1) Providing new [syscall_]enter_from_user_mode() variants, which include
+     stack randomization and utilize a new add_random_kstack_offset_irqsoff()
+     variant, which avoids the get/put_cpu_var() overhead and converting all
+     usage sites over
+
+  2) Picking up Jinjie's seccomp patch from:
+
+     https://lore.kernel.org/lkml/20260629130616.642022-2-ruanjinjie@huawei.com
+
+     and addressing the feedback (renaming the seccomp functions)
+
+  3) Making the ptrace and tracer related functions return a boolean value
+     to indicate syscall permission
+
+  4) Addressing the x86 oddities
+
+  5) Converting the tree over to the new scheme
+
+With that all architectures using the generic syscall entry code follow the
+same scheme, apply stack randomization at the correct and earliest possible
+place and skip syscall processing depending on the boolean return value of
+syscall_enter_from_user_mode[_work]().
+
+There should be no functional changes, at least there are none intended.
+
+The resulting text size for the syscall entry code on x8664 is slightly
+smaller than before these changes.
+
+Testing syscall heavy workloads and micro benchmarks shows a small
+performance gain for the general rework, but the last patch, which changes
+the logic to be more understandable has no measurable impact in either
+direction.
+
+The series applies on Linus tree and is also available from git:
+
+        git://git.kernel.org/pub/scm/linux/kernel/git/tglx/devel.git entry-rework-v1
+
+Thanks,
+
+	tglx
+---
+ Documentation/core-api/entry.rst      |   33 +++++---
+ arch/alpha/kernel/ptrace.c            |    4 -
+ arch/arc/kernel/ptrace.c              |    2 
+ arch/arm/kernel/ptrace.c              |    4 -
+ arch/arm64/kernel/ptrace.c            |    4 -
+ arch/csky/kernel/ptrace.c             |    4 -
+ arch/hexagon/kernel/traps.c           |    2 
+ arch/loongarch/kernel/syscall.c       |   17 +---
+ arch/m68k/kernel/ptrace.c             |    4 -
+ arch/microblaze/kernel/ptrace.c       |    2 
+ arch/mips/kernel/ptrace.c             |    4 -
+ arch/nios2/kernel/ptrace.c            |    2 
+ arch/openrisc/kernel/ptrace.c         |    2 
+ arch/parisc/kernel/ptrace.c           |   12 +--
+ arch/powerpc/kernel/syscall.c         |    5 -
+ arch/riscv/kernel/traps.c             |   14 +--
+ arch/s390/kernel/syscall.c            |   11 +-
+ arch/sh/kernel/ptrace_32.c            |    4 -
+ arch/sparc/kernel/ptrace_32.c         |    2 
+ arch/sparc/kernel/ptrace_64.c         |    2 
+ arch/um/kernel/ptrace.c               |    2 
+ arch/um/kernel/skas/syscall.c         |    2 
+ arch/x86/entry/syscall_32.c           |   70 +++++++------------
+ arch/x86/entry/syscall_64.c           |   61 ++++++----------
+ arch/x86/entry/vsyscall/vsyscall_64.c |   14 +--
+ arch/x86/include/asm/entry-common.h   |    1 
+ arch/x86/include/asm/syscall.h        |   10 --
+ arch/xtensa/kernel/ptrace.c           |    5 -
+ include/asm-generic/syscall.h         |    4 -
+ include/linux/entry-common.h          |  125 ++++++++++++++++++++--------------
+ include/linux/irq-entry-common.h      |    6 -
+ include/linux/ptrace.h                |   13 +--
+ include/linux/randomize_kstack.h      |   19 +++++
+ include/linux/seccomp.h               |   12 +--
+ kernel/entry/syscall-common.c         |    7 +
+ kernel/seccomp.c                      |   35 ++++-----
+ 36 files changed, 264 insertions(+), 256 deletions(-)
+
+
