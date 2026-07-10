@@ -1,150 +1,136 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90D6642847B
-	for <linux-sh@vger.kernel.org>; Fri, 10 Jul 2026 12:53:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8398175A85
+	for <linux-sh@vger.kernel.org>; Fri, 10 Jul 2026 13:32:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783688003; cv=none; b=UXYe9voy154tnlhxYjfZxkjLQkqkGaWB0mFafKnWrW5muqtUfizvZaIrMFrexVFDSzRu9lCKyD2wVSO66ZvUr9ycXgK00/S8UxXULXKu3GkIgWgZp2J7TQWvmRtNFV8zWtXRyJA/QsKjm9DXCl+Su6/ua+FGmNajOCyiq7BLAJg=
+	t=1783690373; cv=none; b=QGZ9n/UTH329mx8ykSlW83LCpWptKEJ8W50s6CuySp8AABXuMhzOajEs1y/LIsPdVim3iDV1ZyznLHPZNJP0QnJvKoyfzq2k8rGFmaI3rcvoVj5m0iPGA7WmzkJyNtgytiHs5+R0Td6Yi/MZEmrPm26tdyYWUdO8D3I2gNW4uYM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783688003; c=relaxed/simple;
-	bh=sxv6a13OPgrK6TOsUQ/kBJYeYtA4hSsjpL/QVUw8MJI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 In-Reply-To:Content-Type:Content-Disposition; b=YV91nMj+nFnCpoutyz/W/McXZJtY+9cjYSnLCK7B5XFQQ6xvPcOLRhi7bMndQyHcXO+TsERmLaQrtkZ6VKC+bLFvdFYBTEFBzA8A8anuy+yqIG+YwiPxQzUq1RY4oHu4elr88/ywMX4mQXuF1MjtAY48N6n64QrnteEDm2OxkIc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=O2AA42wc; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1783690373; c=relaxed/simple;
+	bh=tO2lFZWioW3kKGX0uSWni6YKK238YT0v1wExvNUkqIQ=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=KhsFdhUl5ThOXC+wRaXBi9n156/aq8VcOgRW9qb9kwB4NERfz77tCnBzrWRD1wNc3MxoireBz0G6Mr1uGHP9hSg1qLvdg9DnDCWsuHSHm4iq/TNJhfKofH1/na4/aXhZRvNK21yRd69SyBZlNRltgtwRCuDJf40JCWTnlCsnerk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=aRaZM5iS; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="O2AA42wc"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1783688000;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=XTxMckJ71iKdcnC625lbZ9WJQgTp+gyXuVTaxsSZYeA=;
-	b=O2AA42wc0EFpHFaeTcNaA+5w2Vxj2dLQZ00YjfR5A3+JB1y4OPtfyeY1VNKeuyYVDjlqoy
-	TzMenwjfF9q+zFqyZXi8XP+H48JHs7nMPojLVdTC4UG6U94iupybkM9uqpYd1CMMtl1uyc
-	pySLQjyn0zU5XCWVDK7TvBD50TiZKnw=
-Received: from mx-prod-mc-08.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-35-165-154-97.us-west-2.compute.amazonaws.com [35.165.154.97]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-640-duefXCb_NOaqJcpTJsNlCw-1; Fri,
- 10 Jul 2026 08:53:17 -0400
-X-MC-Unique: duefXCb_NOaqJcpTJsNlCw-1
-X-Mimecast-MFC-AGG-ID: duefXCb_NOaqJcpTJsNlCw_1783687991
-Received: from mx-prod-int-06.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-06.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.93])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mx-prod-mc-08.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id AAE061801379;
-	Fri, 10 Jul 2026 12:53:07 +0000 (UTC)
-Received: from fedora (unknown [10.44.49.164])
-	by mx-prod-int-06.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with SMTP id 8AEF2180029C;
-	Fri, 10 Jul 2026 12:52:47 +0000 (UTC)
-Received: by fedora (nbSMTP-1.00) for uid 1000
-	oleg@redhat.com; Fri, 10 Jul 2026 14:53:07 +0200 (CEST)
-Date: Fri, 10 Jul 2026 14:52:40 +0200
-From: Oleg Nesterov <oleg@redhat.com>
-To: Michal =?iso-8859-1?Q?Such=E1nek?= <msuchanek@suse.de>
-Cc: Thomas Gleixner <tglx@kernel.org>, LKML <linux-kernel@vger.kernel.org>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Shrikanth Hegde <sshegde@linux.ibm.com>,
-	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	linux-riscv@lists.infradead.org,
-	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org,
-	x86@kernel.org, Mark Rutland <mark.rutland@arm.com>,
-	Jinjie Ruan <ruanjinjie@huawei.com>,
-	Andy Lutomirski <luto@kernel.org>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Guo Ren <guoren@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Helge Deller <deller@gmx.de>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Richard Weinberger <richard@nod.at>,
-	Chris Zankel <chris@zankel.net>,
-	linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
-	linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-	Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
-	Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>,
-	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
-	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
-	linux-arch@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
-	linux-doc@vger.kernel.org
-Subject: Re: [patch 13/18] entry: Make trace_syscall_enter() return type bool
-Message-ID: <alDrGBMdTuoLcVyy@redhat.com>
-References: <20260707181957.433213175@kernel.org>
- <20260707190254.338083894@kernel.org>
- <ak5ySpil83TNWxeq@kunlun.suse.cz>
- <87se5tqkyp.ffs@fw13>
- <alDQ7isUKJFl8Va4@kunlun.suse.cz>
- <alDaOw8t-e3rxIPm@redhat.com>
- <alDmTcgzMlKiio9H@kunlun.suse.cz>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="aRaZM5iS"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=5eSoTXH07WtDwZ8lw4FjSwyVSuPL9R2ymhqg1LkXOKM=; t=1783690370;
+	x=1784295170; b=aRaZM5iSgaj2cmLwsudcs/cCeKceUEG7FhJ2DejNMJMz6IDbzHi8mK402/bC2
+	5WzTCEXajAAZvY7BIEHeEF4KOdhqHMtTMG0ItGdVrAzKPvb4LE6alCAzTiOyDnIIPYxsLOvMhn5/F
+	gbx88OgHln7XiVK3ePCCVG5hUctAAc8HPJIdf+Dz8GxOcM44wQsm3/DUW6gYQ6znNTyy0FPui0I76
+	gpqXFLgL9q1XCOPcl7YJc5z1MEXFF4AnDlzkxDMdKs05j+mbSGXTbuetQd5mYrRYmye2gGoQ+XVZV
+	ec/mK64jtoNM+ZFFHG7BE9sKlm03hWOnFKoqlYqYkZg3n0zaaA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1wiBLN-00000001IjK-1GYG; Fri, 10 Jul 2026 15:32:41 +0200
+Received: from p57bd94c1.dip0.t-ipconnect.de ([87.189.148.193] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1wiBLN-00000000hl8-0L8D; Fri, 10 Jul 2026 15:32:41 +0200
+Message-ID: <6beae3c6561a7155ee04ea432df85725078aec1d.camel@physik.fu-berlin.de>
+Subject: Re: Toybox make root no longer works as expected
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Rob Landley <rob@landley.net>, "D. Jeff Dionne" <djeffdionne@gmail.com>
+Cc: linux-sh <linux-sh@vger.kernel.org>, Geert Uytterhoeven
+	 <geert+renesas@glider.be>, "D. Jeff Dionne" <jeff@coresemi.io>
+Date: Fri, 10 Jul 2026 15:32:40 +0200
+In-Reply-To: <6bd93131318b8e78d49fdc5f3e5fecc053f9c046.camel@physik.fu-berlin.de>
+References: 
+	<359d107fd9fe92a55e77be84c26d9ac86112fe13.camel@physik.fu-berlin.de>
+		 <71c6a925c748fb3c9c2af30362387f0e562c0f6f.camel@physik.fu-berlin.de>
+		 <55D40750-934F-4F70-A19C-11DC5F97A389@gmail.com>
+		 <15ca13ffdfa494b4d774f75d3daaee2ac7a8c93f.camel@physik.fu-berlin.de>
+		 <acc36891-6148-429c-aa99-3cf7c6681d6f@landley.net>
+		 <84b1391eb542b5cd6bcbecdfbc63124187265402.camel@physik.fu-berlin.de>
+		 <003c0770-c6f7-4fcf-b11e-74f42bfc14b8@landley.net>
+	 <6bd93131318b8e78d49fdc5f3e5fecc053f9c046.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <alDmTcgzMlKiio9H@kunlun.suse.cz>
-X-Scanned-By: MIMEDefang 3.4.1 on 10.30.177.93
-X-Mimecast-MFC-PROC-ID: 15KqtQYD6F02foMTgQmrTJJqQBiVbybQNhRqKy83MGk_1783687991
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On 07/10, Michal Suchánek wrote:
->
-> On Fri, Jul 10, 2026 at 01:40:43PM +0200, Oleg Nesterov wrote:
-> >
-> > I can only say that ptrace users do want to skip the syscall and set the
-> > return value on entry.
-> >
-> > See
-> > 	[PATCH v5 1/2] ptrace: add PTRACE_SET_SYSCALL_INFO syscall skipping support
-> > 	https://lore.kernel.org/all/20260709100949.94345-2-renzo@cs.unibo.it/
-> >
-> > The changelog explains that currently this doesn't work because
-> > among the arches which define HAVE_ARCH_TRACEHOOK (at least) arch/mips is
-> > broken in this regard.
->
-> Or it could be documented that setting the return value has to be done
-> in the exit trace, and that would than work on any architecture AFAICT.
+Hi,
 
-Well, ptrace users know the problem. And this what they have to do
-currently.
+On Sat, 2026-05-02 at 08:55 +0200, John Paul Adrian Glaubitz wrote:
+> On Fri, 2026-05-01 at 16:27 -0500, Rob Landley wrote:
+> > > What about the patches for J2 support? And can it work with a GCC git=
+ tree like [1]?
+> >=20
+> > They're in musl-cross-make.
+> >=20
+> > https://github.com/richfelker/musl-cross-make/tree/master/patches/binut=
+ils-2.44
+> >=20
+> > https://github.com/richfelker/musl-cross-make/tree/master/patches/gcc-9=
+.4.0
+> >=20
+> > Two in each, I think. (Base support and then a later fdpic bugfix.)
+> >=20
+> > Alas, due to the way Rich maintains musl-cross-make (which is INSANE) i=
+f=20
+> > you want to know WHY any of the patches was added (relevant gcc bugzill=
+a=20
+> > entry and so on) you have to find the first release it was added to and=
+=20
+> > log THAT patch to find the commit message, because he never puts helpfu=
+l=20
+> > comments at the start of the actual files and the commit where the issu=
+e=20
+> > was first dealt with is sometimes quite the hunt.
+> >=20
+> > Another reason I wanted to migrate off mcm...
+> >=20
+> > Lemme know if you need me to dig for the source of the fdpic bugfix=20
+> > thingies, I knew once but don't have it lying around. (Jeff might?)
+> >=20
+> > Oh, right also invented his own patch applying infrastructure (cowpatch=
+)=20
+> > which is like fuzz support but worse: silently eats failures of patches=
+=20
+> > to apply. I don't understand why it exists...
+>=20
+> Hmm, sounds like a bit too much to be able to do that in a short time now
+> in order to be able to test the kernel patch. I guess I will merge the pa=
+tch
+> now anyways and send it to Linus unless someone else has done that alread=
+y
+> anyway.
 
-> With ppc and s390 using the same register for the syscall number and
-> syscall return value it's very much impossible to poke the return value
-> on entry into a register using the generic register access function. As
-> of now there is no place to store the value ot of the return value
-> outside of the registers, either.
+Coming back to this. After recent changes to GCC [1], I would expect the ch=
+ances
+to be higher that a J2 toolchain build with GCC 17 would work better when b=
+uilding
+a current kernel tree.
 
-I know nothing about ppc and s390. Can't comment right now.
+Would you be able to help me build a fresh J2 toolchain from the GCC 17 tre=
+e?
 
-> And the current PTRACE_SET_SYSCALL_INFO indeed sets the syscall nr and
-> arguments on entry and the syscall return value on exit, that
-> disctincion is implemented.
->
-> Not sure how the patchset you point out is relevant, it only adds
-> changes in the exit case.
+Thanks,
+Adrian
 
-No. It allows to skip-and-set-retval on PTRACE_EVENT_SECCOMP.
+> [1] https://gcc.gnu.org/bugzilla/show_bug.cgi?id=3D55212
 
-But ENTRY -> EXIT transition is not yet allowed due to the problems
-above.
-
-Oleg.
-
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
