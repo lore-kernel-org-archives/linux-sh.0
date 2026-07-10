@@ -1,216 +1,79 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4F123630BF
-	for <linux-sh@vger.kernel.org>; Fri, 10 Jul 2026 15:20:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 61ADE352C2C
+	for <linux-sh@vger.kernel.org>; Fri, 10 Jul 2026 18:50:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783696808; cv=none; b=Nq+LlV5zNpzxHlQTkornQQieJRWTrVzXkT1pNxOvZ9PKV/BnCHgTca40DlVLIwrSbLpSSDJXM7U+vVA47MQzjIMzHCsaHrSz5+FN2x89HE9Vn3Vqdy2mHrS0oEcuLs+XMImNdNZJ/46ngKH+4OzSAm26ItkY9pqxbUDlLow90QA=
+	t=1783709434; cv=none; b=mjVYpadkj3O136RgxVhtyxgQnJY5AnozBzf/e+UiY0LXsqiheZNejQ3mkFCbUgAm2q+3z8CpaWRef8eucv/JC8Hf3U6GxVfAP6T5FAkuijny87IcnIzXqwkUYoUVE0z/jl+7i/CJDyybGkKHVU9miuHAUxnL6Ob9fpWD22mqYmU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783696808; c=relaxed/simple;
-	bh=bhIYmmI03GH5yV64n+12XWMrt5l5IMtbkoVv62BqL3M=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=XBgncZoUAAPKpr5fr3Xf/fKX8rvVT8wpRN9aPuveE0MubkFFTZUc3C2h8fxQWD+JvEFnPh4HX6GKXQfkh9BMZFN+2c6obitiR1ipONEQxcBYlFUfCIdOSaBRHftEmZ1BPzg4g9EVZpQDXY/DXJF3qhkZgW4SqjtHiIpftAqLo/g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=rRfHvU7h; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=pk/+bbw3; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=PEvxjgpH; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=p4USxO4M; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
+	s=arc-20240116; t=1783709434; c=relaxed/simple;
+	bh=e8r554PKQEMa0LukCYtTJHrE37158lRUm7GBcEu5DYM=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=KGUYMmY8zIaPPganp+yup8X3kRyUt1+4phBwVvck7WGi0YSLFDUo10wrf1C4weMk/r+8519+VQP/AQJsQpdbRL+XVNqzuIF6KlhAsMkyX9oGTaDGO5iVa27SLojIow2KuH6YL2B7wsUZ94MGnPKyJT08tMpE2UtJM4oxVV+xT9M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=B9qGzrQQ; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="rRfHvU7h";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="pk/+bbw3";
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="PEvxjgpH";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="p4USxO4M"
-Received: from kunlun.suse.cz (unknown [IPv6:2a07:de40:b306:2000::2])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (prime256v1) server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id B43DE76801;
-	Fri, 10 Jul 2026 15:20:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1783696805; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PZQD0gbHT/+/4nEi6V44a4a6X/c8Qb54PXXTiWjk/u8=;
-	b=rRfHvU7hwvxSxH/yhWy3u/UmnKewb4V/Z4b30wYyACRHS2pvvGsK3hzGOrADXnhSphQb6B
-	TJO7bjd1/2FVOhXCYNiRGDpELYNIfYY2dwQ6Y49rIZ1WBugDexsBsCaHyF140dt8k3TjmV
-	UWP5O1yIlbcNFepPxleuBxi0o0QQDRg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1783696805;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PZQD0gbHT/+/4nEi6V44a4a6X/c8Qb54PXXTiWjk/u8=;
-	b=pk/+bbw3K3lpKh/bJanZxO9C8hJb0ZZOIjqryyeda12Q6eGbOK0xFb2lDAgDT0IE8bAo9T
-	Y31J/JbRgJZSmhDA==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=PEvxjgpH;
-	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=p4USxO4M
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1783696804; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PZQD0gbHT/+/4nEi6V44a4a6X/c8Qb54PXXTiWjk/u8=;
-	b=PEvxjgpHDkYAsWHBvOJnCwi8Aqh7iUKS6UnrUW8IsLNixt7v9VdTF6VpKe/6vGC/h1xgM2
-	uQXypgGxDhZQFurqRWyXGrIHbe4ykOmc1FofcTQPuLdfVOHR9PXQBW7Js2xqnQRuLq0aZj
-	LLSWX+cwuBo/Mg5E6/LeKOba5LZ7xYM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1783696804;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PZQD0gbHT/+/4nEi6V44a4a6X/c8Qb54PXXTiWjk/u8=;
-	b=p4USxO4MP+4N45GZtMpBPez/DEQVEMysX4p56b8ql7l7r16Ar/kLpYHwhTAobjb9FOy99M
-	EDSZAKc2nxg1qgBA==
-Date: Fri, 10 Jul 2026 17:20:03 +0200
-From: Michal =?iso-8859-1?Q?Such=E1nek?= <msuchanek@suse.de>
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: Thomas Gleixner <tglx@kernel.org>, LKML <linux-kernel@vger.kernel.org>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Shrikanth Hegde <sshegde@linux.ibm.com>,
-	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	linux-riscv@lists.infradead.org,
-	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org,
-	x86@kernel.org, Mark Rutland <mark.rutland@arm.com>,
-	Jinjie Ruan <ruanjinjie@huawei.com>,
-	Andy Lutomirski <luto@kernel.org>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Guo Ren <guoren@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Helge Deller <deller@gmx.de>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Richard Weinberger <richard@nod.at>,
-	Chris Zankel <chris@zankel.net>,
-	linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
-	linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-	Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
-	Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>,
-	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
-	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
-	linux-arch@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
-	linux-doc@vger.kernel.org
-Subject: Re: [patch 13/18] entry: Make trace_syscall_enter() return type bool
-Message-ID: <alENozSQmA3nU86B@kunlun.suse.cz>
-References: <20260707181957.433213175@kernel.org>
- <20260707190254.338083894@kernel.org>
- <ak5ySpil83TNWxeq@kunlun.suse.cz>
- <87se5tqkyp.ffs@fw13>
- <alDQ7isUKJFl8Va4@kunlun.suse.cz>
- <alDaOw8t-e3rxIPm@redhat.com>
- <alDmTcgzMlKiio9H@kunlun.suse.cz>
- <alDrGBMdTuoLcVyy@redhat.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="B9qGzrQQ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1866D1F00ACA
+	for <linux-sh@vger.kernel.org>; Fri, 10 Jul 2026 18:50:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1783709433;
+	bh=e8r554PKQEMa0LukCYtTJHrE37158lRUm7GBcEu5DYM=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=B9qGzrQQrYvPrH/tl7IZvQrYCOTHnaCvh0OSU54hrmWHxWdoCA+SUJh/k05yRh8ar
+	 J74ERpGPGkjzRzvEPFReQC+WZWEZ6X58MBNXsSmksz6KaHUetsZrC0PbBavfiWcHRb
+	 HOyYan4QE4DNQbFIERykCg4v020PuWCRLxr1K8B/WQT8pqB3OWanqHGFYPw9VUmKc3
+	 nvdPn/1dQwjTquJrOMwCWj6WuzFgef9pebNPdN1njv9ezunJN9b8QCIVh00D0dk00x
+	 4Vcqebpd/YbjppdiM9kcpKi57GsagTtaeMqsvOLH5QlANLJZQmAn0dKyAIkLSz4S/r
+	 SMVyq622OMheA==
+Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5aec201b582so1021792e87.1
+        for <linux-sh@vger.kernel.org>; Fri, 10 Jul 2026 11:50:33 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AHgh+Ro2ryrimHzDsBnWNN74BmMeLaFqgd2BX+DkQwAhyMP3DcnkFDkqaoYSHuDtZ84Oc9ocxqQHTAF3Bw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxOf1tVH7ExjbEz/Y/uFdAFTrtzW4zkTBphAzhK3CWwba5PMmij
+	eBr1gpVIYml0slCJQImWRH4qYnB2OK6vWX5qd0e2T64ueBLJ1hO1knJiaiJ9qehavHD01dN7wxh
+	cIKU2woNOHjafJSH1SWUJ8Ax5PkFIKFI=
+X-Received: by 2002:a05:6512:128b:b0:5ae:b0ec:b024 with SMTP id
+ 2adb3069b0e04-5b0236be053mr67117e87.53.1783709431858; Fri, 10 Jul 2026
+ 11:50:31 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <alDrGBMdTuoLcVyy@redhat.com>
-X-Spam-Flag: YES
-X-Rspamd-Action: add header
-X-Spam-Level: ***************
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [15.15 / 50.00];
-	SPAM_FLAG(5.00)[];
-	NEURAL_SPAM_LONG(3.50)[1.000];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_SPAM_SHORT(2.96)[0.987];
-	HFILTER_HOSTNAME_UNKNOWN(2.50)[];
-	RDNS_NONE(2.00)[];
-	ONCE_RECEIVED(1.20)[];
-	HFILTER_HELO_IP_A(1.00)[kunlun.suse.cz];
-	HFILTER_HELO_NORES_A_OR_MX(0.30)[kunlun.suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b306:2000::2:from];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	FREEMAIL_ENVRCPT(0.00)[gmx.de];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_GT_50(0.00)[52];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_ZERO(0.00)[0];
-	R_RATELIMIT(0.00)[to_ip_from(RLrpyf51xp5ujasy9bitsaikab)];
-	MISSING_XM_UA(0.00)[];
-	FREEMAIL_CC(0.00)[kernel.org,vger.kernel.org,infradead.org,ellerman.id.au,linux.ibm.com,lists.ozlabs.org,lists.linux.dev,dabbelt.com,lists.infradead.org,arm.com,huawei.com,linaro.org,armlinux.org.uk,linux-m68k.org,alpha.franken.de,gmx.de,users.sourceforge.jp,nod.at,zankel.net,lists.linux-m68k.org,arndb.de,monstr.eu,davemloft.net,gaisler.com,lwn.net];
-	DKIM_TRACE(0.00)[suse.de:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[kunlun.suse.cz:helo,kunlun.suse.cz:mid,suse.de:dkim]
-X-Spamd-Bar: +++++++++++++++
-X-Rspamd-Queue-Id: B43DE76801
-X-Spam-Score: 15.15
-X-Spam: Yes
+References: <20260704-sh-x3proto-swnode-v1-0-0c039549dc46@gmail.com>
+In-Reply-To: <20260704-sh-x3proto-swnode-v1-0-0c039549dc46@gmail.com>
+From: Linus Walleij <linusw@kernel.org>
+Date: Fri, 10 Jul 2026 20:50:20 +0200
+X-Gmail-Original-Message-ID: <CAD++jLkFmHqbOMp5SjiS5FiS4YbkQPbwYFcwEQhP_BFXrd47dg@mail.gmail.com>
+X-Gm-Features: AUfX_mxf19wSM9jPNvh5Uqv6zRKwPqLxaXsht7YZeklgUQ5RNtzdolY9A7u05Wo
+Message-ID: <CAD++jLkFmHqbOMp5SjiS5FiS4YbkQPbwYFcwEQhP_BFXrd47dg@mail.gmail.com>
+Subject: Re: [PATCH 0/2] sh: mach-x3proto: convert gpio-keys to software nodes
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Bartosz Golaszewski <brgl@kernel.org>, 
+	Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Jul 10, 2026 at 02:52:40PM +0200, Oleg Nesterov wrote:
-> On 07/10, Michal Suchánek wrote:
-> >
-> > On Fri, Jul 10, 2026 at 01:40:43PM +0200, Oleg Nesterov wrote:
-> > >
-> > > I can only say that ptrace users do want to skip the syscall and set the
-> > > return value on entry.
-> > >
-> > > See
-> > > 	[PATCH v5 1/2] ptrace: add PTRACE_SET_SYSCALL_INFO syscall skipping support
-> > > 	https://lore.kernel.org/all/20260709100949.94345-2-renzo@cs.unibo.it/
-> > >
-> > > The changelog explains that currently this doesn't work because
-> > > among the arches which define HAVE_ARCH_TRACEHOOK (at least) arch/mips is
-> > > broken in this regard.
-> >
-> > Or it could be documented that setting the return value has to be done
-> > in the exit trace, and that would than work on any architecture AFAICT.
-> 
-> Well, ptrace users know the problem. And this what they have to do
-> currently.
-> 
-> > With ppc and s390 using the same register for the syscall number and
-> > syscall return value it's very much impossible to poke the return value
-> > on entry into a register using the generic register access function. As
-> > of now there is no place to store the value ot of the return value
-> > outside of the registers, either.
-> 
-> I know nothing about ppc and s390. Can't comment right now.
-> 
-> > And the current PTRACE_SET_SYSCALL_INFO indeed sets the syscall nr and
-> > arguments on entry and the syscall return value on exit, that
-> > disctincion is implemented.
-> >
-> > Not sure how the patchset you point out is relevant, it only adds
-> > changes in the exit case.
-> 
-> No. It allows to skip-and-set-retval on PTRACE_EVENT_SECCOMP.
+On Sun, Jul 5, 2026 at 7:04=E2=80=AFAM Dmitry Torokhov
+<dmitry.torokhov@gmail.com> wrote:
 
-And if it was hooked correctly to seccomp indicating to seccomp that the
-syscall needs to be skipped it could work but it is not, and will fail
-on ppc.
+> This series converts the legacy gpio-keys platform device on the SH-X3
+> Prototype board to use software nodes and static properties.
+>
+> This is part of the ongoing effort to remove platform data support
+> from the gpio-keys driver, allowing it to rely purely on generic
+> device properties.
+>
+> The first patch adds the software node to the GPIO controller, and
+> the second patch performs the conversion for the gpio-keys device.
+>
+> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 
-Thanks
+Wow putting the AI to good use here!
 
-Michal
+Reviewed-by: Linus Walleij <linusw@kernel.org>
 
-> 
-> But ENTRY -> EXIT transition is not yet allowed due to the problems
-> above.
-> 
-> Oleg.
-> 
+Yours,
+Linus Walleij
