@@ -1,110 +1,114 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f44.google.com (mail-lf1-f44.google.com [209.85.167.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D9DD2B9BA;
-	Sat, 11 Jul 2026 05:14:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E823333D4EC
+	for <linux-sh@vger.kernel.org>; Sat, 11 Jul 2026 07:34:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783746900; cv=none; b=Ec1Bli0bZQw1WyDYX+MQwVpH9ZXp4lM+tpQnfbBn8OTGh3kXYAgkQovgesVFqU2pM446asPZI+NkINdu4X8vwCbG0e5o5to7Gtmmn0rY36YPQxmAhlv+ibCyuL3n/LirWyw+CMT43jkdOr4c3SiKJcdQINb139gcEyTSy6Z/jyY=
+	t=1783755268; cv=none; b=UMiuDOKBR+vUfqmQ21sx3r1P5B8gnE57DVZ8ZbfbJ8YE/fmtYVvHjLCTyxmRYSZYmyrZNq6CYF/GDPJ2DyhlJ5KUxn9zpkTqujTguNRCHQCUtf5TKs/oCaXwsQSohuoTfeZsmc1FjywrclYYU2ILYGfQ2WypAnMhvZU2kx695Xw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783746900; c=relaxed/simple;
-	bh=EhVGZ4XrUueG3AOvBA0Tqqe2K6YlFedTxBKIW/6prqY=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=WHyxLu70aNL8qvoJT46Xl4nWcP8MdeDWWgHIXKM6gmxuLlsjdUx2aH7RKCkGI+yZpxKZz6LGcXvNGx78Ozcdbs5vaOr0BndzL23xi2SWz/sxcXxZMocpubJPQaCiOq9watCdHyfYzmY6xE+yGoEz3cGazWmMKcvnpNqB01wBRDw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=JDtGbDz7; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1783755268; c=relaxed/simple;
+	bh=gUnPJvqa+6hCH/9HCtTO8STc6X6BWHZ70c5H6AKWsOg=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=tYrLNKk/T4z785UMJLC/Idu5DHXo/5GlML9FO3vW7bbL0wjY3/k0M/ucM2Q/JhVkF15nIwcHvHQSbDzBOJbLgJChitjXILJ5X+JBJWNkB+rVTZz+AdRho7jLtwa12EUuUGMGqI4vDaYA22sXEyFWuQffgV9trJ0KzvsLenrSCtY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=AVUYdWB3; arc=none smtp.client-ip=209.85.167.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="JDtGbDz7"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=qZnmUvqzpN2gHADFKM5g69S4CeLVnbNH9BYWBAmZFX4=; t=1783746896;
-	x=1784351696; b=JDtGbDz74laZssaCfcwuctmFrNb0+ETawVXz5cyByidS6SGOn2KhyQozFCMNk
-	+vmNMo76imRdqjBl5LKaoR27A4/SlJ/SWU1LxpGmRfd0Wl8L0E9Ov//NHvU87iJA8qXXrH7W/mD9h
-	l9iBlbPJ3shtnjRA2eM2arB0Ve/K98TOeogV6/Kk0+dyaVYSVFt9ibZr8j2jy7uaZRJBKfJubkKab
-	xNNnD0NYAyV1ZZFdi9B/4dwLhsJwyd7QJIBTgr4rXgOIJo8B1uq9wXdgrs4rMVDL8YDpA8LNHws1y
-	UOzuO/qvM5SGrOYcYJ8ESqBPy/yEO/0l6fZJRAsOmKM6Wo87FQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wiQ37-00000000UQT-3Xlb; Sat, 11 Jul 2026 07:14:49 +0200
-Received: from p57ae56b9.dip0.t-ipconnect.de ([87.174.86.185] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wiQ37-00000002du0-2WUp; Sat, 11 Jul 2026 07:14:49 +0200
-Message-ID: <f9fc5cb2ae36593db9db8faf7ebcdc224842f9a0.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2 0/5] rsk7203: switch to using static device property,
- drop legacy gpio API
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Linus Walleij <linusw@kernel.org>, Dmitry Torokhov
-	 <dmitry.torokhov@gmail.com>
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato
- <ysato@users.sourceforge.jp>,  Geert Uytterhoeven
- <geert+renesas@glider.be>, Bartosz Golaszewski <brgl@kernel.org>, Andy
- Shevchenko	 <andriy.shevchenko@linux.intel.com>, Arnd Bergmann
- <arnd@kernel.org>, 	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
- 	linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org
-Date: Sat, 11 Jul 2026 07:14:48 +0200
-In-Reply-To: <CAD++jL=Wx=mHORGDU_=PgGrOCdTSVes63jgSL2xQX+rCE2uaMw@mail.gmail.com>
-References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com>
-	 <akyJOW79W0xvI-P9@google.com>
-	 <CAD++jL=Wx=mHORGDU_=PgGrOCdTSVes63jgSL2xQX+rCE2uaMw@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AVUYdWB3"
+Received: by mail-lf1-f44.google.com with SMTP id 2adb3069b0e04-5aeb98460c6so1840104e87.2
+        for <linux-sh@vger.kernel.org>; Sat, 11 Jul 2026 00:34:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1783755265; x=1784360065; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=aBafLctpeA1AoyzErbEa9EGgxzwRbfKFWoPKc6c7bv4=;
+        b=AVUYdWB3WfvWD9/jCidP0U7zRkAI7QnX4kmNcHjB6Nosq4CWaZlW0hNhy2LM6kgpWe
+         TWeOEWd21tnxJAl6DPVycHqgm9166I3BafNhzXVO9hS6LEulcv+AlPncKAl7GvVrR03Q
+         iCvt2f7qMPGyswDv6RE6LdZAC8T7nBCACNeECjWvasy2/IQ6mcUH99GfG+odlxT5vxDc
+         faI4NAbgRuPvGxueHmF2X4sAqU7TBPz2sj2hy41Y3HsZaAYU2w0jJYHYvY8gACqUio0A
+         PKN2hjadzNTtEb4X+/A4fXYRXB4crD0SpHGqL5UMuZ2Is9WMaTouNVWbOrjTDz6nyty1
+         dqQQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783755265; x=1784360065;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=aBafLctpeA1AoyzErbEa9EGgxzwRbfKFWoPKc6c7bv4=;
+        b=rcSjzLAj+w6Z/9PH/S8m6f2jtvCf8vJhRxKqMHJduwMdhNDpzqDB2YPcLDaS0Uma+h
+         gOYp3wBVrv3hi1rPjWhYWg8SNWXS7XTeLCMlAvGK90EG2osJeDXY/ELu8CP1NWOO08PR
+         Ssub9xVL47ayvwFZVi/tkT+TROp0KAXgvnc3UUQNB5C1kcAT3s8lbGIDUVbkK0I/PiVb
+         wb9mPlX5VtgDGQYmtbo8jpO59xCL8QpXLWTjQqwnu1aVr23v3CgWgTJ6x9UppoJ+xWG8
+         gROB143C/FYcbvUYpnJlImHW0PqHzhpBBYv+m+GxKNrQAaVJvLBbZmOXa0DIBa1X6AC2
+         zIFQ==
+X-Forwarded-Encrypted: i=1; AHgh+RqtlVlUADoYQo+z2ADCLHWrnQzzwmk5t/4HIQHNLWoGDzlFSG1OfdPH2qHr1B/vZ+xzQbFQuPF9ag==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwnfH+8OcHCSlabCqUBZlIVWqGiTD3hDUWd0I3toTc/i9bMiLCU
+	IFDrq3cHnHEDUQBejHrRvJ+8KidRIlUymFtXTWOg6m6ku3wY0+a3ocns
+X-Gm-Gg: AfdE7cniRIX4o6ri6yOWfiSmG5c+zp6tKP2HgIlKHXgyk1ekzz5ujK6ClcTn7kxs8WD
+	DptlCuis2tufn/u4+dbxrkZ2LQqPII6TqOo23U26aC3zDNYJw8UwTM3Dd2ECH7ssh0lLSD5TYp5
+	l39jdYZX8wWonywuKUqKqb604KHiV0Z7VYCuuy+Cqiwh0s9EG9TBPszDSkxjjR6kGDCkHTeWFTT
+	pGMHldtzQf7e9nLjhB90HwiQ4G/XRACVQ3ks/6apLxbhh7uZkXIFwX4YBQbf/qI96xb5lTpQGuY
+	PEdyPcoBHEzRTdsKFMGNM59de2eeAXb3T///9yB4CKIPVlcn2QVVwoCyIUMDNtr+xSBH1uSreGK
+	ZDcT3UBGN4GrBpyikLezeMQhDLxhK65Fg/wgJcjCg9Jjwn0Ur5evCg2i1ZWBSBFXD0sTf+8SfW5
+	eZvI1copipRZCgZoGV58hNhcC0x0VMgEMg1cExRRHEFsq/yoneM6yOEQbGaNJruFVBvf6w9A==
+X-Received: by 2002:a05:6512:3f8:b0:5ae:bf45:e3be with SMTP id 2adb3069b0e04-5b0236689cdmr321070e87.21.1783755264967;
+        Sat, 11 Jul 2026 00:34:24 -0700 (PDT)
+Received: from ?IPV6:2a00:1fa0:4322:18e2:4e2b:60a6:4ce2:33fb? ([2a00:1fa0:4322:18e2:4e2b:60a6:4ce2:33fb])
+        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5b01ca9dd41sm1117527e87.48.2026.07.11.00.34.20
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 11 Jul 2026 00:34:23 -0700 (PDT)
+Message-ID: <de1d491e-159e-41c2-b145-4d09db091031@gmail.com>
+Date: Sat, 11 Jul 2026 10:34:19 +0300
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 06/10] ASoC: replace linux/gpio.h inclusions
+To: Arnd Bergmann <arnd@kernel.org>, linux-gpio@vger.kernel.org,
+ Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Andrew Lunn <andrew@lunn.ch>,
+ Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+ Gregory Clement <gregory.clement@bootlin.com>, Frank Li <Frank.Li@nxp.com>,
+ Robert Jarzmik <robert.jarzmik@free.fr>,
+ Krzysztof Kozlowski <krzk@kernel.org>, Greg Ungerer <gerg@linux-m68k.org>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ Hauke Mehrtens <hauke@hauke-m.de>, =?UTF-8?B?UmFmYcWCIE1pxYJlY2tp?=
+ <zajec5@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+ Dominik Brodowski <linux@dominikbrodowski.net>,
+ linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-samsung-soc@vger.kernel.org, patches@opensource.cirrus.com,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-sh@vger.kernel.org, linux-input@vger.kernel.org,
+ linux-sunxi@lists.linux.dev, linux-phy@lists.infradead.org,
+ linux-rockchip@lists.infradead.org, linux-sound@vger.kernel.org,
+ Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+References: <20260710211954.1373336-1-arnd@kernel.org>
+ <20260710211954.1373336-7-arnd@kernel.org>
+Content-Language: en-US
+From: Sergey Shtylyov <sergei.shtylyov@gmail.com>
+In-Reply-To: <20260710211954.1373336-7-arnd@kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-Hello Linus,
+On 7/11/26 12:19 AM, Arnd Bergmann wrote:
 
-On Fri, 2026-07-10 at 21:05 +0200, Linus Walleij wrote:
-> On Tue, Jul 7, 2026 at 7:08=E2=80=AFAM Dmitry Torokhov
-> <dmitry.torokhov@gmail.com> wrote:
->=20
-> > Gentle ping on this series... It still applies cleanly and we need this
-> > to be able top drop legacy gpio interfaces from gpio-keys (and
-> > eventually from the kernel).
->=20
-> I lost my patience and queued it to the pinctrl tree on an immutable
-> branch:
-> https://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git/=
-log/?h=3Dib-rsk7204
->=20
-> Then I merged this for v7.3.
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> linux/gpio.h is going away,s o use linux/gpio/consumer.h instead.
 
-I'm sorry, but I wasn't aware that this was an urgent patch. I'm doing this
-as a hobbyist and I'm working on my own pace as I cannot always spend time
-working on kernel maintenance.
+   s/s o/ so/?
 
-I'm usually collecting patches from patchwork [1] for review and then merge
-them in batches if they're fine.
+> 
+> Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>[...]
 
-What I don't understand, why did you choose to use an immutable tree? Is th=
-ere
-really a need for such an escalation? I find that a bit rude. The v2 patch =
-series
-was sent first in May, so I didn't think this was already a long time.
+MBR, Sergey
 
-Thanks,
-Adrian
-
-> [1] https://patchwork.kernel.org/project/linux-sh/list/
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
