@@ -1,114 +1,129 @@
-Received: from mail-lf1-f44.google.com (mail-lf1-f44.google.com [209.85.167.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.17])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E823333D4EC
-	for <linux-sh@vger.kernel.org>; Sat, 11 Jul 2026 07:34:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4144F239E7F;
+	Sat, 11 Jul 2026 08:44:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.17
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783755268; cv=none; b=UMiuDOKBR+vUfqmQ21sx3r1P5B8gnE57DVZ8ZbfbJ8YE/fmtYVvHjLCTyxmRYSZYmyrZNq6CYF/GDPJ2DyhlJ5KUxn9zpkTqujTguNRCHQCUtf5TKs/oCaXwsQSohuoTfeZsmc1FjywrclYYU2ILYGfQ2WypAnMhvZU2kx695Xw=
+	t=1783759484; cv=none; b=PtsQfxpRBp2TOfIzUFMS3pEMZ44B75l3CYDZQnNxU/TUvYX6DhUMw292gze+yt+AXt1FJ/EFzH9nt0hX1cGGIybxyhmgtRQABoShMCAQZFE2eMiL9vnKTOy3VmFBCRVIJhWbTpCDYRgLjrVqkjWcPjw5HUptL5YP9F29Y5yz4fw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783755268; c=relaxed/simple;
-	bh=gUnPJvqa+6hCH/9HCtTO8STc6X6BWHZ70c5H6AKWsOg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=tYrLNKk/T4z785UMJLC/Idu5DHXo/5GlML9FO3vW7bbL0wjY3/k0M/ucM2Q/JhVkF15nIwcHvHQSbDzBOJbLgJChitjXILJ5X+JBJWNkB+rVTZz+AdRho7jLtwa12EUuUGMGqI4vDaYA22sXEyFWuQffgV9trJ0KzvsLenrSCtY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=AVUYdWB3; arc=none smtp.client-ip=209.85.167.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1783759484; c=relaxed/simple;
+	bh=oV4niTZ2Ii67O+QvvUkRW5HxiGVnilwQlup0VtSDcog=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=IadttvvFchqGrxl69ATxyCODuUse27fcJYt1dQa04uODrKy3dzuYsXM8UiBQ0AndHy0kbUtpJV3ZAcweAkiLAkfAgQBzUSFixBZ+u0K7Mrasvt+e1LqNIqpFMpMMjwWAtJBPOqCkOLLxKB44ji1x1eJkT47G0o7WHpbzT9HaGnY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com; spf=pass smtp.mailfrom=linux.intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=KqD1CqtX; arc=none smtp.client-ip=198.175.65.17
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AVUYdWB3"
-Received: by mail-lf1-f44.google.com with SMTP id 2adb3069b0e04-5aeb98460c6so1840104e87.2
-        for <linux-sh@vger.kernel.org>; Sat, 11 Jul 2026 00:34:26 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1783755265; x=1784360065; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=aBafLctpeA1AoyzErbEa9EGgxzwRbfKFWoPKc6c7bv4=;
-        b=AVUYdWB3WfvWD9/jCidP0U7zRkAI7QnX4kmNcHjB6Nosq4CWaZlW0hNhy2LM6kgpWe
-         TWeOEWd21tnxJAl6DPVycHqgm9166I3BafNhzXVO9hS6LEulcv+AlPncKAl7GvVrR03Q
-         iCvt2f7qMPGyswDv6RE6LdZAC8T7nBCACNeECjWvasy2/IQ6mcUH99GfG+odlxT5vxDc
-         faI4NAbgRuPvGxueHmF2X4sAqU7TBPz2sj2hy41Y3HsZaAYU2w0jJYHYvY8gACqUio0A
-         PKN2hjadzNTtEb4X+/A4fXYRXB4crD0SpHGqL5UMuZ2Is9WMaTouNVWbOrjTDz6nyty1
-         dqQQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783755265; x=1784360065;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=aBafLctpeA1AoyzErbEa9EGgxzwRbfKFWoPKc6c7bv4=;
-        b=rcSjzLAj+w6Z/9PH/S8m6f2jtvCf8vJhRxKqMHJduwMdhNDpzqDB2YPcLDaS0Uma+h
-         gOYp3wBVrv3hi1rPjWhYWg8SNWXS7XTeLCMlAvGK90EG2osJeDXY/ELu8CP1NWOO08PR
-         Ssub9xVL47ayvwFZVi/tkT+TROp0KAXgvnc3UUQNB5C1kcAT3s8lbGIDUVbkK0I/PiVb
-         wb9mPlX5VtgDGQYmtbo8jpO59xCL8QpXLWTjQqwnu1aVr23v3CgWgTJ6x9UppoJ+xWG8
-         gROB143C/FYcbvUYpnJlImHW0PqHzhpBBYv+m+GxKNrQAaVJvLBbZmOXa0DIBa1X6AC2
-         zIFQ==
-X-Forwarded-Encrypted: i=1; AHgh+RqtlVlUADoYQo+z2ADCLHWrnQzzwmk5t/4HIQHNLWoGDzlFSG1OfdPH2qHr1B/vZ+xzQbFQuPF9ag==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwnfH+8OcHCSlabCqUBZlIVWqGiTD3hDUWd0I3toTc/i9bMiLCU
-	IFDrq3cHnHEDUQBejHrRvJ+8KidRIlUymFtXTWOg6m6ku3wY0+a3ocns
-X-Gm-Gg: AfdE7cniRIX4o6ri6yOWfiSmG5c+zp6tKP2HgIlKHXgyk1ekzz5ujK6ClcTn7kxs8WD
-	DptlCuis2tufn/u4+dbxrkZ2LQqPII6TqOo23U26aC3zDNYJw8UwTM3Dd2ECH7ssh0lLSD5TYp5
-	l39jdYZX8wWonywuKUqKqb604KHiV0Z7VYCuuy+Cqiwh0s9EG9TBPszDSkxjjR6kGDCkHTeWFTT
-	pGMHldtzQf7e9nLjhB90HwiQ4G/XRACVQ3ks/6apLxbhh7uZkXIFwX4YBQbf/qI96xb5lTpQGuY
-	PEdyPcoBHEzRTdsKFMGNM59de2eeAXb3T///9yB4CKIPVlcn2QVVwoCyIUMDNtr+xSBH1uSreGK
-	ZDcT3UBGN4GrBpyikLezeMQhDLxhK65Fg/wgJcjCg9Jjwn0Ur5evCg2i1ZWBSBFXD0sTf+8SfW5
-	eZvI1copipRZCgZoGV58hNhcC0x0VMgEMg1cExRRHEFsq/yoneM6yOEQbGaNJruFVBvf6w9A==
-X-Received: by 2002:a05:6512:3f8:b0:5ae:bf45:e3be with SMTP id 2adb3069b0e04-5b0236689cdmr321070e87.21.1783755264967;
-        Sat, 11 Jul 2026 00:34:24 -0700 (PDT)
-Received: from ?IPV6:2a00:1fa0:4322:18e2:4e2b:60a6:4ce2:33fb? ([2a00:1fa0:4322:18e2:4e2b:60a6:4ce2:33fb])
-        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5b01ca9dd41sm1117527e87.48.2026.07.11.00.34.20
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 11 Jul 2026 00:34:23 -0700 (PDT)
-Message-ID: <de1d491e-159e-41c2-b145-4d09db091031@gmail.com>
-Date: Sat, 11 Jul 2026 10:34:19 +0300
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="KqD1CqtX"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1783759483; x=1815295483;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:content-transfer-encoding:in-reply-to;
+  bh=oV4niTZ2Ii67O+QvvUkRW5HxiGVnilwQlup0VtSDcog=;
+  b=KqD1CqtXfg9/dGnArHCGcSnQaPpl/VbJjuw/50/mKiR+KBAYeAZ3tDFz
+   JrNLXxDo20yfk8aK63pEDuFGcPJ/ukeZ/OgvRjSjSK9ZkWUTixi+pXcrX
+   NkPYQXHJw9Wub0StqD5eOrSNwhr4DArNhrpjJj0cV7b77uFx46WJn1ycP
+   1H27qC4tl9g6S5hT23V3lJ9ORrU916aBfME+UcyOYpZxxbfSXPiXj3BjE
+   +eLyuRhyAgXHy3AItFsJB5kPeihwtmxCm0lwwIRxMjOW9/DETFifXHHQf
+   bZb5GLsg15cwWe23wK7tqqrrq75KAknVK2Z6R7T1tVGo1wVW2MKWZhc/q
+   w==;
+X-CSE-ConnectionGUID: p87UPW7bSTqFFtKYfEG3zQ==
+X-CSE-MsgGUID: v/bdBJpBT8eozOQoP0PwEQ==
+X-IronPort-AV: E=McAfee;i="6800,10657,11841"; a="84465588"
+X-IronPort-AV: E=Sophos;i="6.25,154,1779174000"; 
+   d="scan'208";a="84465588"
+Received: from fmviesa009.fm.intel.com ([10.60.135.149])
+  by orvoesa109.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Jul 2026 01:44:42 -0700
+X-CSE-ConnectionGUID: gnBGeX6MRHKdJVQguoopjg==
+X-CSE-MsgGUID: KhKBUYNSRPew8W2lbbZOHw==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.25,154,1779174000"; 
+   d="scan'208";a="248708660"
+Received: from abityuts-desk.ger.corp.intel.com (HELO localhost) ([10.245.244.254])
+  by fmviesa009-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Jul 2026 01:44:39 -0700
+Date: Sat, 11 Jul 2026 11:44:36 +0300
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Linus Walleij <linusw@kernel.org>,
+	Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+	Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Bartosz Golaszewski <brgl@kernel.org>,
+	Arnd Bergmann <arnd@kernel.org>, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-gpio@vger.kernel.org
+Subject: Re: [PATCH v2 0/5] rsk7203: switch to using static device property,
+ drop legacy gpio API
+Message-ID: <alICdFwIg91NOZzn@ashevche-desk.local>
+References: <20260520-rsk7203-properties-v2-0-465f3308021b@gmail.com>
+ <akyJOW79W0xvI-P9@google.com>
+ <CAD++jL=Wx=mHORGDU_=PgGrOCdTSVes63jgSL2xQX+rCE2uaMw@mail.gmail.com>
+ <f9fc5cb2ae36593db9db8faf7ebcdc224842f9a0.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 06/10] ASoC: replace linux/gpio.h inclusions
-To: Arnd Bergmann <arnd@kernel.org>, linux-gpio@vger.kernel.org,
- Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Andrew Lunn <andrew@lunn.ch>,
- Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
- Gregory Clement <gregory.clement@bootlin.com>, Frank Li <Frank.Li@nxp.com>,
- Robert Jarzmik <robert.jarzmik@free.fr>,
- Krzysztof Kozlowski <krzk@kernel.org>, Greg Ungerer <gerg@linux-m68k.org>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Hauke Mehrtens <hauke@hauke-m.de>, =?UTF-8?B?UmFmYcWCIE1pxYJlY2tp?=
- <zajec5@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Dmitry Torokhov <dmitry.torokhov@gmail.com>,
- Dominik Brodowski <linux@dominikbrodowski.net>,
- linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
- linux-samsung-soc@vger.kernel.org, patches@opensource.cirrus.com,
- linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
- linux-sh@vger.kernel.org, linux-input@vger.kernel.org,
- linux-sunxi@lists.linux.dev, linux-phy@lists.infradead.org,
- linux-rockchip@lists.infradead.org, linux-sound@vger.kernel.org,
- Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-References: <20260710211954.1373336-1-arnd@kernel.org>
- <20260710211954.1373336-7-arnd@kernel.org>
-Content-Language: en-US
-From: Sergey Shtylyov <sergei.shtylyov@gmail.com>
-In-Reply-To: <20260710211954.1373336-7-arnd@kernel.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <f9fc5cb2ae36593db9db8faf7ebcdc224842f9a0.camel@physik.fu-berlin.de>
+Organization: Intel Finland Oy - BIC 0357606-4 - c/o Alberga Business Park, 6
+ krs, Bertel Jungin Aukio 5, 02600 Espoo
 
-On 7/11/26 12:19 AM, Arnd Bergmann wrote:
-
-> From: Arnd Bergmann <arnd@arndb.de>
+On Sat, Jul 11, 2026 at 07:14:48AM +0200, John Paul Adrian Glaubitz wrote:
+> On Fri, 2026-07-10 at 21:05 +0200, Linus Walleij wrote:
+> > On Tue, Jul 7, 2026 at 7:08 AM Dmitry Torokhov
+> > <dmitry.torokhov@gmail.com> wrote:
+> > 
+> > > Gentle ping on this series... It still applies cleanly and we need this
+> > > to be able top drop legacy gpio interfaces from gpio-keys (and
+> > > eventually from the kernel).
+> > 
+> > I lost my patience and queued it to the pinctrl tree on an immutable
+> > branch:
+> > https://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git/log/?h=ib-rsk7204
+> > 
+> > Then I merged this for v7.3.
 > 
-> linux/gpio.h is going away,s o use linux/gpio/consumer.h instead.
+> I'm sorry, but I wasn't aware that this was an urgent patch.
 
-   s/s o/ so/?
+We are at the finish line of getting rid of legacy GPIO approach that was
+marked as a such like a decade ago. It's not that it's really hurry, but
+this particular series prevents Dmitry to finish his part what he maintains.
 
+> I'm doing this as a hobbyist and I'm working on my own pace as I cannot
+> always spend time working on kernel maintenance.
+
+Right, this is fine, the problem is that we are not working independently on a
+project, there are areas where it's possible, but in many cases one's work may
+be crucial for the other's...
+
+> I'm usually collecting patches from patchwork [1] for review and then merge
+> them in batches if they're fine.
 > 
-> Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>[...]
+> What I don't understand, why did you choose to use an immutable tree? Is there
+> really a need for such an escalation? I find that a bit rude.
 
-MBR, Sergey
+...that's why it's good to have it being moved forward. And having an immutable
+branch is actually *to help* you, and not the opposite. Now you can simply pull
+that branch into your tree as a whole.
+
+> The v2 patch series was sent first in May, so I didn't think this was already
+> a long time.
+
+Pace of the Linux kernel development is 1 week with the release every ~9th week
+(with a gap ~3-4 weeks due to end of cycle and merge window). Currently is the
+first third of July, so... make conclusion yourself.
+
+> > [1] https://patchwork.kernel.org/project/linux-sh/list/
+
+-- 
+With Best Regards,
+Andy Shevchenko
+
 
