@@ -1,204 +1,183 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj1-f45.google.com (mail-pj1-f45.google.com [209.85.216.45])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C3350149DF1;
-	Sat, 11 Jul 2026 20:33:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A41225B090
+	for <linux-sh@vger.kernel.org>; Sun, 12 Jul 2026 05:59:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783802001; cv=none; b=Db52uknWG2094spMaZXVnHhgF2oO1dCSetBFfbn3s2mAIQ/ieM7qy2cWtPa1aKtwbcY4dFw430klibh1rWyCyxDjqazEB5kMAvovQ0+SL6QPx+8OFEuxzHAjTTs7/xzpujQbKdvqoeCdBmVz620+l7QWv9bba+VTrwGP40MYPBU=
+	t=1783835947; cv=none; b=tTASXCIp//DdXTmXuGK5kYOFncWMW8KZ3ZWstFDGsOfIQTZFdmDqooLEx66i5jWa6pW3nzi3bG0oMKId/S9GE5WLKRTn6Wa3i1GFc0Yhc8pin5vKzeAJS6kQ9p9ykKA8RL2xhJXw8iCTHVtdIW8wvUV4IbiT4jD3rV8/yBBXrpo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783802001; c=relaxed/simple;
-	bh=f4WDAwb3qO/KWOBB6gOahvRfdXJNvVppVvPoOxm1wS8=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=U9n5tUzh7GoVpiXFIhC73OMVE8Zqe1psdv7lWrbzqvFN6VMej4+QqZzYlxNNsx4KfFN3+ng3AlDIUDBQxXKJowN1nj2vrYceOvaETmoHzIAcHI75Z+yP568ncg2r7cHdM4FPoiNDuJLVCorMlwn01eN3DXXam6wsZ6isjru4Xxw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=f6nPQIDW; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1783835947; c=relaxed/simple;
+	bh=U43AAegH4Aqj3ml8RtngCZIYUk/Cw2qm6Z62goEv8Q0=;
+	h=Content-Type:Mime-Version:Subject:From:In-Reply-To:Date:Cc:
+	 Message-Id:References:To; b=TXWEJZ3Xxh6dzM2qDQIc3sHIyR3UvplJvyAxpMfeuiSdir+8v2YCo7ISs7snnpH2SPZUffe/U61Lxq7h/fJ30V6oZAs0jOckHwIrDbNVO0Xn37SFxAArXjkdoUi6XExCDumTO5lBOtgG4TqfbY/FZrfq3yeHWKCpaiqbaCDoP6c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=coresemi.io; spf=none smtp.mailfrom=coresemi.io; dkim=pass (2048-bit key) header.d=coresemi-io.20251104.gappssmtp.com header.i=@coresemi-io.20251104.gappssmtp.com header.b=fYCWJYR6; arc=none smtp.client-ip=209.85.216.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=coresemi.io
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=coresemi.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="f6nPQIDW"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C74601F000E9;
-	Sat, 11 Jul 2026 20:33:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1783801999;
-	bh=vf0x/sVLTVCL/PCgyuZ8JagPvunPhYIkJoaxGkdlgsg=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date;
-	b=f6nPQIDWb921zxEmTCJayCTDOfYZdi0+7zYrhf0upuiSWI9j5AZ2jA4rhsOs29HYT
-	 WC65M3P5E0Ndczi1cDcuiv7hGhsQJHbzIeCfUAQhsb3BAmdz9sIRmrV3HJM1BFxfHh
-	 Aux4CNd9IAvECdD+RCjW44j4iuQp1Him2INHy0sHP/oX42qlbB/BPDPlYwuwpyf330
-	 fm02VsUCvmZUjjgJlLWziVrF+imgTjTEQzqm6tpMlL+GLiRFtJSumKDpDKIPCbMwb6
-	 NV1PwwP0Vo7BFl96u+JrYXmWPko75piPEvZ0MdoWxo/dPZ46b1HjcordjvvVp5/9ci
-	 U6Hw/ms11EcEw==
-From: Thomas Gleixner <tglx@kernel.org>
-To: Michal =?utf-8?Q?Such=C3=A1nek?= <msuchanek@suse.de>
-Cc: LKML <linux-kernel@vger.kernel.org>, Peter Zijlstra
- <peterz@infradead.org>, Michael Ellerman <mpe@ellerman.id.au>, Shrikanth
- Hegde <sshegde@linux.ibm.com>, linuxppc-dev@lists.ozlabs.org, Kees Cook
- <kees@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
- loongarch@lists.linux.dev, Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt
- <palmer@dabbelt.com>, linux-riscv@lists.infradead.org, Sven Schnelle
- <svens@linux.ibm.com>, linux-s390@vger.kernel.org, x86@kernel.org, Mark
- Rutland <mark.rutland@arm.com>, Jinjie Ruan <ruanjinjie@huawei.com>, Andy
- Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>, Richard
- Henderson <richard.henderson@linaro.org>, Russell King
- <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Guo
- Ren <guoren@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas
- Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller <deller@gmx.de>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger
- <richard@nod.at>, Chris Zankel <chris@zankel.net>,
- linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
- linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
- linux-sh@vger.kernel.org, linux-um@lists.infradead.org, Arnd Bergmann
- <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>, Will Deacon
- <will@kernel.org>, Brian Cain <bcain@kernel.org>, Michal Simek
- <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>, "David S. Miller"
- <davem@davemloft.net>, Andreas Larsson <andreas@gaisler.com>,
- linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
- linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-arch@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
- linux-doc@vger.kernel.org
-Subject: Re: [patch 13/18] entry: Make trace_syscall_enter() return type bool
-In-Reply-To: <alDQ7isUKJFl8Va4@kunlun.suse.cz>
-References: <20260707181957.433213175@kernel.org>
- <20260707190254.338083894@kernel.org> <ak5ySpil83TNWxeq@kunlun.suse.cz>
- <87se5tqkyp.ffs@fw13> <alDQ7isUKJFl8Va4@kunlun.suse.cz>
-Date: Sat, 11 Jul 2026 22:33:16 +0200
-Message-ID: <87a4rxqnar.ffs@fw13>
+	dkim=pass (2048-bit key) header.d=coresemi-io.20251104.gappssmtp.com header.i=@coresemi-io.20251104.gappssmtp.com header.b="fYCWJYR6"
+Received: by mail-pj1-f45.google.com with SMTP id 98e67ed59e1d1-38759bcd877so1740093a91.2
+        for <linux-sh@vger.kernel.org>; Sat, 11 Jul 2026 22:59:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=coresemi-io.20251104.gappssmtp.com; s=20251104; t=1783835945; x=1784440745; darn=vger.kernel.org;
+        h=to:references:message-id:cc:date:in-reply-to:from:subject
+         :mime-version:content-transfer-encoding:content-type:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=iyTID/WZLHGbu2RVsPZZ0ICCWgZDe9NLggePPfx59jk=;
+        b=fYCWJYR6/3QrAQim1SU1y+NBMsyeJI0SN4ARoUiJYp4MgyrlSjayWLheZ/cF+cDlwO
+         lvGshQLqUAAPNWjx/pCtCMuKf8xo7v36KKq9W39jmXMllBqZ4oUIDIg+uf+VxbyYdmi9
+         QzUCOFIkU2NklOA+la+5GvWU6RB9hGIDctMqH3oP0SMg/cnBmqQdE50nvOdYo+4xAIhO
+         cHK83akSpEByaq0dtvwEXhhDI2iWP+igEyYb/Uae6rGLWAud4Gj6KCtXxmtw2sLafu0f
+         F1AbB35bgAvJToicoz2NpX7aZkooAntSiRTnKxGocQxeIRDDFNFwPiqL4+LZtSzBeHfc
+         HqTQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783835945; x=1784440745;
+        h=to:references:message-id:cc:date:in-reply-to:from:subject
+         :mime-version:content-transfer-encoding:content-type:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=iyTID/WZLHGbu2RVsPZZ0ICCWgZDe9NLggePPfx59jk=;
+        b=A/iIWmeCipiyTJNOsIAN/qj+X6R0IpGXoJILnKBdR98wy6snNC9HHi0T6Z3+qAmsqO
+         SdFGjpcn34smfJ6TlKweHtBZpzFOBbcEaFLVZPsAl37Sb3qeU8knQNpyel3NNFqnmIVK
+         kFlCxYVAxyHyZuVHkJm8ReJbGltfTRDUrbIers95ayBtk5WKFnzG5j1eG8dXSp/e8Qu7
+         m2ItL1PJkAXUGTcEFgIm7A7fPg6DAwTKMw7xL+SXu33/M3RI4zsoLK+FJjjjBA7weAjH
+         HKGgvU8PsKLXLE0RZg/VZEBrDE1eKHwXM+02NOXuZAEG6/SQQko9fNgZS1IRL/8i+l07
+         N4hQ==
+X-Forwarded-Encrypted: i=1; AHgh+RofMJ/7AW9rjqHhEGVqN5jwsV98ihN0FDEfXIg9LTnYm1WD5iURvs0ToD68iWMlhH+Yu9CUVKwpxg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzBg1YlvrpiqcTr+p7ghvH+UX8x8LSkeEcgHrP5WK7Y6Gjejcfc
+	iBnSxi84uriOEKtPMwO8AfkI0Ow0p3VL8wa1e7r8OmzNxk/7zN0NHmtftjdj2ZIYWr0=
+X-Gm-Gg: AfdE7ck9Kkn7DuXl4utBaVUo0A8pigHRiuN6dqk7rgBycwBO2Rg6ywHoE5xPCHoqjUi
+	tNHKzxTU0aF2QZme++oyMQes3CgYKVqv+NXURJJZMoMFLmehIg7iHJlPkktEJj7XBBU8vfNQNK3
+	CVO7J2IoPaGeV/eaWbECtR86aQxOCw8A5A+ysAvugpBUHqa6kVZOisGcKaHGlnKy0L+p4Ha22XB
+	BYC0FgwPBuU6rNU1gzrOXC/Gvw5IhUkF1zHee/ecdYgAFd6P6ZrYpgAE2JZf+GnLo5Oiykm/Bae
+	supAfRBLFEJcXID+H1q2lT2xkytNAdgxSjFD7xWyIWF90JEEF28HnvvHa+/iAINxbjdz5RQbIR9
+	Ktf19NPF2DYOTXXngDmvf+srayQf7T8Uo9F5y8fFi0buexZysXqoYTeO4Av400UOwk6/KZWILyt
+	gQ0awG0xbIcyz+xtpAFniPcf2R+/YOe+d8KSJE
+X-Received: by 2002:a17:90b:4a:b0:380:540:d49a with SMTP id 98e67ed59e1d1-38dc78228cbmr4804210a91.7.1783835944712;
+        Sat, 11 Jul 2026 22:59:04 -0700 (PDT)
+Received: from smtpclient.apple ([2001:268:99b5:9e3:2c82:f889:b81:1fd8])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-38a5506b47esm4682321a91.3.2026.07.11.22.59.03
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 11 Jul 2026 22:59:04 -0700 (PDT)
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Mime-Version: 1.0 (1.0)
+Subject: Re: Toybox make root no longer works as expected
+From: "D. Jeff Dionne" <jeff@coresemi.io>
+In-Reply-To: <570e4053-9e57-4e63-9808-0b770a3a3791@landley.net>
+Date: Sun, 12 Jul 2026 15:00:25 +0900
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ "D. Jeff Dionne" <djeffdionne@gmail.com>,
+ linux-sh <linux-sh@vger.kernel.org>,
+ Geert Uytterhoeven <geert+renesas@glider.be>
+Message-Id: <A4205228-E202-4157-9C57-FE37497E1586@coresemi.io>
+References: <570e4053-9e57-4e63-9808-0b770a3a3791@landley.net>
+To: Rob Landley <rob@landley.net>
+X-Mailer: iPhone Mail (23C71)
 
-Michal!
+I will try and force myself to find time to help with this.
 
-On Fri, Jul 10 2026 at 13:01, Michal Such=C3=A1nek wrote:
-> On Wed, Jul 08, 2026 at 10:34:38PM +0200, Thomas Gleixner wrote:
->> does not make #2 magically go away. It's still the same problem whether
->> you like it or not.
->
-> However, reading the syscall number from pt_regs only after
-> syscall_enter_from_user_mode exits does.
+I noticed a few days ago that some very old targets I need to work on are ha=
+ving some bitrot with even new 9.4.0 toolchains.
 
-That does not solve anything at all.
+Rob, can you do me a favour and extract our GCC patch stack for all the sh2 f=
+lavours we support cleanly from the build scripts?  All those targets will n=
+eed forward porting.
 
-TBH, your communication style is annoying as hell. You fail to provide
-any useful arguments and explanations despite me giving you a proper
-analysis. And I'm absolutely tired of this.
+Cheers,
+J.
 
-So let me try again for _ONE_ last time to explain you why your ppc/s390
-world view is broken and let's look at the current code (irrelevant
-portions omitted).
-
-static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsig=
-ned long work)
-{
-	if (work & SYSCALL_WORK_SYSCALL_USER_DISPATCH) {
-#1		if (syscall_user_dispatch(regs))
-			return -1L;
-	}
-=20=20=20=20=20=20=20=20
-	if (work & (SYSCALL_WORK_SYSCALL_TRACE | SYSCALL_WORK_SYSCALL_EMU)) {
-#2		ret =3D arch_ptrace_report_syscall_entry(regs);
-		if (ret || (work & SYSCALL_WORK_SYSCALL_EMU))
-			return -1L;
-	}
-
-	/* Do seccomp after ptrace, to catch any tracer changes. */
-	if (work & SYSCALL_WORK_SECCOMP) {
-#3		ret =3D __secure_computing();
-		if (ret =3D=3D -1L)
-			return ret;
-	}
-
-	/* Either of the above might have changed the syscall number */
-#4	syscall =3D syscall_get_nr(current, regs);
-
-	if (unlikely(work & SYSCALL_WORK_SYSCALL_TRACEPOINT))
-#5		syscall =3D trace_syscall_enter(regs, syscall);
-
-        return syscall;
-}
-
-#1) The user dispatch mechanism does not modify the syscall return
-    value, but it can rollback the syscall and tell the call site to
-    skip the invocation.
-
-    The mechanism used in upstream today is to return -1L as the syscall
-    number which makes the architecture specific entry code skip the
-    syscall and refrain from touching the return value.
-
-#2) ptrace
-
-    ptrace can poke whatever it wants into the syscall number storage
-    via ptrace_set_syscall_info_entry() -> syscall_set_nr()
-
-    It does not set the return code.
-
-    It does not abort the syscall when the poked syscall number is -1L.
-
-    It only aborts when a fatal signal is pending.
-
-#3) seccomp
-
-    seccomp reads the syscall number, which might have been modified by
-    ptrace and acts upon it.
-
-    It can rewrite the syscall number even if it is -1 to begin with.
-
-    It can rewrite the return code if it decides to refuse the syscall
-    to be executed.
-
-    If it refuses the syscall to be executed it returns -1L.
-
-#4) Rereading the syscall number after ptrace/seccomp
-
-    That's required to give the eventually modified number to the
-    tracer.
-
-    Obviously the tracer could do that on it's own, but with the current
-    implementation it expects the eventually modified syscall number
-
-    Changing that to make the tracer do it, is possible but does not
-    change any of the actual expectations. That's just cosmetic wankery.
-
-#5) tracing
-
-    tracing can have a probe or bpf attached, which in turn can
-
-      - rewrite the syscall number
-
-      - set the return code in case that it sets the syscall number to
-        -1L
-
-        It can even set it in case it sets it to some other value, but
-        the architecture code has to be resilent against that no matter
-        what.
-
-      - if it does not set the return code when it sets the syscall
-        number to -1L then it has a historical expectation that the
-        syscall returns -ENOSYS
-
-        That's how it is and you can argue in circles and it's not going
-        away unless you have a great argument why you can break existing
-        user space probes/bpf scripts.
-
-So now please provide in coherent sentences the argument why this solves
-anything:
-
-> However, reading the syscall number from pt_regs only after
-> syscall_enter_from_user_mode exits does.
-
-If you can, which I doubt, then please send a patch [series] against:
-
-   git://git.kernel.org/pub/scm/linux/kernel/git/tglx/devel.git entry/rework
-
-with proper change logs explaining the superiour solution.
-
-If not, please spare us the next set of incoherent "I wan't a pony"
-mails.
-
-Thanks,
-
-        tglx
+> On Jul 12, 2026, at 13:52, Rob Landley <rob@landley.net> wrote:
+>=20
+> =EF=BB=BFOn 7/10/26 08:32, John Paul Adrian Glaubitz wrote:
+>> Coming back to this. After recent changes to GCC [1], I would expect the c=
+hances
+>> to be higher that a J2 toolchain build with GCC 17 would work better when=
+ building
+>> a current kernel tree.
+>> Would you be able to help me build a fresh J2 toolchain from the GCC 17 t=
+ree?
+>=20
+> Yes, I am interested.
+>=20
+> I was actually poking at that a couple weeks ago. (tl;dr when the arm guys=
+ added fdpic support for their target, they broke sh2's fdpic support in com=
+mit https://github.com/gcc-mirror/gcc/commit/11189793b6ef and I have a todo i=
+tem to add some #ifdef __MUSL__ to that since you have to say "sh2eb-blah-mu=
+slfdpic" in the config --target anyway).
+>=20
+> Backstory time!
+>=20
+> So I shipped new toolchains with the recent toybox release:
+>=20
+>  https://landley.net/bin/toolchains/19-06-2026/
+>=20
+> This time based on gcc 15.1, and I had to bisect some issues (like https:/=
+/mstdn.jp/users/landley/statuses/116747488061835417) along the way (the solu=
+tion of which was for Rich to update musl to the current version in musl-cro=
+ss-make, which he'd forgotten to do: the system call interface missed annota=
+ting two registers as caller saved).
+>=20
+> The one target I _didn't_ get to work in time for the release was sh2eb-fd=
+pic. (With gcc 15.1 the link fails trying to build musl, complaining about b=
+eing unable to find LP50, every other package can be updated except that one=
+ and you get a shell prompt in mkroot, although you seperately have to use a=
+n older kernel because of the header assembly issue causing an internal comp=
+iler error; that's separate breakage.)
+>=20
+> You still need patches to add proper -mj2 support, but since j2 is backwar=
+ds compatible with sh2eb-fdpic that's what I've actually been shipping in my=
+ toolchains. Unfortunately, sh2-fdpic doesn't work in 15.1, and I bisected f=
+rom 9.4 to find out why.
+>=20
+> (Drilling forward from "the one that works" to figure out where newer vers=
+ions broke stuff is my go-to approach when I don't have a firm grasp of the p=
+lumbing in question.)
+>=20
+> =46rom my notes;
+>=20
+> The first commit after 9.4 to break fdpic was 5d727a4b2025 which added c++=
+ unwind exception support to arm fdpic. That caused the "unwind-pe.h:270:25:=
+ error: '_Unwind_gnu_Find_got' was not declared in this scope" error, which p=
+ersisted for many, many commits after that...
+>=20
+> Commit 551935d11817 then switched the behavior to the CURRENT failure, the=
+ one about LP50. But A) that commit's enormous adding a new subsystem, and B=
+) I think that's a separate error masking the first, not fixing it.
+>=20
+> I was trying to build that toolchain from an unpatched gcc with newer vers=
+ion. (the -mj2 machine is nice to have but not vital, what we _really_ need i=
+s sh2eb with fdpic).
+>=20
+> I asked on the #musl irc channel and nsz suggested https://git.zv.io/toolc=
+hains/musl-cross-make/-/raw/musl.cc-old/patches/gcc-11-20230427/0100-hack-sh=
+2fdpic-unwind-nonsense.diff?ref_type=3Dheads and with the zv patch and an up=
+dated version of the VISIBILITY_HIDDEN patch, commit 551935d11817^1 builds a=
+ toolchain! But the resulting toybox segfaults...
+>=20
+> Bisected the segfault to commit 11189793b6ef (back in 2019) where the arm f=
+dpic guys changed the semantics of __do_global_dtors_aux and frame_dummy in a=
+ way that broke superh fdpic. They do not explain WHY they changed the seman=
+tics' and musl's init code expects the old semantics. (This is one of those c=
+rt1.o talking to crtbegin.o talking to crti.o things. The arm guys GLOBALLY c=
+hanged the handoff, and broke musl-fdpic in the process. I doubt they regres=
+sion tested fdpic on any other target, and embedded guys always use OLD TOOL=
+CHAINS because the new ones have worse optimizers for C...)
+>=20
+> Seriously, that commit says "we need to make sure __do_global_dtors_aux an=
+d frame_dummy are referenced by their address, not by pointers to the functi=
+on descriptors" but... why? It WORKED BEFORE THAT just fine. You arm guys di=
+d not invent fdpic! It's been around for MANY YEARS...
+>=20
+> I've been meaning to get back to this, but I've been juggling too many bal=
+ls...
+>=20
+> Getting sh2 working with the new optimizer plumbing would e great, but unb=
+reaking fdpic seems like a prerequisite for our use cases...
+>=20
+> Rob
