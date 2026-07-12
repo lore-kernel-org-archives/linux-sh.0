@@ -1,183 +1,121 @@
-Received: from mail-pj1-f45.google.com (mail-pj1-f45.google.com [209.85.216.45])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from eastern.ash.relay.mailchannels.net (eastern.ash.relay.mailchannels.net [23.83.222.55])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A41225B090
-	for <linux-sh@vger.kernel.org>; Sun, 12 Jul 2026 05:59:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5464F5474F
+	for <linux-sh@vger.kernel.org>; Sun, 12 Jul 2026 08:10:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=23.83.222.55
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783835947; cv=none; b=tTASXCIp//DdXTmXuGK5kYOFncWMW8KZ3ZWstFDGsOfIQTZFdmDqooLEx66i5jWa6pW3nzi3bG0oMKId/S9GE5WLKRTn6Wa3i1GFc0Yhc8pin5vKzeAJS6kQ9p9ykKA8RL2xhJXw8iCTHVtdIW8wvUV4IbiT4jD3rV8/yBBXrpo=
+	t=1783843848; cv=none; b=YZOcwroKVciZsaxlpQAqMOHMhcPtHLSx6mJGXbLylM03j978VSunAGY9otqbzN8WCHZ3GyKNmFov85AQNBLILmlBf2YazOQ7ThnhAq6StOB+T1H/V7Dz7U5YJjtW1+T/MiGyC506wwEM1IaaCfTb/cRUjWG2i5u5Qww85eB425c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783835947; c=relaxed/simple;
-	bh=U43AAegH4Aqj3ml8RtngCZIYUk/Cw2qm6Z62goEv8Q0=;
-	h=Content-Type:Mime-Version:Subject:From:In-Reply-To:Date:Cc:
-	 Message-Id:References:To; b=TXWEJZ3Xxh6dzM2qDQIc3sHIyR3UvplJvyAxpMfeuiSdir+8v2YCo7ISs7snnpH2SPZUffe/U61Lxq7h/fJ30V6oZAs0jOckHwIrDbNVO0Xn37SFxAArXjkdoUi6XExCDumTO5lBOtgG4TqfbY/FZrfq3yeHWKCpaiqbaCDoP6c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=coresemi.io; spf=none smtp.mailfrom=coresemi.io; dkim=pass (2048-bit key) header.d=coresemi-io.20251104.gappssmtp.com header.i=@coresemi-io.20251104.gappssmtp.com header.b=fYCWJYR6; arc=none smtp.client-ip=209.85.216.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=coresemi.io
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=coresemi.io
+	s=arc-20240116; t=1783843848; c=relaxed/simple;
+	bh=mGF6MjzIzvIkO5rx8y3KcdzmLO+HSoZJyhNn6mIulSw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=g8WuS1RPUOVcqYoB4w9D/VEankxIm1E+orl4H3ItkbYEzQGlS1e5OoiA999d/e/LDF+q5vmF2ddn/KthQG5ZrLP0y+Xjw/tNXgE0ZhsnuFVT9SuBSNv6MmbAOsxxJOHwZshZNa7zDNclWbqpjGR93WizVbc4owySFOqXeSfbPV0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b=ZBawrHuw; arc=none smtp.client-ip=23.83.222.55
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=coresemi-io.20251104.gappssmtp.com header.i=@coresemi-io.20251104.gappssmtp.com header.b="fYCWJYR6"
-Received: by mail-pj1-f45.google.com with SMTP id 98e67ed59e1d1-38759bcd877so1740093a91.2
-        for <linux-sh@vger.kernel.org>; Sat, 11 Jul 2026 22:59:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=coresemi-io.20251104.gappssmtp.com; s=20251104; t=1783835945; x=1784440745; darn=vger.kernel.org;
-        h=to:references:message-id:cc:date:in-reply-to:from:subject
-         :mime-version:content-transfer-encoding:content-type:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=iyTID/WZLHGbu2RVsPZZ0ICCWgZDe9NLggePPfx59jk=;
-        b=fYCWJYR6/3QrAQim1SU1y+NBMsyeJI0SN4ARoUiJYp4MgyrlSjayWLheZ/cF+cDlwO
-         lvGshQLqUAAPNWjx/pCtCMuKf8xo7v36KKq9W39jmXMllBqZ4oUIDIg+uf+VxbyYdmi9
-         QzUCOFIkU2NklOA+la+5GvWU6RB9hGIDctMqH3oP0SMg/cnBmqQdE50nvOdYo+4xAIhO
-         cHK83akSpEByaq0dtvwEXhhDI2iWP+igEyYb/Uae6rGLWAud4Gj6KCtXxmtw2sLafu0f
-         F1AbB35bgAvJToicoz2NpX7aZkooAntSiRTnKxGocQxeIRDDFNFwPiqL4+LZtSzBeHfc
-         HqTQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783835945; x=1784440745;
-        h=to:references:message-id:cc:date:in-reply-to:from:subject
-         :mime-version:content-transfer-encoding:content-type:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=iyTID/WZLHGbu2RVsPZZ0ICCWgZDe9NLggePPfx59jk=;
-        b=A/iIWmeCipiyTJNOsIAN/qj+X6R0IpGXoJILnKBdR98wy6snNC9HHi0T6Z3+qAmsqO
-         SdFGjpcn34smfJ6TlKweHtBZpzFOBbcEaFLVZPsAl37Sb3qeU8knQNpyel3NNFqnmIVK
-         kFlCxYVAxyHyZuVHkJm8ReJbGltfTRDUrbIers95ayBtk5WKFnzG5j1eG8dXSp/e8Qu7
-         m2ItL1PJkAXUGTcEFgIm7A7fPg6DAwTKMw7xL+SXu33/M3RI4zsoLK+FJjjjBA7weAjH
-         HKGgvU8PsKLXLE0RZg/VZEBrDE1eKHwXM+02NOXuZAEG6/SQQko9fNgZS1IRL/8i+l07
-         N4hQ==
-X-Forwarded-Encrypted: i=1; AHgh+RofMJ/7AW9rjqHhEGVqN5jwsV98ihN0FDEfXIg9LTnYm1WD5iURvs0ToD68iWMlhH+Yu9CUVKwpxg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzBg1YlvrpiqcTr+p7ghvH+UX8x8LSkeEcgHrP5WK7Y6Gjejcfc
-	iBnSxi84uriOEKtPMwO8AfkI0Ow0p3VL8wa1e7r8OmzNxk/7zN0NHmtftjdj2ZIYWr0=
-X-Gm-Gg: AfdE7ck9Kkn7DuXl4utBaVUo0A8pigHRiuN6dqk7rgBycwBO2Rg6ywHoE5xPCHoqjUi
-	tNHKzxTU0aF2QZme++oyMQes3CgYKVqv+NXURJJZMoMFLmehIg7iHJlPkktEJj7XBBU8vfNQNK3
-	CVO7J2IoPaGeV/eaWbECtR86aQxOCw8A5A+ysAvugpBUHqa6kVZOisGcKaHGlnKy0L+p4Ha22XB
-	BYC0FgwPBuU6rNU1gzrOXC/Gvw5IhUkF1zHee/ecdYgAFd6P6ZrYpgAE2JZf+GnLo5Oiykm/Bae
-	supAfRBLFEJcXID+H1q2lT2xkytNAdgxSjFD7xWyIWF90JEEF28HnvvHa+/iAINxbjdz5RQbIR9
-	Ktf19NPF2DYOTXXngDmvf+srayQf7T8Uo9F5y8fFi0buexZysXqoYTeO4Av400UOwk6/KZWILyt
-	gQ0awG0xbIcyz+xtpAFniPcf2R+/YOe+d8KSJE
-X-Received: by 2002:a17:90b:4a:b0:380:540:d49a with SMTP id 98e67ed59e1d1-38dc78228cbmr4804210a91.7.1783835944712;
-        Sat, 11 Jul 2026 22:59:04 -0700 (PDT)
-Received: from smtpclient.apple ([2001:268:99b5:9e3:2c82:f889:b81:1fd8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-38a5506b47esm4682321a91.3.2026.07.11.22.59.03
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 11 Jul 2026 22:59:04 -0700 (PDT)
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (2048-bit key) header.d=landley.net header.i=@landley.net header.b="ZBawrHuw"
+X-Sender-Id: dreamhost|x-authsender|rob@landley.net
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id 75750460D67;
+	Sun, 12 Jul 2026 08:02:07 +0000 (UTC)
+Received: from pdx1-sub0-mail-a209.dreamhost.com (100-99-1-19.trex-nlb.outbound.svc.cluster.local [100.99.1.19])
+	(Authenticated sender: dreamhost)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 0E622460C77;
+	Sun, 12 Jul 2026 08:02:07 +0000 (UTC)
+X-Sender-Id: dreamhost|x-authsender|rob@landley.net
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: dreamhost|x-authsender|rob@landley.net
+X-MailChannels-Auth-Id: dreamhost
+X-Battle-Cold: 0a37ae14713b31d1_1783843327296_2655508904
+X-MC-Loop-Signature: 1783843327296:3102808088
+X-MC-Ingress-Time: 1783843327294
+Received: from pdx1-sub0-mail-a209.dreamhost.com (pop.dreamhost.com
+ [64.90.62.162])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
+	by 100.99.1.19 (trex/8.0.2);
+	Sun, 12 Jul 2026 08:02:07 +0000
+Received: from [192.168.14.157] (unknown [209.81.127.98])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	(Authenticated sender: rob@landley.net)
+	by pdx1-sub0-mail-a209.dreamhost.com (Postfix) with ESMTPSA id 4gydML4ftwz17j;
+	Sun, 12 Jul 2026 01:02:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=landley.net;
+	s=dreamhost; t=1783843326;
+	bh=R8jInBxkJuGxa3yugd4jN4jiTxwyIFVx7V5RDwe1wTA=;
+	h=Date:Subject:To:Cc:From:Content-Type:Content-Transfer-Encoding;
+	b=ZBawrHuwUT5r4+G/mp1vrs/EsZiEDaGAmqK0rMDr6EUDbBpvlrxNcL7h9M2AgSjmZ
+	 hC10WkjgdrwaVGy9+EFTAKkOHMyD0gTqAhcayrM7MrDhMFwd/IQag1BRloMGThtC3b
+	 7y1dXHT9pDpTCtQGwPe/08FSG7GbeVjl+LKxiUdFoZR1pnZpPocUOjBEeaSgtNIFSj
+	 CiHBGIg8dZbIWbJd0kOCIyqJMACd17E66oQnVhoIp3Su7i+DTQy2KZuYIgZZg03Abl
+	 z4Wy3V7NKXnR6mVZGqQRqG4GkTbxv9nV8/TjJGWHEYBt8DTxcfCOwY0U1JNvlCMCCJ
+	 bgITgrknE9VmQ==
+Message-ID: <2a81cd17-bf7f-4bc0-9bc4-86b170d0cc22@landley.net>
+Date: Sun, 12 Jul 2026 03:02:06 -0500
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0 (1.0)
+MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
 Subject: Re: Toybox make root no longer works as expected
-From: "D. Jeff Dionne" <jeff@coresemi.io>
-In-Reply-To: <570e4053-9e57-4e63-9808-0b770a3a3791@landley.net>
-Date: Sun, 12 Jul 2026 15:00:25 +0900
+To: "D. Jeff Dionne" <jeff@coresemi.io>
 Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- "D. Jeff Dionne" <djeffdionne@gmail.com>,
- linux-sh <linux-sh@vger.kernel.org>,
- Geert Uytterhoeven <geert+renesas@glider.be>
-Message-Id: <A4205228-E202-4157-9C57-FE37497E1586@coresemi.io>
+ "D. Jeff Dionne" <djeffdionne@gmail.com>, linux-sh
+ <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
 References: <570e4053-9e57-4e63-9808-0b770a3a3791@landley.net>
-To: Rob Landley <rob@landley.net>
-X-Mailer: iPhone Mail (23C71)
+ <A4205228-E202-4157-9C57-FE37497E1586@coresemi.io>
+Content-Language: en-US
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <A4205228-E202-4157-9C57-FE37497E1586@coresemi.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-I will try and force myself to find time to help with this.
+On 7/12/26 01:00, D. Jeff Dionne wrote:
+> I will try and force myself to find time to help with this.
+> 
+> I noticed a few days ago that some very old targets I need to work on are having some bitrot with even new 9.4.0 toolchains.
+> 
+> Rob, can you do me a favour and extract our GCC patch stack for all the sh2 flavours we support cleanly from the build scripts?  All those targets will need forward porting.
 
-I noticed a few days ago that some very old targets I need to work on are ha=
-ving some bitrot with even new 9.4.0 toolchains.
+For gcc-9.4 there's this in musl-cross-make:
 
-Rob, can you do me a favour and extract our GCC patch stack for all the sh2 f=
-lavours we support cleanly from the build scripts?  All those targets will n=
-eed forward porting.
+https://github.com/richfelker/musl-cross-make/blob/master/patches/gcc-9.4.0/0007-j2.diff
 
-Cheers,
-J.
+https://github.com/richfelker/musl-cross-make/blob/master/patches/gcc-9.4.0/0020-sh-fdpic-pr114641.diff
 
-> On Jul 12, 2026, at 13:52, Rob Landley <rob@landley.net> wrote:
->=20
-> =EF=BB=BFOn 7/10/26 08:32, John Paul Adrian Glaubitz wrote:
->> Coming back to this. After recent changes to GCC [1], I would expect the c=
-hances
->> to be higher that a J2 toolchain build with GCC 17 would work better when=
- building
->> a current kernel tree.
->> Would you be able to help me build a fresh J2 toolchain from the GCC 17 t=
-ree?
->=20
-> Yes, I am interested.
->=20
-> I was actually poking at that a couple weeks ago. (tl;dr when the arm guys=
- added fdpic support for their target, they broke sh2's fdpic support in com=
-mit https://github.com/gcc-mirror/gcc/commit/11189793b6ef and I have a todo i=
-tem to add some #ifdef __MUSL__ to that since you have to say "sh2eb-blah-mu=
-slfdpic" in the config --target anyway).
->=20
-> Backstory time!
->=20
-> So I shipped new toolchains with the recent toybox release:
->=20
->  https://landley.net/bin/toolchains/19-06-2026/
->=20
-> This time based on gcc 15.1, and I had to bisect some issues (like https:/=
-/mstdn.jp/users/landley/statuses/116747488061835417) along the way (the solu=
-tion of which was for Rich to update musl to the current version in musl-cro=
-ss-make, which he'd forgotten to do: the system call interface missed annota=
-ting two registers as caller saved).
->=20
-> The one target I _didn't_ get to work in time for the release was sh2eb-fd=
-pic. (With gcc 15.1 the link fails trying to build musl, complaining about b=
-eing unable to find LP50, every other package can be updated except that one=
- and you get a shell prompt in mkroot, although you seperately have to use a=
-n older kernel because of the header assembly issue causing an internal comp=
-iler error; that's separate breakage.)
->=20
-> You still need patches to add proper -mj2 support, but since j2 is backwar=
-ds compatible with sh2eb-fdpic that's what I've actually been shipping in my=
- toolchains. Unfortunately, sh2-fdpic doesn't work in 15.1, and I bisected f=
-rom 9.4 to find out why.
->=20
-> (Drilling forward from "the one that works" to figure out where newer vers=
-ions broke stuff is my go-to approach when I don't have a firm grasp of the p=
-lumbing in question.)
->=20
-> =46rom my notes;
->=20
-> The first commit after 9.4 to break fdpic was 5d727a4b2025 which added c++=
- unwind exception support to arm fdpic. That caused the "unwind-pe.h:270:25:=
- error: '_Unwind_gnu_Find_got' was not declared in this scope" error, which p=
-ersisted for many, many commits after that...
->=20
-> Commit 551935d11817 then switched the behavior to the CURRENT failure, the=
- one about LP50. But A) that commit's enormous adding a new subsystem, and B=
-) I think that's a separate error masking the first, not fixing it.
->=20
-> I was trying to build that toolchain from an unpatched gcc with newer vers=
-ion. (the -mj2 machine is nice to have but not vital, what we _really_ need i=
-s sh2eb with fdpic).
->=20
-> I asked on the #musl irc channel and nsz suggested https://git.zv.io/toolc=
-hains/musl-cross-make/-/raw/musl.cc-old/patches/gcc-11-20230427/0100-hack-sh=
-2fdpic-unwind-nonsense.diff?ref_type=3Dheads and with the zv patch and an up=
-dated version of the VISIBILITY_HIDDEN patch, commit 551935d11817^1 builds a=
- toolchain! But the resulting toybox segfaults...
->=20
-> Bisected the segfault to commit 11189793b6ef (back in 2019) where the arm f=
-dpic guys changed the semantics of __do_global_dtors_aux and frame_dummy in a=
- way that broke superh fdpic. They do not explain WHY they changed the seman=
-tics' and musl's init code expects the old semantics. (This is one of those c=
-rt1.o talking to crtbegin.o talking to crti.o things. The arm guys GLOBALLY c=
-hanged the handoff, and broke musl-fdpic in the process. I doubt they regres=
-sion tested fdpic on any other target, and embedded guys always use OLD TOOL=
-CHAINS because the new ones have worse optimizers for C...)
->=20
-> Seriously, that commit says "we need to make sure __do_global_dtors_aux an=
-d frame_dummy are referenced by their address, not by pointers to the functi=
-on descriptors" but... why? It WORKED BEFORE THAT just fine. You arm guys di=
-d not invent fdpic! It's been around for MANY YEARS...
->=20
-> I've been meaning to get back to this, but I've been juggling too many bal=
-ls...
->=20
-> Getting sh2 working with the new optimizer plumbing would e great, but unb=
-reaking fdpic seems like a prerequisite for our use cases...
->=20
-> Rob
+And then binutils-2.44 has:
+
+https://github.com/richfelker/musl-cross-make/blob/master/patches/binutils-2.44/0001-j2.diff
+
+https://github.com/richfelker/musl-cross-make/blob/master/patches/binutils-2.44/0002-sh-fdpic-pr31619.diff
+
+(The second of which is apparently a fix for 
+https://sourceware.org/bugzilla/show_bug.cgi?id=31619 and the fix was 
+bigger in 2.33.1, I dunno if the last hunk was dropped because it was no 
+longer needed or because it didn't apply...)
+
+Then our build scripts add a specs patch:
+
+https://codeberg.org/J-Core/librelane-vhdl-build/src/branch/master/01-toolchains.sh#L25
+
+And you have a patch to add __attribute__ naked:
+
+https://codeberg.org/J-Core/librelane-vhdl-build/src/branch/master/01-toolchains.sh#L212
+
+And then here's the NOMULT patch (which is not properly #ifdeffed but 
+chops out stuff when we build a second instance of the compiler, for the 
+j1-nomult target):
+
+https://codeberg.org/J-Core/librelane-vhdl-build/src/branch/master/01-toolchains.sh#L332
+
+That's 7 patches in total, 6 of which apply always and the 7th applies 
+only when we want to build a j1-nomult compiler. (Cleanup discussion 
+stalled because we never worked out what config tuple we wanted to 
+specify it, do we need to make it multilib, etc.)
+
+Rob
