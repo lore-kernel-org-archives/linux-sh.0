@@ -1,126 +1,204 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f170.google.com (mail-pg1-f170.google.com [209.85.215.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 852A93546C9
-	for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 07:06:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C71E35CBCB
+	for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 21:41:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783926385; cv=none; b=uWn7x+/pv9wDiBfymcC55BgO9oFwzIRC7A1l8iAqvFcUoFJvcmbGEqtD2Co79XgKLbso4MWVnQFduOF4KNZz9FjSidgu2ETZcgszJkYjGaIXYyH6a7cek5/bxLkr7tfhVbefUinvpEoRkFlMkq1cK4PJcQStVpcKwsu8rkhh4ZQ=
+	t=1783978897; cv=none; b=kN9UmlF21BJus75cfVW/OqXu0uCK1u7U62RQJdUHgB4FB4Gss3Y/P5ItHzr1aaa+8+Jpdm82FFgr2PtIx2Cfzs+yoAIE9w+MF81x8lOrKRAqOsO5XIx6j+N2O6aUdxmrLx7alA43hGKTmW5x+jomeH3Mv14M8K7aSkwTkgf+jEg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783926385; c=relaxed/simple;
-	bh=hCeMAFawqUQZK5TTzZSun5coCAr0fqMieti9jZqRw7A=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Hk4QAhmaGymLfXw5YM5/NpL+QhGooqSaoatwwsBDMxtsAsh2dKSDo4zignG0wjzSntomoJz8W0lw59vznpVV24jxlzBdKr2p7SotLRYOdepDWGBJirmI2UzwUG/zvgrn8ogjWdjD1qMG9jIJrDouKkYGoIhBF4VxruG3Qn4TPSA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TbglOxZr; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1783978897; c=relaxed/simple;
+	bh=W+EwZnLFKVj1h1rZe5PgiDii2PS5+D3kv689Az0HHns=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=HJplkz2Qrq0CXTlBnAUdn+DUMAzBypou1kxr6t7ECPkAkIFiqV2S/caNJajJx6Elf0NMtrOdO9Jm0bdfLLMtR5cEbtnrm2z+aBUQByIbf7/2rntapw6B0Sdcivp2RRJzKzpNG+RR7BddBJqOIl79tHH4xZpsMF3pWdFXhquLqSY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=bxhAkBTg; arc=none smtp.client-ip=209.85.215.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TbglOxZr"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3B9671F01561
-	for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 07:06:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1783926384;
-	bh=MaoMLNzrQSdilHBAPxvn7cFGYo6KCQRZiQrYmmdeSDg=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=TbglOxZrZc+8ho1Z2BcK0IhS3egNUSq0c5Yekd6nxDBKZQhVPPnrHghm6ItjXrvW8
-	 myYXJ6x6lFh7QX5ecmuh/vq7Qwc4aN3eTk8kvvmFs1d8wRQY7vrvAGfQK8ML7sZ4Yj
-	 k2WeLrzUteazWoeRwgjCCUDZJ2+PWRLzL1ozd2prV95l5uW3ki91C/T/KpUndY2saf
-	 +I1D4H0CLwMJu74DptZISJOOYDmUct5uhnCyLsAUx2HSrcK3fC5VZsBannIxQYZ7Rq
-	 GNjV6d1+IgN8jsegZ7lli5dbQ5dULez5iyH6dt+oUZzipNLSJVSN9n9AB3HDQyztKw
-	 NLk2nciGwWqEA==
-Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-493bc8fda98so16847305e9.0
-        for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 00:06:24 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RrE4YUpPMrP1Bc9FHV33S6HWbf/sSHVLUkLnFqOa+nrOqFZAcrxK70K1X6ADJ/hChG/DEQ2n64ZSA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxDW9Us/9h5PMSwBw6KGMe54JANbjZIBv5OJdEc693k4QSeWbjY
-	OfnO9lQQ6mgQ/LAwRFppvGN83eHfjpVLE3HS1rWybK1gNEr0LMARYfohyfGalcNKjXcjrnqDBep
-	IGtKpcUJGwQYfQNsmQT6xCz5SGbjmtqE=
-X-Received: by 2002:a05:6000:186c:b0:476:d13f:bb74 with SMTP id
- ffacd0b85a97d-47f2dc9bac8mr8770361f8f.15.1783926382749; Mon, 13 Jul 2026
- 00:06:22 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bxhAkBTg"
+Received: by mail-pg1-f170.google.com with SMTP id 41be03b00d2f7-c9aea40d799so138322a12.0
+        for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 14:41:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1783978895; x=1784583695; darn=vger.kernel.org;
+        h=content-disposition:content-type:mime-version:message-id:subject:cc
+         :to:from:date:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=v+T9ncXsQofNw87dQE5f2mF+cWycslyRRbsUPole34o=;
+        b=bxhAkBTgM1Mx7Bf736Hc1nC1egZvJeLXvKmQMFLJo+3SPFTYwFf/VaJt8XH0OYTyM+
+         +JfmQxiBQQzmHXTkrAw6f1kXNMTG8/eJkZCKcs2pBgMxnPUFbEGtESTM3i/R+mff8zhV
+         zxSy2gBju6ZGkobXHvJD11Q8MRW6TgAvRzFMDEKx/A4/Xl1e2WqZb/yKG6/t1YOA+GsK
+         ZjK84TSR7RS1gKf69dqNJqIr+E5lD+Nkm3MGF+8jqAcph1PbWMeOtrPC7wREaMJgy01n
+         o/CpfbtM0Q9pKQ3pwzJ+uItyiWGWoor6VdKhN4XCErlqVtz2JVOjiPPcoxtLwij8xcaj
+         0jkA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783978895; x=1784583695;
+        h=content-disposition:content-type:mime-version:message-id:subject:cc
+         :to:from:date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=v+T9ncXsQofNw87dQE5f2mF+cWycslyRRbsUPole34o=;
+        b=neS19fdcz003CBk2LOaYAV9era+xDo8jgRKBVsHNpOBmEourObzCzmEVCV13lSMcq1
+         lT1Wch7Dg9VF83CL+N1zno3lF/SJshiCRNzihheQyGwFnkbBntgXZvr9+pxpzUZhHwVi
+         ZSn20HJBjTIfPjpsgabuP/aAfEeBGqPv1En7hfr2oK3L3sZkdKZoER3k8bS4LwgEhnEn
+         zRGYtZCleLQedr3dDDH4EZx/BpxaMffMdNpm8cOMf/2ka94TvGYNw5QOFm6oi7py+iv0
+         JBjEEZdE0mcxeHlnuuc+pZL37oDSircPT9Z07rQHZ8ppBMRy4roMgzaXIzJ80B/cruOX
+         UXTQ==
+X-Forwarded-Encrypted: i=1; AHgh+RrorvqU8LYlYqERv4D+mnh1aRfl4kFX7XCywOmHTLksKrwVHJf9RtxgTB2NdbwDJxl6RZbvsKvhZg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwgjhLQxtfZZEkMHPRRjQDj3atgHi52ZWjWa/F4q+jLBORz3s4g
+	62pxXOVZoKi6GO0OzEjsIxQc2UiMcIBO9Cx5J1cm5RTifEGOnALALUJs
+X-Gm-Gg: AfdE7cmNDWWZ5eRsKNnGGCqtPQXwZGbsk1GeJHsUQ1InWW8eb6RI5rQo5b9hj8wug1u
+	LQEvkVlYvqCviUsYQO9VUZKMM5kYwStM3wPZgWjwRw+SpfADsOVdzfevj58Wa/tbQ04FGYdrym3
+	T4XLGYy18w43iSgKCtP5/SYTzCLEPEj9+vkkLzL51sDKqiQYH0mWEV2zqkDoS9MI0BowL/Y1B5Z
+	wcpyMfjSBolUrUeICnhh9TqUbIgguUAaXy6NiOKCM0BSSaRYP2sHkP3iNhDcM7Ynq8BVFL2FSWr
+	uWgan4Tgiaw9cS0AmZcv48qg4OPNncWcNf2u+3yhYhTiOe6sbljl9PStl9yOSVNsg3X1yMh/fxO
+	+FGiX8yiXn4HDmMbrcz1y2GAohgcF/UwninrL3tmfa+IYX0YQAJeTqw/ti/DQqJmHvwi6c18/nK
+	b1FinuYfpFGhZVcfNasc5SmOCZCZYczg+dpyggSnFD10jb8CurIkil1Ea86X/eBj4Y
+X-Received: by 2002:a05:6a20:431b:b0:3a3:327:c5c8 with SMTP id adf61e73a8af0-3c10fc4dac7mr11212239637.0.1783978895328;
+        Mon, 13 Jul 2026 14:41:35 -0700 (PDT)
+Received: from google.com ([2a00:79e0:2ebe:8:e15f:5d5f:580b:f2e9])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3118389d9bcsm62379929eec.20.2026.07.13.14.41.33
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 13 Jul 2026 14:41:34 -0700 (PDT)
+Date: Mon, 13 Jul 2026 14:41:31 -0700
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Linus Walleij <linusw@kernel.org>, 
+	Bartosz Golaszewski <brgl@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, 
+	Mark Brown <broonie@kernel.org>, jacopo mondi <jacopo@jmondi.org>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-gpio@vger.kernel.org
+Subject: [RESEND PATCH] sh: ecovec24: use static device properties to
+ describe the touchscreen
+Message-ID: <alUyZ2zVWCPhyHHX@google.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260707181957.433213175@kernel.org> <20260707190253.974626922@kernel.org>
-In-Reply-To: <20260707190253.974626922@kernel.org>
-From: Guo Ren <guoren@kernel.org>
-Date: Mon, 13 Jul 2026 15:06:10 +0800
-X-Gmail-Original-Message-ID: <CAJF2gTTjW0RfZsJmHVAqrRsHpK4cJ+01G_Kkytt=0Wpm4sZpkg@mail.gmail.com>
-X-Gm-Features: AUfX_mzuKA4JwmuMUWB774bzpkP7q4a7PrJvxtp8N1GWwrENQwGP0BULxiqlyqc
-Message-ID: <CAJF2gTTjW0RfZsJmHVAqrRsHpK4cJ+01G_Kkytt=0Wpm4sZpkg@mail.gmail.com>
-Subject: Re: [patch 06/18] riscv/syscall: Use syscall_enter_from_user_mode_randomize_stack()
-To: Thomas Gleixner <tglx@kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, 
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, linux-riscv@lists.infradead.org, 
-	Michael Ellerman <mpe@ellerman.id.au>, Shrikanth Hegde <sshegde@linux.ibm.com>, 
-	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>, 
-	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev, 
-	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org, x86@kernel.org, 
-	Mark Rutland <mark.rutland@arm.com>, Jinjie Ruan <ruanjinjie@huawei.com>, 
-	Andy Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>, 
-	Richard Henderson <richard.henderson@linaro.org>, Russell King <linux@armlinux.org.uk>, 
-	Catalin Marinas <catalin.marinas@arm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, 
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller <deller@gmx.de>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, 
-	Chris Zankel <chris@zankel.net>, linux-arm-kernel@lists.infradead.org, 
-	linux-alpha@vger.kernel.org, linux-csky@vger.kernel.org, 
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
-	linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, 
-	linux-um@lists.infradead.org, Arnd Bergmann <arnd@arndb.de>, 
-	Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>, 
-	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>, 
-	"David S. Miller" <davem@davemloft.net>, Andreas Larsson <andreas@gaisler.com>, 
-	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org, 
-	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org, 
-	linux-arch@vger.kernel.org, =?UTF-8?Q?Michal_Such=C3=A1nek?= <msuchanek@suse.de>, 
-	Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On Wed, Jul 8, 2026 at 3:06=E2=80=AFAM Thomas Gleixner <tglx@kernel.org> wr=
-ote:
->
-> syscall_enter_from_user_mode_randomize_stack() replaces
-> syscall_enter_from_user_mode() and the subsequent invocation of
-> add_random_kstack_offset().
->
-> The advantage is that it applies the stack randomization right after
-> enter_from_user_mode() and thereby avoids the overhead of get/put_cpu_var=
-()
-> as that code is invoked with interrupts disabled.
->
-> No functional change.
->
-> Signed-off-by: Thomas Gleixner <tglx@kernel.org>
-> Cc: Paul Walmsley <pjw@kernel.org>
-> Cc: Palmer Dabbelt <palmer@dabbelt.com>
-> Cc: linux-riscv@lists.infradead.org
-> ---
->  arch/riscv/kernel/traps.c |    5 +----
->  1 file changed, 1 insertion(+), 4 deletions(-)
->
-> --- a/arch/riscv/kernel/traps.c
-> +++ b/arch/riscv/kernel/traps.c
-> @@ -7,7 +7,6 @@
->  #include <linux/kernel.h>
->  #include <linux/init.h>
->  #include <linux/irqflags.h>
-> -#include <linux/randomize_kstack.h>
->  #include <linux/sched.h>
->  #include <linux/sched/debug.h>
->  #include <linux/sched/signal.h>
-> @@ -333,9 +332,7 @@ void do_trap_ecall_u(struct pt_regs *reg
->
->                 riscv_v_vstate_discard(regs);
->
-> -               syscall =3D syscall_enter_from_user_mode(regs, syscall);
-> -
-> -               add_random_kstack_offset();
-> +               syscall =3D syscall_enter_from_user_mode_randomize_stack(=
-regs, syscall);
+Convert the board to use static device properties instead of platform
+data to describe the touchscreen, so that support for platform data can
+be removed from tsc2007 driver (ecovec24 is the last board using this
+mechanism of describing tsc2007).
 
-Reviewed-by: Guo Ren <guoren@kernel.org>
+Device properties do not allow custom board methods, so the method for
+getting "pen down" state was removed (the driver is capable of working
+without it). If this functionality is needed proper pin control/gpio
+support needs to be implemented so that the same pin can serve as an
+input GPIO and an interrupt.
 
---=20
-Best Regards
- Guo Ren
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+---
+
+This is a resend of the patch I sent in August of 2024. My fault of not
+noticing reply from Adrian inquiring about potential negative impact
+from not having GPIO-based "pen down" detection. I believe this is fine,
+the "pen down" is an optional feature and the driver can detect the
+touches even when it is not specified. Additionally, this is an
+evaluation board, so user impact should be negligible.
+
+However the bigger question is whether ecovec24 board still relevant.
+According to my research it has the following regressions currently
+unfixed:
+
+5716fb9bd9c6 ("mmc: spi: Convert to use GPIO descriptors")
+  - MMC SPI device naming broken (broke SD fallback mode)
+
+9fda6693335c ("spi: sh-msiof: Convert to use GPIO descriptors")
+  - SPI CS polarity inverted (broke initialization on the MSIOF0 SPI bus)
+
+c2f9b05fd5c1 ("media: arch: sh: ecovec: Use new renesas-ceu camera driver")
+  - Camera array sentinel missing (causes out-of-bounds reads and
+    potentially kernel panics)
+  - Camera standby polarity inverted (enadvertently keeps cameras
+    permanently powered off)
+  - Camera disabled iby default (board defconfig points to a deleted
+    driver)
+
+They are ~6 years old, so I wonder: do people actually *actively* use
+this board with modern kernels? Should it simply be removed?
+
+Thanks!
+
+ arch/sh/boards/mach-ecovec24/setup.c | 38 ++++++++--------------------
+ 1 file changed, 11 insertions(+), 27 deletions(-)
+
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index a641e26f8fdf..110a77f903b5 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -26,6 +26,7 @@
+ #include <linux/platform_data/tmio.h>
+ #include <linux/platform_data/tsc2007.h>
+ #include <linux/platform_device.h>
++#include <linux/property.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+@@ -589,39 +590,21 @@ static struct platform_device keysc_device = {
+ /* TouchScreen */
+ #define IRQ0 evt2irq(0x600)
+ 
+-static int ts_get_pendown_state(struct device *dev)
+-{
+-	int val = 0;
+-	gpio_free(GPIO_FN_INTC_IRQ0);
+-	gpio_request(GPIO_PTZ0, NULL);
+-	gpio_direction_input(GPIO_PTZ0);
+-
+-	val = gpio_get_value(GPIO_PTZ0);
+-
+-	gpio_free(GPIO_PTZ0);
+-	gpio_request(GPIO_FN_INTC_IRQ0, NULL);
+-
+-	return val ? 0 : 1;
+-}
+-
+-static int ts_init(void)
+-{
+-	gpio_request(GPIO_FN_INTC_IRQ0, NULL);
+-	return 0;
+-}
++static const struct property_entry tsc2007_properties[] = {
++	PROPERTY_ENTRY_U32("ti,x-plate-ohms", 180),
++	{ }
++};
+ 
+-static struct tsc2007_platform_data tsc2007_info = {
+-	.model			= 2007,
+-	.x_plate_ohms		= 180,
+-	.get_pendown_state	= ts_get_pendown_state,
+-	.init_platform_hw	= ts_init,
++static const struct software_node tsc2007_swnode = {
++	.name = "tsc2007",
++	.properties = tsc2007_properties,
+ };
+ 
+ static struct i2c_board_info ts_i2c_clients = {
+ 	I2C_BOARD_INFO("tsc2007", 0x48),
+ 	.type		= "tsc2007",
+-	.platform_data	= &tsc2007_info,
+ 	.irq		= IRQ0,
++	.swnode		= &tsc2007_swnode,
+ };
+ 
+ static struct regulator_consumer_supply cn12_power_consumers[] =
+@@ -1242,8 +1225,9 @@ static int __init arch_setup(void)
+ 		gpio_direction_output(GPIO_PTF4, 1);
+ 
+ 		/* enable TouchScreen */
+-		i2c_register_board_info(0, &ts_i2c_clients, 1);
++		gpio_request(GPIO_FN_INTC_IRQ0, NULL);
+ 		irq_set_irq_type(IRQ0, IRQ_TYPE_LEVEL_LOW);
++		i2c_register_board_info(0, &ts_i2c_clients, 1);
+ 	}
+ 
+ 	/* enable CEU0 */
+-- 
+2.55.0.795.g602f6c329a-goog
+
+
+-- 
+Dmitry
