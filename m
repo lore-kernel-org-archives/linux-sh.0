@@ -1,103 +1,126 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D6ED30EF80;
-	Sun, 12 Jul 2026 12:27:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 852A93546C9
+	for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 07:06:24 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783859250; cv=none; b=AGWuvvYStXo2pW+9qaPLRvcjq4nkQE5iYv5JVe12Il7OKts5gcYtl/M+QfI7RwvqFRbMsIAIOIqoHfObvfN4IedyZRF9q4BPfxeEaG0Ly8J4PhlPbsWVZTHpQqcSLhrf6eUSBxiNhkC3BDqY5IyV6fgvZ0AaTN9upGewcggpVIo=
+	t=1783926385; cv=none; b=uWn7x+/pv9wDiBfymcC55BgO9oFwzIRC7A1l8iAqvFcUoFJvcmbGEqtD2Co79XgKLbso4MWVnQFduOF4KNZz9FjSidgu2ETZcgszJkYjGaIXYyH6a7cek5/bxLkr7tfhVbefUinvpEoRkFlMkq1cK4PJcQStVpcKwsu8rkhh4ZQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783859250; c=relaxed/simple;
-	bh=L/n4SezSWQATpwU6IRgOEvEHHHUBkOmPMdj879cIAIg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=cUQMPxh0avTP81eeAkmrlBuBq5EAhX/pAR1Su3Xw1/C2rB2SvGKn9pUk6Y7x4ydWHbY3cHGfeLQ9xOtDIXXUEPgm2Bq3trfu7oebV6YCq5Kef9NuSQO+ChWLV41CIikbYXp2uPSZ30HcfDua6IA/pB17roL3ioJASf+b9VREZLg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C37F81F000E9;
-	Sun, 12 Jul 2026 12:27:21 +0000 (UTC)
-Message-ID: <ec9e62c8-3c1d-4493-a876-82432575b381@linux-m68k.org>
-Date: Sun, 12 Jul 2026 22:27:19 +1000
+	s=arc-20240116; t=1783926385; c=relaxed/simple;
+	bh=hCeMAFawqUQZK5TTzZSun5coCAr0fqMieti9jZqRw7A=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=Hk4QAhmaGymLfXw5YM5/NpL+QhGooqSaoatwwsBDMxtsAsh2dKSDo4zignG0wjzSntomoJz8W0lw59vznpVV24jxlzBdKr2p7SotLRYOdepDWGBJirmI2UzwUG/zvgrn8ogjWdjD1qMG9jIJrDouKkYGoIhBF4VxruG3Qn4TPSA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TbglOxZr; arc=none smtp.client-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TbglOxZr"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3B9671F01561
+	for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 07:06:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1783926384;
+	bh=MaoMLNzrQSdilHBAPxvn7cFGYo6KCQRZiQrYmmdeSDg=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=TbglOxZrZc+8ho1Z2BcK0IhS3egNUSq0c5Yekd6nxDBKZQhVPPnrHghm6ItjXrvW8
+	 myYXJ6x6lFh7QX5ecmuh/vq7Qwc4aN3eTk8kvvmFs1d8wRQY7vrvAGfQK8ML7sZ4Yj
+	 k2WeLrzUteazWoeRwgjCCUDZJ2+PWRLzL1ozd2prV95l5uW3ki91C/T/KpUndY2saf
+	 +I1D4H0CLwMJu74DptZISJOOYDmUct5uhnCyLsAUx2HSrcK3fC5VZsBannIxQYZ7Rq
+	 GNjV6d1+IgN8jsegZ7lli5dbQ5dULez5iyH6dt+oUZzipNLSJVSN9n9AB3HDQyztKw
+	 NLk2nciGwWqEA==
+Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-493bc8fda98so16847305e9.0
+        for <linux-sh@vger.kernel.org>; Mon, 13 Jul 2026 00:06:24 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AHgh+RrE4YUpPMrP1Bc9FHV33S6HWbf/sSHVLUkLnFqOa+nrOqFZAcrxK70K1X6ADJ/hChG/DEQ2n64ZSA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxDW9Us/9h5PMSwBw6KGMe54JANbjZIBv5OJdEc693k4QSeWbjY
+	OfnO9lQQ6mgQ/LAwRFppvGN83eHfjpVLE3HS1rWybK1gNEr0LMARYfohyfGalcNKjXcjrnqDBep
+	IGtKpcUJGwQYfQNsmQT6xCz5SGbjmtqE=
+X-Received: by 2002:a05:6000:186c:b0:476:d13f:bb74 with SMTP id
+ ffacd0b85a97d-47f2dc9bac8mr8770361f8f.15.1783926382749; Mon, 13 Jul 2026
+ 00:06:22 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 02/10] m68k/coldfire: replace linux/gpio.h inclusions
-To: Arnd Bergmann <arnd@kernel.org>, linux-gpio@vger.kernel.org,
- Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Andrew Lunn <andrew@lunn.ch>,
- Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
- Gregory Clement <gregory.clement@bootlin.com>, Frank Li <Frank.Li@nxp.com>,
- Robert Jarzmik <robert.jarzmik@free.fr>,
- Krzysztof Kozlowski <krzk@kernel.org>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Hauke Mehrtens <hauke@hauke-m.de>, =?UTF-8?B?UmFmYcWCIE1pxYJlY2tp?=
- <zajec5@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Dmitry Torokhov <dmitry.torokhov@gmail.com>,
- Dominik Brodowski <linux@dominikbrodowski.net>,
- linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
- linux-samsung-soc@vger.kernel.org, patches@opensource.cirrus.com,
- linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
- linux-sh@vger.kernel.org, linux-input@vger.kernel.org,
- linux-sunxi@lists.linux.dev, linux-phy@lists.infradead.org,
- linux-rockchip@lists.infradead.org, linux-sound@vger.kernel.org,
- Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-References: <20260710211954.1373336-1-arnd@kernel.org>
- <20260710211954.1373336-3-arnd@kernel.org>
-Content-Language: en-US
-From: Greg Ungerer <gerg@linux-m68k.org>
-In-Reply-To: <20260710211954.1373336-3-arnd@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+References: <20260707181957.433213175@kernel.org> <20260707190253.974626922@kernel.org>
+In-Reply-To: <20260707190253.974626922@kernel.org>
+From: Guo Ren <guoren@kernel.org>
+Date: Mon, 13 Jul 2026 15:06:10 +0800
+X-Gmail-Original-Message-ID: <CAJF2gTTjW0RfZsJmHVAqrRsHpK4cJ+01G_Kkytt=0Wpm4sZpkg@mail.gmail.com>
+X-Gm-Features: AUfX_mzuKA4JwmuMUWB774bzpkP7q4a7PrJvxtp8N1GWwrENQwGP0BULxiqlyqc
+Message-ID: <CAJF2gTTjW0RfZsJmHVAqrRsHpK4cJ+01G_Kkytt=0Wpm4sZpkg@mail.gmail.com>
+Subject: Re: [patch 06/18] riscv/syscall: Use syscall_enter_from_user_mode_randomize_stack()
+To: Thomas Gleixner <tglx@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, 
+	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, linux-riscv@lists.infradead.org, 
+	Michael Ellerman <mpe@ellerman.id.au>, Shrikanth Hegde <sshegde@linux.ibm.com>, 
+	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>, 
+	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev, 
+	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org, x86@kernel.org, 
+	Mark Rutland <mark.rutland@arm.com>, Jinjie Ruan <ruanjinjie@huawei.com>, 
+	Andy Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>, 
+	Richard Henderson <richard.henderson@linaro.org>, Russell King <linux@armlinux.org.uk>, 
+	Catalin Marinas <catalin.marinas@arm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, 
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller <deller@gmx.de>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger <richard@nod.at>, 
+	Chris Zankel <chris@zankel.net>, linux-arm-kernel@lists.infradead.org, 
+	linux-alpha@vger.kernel.org, linux-csky@vger.kernel.org, 
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-um@lists.infradead.org, Arnd Bergmann <arnd@arndb.de>, 
+	Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>, 
+	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>, 
+	"David S. Miller" <davem@davemloft.net>, Andreas Larsson <andreas@gaisler.com>, 
+	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org, 
+	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org, 
+	linux-arch@vger.kernel.org, =?UTF-8?Q?Michal_Such=C3=A1nek?= <msuchanek@suse.de>, 
+	Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Hi Arnd,
-
-On 11/7/26 07:19, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
-> 
-> linux/gpio.h should no longer be used, convert these instead to
-> linux/gpio/legacy.h for coldfire.
-> 
-> Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-
-I have applied this one to the for-next branch of the m68knommu git tree.
-
-Thanks
-Greg
-
-
+On Wed, Jul 8, 2026 at 3:06=E2=80=AFAM Thomas Gleixner <tglx@kernel.org> wr=
+ote:
+>
+> syscall_enter_from_user_mode_randomize_stack() replaces
+> syscall_enter_from_user_mode() and the subsequent invocation of
+> add_random_kstack_offset().
+>
+> The advantage is that it applies the stack randomization right after
+> enter_from_user_mode() and thereby avoids the overhead of get/put_cpu_var=
+()
+> as that code is invoked with interrupts disabled.
+>
+> No functional change.
+>
+> Signed-off-by: Thomas Gleixner <tglx@kernel.org>
+> Cc: Paul Walmsley <pjw@kernel.org>
+> Cc: Palmer Dabbelt <palmer@dabbelt.com>
+> Cc: linux-riscv@lists.infradead.org
 > ---
->   arch/m68k/coldfire/device.c     | 2 +-
->   arch/m68k/include/asm/mcfgpio.h | 2 +-
->   2 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/m68k/coldfire/device.c b/arch/m68k/coldfire/device.c
-> index 1420bae0964f..9a0258acd998 100644
-> --- a/arch/m68k/coldfire/device.c
-> +++ b/arch/m68k/coldfire/device.c
-> @@ -12,7 +12,7 @@
->   #include <linux/init.h>
->   #include <linux/io.h>
->   #include <linux/spi/spi.h>
-> -#include <linux/gpio.h>
-> +#include <linux/gpio/legacy.h>
->   #include <linux/fec.h>
->   #include <linux/dmaengine.h>
->   #include <asm/traps.h>
-> diff --git a/arch/m68k/include/asm/mcfgpio.h b/arch/m68k/include/asm/mcfgpio.h
-> index 7103cfa4edb6..29726aa40eb6 100644
-> --- a/arch/m68k/include/asm/mcfgpio.h
-> +++ b/arch/m68k/include/asm/mcfgpio.h
-> @@ -16,7 +16,7 @@ int __mcfgpio_request(unsigned gpio);
->   void __mcfgpio_free(unsigned gpio);
->   
->   #ifdef CONFIG_GPIOLIB
-> -#include <linux/gpio.h>
-> +#include <linux/gpio/legacy.h>
->   #else
->   
->   /* our alternate 'gpiolib' functions */
+>  arch/riscv/kernel/traps.c |    5 +----
+>  1 file changed, 1 insertion(+), 4 deletions(-)
+>
+> --- a/arch/riscv/kernel/traps.c
+> +++ b/arch/riscv/kernel/traps.c
+> @@ -7,7 +7,6 @@
+>  #include <linux/kernel.h>
+>  #include <linux/init.h>
+>  #include <linux/irqflags.h>
+> -#include <linux/randomize_kstack.h>
+>  #include <linux/sched.h>
+>  #include <linux/sched/debug.h>
+>  #include <linux/sched/signal.h>
+> @@ -333,9 +332,7 @@ void do_trap_ecall_u(struct pt_regs *reg
+>
+>                 riscv_v_vstate_discard(regs);
+>
+> -               syscall =3D syscall_enter_from_user_mode(regs, syscall);
+> -
+> -               add_random_kstack_offset();
+> +               syscall =3D syscall_enter_from_user_mode_randomize_stack(=
+regs, syscall);
 
+Reviewed-by: Guo Ren <guoren@kernel.org>
+
+--=20
+Best Regards
+ Guo Ren
