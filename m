@@ -1,235 +1,155 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 637C93FA5EB
-	for <linux-sh@vger.kernel.org>; Tue, 14 Jul 2026 08:20:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 195763624C3
+	for <linux-sh@vger.kernel.org>; Tue, 14 Jul 2026 10:45:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784017230; cv=none; b=nXZMU/ObDaLBtQC20p9kl8RhwQQzkmsrZVnrznav+k5aOFVA7iweropxaaAfWfjFuKpgMzPHMhgmy3SKg06+MMq/9NLFVhy0K1D2Arz7g9H2ekI3WSElNYe8uE8Sfr2GqjBSTWLRb8aQs0GOsynz/iFwlBXmf4FtmjRMSJU3XdE=
+	t=1784025928; cv=none; b=AVNlfkq2EwNGR8huk8gjzKZyoN+ECoNSM2UqG41xFQGM7Ebx9UeJGn15QWxzKpG58zJAKIpZcZ+HsFY0oTFpgCen2udBXv6jpwEtOhQfjbTj031k2o8zCUfDKUsmMa68msfz0kZxkR+N7ZfwczhFryVrxMC/gaKQi4yEpDZyKp4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784017230; c=relaxed/simple;
-	bh=TGt1HFaW/THuzsrHNEcoHdyo6LaeCt1ApJr4+qFvNmI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=N2lK261Wc/hfQ3mTnBFfnWotHYg9Ant8grj0ri5RH4Dt1EnhtalMHM7z1T9HMI2vXCk5bY5SppNeyExl7zxFuTmBnsO43HMeIiNAr/pVpAWWiWDI9ptMFUvCOu7aIcydXisRDRgnuVEfYW7bXCrKVWkKpupWh91tjY3fV+tvN/Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=DKJ09ll/; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=kyKADJBo; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=DKJ09ll/; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=kyKADJBo; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
+	s=arc-20240116; t=1784025928; c=relaxed/simple;
+	bh=cqjwLKPmWQRZoIjhZmnnCuX6lPobdGKWZdx8AgbPR2Q=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=dZYgXzfyG+V2FGR0B0mZBubaOx7/3yQgmrdiQwL8IB502/C/93CAuRzu+oQGId5V7zwaHEh4WihVYNghPxeOaD7vHzh2ymDWs0nC5FsY8WlWkBgXfUj7AlgkwE6KnzqAHIhFDb+noKM/7P6v3dZ6w2Rbq48aC/Cs29klSBnSOMM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=R+Q2OSul; arc=none smtp.client-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="DKJ09ll/";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="kyKADJBo";
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="DKJ09ll/";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="kyKADJBo"
-Received: from kunlun.suse.cz (unknown [IPv6:2a07:de40:b306:2000::2])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (prime256v1) server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 5B37B77D67;
-	Tue, 14 Jul 2026 08:20:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1784017221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
-	b=DKJ09ll/zFwCXlbl6voF6Ew/i+nGfuIXvwr6+pPYyJYkjrugeEud/q+Ki5j7VPl5fqg4RU
-	7v0Fr5aEHfh6wFz8BRS8uap35P8g2QzVdrMcXNhwITMtJjhdQjQ/wGAESjusjginjvTIaB
-	s/IaH99ENQnMIs5WMPNIymEU1PqEzNQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1784017221;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
-	b=kyKADJBodi7qpCF8SOU3elSKX6/nsxl0ZSGyW3McIGkcmKNlth+AD/XvcaQdtO7s/xaBLW
-	/BdlcT2IZYRDreCA==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.de header.s=susede2_rsa header.b="DKJ09ll/";
-	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=kyKADJBo
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1784017221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
-	b=DKJ09ll/zFwCXlbl6voF6Ew/i+nGfuIXvwr6+pPYyJYkjrugeEud/q+Ki5j7VPl5fqg4RU
-	7v0Fr5aEHfh6wFz8BRS8uap35P8g2QzVdrMcXNhwITMtJjhdQjQ/wGAESjusjginjvTIaB
-	s/IaH99ENQnMIs5WMPNIymEU1PqEzNQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1784017221;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
-	b=kyKADJBodi7qpCF8SOU3elSKX6/nsxl0ZSGyW3McIGkcmKNlth+AD/XvcaQdtO7s/xaBLW
-	/BdlcT2IZYRDreCA==
-Date: Tue, 14 Jul 2026 10:20:20 +0200
-From: Michal =?iso-8859-1?Q?Such=E1nek?= <msuchanek@suse.de>
-To: Thomas Gleixner <tglx@kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Shrikanth Hegde <sshegde@linux.ibm.com>,
-	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	linux-riscv@lists.infradead.org,
-	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org,
-	x86@kernel.org, Mark Rutland <mark.rutland@arm.com>,
-	Jinjie Ruan <ruanjinjie@huawei.com>,
-	Andy Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Guo Ren <guoren@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Helge Deller <deller@gmx.de>,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="R+Q2OSul"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4921eed3fa2so35727615e9.0
+        for <linux-sh@vger.kernel.org>; Tue, 14 Jul 2026 03:45:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1784025925; x=1784630725; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=mpNtz8GlFERmeb7xa04S3bJbr2p9nAg4CTylYMAg3pE=;
+        b=R+Q2OSulpdKegXnWJELa4QZxJzb7UZxtD56b0dfLla11Ixug3J6JjOiF80fT2ZKREQ
+         lK0MAQ+UNt5UGYmYyMIsS9IMvUShZLuIrlhPqgCyIq1dfy5uZPgDDqdkqbL8CHMbd7aY
+         lvbf0femrczQgw3gnhDM4/Y0F0dU340NIC6fgirIM8GvH8cPflheulcxq8rAUhp5xMHS
+         BhBe355eJgAIvop3Ut0cNrvjqy5my/jwwnWAYykduslRwkEotDpFmcdvBEfDotCNjQHk
+         WvNnJqHeHYzCGd4pUh9HgLrxJEoQ4Ki0GEnIMnA6pchq5l5xN8wfwx3wRL+LvWWyFbIS
+         lepw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1784025925; x=1784630725;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=mpNtz8GlFERmeb7xa04S3bJbr2p9nAg4CTylYMAg3pE=;
+        b=pOkkOw1wLFLdx84Tdr5Yot5354Q6kGGGhxhPaB80CO6zqIL1cT9hGf4VnLoMaoqHyO
+         oRwfQDHa3sGfyhHPFUUU8ckm+gpKeMqWWew+iSuc5lZcZ6qhdvzUI9CNAt211N59qwgM
+         nspKPnrLDnFNhk5ehbHtH+ksCzI1h4phLD3AtvO/6gpeRRrhU/9m0RnLbm5T9pqqAPWr
+         CHeEpXglJyBLnGO3qHYpWwlHcw9D90ei2SbxqCrv6jhW0EVXeABOB3b5OQY/h5wr5e7+
+         +uqY52I0wgAmEBV80E5371aYKmxMxsdENYAFYUatB9gGOiN8AiCg49WjDF23ly64cFcY
+         GajA==
+X-Forwarded-Encrypted: i=1; AHgh+RqxSUGMpO0JYGtSNSHEFmvV6L+xAprsVHeio3ISzumdEmG/1Lttyb1ATwDhZfUWpWKDmxDLAJT8Bw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx+GX1KCF/laFbAyYrOnofu8KO0UVJWm55erO4LneQ5JMVl0EVS
+	wDqUWS7k/nKuAsqsYzFU9PJwdHC8nieTw6TnNfiBIaDVzidtm+yJA+E=
+X-Gm-Gg: AfdE7ckJOAcYrEbraNPymnAPPF1Zar3TSJgpt9d2V3uswBjmA74wbINPKkVf0gRuLVr
+	+bUhqvXkPV8OMqteLwYNsoCOAfBcoQdZythJ6aw+hDm5UouyTHnNwf9EQJAQuiiSoa/chdAV1k4
+	HxQ9vy8nJmaCZyU/uSbMnqowOxsjbVwCiP3UpeowuQv/Ft+EV03UA5TKZZ81xg48fVJ/rqkwnO9
+	eyj1NzXMIJqTKqX57Fi/G2mEm/gNC0pLCSNkWtQOVq+k+W9q9BDznpNG17um7Lr6NCH6ADtn4fg
+	QgdBYBCfGnKOry+DMi6XviUADLyLTkQayFhawkukS+VTMRODZ0DXvdI9Hdh6m95IdqOacfhOVTm
+	+JXH5yRoDunJNx1kuLY5l4lNrCCehCaBQMOeK9oTHsugJKBR6wHwpDCFHS2OSnuLdbmC+UMxWT1
+	oBAU7XdlSpcGgkZ99ai1eTyyqZIh4sCg2i3i4RUchOqrvRNm8veTCxk9RYv3TQ8gOOXr9y
+X-Received: by 2002:a05:600c:628f:b0:493:d1e0:a4f1 with SMTP id 5b1f17b1804b1-49538ff8272mr16763805e9.0.1784025924834;
+        Tue, 14 Jul 2026 03:45:24 -0700 (PDT)
+Received: from localhost ([2a02:810d:4a94:b300:bae1:d42b:869:1dc8])
+        by smtp.gmail.com with UTF8SMTPSA id 5b1f17b1804b1-4950a2edd6fsm66347595e9.11.2026.07.14.03.45.22
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 14 Jul 2026 03:45:23 -0700 (PDT)
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>,
+	Florian Fuchs <fuchsfl@gmail.com>,
 	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Richard Weinberger <richard@nod.at>,
-	Chris Zankel <chris@zankel.net>,
-	linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
-	linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-	Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
-	Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>,
-	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
-	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
-	linux-arch@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
-	linux-doc@vger.kernel.org
-Subject: Re: [patch 13/18] entry: Make trace_syscall_enter() return type bool
-Message-ID: <alXxRMjQsBas4AJv@kunlun.suse.cz>
-References: <20260707181957.433213175@kernel.org>
- <20260707190254.338083894@kernel.org>
- <ak5ySpil83TNWxeq@kunlun.suse.cz>
- <87se5tqkyp.ffs@fw13>
- <alDQ7isUKJFl8Va4@kunlun.suse.cz>
- <87a4rxqnar.ffs@fw13>
+	linux-kernel@vger.kernel.org
+Subject: [PATCH] sh: lib: Restore r4 in shift helpers
+Date: Tue, 14 Jul 2026 12:41:47 +0200
+Message-ID: <20260714104147.2016549-1-fuchsfl@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <87a4rxqnar.ffs@fw13>
-X-Spamd-Bar: +++++++++++++
-X-Rspamd-Queue-Id: 5B37B77D67
-X-Spam-Flag: YES
-X-Spam-Score: 13.02
-X-Spam-Level: *************
-X-Rspamd-Action: add header
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spamd-Result: default: False [13.02 / 50.00];
-	SPAM_FLAG(5.00)[];
-	NEURAL_SPAM_LONG(3.50)[1.000];
-	BAYES_HAM(-3.00)[100.00%];
-	HFILTER_HOSTNAME_UNKNOWN(2.50)[];
-	RDNS_NONE(2.00)[];
-	ONCE_RECEIVED(1.20)[];
-	HFILTER_HELO_IP_A(1.00)[kunlun.suse.cz];
-	NEURAL_SPAM_SHORT(0.83)[0.278];
-	HFILTER_HELO_NORES_A_OR_MX(0.30)[kunlun.suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmx.de];
-	FREEMAIL_CC(0.00)[vger.kernel.org,infradead.org,ellerman.id.au,linux.ibm.com,lists.ozlabs.org,kernel.org,lists.linux.dev,dabbelt.com,lists.infradead.org,arm.com,huawei.com,redhat.com,linaro.org,armlinux.org.uk,linux-m68k.org,alpha.franken.de,gmx.de,users.sourceforge.jp,nod.at,zankel.net,lists.linux-m68k.org,arndb.de,monstr.eu,davemloft.net,gaisler.com,lwn.net];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b306:2000::2:from];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_GT_50(0.00)[52];
-	MISSING_XM_UA(0.00)[];
-	RCVD_COUNT_ZERO(0.00)[0];
-	DKIM_TRACE(0.00)[suse.de:+];
-	R_RATELIMIT(0.00)[to_ip_from(RLs1yuyu6ywojxyk8y3ncu5g39)];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.de:dkim]
-X-Spam: Yes
 
-On Sat, Jul 11, 2026 at 10:33:16PM +0200, Thomas Gleixner wrote:
-> Michal!
-> 
-> On Fri, Jul 10 2026 at 13:01, Michal Suchánek wrote:
-> > On Wed, Jul 08, 2026 at 10:34:38PM +0200, Thomas Gleixner wrote:
-> >> does not make #2 magically go away. It's still the same problem whether
-> >> you like it or not.
-> >
-> > However, reading the syscall number from pt_regs only after
-> > syscall_enter_from_user_mode exits does.
-> 
-> That does not solve anything at all.
-> 
-> TBH, your communication style is annoying as hell. You fail to provide
-> any useful arguments and explanations despite me giving you a proper
-> analysis. And I'm absolutely tired of this.
-> 
-> So let me try again for _ONE_ last time to explain you why your ppc/s390
-> world view is broken and let's look at the current code (irrelevant
-> portions omitted).
-> 
-> static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsigned long work)
-> {
-> 	if (work & SYSCALL_WORK_SYSCALL_USER_DISPATCH) {
-> #1		if (syscall_user_dispatch(regs))
-> 			return -1L;
-> 	}
->         
-> 	if (work & (SYSCALL_WORK_SYSCALL_TRACE | SYSCALL_WORK_SYSCALL_EMU)) {
-> #2		ret = arch_ptrace_report_syscall_entry(regs);
-> 		if (ret || (work & SYSCALL_WORK_SYSCALL_EMU))
-> 			return -1L;
-> 	}
-> 
-> 	/* Do seccomp after ptrace, to catch any tracer changes. */
-> 	if (work & SYSCALL_WORK_SECCOMP) {
-> #3		ret = __secure_computing();
-> 		if (ret == -1L)
-> 			return ret;
-> 	}
-> 
-> 	/* Either of the above might have changed the syscall number */
-> #4	syscall = syscall_get_nr(current, regs);
-> 
-> 	if (unlikely(work & SYSCALL_WORK_SYSCALL_TRACEPOINT))
-> #5		syscall = trace_syscall_enter(regs, syscall);
-> 
->         return syscall;
-> }
-> 
-> #1) The user dispatch mechanism does not modify the syscall return
->     value, but it can rollback the syscall and tell the call site to
->     skip the invocation.
-> 
->     The mechanism used in upstream today is to return -1L as the syscall
->     number which makes the architecture specific entry code skip the
->     syscall and refrain from touching the return value.
-> 
-> #2) ptrace
-> 
->     ptrace can poke whatever it wants into the syscall number storage
->     via ptrace_set_syscall_info_entry() -> syscall_set_nr()
-> 
->     It does not set the return code.
-> 
->     It does not abort the syscall when the poked syscall number is -1L.
+Commit 940d4113f330 ("sh: New gcc support") added new shift helpers
+that use r4 as a scratch register while dispatching to the selected shift
+sequence. But, the helpers return without restoring r4. With GCC 17, the
+register allocator can keep a live value in r4 across the helper call.
+Clobbering it results in runtime data corruption. Restore r4 before
+jumping to the selected shift sequence.
 
-Indeed, it does not abort on -1 syscall number anymore although there
-are still comments around that claim that setting the syscall number to
--1 is special.
+Fixes: 940d4113f330 ("sh: New gcc support")
+Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+---
+Without the patch, the early boot on e.g J2 gets a kernel BUG at
+mm/percpu.c:2604 / "can't handle more than one group."
+        PCPU_SETUP_BUG_ON(pcpu_verify_alloc_info(ai) < 0);
+As the static condition in mm/percpu-km.c wasn't true:
+        ai->nr_groups != 1
+nr_groups contained 60 - the clobbered value from the shift helper.
 
-Thanks
+This change was tested on the J2 core on the Mimas v2 board. It can
+theoretically also target other SH2 devices, but I don't have any other
+than J2 sadly.
 
-Michal
+The flow of operations matches now the state in the libgcc, see also
+in gcc: libgcc/config/sh/lib1funcs.S
+---
+ arch/sh/lib/ashlsi3.S | 3 ++-
+ arch/sh/lib/ashrsi3.S | 3 ++-
+ arch/sh/lib/lshrsi3.S | 3 ++-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/lib/ashlsi3.S b/arch/sh/lib/ashlsi3.S
+index 4df4401cdf31..73a9d709b169 100644
+--- a/arch/sh/lib/ashlsi3.S
++++ b/arch/sh/lib/ashlsi3.S
+@@ -63,8 +63,9 @@ __ashlsi3_r0:
+ 	mova	ashlsi3_table,r0
+ 	mov.b	@(r0,r4),r4
+ 	add	r4,r0
++	mov.l	@r15+,r4
+ 	jmp	@r0
+-	mov.l	@r15+,r0
++	mov	r4,r0
+ 
+ 	.align	2
+ ashlsi3_table:
+diff --git a/arch/sh/lib/ashrsi3.S b/arch/sh/lib/ashrsi3.S
+index bf3c4e03e6ff..9962d7c587df 100644
+--- a/arch/sh/lib/ashrsi3.S
++++ b/arch/sh/lib/ashrsi3.S
+@@ -62,8 +62,9 @@ __ashrsi3_r0:
+ 	mova	ashrsi3_table,r0
+ 	mov.b	@(r0,r4),r4
+ 	add	r4,r0
++	mov.l	@r15+,r4
+ 	jmp	@r0
+-	mov.l	@r15+,r0
++	mov	r4,r0
+ 
+ 	.align	2
+ ashrsi3_table:
+diff --git a/arch/sh/lib/lshrsi3.S b/arch/sh/lib/lshrsi3.S
+index b79b8170061f..9218f0bad1cc 100644
+--- a/arch/sh/lib/lshrsi3.S
++++ b/arch/sh/lib/lshrsi3.S
+@@ -62,8 +62,9 @@ __lshrsi3_r0:
+ 	mova	lshrsi3_table,r0
+ 	mov.b	@(r0,r4),r4
+ 	add	r4,r0
++	mov.l	@r15+,r4
+ 	jmp	@r0
+-	mov.l	@r15+,r0
++	mov	r4,r0
+ 
+ 	.align	2
+ lshrsi3_table:
+-- 
+2.43.0
+
