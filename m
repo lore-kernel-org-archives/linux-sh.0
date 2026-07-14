@@ -1,202 +1,235 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38BC53F8222
-	for <linux-sh@vger.kernel.org>; Tue, 14 Jul 2026 08:14:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 637C93FA5EB
+	for <linux-sh@vger.kernel.org>; Tue, 14 Jul 2026 08:20:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784016874; cv=none; b=eD3XHe5wCGkaAJsRSsjoOq3egYhZM+HOL7AKaf8FKDCaOwcUavDz2VvHlQpC5O9r8rtSfDLbQ8wMWOfCaQZp3cGBHt7QC4tH9vLfyH4n/zhA4ou9yheeuus0Mi9xf1R9njVrOXfzXC5VdM/Ng+8+ZEz5j89PANrx9lIFkhnaeWQ=
+	t=1784017230; cv=none; b=nXZMU/ObDaLBtQC20p9kl8RhwQQzkmsrZVnrznav+k5aOFVA7iweropxaaAfWfjFuKpgMzPHMhgmy3SKg06+MMq/9NLFVhy0K1D2Arz7g9H2ekI3WSElNYe8uE8Sfr2GqjBSTWLRb8aQs0GOsynz/iFwlBXmf4FtmjRMSJU3XdE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784016874; c=relaxed/simple;
-	bh=FwIE6h5axno7hqS5eT8TYujn4ItIz7qxJmCm/rU05g4=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=cMulJqRoOHQN9faqwER+NR+zeXH9DGnFzj0rr0JPLUgfz2YT4oUf1av+AORU2BlLAmLpnIKNak2RqkIs2XhqbGIGzy1x/7BR8ForknHiOS2Ots5MZit+zBxVHSTaLapmzjKZ3qrjhlRuB5AJ5+LfMutpgbVOHAabAjC1TGbAXLs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=cuUtpUqF; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1784017230; c=relaxed/simple;
+	bh=TGt1HFaW/THuzsrHNEcoHdyo6LaeCt1ApJr4+qFvNmI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=N2lK261Wc/hfQ3mTnBFfnWotHYg9Ant8grj0ri5RH4Dt1EnhtalMHM7z1T9HMI2vXCk5bY5SppNeyExl7zxFuTmBnsO43HMeIiNAr/pVpAWWiWDI9ptMFUvCOu7aIcydXisRDRgnuVEfYW7bXCrKVWkKpupWh91tjY3fV+tvN/Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=DKJ09ll/; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=kyKADJBo; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=DKJ09ll/; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=kyKADJBo; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="cuUtpUqF"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=TxwFfiSF0lVaZHjzmi2rg1JthV/YuSzhwhpkPB4Je4w=; t=1784016869;
-	x=1784621669; b=cuUtpUqFFV06kBw/4zpjmH9C9RVcfkdkd50ifD2UQ0k3Uyf2zRP7IyTsUaj0P
-	Zt4JBINLmA8hxLHk68Q1l49C0s+tzfPuu6vKPFmTh3ORXRy9XyhlSe/7w33/AtWve8mnZ8qODrpPO
-	ED/lZnevAlYSqd7o9/ug0ap0A2x+sWOFXykWHbb9rb1M2/FJw1+1vk5BwUxvhzCjzjFgcZAExhtCQ
-	saCuagvtjw+1d+so4U0XJoDdPjmG7McJ+/RKjSgqTIFw9z1TdUuGZA6EpIiVCwDr0ngsjwYFSBCNO
-	lciVBA2shqcdITQnD1a1x+H+l6XmEG0Qc1ZvPTYb8Ohu4AF3jw==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wjYHV-00000003Tf3-001n; Tue, 14 Jul 2026 10:14:21 +0200
-Received: from p57bd94c1.dip0.t-ipconnect.de ([87.189.148.193] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wjYHU-00000000QOT-3Fjz; Tue, 14 Jul 2026 10:14:20 +0200
-Message-ID: <3eeb0f60a3f133bfd3ab5467b35045c904b8a9e8.camel@physik.fu-berlin.de>
-Subject: Re: Toybox make root no longer works as expected
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Florian Fuchs <fuchsfl@gmail.com>
-Cc: Rob Landley <rob@landley.net>, linux-sh <linux-sh@vger.kernel.org>, 
- Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 14 Jul 2026 10:14:20 +0200
-In-Reply-To: <alXpoJOjg5HrSvhE@lithos>
-References: 
-	<359d107fd9fe92a55e77be84c26d9ac86112fe13.camel@physik.fu-berlin.de>
-	 <71c6a925c748fb3c9c2af30362387f0e562c0f6f.camel@physik.fu-berlin.de>
-	 <alXpoJOjg5HrSvhE@lithos>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="DKJ09ll/";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="kyKADJBo";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="DKJ09ll/";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="kyKADJBo"
+Received: from kunlun.suse.cz (unknown [IPv6:2a07:de40:b306:2000::2])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange ECDHE (prime256v1) server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5B37B77D67;
+	Tue, 14 Jul 2026 08:20:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1784017221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
+	b=DKJ09ll/zFwCXlbl6voF6Ew/i+nGfuIXvwr6+pPYyJYkjrugeEud/q+Ki5j7VPl5fqg4RU
+	7v0Fr5aEHfh6wFz8BRS8uap35P8g2QzVdrMcXNhwITMtJjhdQjQ/wGAESjusjginjvTIaB
+	s/IaH99ENQnMIs5WMPNIymEU1PqEzNQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1784017221;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
+	b=kyKADJBodi7qpCF8SOU3elSKX6/nsxl0ZSGyW3McIGkcmKNlth+AD/XvcaQdtO7s/xaBLW
+	/BdlcT2IZYRDreCA==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.de header.s=susede2_rsa header.b="DKJ09ll/";
+	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=kyKADJBo
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1784017221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
+	b=DKJ09ll/zFwCXlbl6voF6Ew/i+nGfuIXvwr6+pPYyJYkjrugeEud/q+Ki5j7VPl5fqg4RU
+	7v0Fr5aEHfh6wFz8BRS8uap35P8g2QzVdrMcXNhwITMtJjhdQjQ/wGAESjusjginjvTIaB
+	s/IaH99ENQnMIs5WMPNIymEU1PqEzNQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1784017221;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=j1nzoIiIS1i6/8kifcmUM+0AdKBs7HiZlyka0H+4a9w=;
+	b=kyKADJBodi7qpCF8SOU3elSKX6/nsxl0ZSGyW3McIGkcmKNlth+AD/XvcaQdtO7s/xaBLW
+	/BdlcT2IZYRDreCA==
+Date: Tue, 14 Jul 2026 10:20:20 +0200
+From: Michal =?iso-8859-1?Q?Such=E1nek?= <msuchanek@suse.de>
+To: Thomas Gleixner <tglx@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Shrikanth Hegde <sshegde@linux.ibm.com>,
+	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>,
+	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev,
+	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
+	linux-riscv@lists.infradead.org,
+	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org,
+	x86@kernel.org, Mark Rutland <mark.rutland@arm.com>,
+	Jinjie Ruan <ruanjinjie@huawei.com>,
+	Andy Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Guo Ren <guoren@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Helge Deller <deller@gmx.de>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Richard Weinberger <richard@nod.at>,
+	Chris Zankel <chris@zankel.net>,
+	linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
+	linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+	linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
+	Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
+	Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>,
+	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
+	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
+	linux-arch@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
+	linux-doc@vger.kernel.org
+Subject: Re: [patch 13/18] entry: Make trace_syscall_enter() return type bool
+Message-ID: <alXxRMjQsBas4AJv@kunlun.suse.cz>
+References: <20260707181957.433213175@kernel.org>
+ <20260707190254.338083894@kernel.org>
+ <ak5ySpil83TNWxeq@kunlun.suse.cz>
+ <87se5tqkyp.ffs@fw13>
+ <alDQ7isUKJFl8Va4@kunlun.suse.cz>
+ <87a4rxqnar.ffs@fw13>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <87a4rxqnar.ffs@fw13>
+X-Spamd-Bar: +++++++++++++
+X-Rspamd-Queue-Id: 5B37B77D67
+X-Spam-Flag: YES
+X-Spam-Score: 13.02
+X-Spam-Level: *************
+X-Rspamd-Action: add header
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spamd-Result: default: False [13.02 / 50.00];
+	SPAM_FLAG(5.00)[];
+	NEURAL_SPAM_LONG(3.50)[1.000];
+	BAYES_HAM(-3.00)[100.00%];
+	HFILTER_HOSTNAME_UNKNOWN(2.50)[];
+	RDNS_NONE(2.00)[];
+	ONCE_RECEIVED(1.20)[];
+	HFILTER_HELO_IP_A(1.00)[kunlun.suse.cz];
+	NEURAL_SPAM_SHORT(0.83)[0.278];
+	HFILTER_HELO_NORES_A_OR_MX(0.30)[kunlun.suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmx.de];
+	FREEMAIL_CC(0.00)[vger.kernel.org,infradead.org,ellerman.id.au,linux.ibm.com,lists.ozlabs.org,kernel.org,lists.linux.dev,dabbelt.com,lists.infradead.org,arm.com,huawei.com,redhat.com,linaro.org,armlinux.org.uk,linux-m68k.org,alpha.franken.de,gmx.de,users.sourceforge.jp,nod.at,zankel.net,lists.linux-m68k.org,arndb.de,monstr.eu,davemloft.net,gaisler.com,lwn.net];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b306:2000::2:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCPT_COUNT_GT_50(0.00)[52];
+	MISSING_XM_UA(0.00)[];
+	RCVD_COUNT_ZERO(0.00)[0];
+	DKIM_TRACE(0.00)[suse.de:+];
+	R_RATELIMIT(0.00)[to_ip_from(RLs1yuyu6ywojxyk8y3ncu5g39)];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.de:dkim]
+X-Spam: Yes
 
-Hi Florian,
+On Sat, Jul 11, 2026 at 10:33:16PM +0200, Thomas Gleixner wrote:
+> Michal!
+> 
+> On Fri, Jul 10 2026 at 13:01, Michal Suchánek wrote:
+> > On Wed, Jul 08, 2026 at 10:34:38PM +0200, Thomas Gleixner wrote:
+> >> does not make #2 magically go away. It's still the same problem whether
+> >> you like it or not.
+> >
+> > However, reading the syscall number from pt_regs only after
+> > syscall_enter_from_user_mode exits does.
+> 
+> That does not solve anything at all.
+> 
+> TBH, your communication style is annoying as hell. You fail to provide
+> any useful arguments and explanations despite me giving you a proper
+> analysis. And I'm absolutely tired of this.
+> 
+> So let me try again for _ONE_ last time to explain you why your ppc/s390
+> world view is broken and let's look at the current code (irrelevant
+> portions omitted).
+> 
+> static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsigned long work)
+> {
+> 	if (work & SYSCALL_WORK_SYSCALL_USER_DISPATCH) {
+> #1		if (syscall_user_dispatch(regs))
+> 			return -1L;
+> 	}
+>         
+> 	if (work & (SYSCALL_WORK_SYSCALL_TRACE | SYSCALL_WORK_SYSCALL_EMU)) {
+> #2		ret = arch_ptrace_report_syscall_entry(regs);
+> 		if (ret || (work & SYSCALL_WORK_SYSCALL_EMU))
+> 			return -1L;
+> 	}
+> 
+> 	/* Do seccomp after ptrace, to catch any tracer changes. */
+> 	if (work & SYSCALL_WORK_SECCOMP) {
+> #3		ret = __secure_computing();
+> 		if (ret == -1L)
+> 			return ret;
+> 	}
+> 
+> 	/* Either of the above might have changed the syscall number */
+> #4	syscall = syscall_get_nr(current, regs);
+> 
+> 	if (unlikely(work & SYSCALL_WORK_SYSCALL_TRACEPOINT))
+> #5		syscall = trace_syscall_enter(regs, syscall);
+> 
+>         return syscall;
+> }
+> 
+> #1) The user dispatch mechanism does not modify the syscall return
+>     value, but it can rollback the syscall and tell the call site to
+>     skip the invocation.
+> 
+>     The mechanism used in upstream today is to return -1L as the syscall
+>     number which makes the architecture specific entry code skip the
+>     syscall and refrain from touching the return value.
+> 
+> #2) ptrace
+> 
+>     ptrace can poke whatever it wants into the syscall number storage
+>     via ptrace_set_syscall_info_entry() -> syscall_set_nr()
+> 
+>     It does not set the return code.
+> 
+>     It does not abort the syscall when the poked syscall number is -1L.
 
-On Tue, 2026-07-14 at 09:47 +0200, Florian Fuchs wrote:
-> > OK, for some reason it works now. Unfortunately, the toolchain doesn't =
-like the current kernel:
-> >=20
-> >   CC      net/ipv4/inetpeer.o
-> > during RTL pass: final
-> > In file included from kernel/nstree.c:8:
-> > kernel/nstree.c: In function '__se_sys_listns':
-> > ./include/linux/syscalls.h:261:9: internal compiler error: in change_ad=
-dress_1, at emit-rtl.c:2275
-> >   261 |         }                                                      =
-         \
-> >       |         ^
-> > ./include/linux/syscalls.h:236:9: note: in expansion of macro '__SYSCAL=
-L_DEFINEx'
-> >   236 |         __SYSCALL_DEFINEx(x, sname, __VA_ARGS__)
-> >       |         ^~~~~~~~~~~~~~~~~
-> > ./include/linux/syscalls.h:228:36: note: in expansion of macro 'SYSCALL=
-_DEFINEx'
-> >   228 | #define SYSCALL_DEFINE4(name, ...) SYSCALL_DEFINEx(4, _##name, =
-__VA_ARGS__)
-> >       |                                    ^~~~~~~~~~~~~~~
-> > kernel/nstree.c:763:1: note: in expansion of macro 'SYSCALL_DEFINE4'
-> >   763 | SYSCALL_DEFINE4(listns, const struct ns_id_req __user *, req,
-> >       | ^~~~~~~~~~~~~~~
-> > Please submit a full bug report,
-> > with preprocessed source if appropriate.
-> > See <https://gcc.gnu.org/bugs/> for instructions.
-> > {standard input}: Assembler messages:
-> > {standard input}: Warning: end of file not at end of a line; newline in=
-serted
-> > {standard input}:1592: Error: missing operand
-> > {standard input}:1592: Error: invalid operands for opcode
-> > {standard input}:976: Error: displacement to undefined symbol .L339 ove=
-rflows 12-bit field
-> > {standard input}:1014: Error: displacement to undefined symbol .L459 ov=
-erflows 12-bit field
-> > {standard input}:1028: Error: displacement to undefined symbol .L340 ov=
-erflows 12-bit field
-> > {standard input}:1040: Error: displacement to undefined symbol .L461 ov=
-erflows 12-bit field
-> > {standard input}:1060: Error: displacement to undefined symbol .L462 ov=
-erflows 12-bit field
-> > {standard input}:1082: Error: displacement to undefined symbol .L463 ov=
-erflows 12-bit field
-> > {standard input}:1100: Error: displacement to undefined symbol .L252 ov=
-erflows 12-bit field
-> > {standard input}:1201: Error: displacement to undefined symbol .L286 ov=
-erflows 12-bit field
-> > {standard input}:1211: Error: displacement to undefined symbol .L468 ov=
-erflows 12-bit field
-> > {standard input}:1221: Error: displacement to undefined symbol .L298 ov=
-erflows 12-bit field
-> > {standard input}:1234: Error: displacement to undefined symbol .L469 ov=
-erflows 12-bit field
-> > {standard input}:1256: Error: displacement to undefined symbol .L349 ov=
-erflows 12-bit field
-> > {standard input}:1341: Error: displacement to undefined symbol .L314 ov=
-erflows 12-bit field
-> > {standard input}:1488: Error: displacement to undefined symbol .L454 ov=
-erflows 8-bit field=20
-> > {standard input}:1498: Error: displacement to undefined symbol .L471 ov=
-erflows 8-bit field=20
-> > make[3]: *** [scripts/Makefile.build:289: kernel/nstree.o] Error 1
-> > make[3]: *** Waiting for unfinished jobs....
-> >=20
-> > Adrian
->=20
-> I also crafted a bit with gcc-17, and my first issue was a duplicate
-> symbols (LPCS0) compiling libgcc like in
-> https://gcc.gnu.org/bugzilla/show_bug.cgi?id=3D89012 I could only work
-> around with explicitly using O1 instead of O2 in INTERNAL_CFLAGS of gcc.
->=20
-> And errors with libbacktrace, I worked around by --enable-languages=3Dc
->=20
-> I got gcc to not ICE, but it then fails with invalid assembler thats why
-> I became suspicious about the asm in question. turns out, delcaring the
-> adresses as offsetable, seems to "fix" the ICE and compile and work for
-> fdpic, means it is maybe not necessarily only a GCC issue.
->=20
-> diff --git a/arch/sh/include/asm/uaccess_32.h b/arch/sh/include/asm/uacce=
-ss_32.h
-> index 5d7ddc092afd..cef40414bfb1 100644
-> --- a/arch/sh/include/asm/uaccess_32.h
-> +++ b/arch/sh/include/asm/uaccess_32.h
-> @@ -92,7 +92,7 @@ __asm__ __volatile__( \
->  	".long	1b + 2, 3b\n\t" \
->  	".previous" \
->  	:"=3D&r" (err), "=3D&r" (x) \
-> -	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-> +	:"o" (__m(addr)), "i" (-EFAULT), "0" (err)); })
->  #else
->  #define __get_user_u64(x, addr, err) \
->  ({ \
-> @@ -116,7 +116,7 @@ __asm__ __volatile__( \
->  	".long	1b + 2, 3b\n\t" \
->  	".previous" \
->  	:"=3D&r" (err), "=3D&r" (x) \
-> -	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-> +	:"o" (__m(addr)), "i" (-EFAULT), "0" (err)); })
->  #endif
-> =20
->  #define __put_user_size(x,ptr,size,retval)		\
-> @@ -196,7 +196,7 @@ __asm__ __volatile__( \
->  	".long	1b, 3b\n\t" \
->  	".previous" \
->  	: "=3Dr" (retval) \
-> -	: "r" (val), "m" (__m(addr)), "i" (-EFAULT), "0" (retval) \
-> +	: "r" (val), "o" (__m(addr)), "i" (-EFAULT), "0" (retval) \
->          : "memory"); })
->  #else
->  #define __put_user_u64(val,addr,retval) \
-> @@ -218,7 +218,7 @@ __asm__ __volatile__( \
->  	".long	1b, 3b\n\t" \
->  	".previous" \
->  	: "=3Dr" (retval) \
-> -	: "r" (val), "m" (__m(addr)), "i" (-EFAULT), "0" (retval) \
-> +	: "r" (val), "o" (__m(addr)), "i" (-EFAULT), "0" (retval) \
->          : "memory"); })
->  #endif
-> =20
+Indeed, it does not abort on -1 syscall number anymore although there
+are still comments around that claim that setting the syscall number to
+-1 is special.
 
-Thanks a lot for looking into this, I appreciate the help!
+Thanks
 
-Did you manage to build a J2 toolchain using GCC 17? I have not looked
-into it myself yet due to time constraints, but I would like to switch
-to a newer compiler to build test kernels for my J2.
-
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Michal
