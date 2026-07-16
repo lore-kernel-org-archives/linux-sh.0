@@ -1,145 +1,109 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f43.google.com (mail-wr1-f43.google.com [209.85.221.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF42742D74D;
-	Thu, 16 Jul 2026 17:05:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32C4B372B3B
+	for <linux-sh@vger.kernel.org>; Thu, 16 Jul 2026 17:52:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784221517; cv=none; b=iA1OVMNabSfKTWZcpN7VBh7uLdc5KCTGHbneX/E8zR0DJHTN5ge4JVkoba82cKOCVpw1y95EoM5bL4f19j2irkjhLDxd9RQkBTexfhxRdVfQngDe8E2BMv6Ns5HgswU3bQp3EGMW/8sht1AX2SoENRpwT9ZDK9UjlvDZnfSqaGs=
+	t=1784224333; cv=none; b=sg9yWYum1vj8Pr6YUEy8HyfJWLtHfakaUFQFEEC1Y2hWVoX5yb75616MQ4tdigboUN2JCvwavVj35OgPtbv9HNs1jM+XQaP6pkatHQAUixvK7FXYA4xlIcBKvJC/9cWcqWTUGcf0CMJEBQLaB4X7IHdzys8n4R0tDCCrmJU4IUU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784221517; c=relaxed/simple;
-	bh=EMZSHhUc+YunHSTZZcowO/4q90CmY0vTHxDeMpviXEM=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=k/YHQc3r56zmsylh0zon/lcXUa5GqGU7y7C4u+yQKbCKZCSAgPbz7USFkGgiQejOyyKfPSYuHvnV2C+6NfuBr3aIK/rsPSX2t+7YIR2X1B+7b2FtV00catM230WjIZnXl5JLdbg6KbJx5V4CQW0RUmMoogxLl2ekmiEKQ6b2bi8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=h0DgAXrF; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1784224333; c=relaxed/simple;
+	bh=J6v4npz3OThd8NQjBNodgNvNGgFRWZH0AmcNMYfCyjc=;
+	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=tFrEvWIeRgLuyg6In0jsrSVHwKNZEX+yvtTFRgfiz0HvZu8lTikKeD1l3p6GybidPvR4/onptd/qkT8XzKc5XFI6xuExCIP13H55iX6U4MuuA9WHc/RA4lH+Ped4dWTuFsIgteARA1Myum8HMrGxE/3i3548kIfOJGeQbWRm8R0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ITU6MBCT; arc=none smtp.client-ip=209.85.221.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="h0DgAXrF"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=G8gFY350Tuhiq3xDoixGEqr0Bd8U2Cik1qGMaPjrd94=; t=1784221512;
-	x=1784826312; b=h0DgAXrF1XIpgrQMjyJ7NQJcdzNxnSk26V/JPxLp4W20G3xRLzgaTdGQhQW6L
-	VPrAd2CAJm6lkG1YTIi77ZLzYm8H8U1EeOIlnRwP89Otkg8b602XxrNxoSZ3CgwTUP5zvl24faTVd
-	nLzNWn2p0PkP4dE3CaW9XeEh+9e6ZcUKDdOQovOtBVBw0irVs1xcJyuVOOCycKESHLOWJxXqV9mor
-	h2YD5h0bVM/5k1EiPojcXXyMIiujrIEhoODnWP02bsfPntolIITKNIgZeDC+bPPeXwndZYXMaTm1a
-	EQBv8Nn8Cj0yq39/FMtpkYEWBXDD9xI/Ty1q4W1hi5EqfLBhWg==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wkPWC-000000043N1-1X6R; Thu, 16 Jul 2026 19:05:04 +0200
-Received: from p5dc558fe.dip0.t-ipconnect.de ([93.197.88.254] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wkPWC-00000000Eep-0SiY; Thu, 16 Jul 2026 19:05:04 +0200
-Message-ID: <c4177b44450a909ae8dad60da39523f14b5f2005.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ITU6MBCT"
+Received: by mail-wr1-f43.google.com with SMTP id ffacd0b85a97d-4629051c9d1so2208762f8f.2
+        for <linux-sh@vger.kernel.org>; Thu, 16 Jul 2026 10:52:12 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1784224330; x=1784829130; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:subject:cc:to:from:date:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=d9HnM57cPoFNZBFEZlPJlObGF0jJpBNUfGKI2DBSN2g=;
+        b=ITU6MBCTmY8cCiarH4sBrVD+51WCwM3zv7082fKRygB7cSBDc/7nx95vfc+fDD+QCh
+         N4/w/M2sjFhgn8LNLDqosve+RStW7SVvgYbd7Mp3r+2hQQ+9K5XAlL0cLLtPA6HyTB6k
+         lPxuFTGtDJeBqxZjs3ivizSFWu6QcDQ8hb1IyER4km+yVKYDCgNFgodz6A2zWr1yS4/V
+         pXUBfTIZMEZlD3kRaCnC9rMCaSKvWAcea91gMgfrqlAo0hObYhpTJXE1tyxfSR5KSkG+
+         0Q298cYFyE6I3OKIx0HMCFOjio1bdx8z/M9X7Hxg+FXfuoGEJifj3hLDXNphESAdRsRR
+         XYRQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1784224330; x=1784829130;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=d9HnM57cPoFNZBFEZlPJlObGF0jJpBNUfGKI2DBSN2g=;
+        b=qWp1VAS7SxGRSfs0r2f55ZMT49Qgjb6hrY0N7VPlSpYzHkOoWnNHgg9OFtnL0Bp43O
+         8PKHEZ2R9Ly0PGcO0bWDf733D4i/ve0sVP1fvdMYz4LXZfinKPLbmv1Ha99bYf412tch
+         zuoQz+y/oAxSwr2tiZOULh0FORa9LFi4WTJdvPKucqhjGqbfPjp9TQMCGogS786Iz9X7
+         ov73SOn4e9Zk0/AbZ7/IkGV/jf/l3TE+f7VAO3XsG6e/38dIDBToA2GThPe2+iqYEMnG
+         WgvjXAXUNixKZyUL4ziDjwD0KAMfMmHFRBrw7Ax10Sdq8PwTVf1hWh0U/iLmaQdpNl0Z
+         VROQ==
+X-Forwarded-Encrypted: i=1; AHgh+RpkkVH+4TNn0eEdvVq5DxXPvPSkg9efPys0ItUTAwue9w6Ufeo3kb26JvluwwerWADPZODWuc3Hlg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyVI09goLGBTdGh02xkRsQAXW9K2ncuX/56/JeLEUm9V4R5WNKY
+	8Uau8/TXCdRqKD3/RmehInUyKckXKM4pgE/qv9HXgqs09iHQUxfFpFMm2gRqBpzA
+X-Gm-Gg: AfdE7ckrs3A7GluIzCFRsib0syw2O17VZKFTrbXny229KMKae6XO1O1Y/G54ECT6NHq
+	H0Eut7ife9Y1f4VHM356/glfM1hT5Efxmo9sbRZrwo7+YGKaTjNy0VlXH2OiF9D7uvlJ+LwNqZC
+	e5PAUtu4JlzMvOiL7fDOY/OtxAyZN7Ja2pxM1aaElF2T0ks7vDojFMdsuth2Scv9+x6azReT7NR
+	bhMMr3ky8i9is6hqywdThrxCQAA11scCvPeUFVHEjAopwIET9rvCQxnF2nQ20GhD9/8T4obBg0N
+	MgGX1jlHBq2FsDvDeCaPbWpEAmT5efK4s6NMMMagmJeD3ZvhFNuhoyMMnJytHoyVE+Bs0l3Md+D
+	N4Yp+h0v4ZqGkSFdT5wX5q7zIjSYpbcuoAKLkJL2Ad2b5hXYqtsYSkvuofkl/rFEMe08vEWu7Ig
+	BcMYghrEgtb/wFtxiexDmygbJmJg0S3c+NaW7wHF0=
+X-Received: by 2002:a05:6000:70f:b0:47b:69a5:7264 with SMTP id ffacd0b85a97d-47f6078d365mr30313f8f.5.1784224330442;
+        Thu, 16 Jul 2026 10:52:10 -0700 (PDT)
+Received: from pumpkin (82-69-66-36.dsl.in-addr.zen.co.uk. [82.69.66.36])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-47f464c30a9sm24929886f8f.31.2026.07.16.10.52.10
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 16 Jul 2026 10:52:10 -0700 (PDT)
+Date: Thu, 16 Jul 2026 18:52:08 +0100
+From: David Laight <david.laight.linux@gmail.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Florian Fuchs <fuchsfl@gmail.com>, Rich Felker <dalias@libc.org>,
+ linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH] sh: uaccess: Require offsettable operands for 64-bit
  user access
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Florian Fuchs <fuchsfl@gmail.com>, Rich Felker <dalias@libc.org>, 
-	linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Date: Thu, 16 Jul 2026 19:05:03 +0200
-In-Reply-To: <20260716165329.3418962-1-fuchsfl@gmail.com>
+Message-ID: <20260716185208.74ed22fa@pumpkin>
+In-Reply-To: <c4177b44450a909ae8dad60da39523f14b5f2005.camel@physik.fu-berlin.de>
 References: <20260716165329.3418962-1-fuchsfl@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	<c4177b44450a909ae8dad60da39523f14b5f2005.camel@physik.fu-berlin.de>
+X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; arm-unknown-linux-gnueabihf)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-Hi Florian,
+On Thu, 16 Jul 2026 19:05:03 +0200
+John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de> wrote:
 
-On Thu, 2026-07-16 at 18:53 +0200, Florian Fuchs wrote:
-> The 64-bit __get_user_u64()/__put_user_u64() paths address the memory
-> operand as %T2 (base+4). This base+4 requires an offsettable address,
-> but "m" also allows the indexed mode @(R0,Rn) (e.g. for a variable-
-> indexed array element), which has no displacement field for the +4.
-> Depending on optimization this build fails with "invalid 'asm'" or an
-> ICE in GCC's change_address_1.
->=20
-> Require an offsettable memory operand, allowing GCC to reload an
-> unsuitable indexed address into an appropriate form.
->=20
-> Fixes: 2d2b308a8b7d ("sh: Implement __get_user_u64() required for 64-bit =
-get_user()")
-> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
-> ---
-> The patch was verified on the J2 core on the Mimas v2 board. And booted
-> on the Dreamcast SH4. checkpatch doesn't like the missing whitespaces
-> around : I preferred not to touch the other unrelated lines, so I kept
-> the local style.
->=20
-> The original GCC ICE, without this patch can be seen here:
-> https://lore.kernel.org/linux-sh/ef22a5de-d945-4080-9f4a-f5a1ab9de1dc@lan=
-dley.net/
->=20
->  arch/sh/include/asm/uaccess_32.h | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
->=20
-> diff --git a/arch/sh/include/asm/uaccess_32.h b/arch/sh/include/asm/uacce=
-ss_32.h
-> index 5d7ddc092afd..cef40414bfb1 100644
-> --- a/arch/sh/include/asm/uaccess_32.h
-> +++ b/arch/sh/include/asm/uaccess_32.h
-> @@ -92,7 +92,7 @@ __asm__ __volatile__( \
->  	".long	1b + 2, 3b\n\t" \
->  	".previous" \
->  	:"=3D&r" (err), "=3D&r" (x) \
-> -	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-> +	:"o" (__m(addr)), "i" (-EFAULT), "0" (err)); })
->  #else
->  #define __get_user_u64(x, addr, err) \
->  ({ \
-> @@ -116,7 +116,7 @@ __asm__ __volatile__( \
->  	".long	1b + 2, 3b\n\t" \
->  	".previous" \
->  	:"=3D&r" (err), "=3D&r" (x) \
-> -	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-> +	:"o" (__m(addr)), "i" (-EFAULT), "0" (err)); })
->  #endif
-> =20
->  #define __put_user_size(x,ptr,size,retval)		\
-> @@ -196,7 +196,7 @@ __asm__ __volatile__( \
->  	".long	1b, 3b\n\t" \
->  	".previous" \
->  	: "=3Dr" (retval) \
-> -	: "r" (val), "m" (__m(addr)), "i" (-EFAULT), "0" (retval) \
-> +	: "r" (val), "o" (__m(addr)), "i" (-EFAULT), "0" (retval) \
->          : "memory"); })
->  #else
->  #define __put_user_u64(val,addr,retval) \
-> @@ -218,7 +218,7 @@ __asm__ __volatile__( \
->  	".long	1b, 3b\n\t" \
->  	".previous" \
->  	: "=3Dr" (retval) \
-> -	: "r" (val), "m" (__m(addr)), "i" (-EFAULT), "0" (retval) \
-> +	: "r" (val), "o" (__m(addr)), "i" (-EFAULT), "0" (retval) \
->          : "memory"); })
->  #endif
-> =20
+> Hi Florian,
+> 
+> On Thu, 2026-07-16 at 18:53 +0200, Florian Fuchs wrote:
+> > The 64-bit __get_user_u64()/__put_user_u64() paths address the memory
+> > operand as %T2 (base+4). This base+4 requires an offsettable address,
+> > but "m" also allows the indexed mode @(R0,Rn) (e.g. for a variable-
+> > indexed array element), which has no displacement field for the +4.
+> > Depending on optimization this build fails with "invalid 'asm'" or an
+> > ICE in GCC's change_address_1.
+> > 
+> > Require an offsettable memory operand, allowing GCC to reload an
+> > unsuitable indexed address into an appropriate form.
 
-Nice catch, thanks a lot for fixing this!
+An alternative would be to pass 'addr' and 'addr + 4' separately so that
+the C compilation adds in the offset.
+With a bit more effort the define wouldn't need repeating for LE and BE.
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+There is a bug in the __put_user_u64 code - it is missing the exception
+table entry for the second word.
+(It is present in __get_user_u64, but a separate label would be better.)
 
-Adrian
+I also wonder whether there should be non-mmu copies?
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+	David
