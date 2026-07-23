@@ -1,95 +1,100 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7FC8E2FB97D;
-	Tue, 21 Jul 2026 08:17:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C5074446ED;
+	Thu, 23 Jul 2026 11:40:53 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784621873; cv=none; b=ob0Stmd0x47dR9Be8LsZDkmj0NMKTPkUZbC1+bgbZr9GQ3aNJQ72HSKePVv/e4ep3hq8xBmkCZr/UY9P1azV9Dge8Q3tgf0utUNpO0FeqmXqaNKS68nYRs+f5CHfODc6Tzh2OwdapzK5adTRijJQg8yYng5xLk6mZNa4eC7Q05c=
+	t=1784806855; cv=none; b=QZMJDFBasNpt96by26ZY0APQkfQ9S8qhBeMIh+n4pT1gZhr+kDa+lEIc0zrMEhgigzjGmzd5ooEdxJuWZQRX0DIZyrtM8uupVKtsqtM31mKjrXH59PJv+53q+Z/z5sxGOSYDqn3c/Hd9io493RVygnnUjMXtp5olSAjFeNX20zM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784621873; c=relaxed/simple;
-	bh=Un4kruJR9OSZ5yVJVOk6XAfzBtg4S1W3/ssotgwdLao=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=YvbU1Id+tS+oU896G7h/j0HUYUBt37Kn8YFDwSmOKwccOeSwDObzTRYI8HsAUSHK4f8v/YS/D9VAiMcjLQv+S3/6rvyI8bKQL98WpFUyjLjU92ukOTlYHVla+e2Uf5x+xmJcpJ8yPlGXRYc8Qc411yj6OukRnqFyI/i8/yKH6iU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gzjjESdF; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1784806855; c=relaxed/simple;
+	bh=p3GWWajFcuX3bvngkIzxc7oGbp+qDNV+kswQXzKfvIs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=EYkUKNGL4/31pdhub9xEs8qpzTxw6RrayhUeK8UuRIofzqptVw7clrTILrJ5q0mrIiOFfuQqKvtgOGIqXPaXQWB8SpYYCVMAWlOI/z1VUgh9eEI3hKWLyH+ezPAnNeFCZb/Csxa9G51NX2i+xLxgOS5rYmhksvj9qGAWZdj1kvg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kS5TGBFH; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gzjjESdF"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7485D1F000E9;
-	Tue, 21 Jul 2026 08:17:51 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kS5TGBFH"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 666921F000E9;
+	Thu, 23 Jul 2026 11:40:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784621872;
-	bh=T6g9AHg6Msysl37eYnjnLtQmEqUs+OTtZKGs9WFjvSk=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date;
-	b=gzjjESdF8CyzkjGgzLW39bNILuphzcta3sLi1URSjyAFzJLipC3UmTrXu3jFFA61P
-	 pi0PV5sSxroT5MC4vSB4irmB8zkSTQpTKtCfEXUbyhmwF4wWaIQ7lbNCZq0H7DmKFK
-	 8I7OxSO8hwMcqfwnwS7791wWvgudq6KYGJc2fT4Fg1b9+hIgTc7vYx2BwdLm81gs4i
-	 wUS79qiWoSovsixtK4st1zKQHQc+AVAWsjP8+JuFDiWzJmzXtUEBmK6h+qeN8XDX1T
-	 q37KCU+p9yvcznsgWiTAyqiGmNVH8Q7lJHO4++M0Slhqh7kAciZtfiGRWhaqAlyvHz
-	 9t2nZgwHDG8hg==
-From: Thomas Gleixner <tglx@kernel.org>
-To: Magnus Lindholm <linmag7@gmail.com>
-Cc: LKML <linux-kernel@vger.kernel.org>, Peter Zijlstra
- <peterz@infradead.org>, Michael Ellerman <mpe@ellerman.id.au>, Shrikanth
- Hegde <sshegde@linux.ibm.com>, linuxppc-dev@lists.ozlabs.org, Kees Cook
- <kees@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
- loongarch@lists.linux.dev, Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt
- <palmer@dabbelt.com>, linux-riscv@lists.infradead.org, Sven Schnelle
- <svens@linux.ibm.com>, linux-s390@vger.kernel.org, x86@kernel.org, Mark
- Rutland <mark.rutland@arm.com>, Jinjie Ruan <ruanjinjie@huawei.com>, Andy
- Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>, Richard
- Henderson <richard.henderson@linaro.org>, Russell King
- <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Guo
- Ren <guoren@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas
- Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller <deller@gmx.de>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger
- <richard@nod.at>, Chris Zankel <chris@zankel.net>,
- linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
- linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
- linux-sh@vger.kernel.org, linux-um@lists.infradead.org, Arnd Bergmann
- <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>, Will Deacon
- <will@kernel.org>, Brian Cain <bcain@kernel.org>, Michal Simek
- <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>, "David S. Miller"
- <davem@davemloft.net>, Andreas Larsson <andreas@gaisler.com>,
- linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
- linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-arch@vger.kernel.org, Michal =?utf-8?Q?Such=C3=A1nek?=
- <msuchanek@suse.de>, Jonathan
- Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org
-Subject: Re: [patch 00/18] entry: Consolidate and rework syscall entry handling
-In-Reply-To: <CA+=Fv5Sd5+-K3-MOiEc2N8z_5CoLQPVPUwjiugSj3u8cBWJXXQ@mail.gmail.com>
-References: <20260707181957.433213175@kernel.org>
- <CA+=Fv5TDNH8+JAojV9_W36kUkEE68uiA00FQ7i0vJunebqs1sA@mail.gmail.com>
- <87wluplb6k.ffs@fw13>
- <CA+=Fv5Sd5+-K3-MOiEc2N8z_5CoLQPVPUwjiugSj3u8cBWJXXQ@mail.gmail.com>
-Date: Tue, 21 Jul 2026 10:17:49 +0200
-Message-ID: <87ecgwlpsi.ffs@fw13>
+	s=k20260515; t=1784806852;
+	bh=yYwfUXVUZiK1Kk4sc//LAooyNI64snUO5+e++KmUDs4=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=kS5TGBFHBvVqmYzd5Y8AKCbYfgMdkx4ZD67Rmo3r9Xo6oy0SJZsF2izTJF99m3s1D
+	 gnsw2y5HVmxAlfa7x6Js111fjC9hS8NrxDrniwZNyTpiRjRXtnUwRoPXTUFnQJjB44
+	 GKxRDLnE2PE5ji90L6g8S21nSZ2VKpQ8g25F/f/dpDih9mSm1QN4PMxtAuTXH6ZwxR
+	 fXYtBi2EolTv3+MukxYIyfbHiuXLn3lViXFMBHt0lGRRsPt3mx33TrvQFUnzH0P+zr
+	 Jnn7R73TV7p7HIURwxsq4sBgpGTkpdKLqK8sumy/myysGZq8SLtK6rN6Jsxhuva6kb
+	 n1aA5M392Tq4w==
+Date: Thu, 23 Jul 2026 12:40:45 +0100
+From: Lee Jones <lee@kernel.org>
+To: Arnd Bergmann <arnd@kernel.org>
+Cc: linux-gpio@vger.kernel.org, Linus Walleij <linusw@kernel.org>,
+	Bartosz Golaszewski <brgl@kernel.org>,
+	Arnd Bergmann <arnd@arndb.de>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+	Pavel Machek <pavel@kernel.org>, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-input@vger.kernel.org,
+	linux-leds@vger.kernel.org,
+	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>,
+	Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Subject: Re: [PATCH 3/6] [v6] leds: gpio: make legacy gpiolib interface
+ optional
+Message-ID: <20260723114045.GE3363113@google.com>
+References: <20260710211854.1371746-1-arnd@kernel.org>
+ <20260710211854.1371746-4-arnd@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260710211854.1371746-4-arnd@kernel.org>
 
-Magnus!
+On Fri, 10 Jul 2026, Arnd Bergmann wrote:
 
-On Tue, Jul 21 2026 at 00:01, Magnus Lindholm wrote:
-> On Mon, Jul 20, 2026 at 9:21=E2=80=AFPM Thomas Gleixner <tglx@kernel.org>=
- wrote:
->> If you want to base your stuff on that for 7.3, I can add a tag which
->> makes it immutable so it can be pulled into the alpha tree.
->
-> Yes, please. There is still some ongoing testing/review of my Alpha
-> GENERIC_ENTRY series, but assuming it is ready in time for the 7.3 merge
-> window, an immutable tag would be very helpful.
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> There are still a handful of ancient mips/armv5/sh boards that use the
+> gpio_led:gpio member to pass an old-style gpio number, but all modern
+> users have been converted to gpio descriptors.
+> 
+> While the CONFIG_GPIOLIB_LEGACY option that guards devm_gpio_request_one()
+> and related helpers is currently turned on in all kernel builds,
+> the plan is to only enable it on the few platforms that actually
+> pass gpio numbers in any platform_data.
+> 
+> Split out the legacy portion of the platform_data handling into a custom
+> helper function that is guarded with in #ifdef block, to allow the
+> the leds-gpio driver to compile cleanly when CONFIG_GPIOLIB_LEGACY
+> gets turned off. Once the last user is converted, this function can
+> be removed.
+> 
+> Link: https://lore.kernel.org/all/e9252384-a55c-4a91-9c61-06e05a0b2ce4@app.fastmail.com/
+> Reviewed-by: Linus Walleij <linusw@kernel.org>
+> Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+> Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+> Acked-by: Dmitry Torokhov <dmitry.torokhov@gmail.com> # for input
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+> v5: no changes
+> v4: whitespace changes only
+> v3: simplify gpio_led_get_gpiod
+> v2: rework a little bit to keep the legacy code path more separate,
+>     extend changelog description
+> ---
+>  drivers/leds/leds-gpio.c | 52 +++++++++++++++++++++++++++-------------
+>  include/linux/leds.h     |  2 ++
+>  2 files changed, 37 insertions(+), 17 deletions(-)
 
-Here you go:
+Any deps?
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git core-entry-for=
--arch-07-21-26
-
-Thanks,
-
-        tglx
+-- 
+Lee Jones
