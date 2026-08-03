@@ -1,131 +1,157 @@
-Received: from mail-pj1-f50.google.com (mail-pj1-f50.google.com [209.85.216.50])
+Received: from mail-yx1-f53.google.com (mail-yx1-f53.google.com [74.125.224.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE8881F872D
-	for <linux-sh@vger.kernel.org>; Mon,  3 Aug 2026 06:23:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE84D2BE639
+	for <linux-sh@vger.kernel.org>; Mon,  3 Aug 2026 23:40:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785738237; cv=none; b=pmiinfpO2B9aHADZejEzcxOoLku+umQIsfrO9rBw0oX4SifBZmcnHRPrfka4IErZYpBf+LlMDCNZ5crdjE7khgkvHzbk+5oW9iLFyLJEsWgrUDxAf0CMwmreOx9n+sFooNy13Ge5nGh35T7ud/bu+zlL//mR6teHjYwnSI/fVxU=
+	t=1785800450; cv=none; b=uRv2bi0IDPs1r08jhVAaXZtjBs1dXlGH7l/h/K4iS7G32C5V3Y+KgCbY8S50KLxvzlw2w6Fd0hVe2e4SzpGXWPY/90W7/YG1yyPLc9RJL2t5rdNB0TqTY/6BJI0RdRLsJe4/oH/bTNEE+P9oiEFLXFTPOaXzia5XIE9Ica0Ty3k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785738237; c=relaxed/simple;
-	bh=pMUyTnwdgoFwCVbvZDTlcI8Sr37AGEj6Dh8HL1zcOjE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=M5t7DAPk7k0dbWSfm1Xnzwv9CGLeGGUXVOy9LgAvVS6ciIxlCcPrQfqgO18M9zoUqxYR/q0ALMjST2tXy8j/kdaTC0zeT6s3CWPvYI6fRgaDlrem9hyo7aEc2kLr2FrX+7yqp4nPlvAC8sM4Mp+BRRLNJi4MgoUM5uI+USk2DQc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=e3oPs98y; arc=none smtp.client-ip=209.85.216.50
+	s=arc-20240116; t=1785800450; c=relaxed/simple;
+	bh=xmWuIF3gvmbx4DiLSNyVNuxpNp9mTMt+/4AKY0oZYD0=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=r8pyytyDZ4T3DN4rwFXdAlEcS7ZlAow1HzjGr/RaZ9gQTNysPRz9of+cx4xmLD29HyWVJ7mFWePn+GzpWreCt6GYnH9GTFTvuLZbOaVbGDKWg6nQvKrkUrM1swrWjO5rvldltODOhQAiyiOOkZ8iUbRY2PZXZ6A/4WX1SzWBslg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=LJqzHwRr; arc=none smtp.client-ip=74.125.224.53
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="e3oPs98y"
-Received: by mail-pj1-f50.google.com with SMTP id 98e67ed59e1d1-38fdeaed181so394887a91.1
-        for <linux-sh@vger.kernel.org>; Sun, 02 Aug 2026 23:23:55 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LJqzHwRr"
+Received: by mail-yx1-f53.google.com with SMTP id 956f58d0204a3-66899c7b57bso5939707d50.1
+        for <linux-sh@vger.kernel.org>; Mon, 03 Aug 2026 16:40:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1785738235; x=1786343035; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=Ck3CD6/H81B/49IDvwXO1W+2CpiInIdnGO3PMFsRX/A=;
-        b=e3oPs98yFPaBGEhU0MJ1TZu6YrLXjI850sXTcPN8gGDgrguMZDBfUNCpFJSUv4cMlm
-         W+ozb1BxO7ClQkl+m8Gan+I4PrK9AxIyHMoKgmb9mwTCTanuG8znQSXjNEJSSdz+CCjS
-         tjjUzt7L8oYH/opkRtjMpUjG2DatBfdUdUyQgUe2kbRXUhgTOmZJKbLW6gt5jKlOFa8q
-         PvIbNQyuxQxcnzrJBIGBrbez+NgXfoNGZXlfrXoimxlqau2bHPodbWdf7TJMaveMcxUM
-         xA06Ek4zaEvai/Vzf3pSl6CWkd2bm+6LrBQJOSfeWr6sNZHcR8gK1FQ/ZbOhpp3FuKkT
-         fybQ==
+        d=gmail.com; s=20251104; t=1785800448; x=1786405248; darn=vger.kernel.org;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=U+7Ru6jZFSxz7ibFdQEbmpjCAkPd7K+3B96IxICOxK8=;
+        b=LJqzHwRr7gEY9qMY/x/cI42n0OwdoPFXgRESTQ97I2VdoFtzXbrmZSPJaOUyZ2fuTv
+         Ei2oFFCfMIBsvyPXpu+DyAm3x67V7slOIcW1z2njG6Qf1AcFaaDraIMTiCy2wC7u51Lk
+         Ypg+CG2tfZOcvajkhdeetluhMfGpUs0k/mF+21AmLvYWxGCNBQDnqtmZOEuDwbMPHapc
+         2g/7VXvApzJRTMzjT3kF/yjt79JL1cXQjclqecc9oloCPHNOusewSzMFHOZH8wQqW3na
+         wFpJlUDfNYAWjNvDSuIoVyLBLPWZf9vm3ToxDPPYL8Ne912bYEr5utodA0oZD5gI18mG
+         2j3A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785738235; x=1786343035;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Ck3CD6/H81B/49IDvwXO1W+2CpiInIdnGO3PMFsRX/A=;
-        b=VJKa2lNF/H1bODfQtb8H8BLpPFOP0IT48VUABDY9J/KRBEUEZVfofbMg5Zs8gl7MmA
-         9s82lz4E/hMqzMfibFrtiPzoUhOFFrdPNKeDx1ZL0oGrjDNOw0gqgLa/TdBp9mx98su7
-         UvcTQ5nBNxaTjSsRK2K15LNhDpytDdHenlVFH38UpNfrr0ArywBD4/bKbRD7fGs7lS7j
-         hGzZpHipPn7pw2saZrwTj3CMNQf5BaygfrBdLqluEESzCoiFweYJz1Lj7IbxaTfjONza
-         9EDlmI723KINHi0jBbt45/7/HH9MEE9iypsiaC9RMrV4vqdcMBJ70IX/oKIFZ5WufzV3
-         lQvw==
-X-Forwarded-Encrypted: i=1; AHgh+RoAWh3pr4RByob50jJrwkqK9brkbMLbBaX+96XwmoSB083OfroAtKQib6HnEVhqp1wugNDuokUt+w==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw2sfP9mXiOQv7qhA5hahQidbHnyLbHaKPeOEE8XXIWsLJbhCTF
-	TVdXT057vii93UyNo7UogBYsgWvNFGuz+Y4yJCUm1FnPYKmC0Nip+lc6
-X-Gm-Gg: AR+sD10t1ja/8ex51F8Sfp7Soopy+11G9zI1UviHWgXbYerjuGZYFCh63JZ0TmtqCLa
-	QFvHb1yj0yEuvHqRRL8plMotO+cIk3yhpFiLS4ybsITFvpy0U+k7Fhn8wvcXwtf8KUERcxShERS
-	8JtqEbzBqJQPZ5nXurRN4mgUE/4VlCXVyqKG3kBws3UZfxHliGZ2Z2W4EjMsLTUx6rVV2VuWZ1D
-	zVN6dj9uVUuK9HpDhqeqwA+2oQpIU6oNgKo8qQwXvcZEjv95uPI2XvVM13t9ZzLNlSulSHbUiZb
-	kC+t5OSmxPBxGugYfclVW8gqcV++UBjzunfNScnZSp9Dcoa3QzuNCr7OB2X/3ZCfziofsjhcqjf
-	tiDH4vntmGPVrC3os1GFczQGLsJR3UibV0sORBV1PdwLldDEvRT6hR+4fv9YZ9kPaNJFA4IwZax
-	da9Yw3KuZFX+lsIrDg685ibiPUnE1+HwjSJRaoDE2rr9CIJ9uEF9WGbXIHE68LiX/+pY8SCuKbB
-	/ihxCLggBGIZANBCFvb3Tz6KMidsw==
-X-Received: by 2002:a17:90b:3b82:b0:38e:57a3:f218 with SMTP id 98e67ed59e1d1-38fbc4832ccmr8663354a91.13.1785738235117;
-        Sun, 02 Aug 2026 23:23:55 -0700 (PDT)
-Received: from google.com ([2a00:79e0:2ebe:8:4fff:876c:cdae:e53c])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3153dd4e666sm48696264eec.4.2026.08.02.23.23.53
+        d=1e100.net; s=20251104; t=1785800448; x=1786405248;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=U+7Ru6jZFSxz7ibFdQEbmpjCAkPd7K+3B96IxICOxK8=;
+        b=sSG20MzNzN2+b83uq4omXjhRvjFOSWoIrYueMoFDLC36fiyCm6ctL0X6c4MBNmcT82
+         BSfnxtCLJVeP2+tIvhpZudKc1Zxqm25vBAxs40WLI9Pbc5LvNqNrciOXHFERjGQ0qnVs
+         QfWb/bDRetg3DuQg7Uw6YJC2qyrOUvcCwjJbP+gtoMU4CmXQO+bofGOWRX/jorrH3FB1
+         vdWKd6LUdvYrZa3USS/h9hkuEnpqNMdResdM6o3oREu1vmSy1EF/1p7NEjOnu48dYuUv
+         6dDjlyDWFAChIsi2EUOwzJdoIxL4srK03KysFgi2dmRNRPCv1xZl3IhDu4tuA7Kh8tVD
+         zWDg==
+X-Forwarded-Encrypted: i=1; AHgh+Rq+mGWreYBcozEZ6eJAkbPnkfgkv98FMmmH1do552U+ZwDdwpsXHF50gKAd9hO8mPz/4rwQ10k32g==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzaT9Z6Lt721ct1GGuVvjrVK2AtWc3uppIUzFOif+ruEyLaKsJw
+	r0XOd2WUzsUVsi6fOnlBtsrXf4HljAiqK4qePzuKUVyi0IOojGgZR5+l
+X-Gm-Gg: AR+sD136tVHSKVk/wQRzRbw2P4UcpKXMfmviZCel3yOEvrLaxhBH5Rmy/X+fn9pI5ej
+	vgnoGSq+hMbcq9elNyybMZ0EsOmT6cH8MLuV1pnzvTFTrnvva3QmeDnVY6JwGsU1uDQ4hNN1Q6t
+	aY/EQs0XAcRCTF0zVGh/2/TMFZsIrZnOV7loJMlMq1qseEr23JjZngzmvqAI/diSYGqqqNrGLjS
+	LZ8IoXpbRpNmXF6zQsLL+UpMC/WJ9NKLU71tKQKA+jJoG8Xxerqx6G7+nLYPD/mK6Sjj9tv3nVN
+	7zhl8j9JPaa4uwPZ+MsVMFqiiJOQMIhoOXCfRfj60ORu3lYNTFW+xjyytEM4d0ZlGJ7l7Y5Ku0s
+	nf0zMQGSRRw/ttponVnXaWU3F9lXq928dLn1eK5WratXMsgfsRTV18P63T3f9e/APE0DbUCStTl
+	R3pmzzZKm5/rPHumaVTM9oad4Q0r7Qu/HgN1ksq9o0nkYizx6a9bsDuPGv7Kg+yqJx0m8JTzij
+X-Received: by 2002:a53:c745:0:b0:668:43a3:9db2 with SMTP id 956f58d0204a3-6694f17d897mr10635045d50.32.1785800447478;
+        Mon, 03 Aug 2026 16:40:47 -0700 (PDT)
+Received: from localhost ([2600:1702:7a90:6f9f:8bc4:8aec:108d:7a04])
+        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-66948b98babsm6681654d50.0.2026.08.03.16.40.45
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 02 Aug 2026 23:23:54 -0700 (PDT)
-Date: Sun, 2 Aug 2026 23:23:51 -0700
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, Linus Walleij <linusw@kernel.org>, 
-	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	kernel test robot <lkp@intel.com>
-Subject: Re: [PATCH] sh: mach-rsk: rsk7203: avoid using inline compound
- literals
-Message-ID: <anAzp47FoRtVB_nA@google.com>
-References: <20260802-sh-rsk7203-swnode-props-v1-1-7a790cbac9e6@gmail.com>
- <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
- <anAvJM0u_TIgL4ck@google.com>
- <70cb2e4d8a6fd11cbeb534dbf269f67148a00a8d.camel@physik.fu-berlin.de>
+        Mon, 03 Aug 2026 16:40:45 -0700 (PDT)
+From: Matt Turner <mattst88@gmail.com>
+Subject: [PATCH 0/3] alpha: fix floating-point exception state handling
+Date: Mon, 03 Aug 2026 19:40:44 -0400
+Message-Id: <20260803-alpha-fp-exceptions-v1-0-c99d75608e60@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <70cb2e4d8a6fd11cbeb534dbf269f67148a00a8d.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/x2MQQqAIBAAvxJ7bsGKsvpKdBBbcyFMNEIQ/550H
+ JiZDJECU4S1yRDo5ci3q9C1DWir3EnIR2XoRT+JWQyoLm8VGo+UNPmn6hFHLeWxkBilGqCWPpD
+ h9F+3vZQP4EcgZ2UAAAA=
+X-Change-ID: 20260803-alpha-fp-exceptions-5c77d9e057a3
+To: Richard Henderson <richard.henderson@linaro.org>, 
+ Matt Turner <mattst88@gmail.com>, Magnus Lindholm <linmag7@gmail.com>
+Cc: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+ linux-sh@vger.kernel.org, "David S. Miller" <davem@davemloft.net>, 
+ Andreas Larsson <andreas@gaisler.com>, stable@vger.kernel.org
+X-Mailer: b4 0.14.3
 
-On Mon, Aug 03, 2026 at 08:20:24AM +0200, John Paul Adrian Glaubitz wrote:
-> Hi Dmitry,
-> 
-> I apologize for my previous harsh mail, but the way these patches are being
-> pushed in really puts me under actual stress. There is a second situation like
-> this now where another kernel maintainer is too impatient.
-> 
-> On Sun, 2026-08-02 at 23:07 -0700, Dmitry Torokhov wrote:
-> > > Isn't that the patch that was forced into the kernel, overriding me
-> > > as the maintainer of arch/sh because Linus Walleij got impatient and
-> > > merged the patch into an immutable tree?
-> > 
-> > Yes, but incompatibility with older GCCs is not something that you'd
-> > recognize on the spot, would you?
-> 
-> No, I wouldn't. But I would have most likely caught it as I'm building the
-> kernel for my J2 board with a GCC 9.x compiler as I don't have any more
-> recent GCC version for J2 at the moment.
-> 
-> > Also, you seem to be hung up on the notion of immutable branch. This is
-> > simply a branch that creator promises not to rewind/rebase so that it
-> > can be easily shared between different subsystems.
-> 
-> Well, it sounded to me like he wanted to make a point that there isn't going
-> to be any discussion about this anymore which I really thought was not okay.
+Three fixes to floating-point exception handling on Alpha.  The first two
+are a pair and should be applied and backported together; each commit
+message explains why taking one alone is worse than taking neither.
 
-No, not at all. Again, it is just for ease of sharing and promise that
-git will not generate conflicts if multiple trees pull it in.
+The first fixes ieee_swcr_to_fpcr() setting FPCR_DNOD unconditionally,
+which disabled denormal operand traps for every process using the default
+FPU settings.  Instructions built with the software completion suffix
+never reached the kernel emulator, and the hardware silently substituted
+zero for denormal operands.  This affects anything built with -mieee,
+glibc included.
 
-> 
-> > While we are at this, there are a few more patch series for SH that I
-> > would like you to take a look at, pretty please...
-> 
-> Yes, absolutely. I absolutely appreciate the work, I am just asking for a
-> little patience. As SuperH maintainer, one of the most important tasks the
-> past weeks was to get the GCC backend moved to the new register allocator
-> which is finally done now. GCC upstream is pushing to migrate all backends
-> to LRA now so it meant that this had highest priority.
+The second stops hardware-fabricated exception bits from reaching user
+space.  On EV6 and later the hardware writes exception status into the
+FPCR before delivering a software completion trap, and those bits can be
+wrong for the instruction that trapped.  alpha_fp_emul() only wrote the
+FPCR back when soft-fp raised something, so whenever it found the
+instruction exact the fabricated bits stayed visible to fetestexcept().
+The exception summary register is now passed down so the handler can tell
+which exceptions the hardware attributed to the trapping instruction.
 
-I totally understand, and thank you for your work.
+The third makes the emulation determine tininess after rounding, as the
+hardware does.  soft-fp had no notion of the distinction and always
+determined it before rounding, so an operation that trapped for software
+completion could report an underflow the same operation would not report
+when it did not trap.  The two paths disagreed on the same machine, which
+IEEE 754 does not allow.  This adds _FP_TININESS_AFTER_ROUNDING to the
+shared soft-fp code, as glibc's copy already has, and sets it for Alpha
+only.  It defaults to zero, so powerpc, sh and sparc are unchanged.
 
-Thanks.
+Measured with the glibc testsuite on an UP1500 (EV67), with
+CONFIG_MATHEMU=y.  Without that option alpha_fp_emul() is not built at
+all and roughly 830 math tests fail on their own, so it is a prerequisite
+for any of this being reachable.
 
+  glibc make check subdirs=math
+
+  before                              831 failures
+  after patch 1                        48 failures
+  after patch 2                        28 failures
+  after patch 3 (and glibc fixes)       3 failures
+
+The three that remain are a GCC bug: a long double to float cast on Alpha
+is lowered as quad to double to float, but C requires it to round once,
+and the intermediate can land on a float halfway point.  Two glibc fixes
+are being posted separately to libc-alpha.
+
+stdlib/tst-tininess passes, which confirms the hardware determines
+tininess after rounding for the results it produces itself.
+
+The shared soft-fp change was compile tested on sparc32, sparc64 and
+ppc32 in addition to alpha.  Only Alpha was tested at runtime; elsewhere
+the new code is unreachable by default.
+
+---
+Matt Turner (3):
+      alpha: fix ieee_swcr_to_fpcr setting FPCR_DNOD unconditionally
+      alpha: don't leak hardware-fabricated FP exception bits to user space
+      alpha: determine tininess after rounding in the FP emulation
+
+ arch/alpha/include/asm/sfp-machine.h |  4 ++
+ arch/alpha/include/uapi/asm/fpu.h    |  8 +++-
+ arch/alpha/kernel/traps.c            |  6 +--
+ arch/alpha/math-emu/math.c           | 88 +++++++++++++++++++++++++++++++-----
+ include/math-emu/op-common.h         | 23 +++++++++-
+ include/math-emu/soft-fp.h           |  8 ++++
+ 6 files changed, 119 insertions(+), 18 deletions(-)
+---
+base-commit: 8cdeaa50eae8dad34885515f62559ee83e7e8dda
+change-id: 20260803-alpha-fp-exceptions-5c77d9e057a3
+
+Best regards,
 -- 
-Dmitry
+Matt Turner <mattst88@gmail.com>
+
