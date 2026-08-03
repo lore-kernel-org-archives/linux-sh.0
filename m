@@ -1,68 +1,68 @@
-Received: from mail-yx1-f46.google.com (mail-yx1-f46.google.com [74.125.224.46])
+Received: from mail-yx1-f52.google.com (mail-yx1-f52.google.com [74.125.224.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90CC0395AD3
-	for <linux-sh@vger.kernel.org>; Mon,  3 Aug 2026 23:40:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3322C397943
+	for <linux-sh@vger.kernel.org>; Mon,  3 Aug 2026 23:40:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785800452; cv=none; b=XAEJU0UBi+KEX2rLQMvtf3kw0c4nlfCuHlhS0Qu1rggTuyKqSdbGHcTGd8MMY/P5M6NuikB7pXAm4PwV8ukgIXSbTe1BJxIfbm4fZQpG2l2dwf0+chS3SNRTXOY5gLpJwDGkSDE10vfhEZmPqnI1AqzVpgPHMsFv2wymUUkzhGM=
+	t=1785800454; cv=none; b=Mc2ZkyS6wLmKVJSQOLbcZOSqQDqPFuwG1Nx8UNba2bX/G2qJIPhMW7QX93vaMRNZ64Wz18WJ7517YlhW34AO+qZeq0BI2GD+5En58HQMEPMnHxpxUeMIuyH32OuswPGKZDQrjdO0tSaGXjc2hdZ8zj49d0XEGN4REdYZvd4SuvI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785800452; c=relaxed/simple;
-	bh=YZg1odxiWek0UxsP57a8f13DBqPUmymS1YIGamKZW+Q=;
+	s=arc-20240116; t=1785800454; c=relaxed/simple;
+	bh=l7nUfbmcaF4fNgdDGLaluLSkk7Vtw5eJN5GAj2QQfq8=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=nR0XH8Qu3Yy2ZSH08jU/T75QRdh57tJdWsqyuoDHkkWVs7F9mxuSidQXCxP2DfGhYWlouONRV9MlNJVfpDLzFYh84B4aktkmn1pjHwucWm3Up3DWGQpq0bf7RN2o+k16Tgi+HIeWocYnf1TWKJNh5fFL2RWfnB9kdzHK67nC2dg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=B06zjzZI; arc=none smtp.client-ip=74.125.224.46
+	 In-Reply-To:To:Cc; b=b5Y02rXHerX4WOi7XlNPHBAol/teNd1v9+IiMC+dIlrPGcw9Nhbxq86Tg9EeVbE6hOadU3qJvnsFbXxMaKpBv7irnOYBPH5GnRA6SP7LnR/qGiDT9W1vt7SdlObdNa6buOKlAwOXouSLvjNUbntCgFxxczPQb+ybYsOQ69TAhhw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=UGgpVXP/; arc=none smtp.client-ip=74.125.224.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="B06zjzZI"
-Received: by mail-yx1-f46.google.com with SMTP id 956f58d0204a3-664a09bc459so4973792d50.1
-        for <linux-sh@vger.kernel.org>; Mon, 03 Aug 2026 16:40:50 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="UGgpVXP/"
+Received: by mail-yx1-f52.google.com with SMTP id 956f58d0204a3-6689402c7bfso4636806d50.1
+        for <linux-sh@vger.kernel.org>; Mon, 03 Aug 2026 16:40:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1785800449; x=1786405249; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1785800451; x=1786405251; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=iXt2lHl6V6DYOxKrsChpRVwvJNwCDOvF3knLtupIoSg=;
-        b=B06zjzZIb4DrxrL4KvqLlHDn9RGSsjwqhOhkwKhmOUr9TLQKClY+YqrK7vqY70jjEJ
-         PwgsgeL7uh2DbOLRXvkOgG1AwXVmafNqOf7G1692yDq4+UHUuOeNnisRffLMVcmfE6QC
-         LLGxOaqZUWJDebuW0nkJKWitu7udF1/8aPzTjtBPkCbymJ/Hxp1FEOumvUBBj/OE8dOT
-         u/2iwVKLoECCOPnyy0E+vV8pKFBdbGJnhreHvqGYuX0BFucddECVDaCwsyw2z6oobVsu
-         lNn/1muTrj3YbiRuvVBLIm9IkZIqAH+VHQ3PBfvD9oW7FU3LvpIBG4t0xbZl6UpNtexw
-         CVBQ==
+        bh=+2j9pfRfEIp9EnFpow/3t02qd283vXOlzX6oo/fcXlc=;
+        b=UGgpVXP/khMSfc9ttEUIqTVy5cbTCBDtfR2MBMSdv6FTzuTDrWOSyTgB8TgqULTS5A
+         VINTeLpRFN0f85mCyyiRlwMildC/IkPd+byPa0Z9UVsOx4yjtxxnWEWQpheimZIe5/lG
+         pmxv3ALKrCSP2AcF4rIkKhBYBxrpKvwFJBjAKy9uKIxmR/aQAf8ddak57Q+cAbjE+PLb
+         ytu9n2aZ6mqfLgtVV8IvFUwZ6SV4pRWNFarSLTIQUrkt57hHJa1Bfr6FVjpg0kB4FuJu
+         4u1va7P8H+4gl12h1sIxPWx4q6tKHz5IkINuC2Y6hLny7yM3aySom7ectyQJGfODyHI1
+         4mjw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785800449; x=1786405249;
+        d=1e100.net; s=20251104; t=1785800451; x=1786405251;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=iXt2lHl6V6DYOxKrsChpRVwvJNwCDOvF3knLtupIoSg=;
-        b=sU2pmCksr4ULkzQ/6fgF9qMRkoXnYBYMn8DiouObJx3z64DyL/n6mkglAnwH71qPZI
-         pp5p2U5Pmt0ze5Wl7SRgxP5CR8g86yqceBOq1YIiTUE71ZHfQlpijpxQYe/4Ayk6U7P9
-         wFnzpZeg5r5iPuNW9IChaXLLWYwqZPF9mf8wHtGfJ0djoivaC3kX4l6C8uhKYTXJlSQb
-         Yjm9D08BCVmSXQeiy//99mpksXF61ag819BMUPkaXx12cSde9dacR2wIINGSFtoF5gR6
-         oveFeZlcneuZF+BwApK9qOXDtoUDrBm7u07l6UxuoCrgwfPpkUl04BLBtNbnV/66i6WA
-         QszQ==
-X-Forwarded-Encrypted: i=1; AHgh+RqsTCnQ5zGF8iDYsmOHc7xn5dqI02hNxGBnlFhhkpFv+wyuWYmiwzLHG0X+KMdK5TcngnyEvPBqSw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy++UiQF7q++DsycslkcW/PWaUShv1dxvC0eJTiCEKvyhwKlv74
-	24PToYVwYuAQyu9mJF+nhN8/apg5B89fE5O8MhxK923i/wigSXsMnIUn
-X-Gm-Gg: AR+sD103NLA8L5uQucH5TS2CfR5XGkDrjctWu2vm0iqzxBe5itxODmhDA07zhJjWey4
-	Nx9MbvcjTqggzQyi2iROk6Oibp6xdEp1NM1ombK3B/Pmj7R3U31h/wTEx2ifwdc5r93jJW7h/io
-	odnrST2evRZm/tiN3Hw2OiPVK8OQGr3CVryvGVaXxh5e2FBRsF4sziG+UW3Y+IQrWNFJTQrzUWu
-	Rddb4PJZKf97PihrMcmuH+cyStKPGrBNhSd7+eTeH6MN4cJgo9QMljrQdXz5IhliZvIqNiWxVrn
-	knvYU+/t+jPgjYMf7N18vtMM4WOcO6Sp06IeT4+YZI9AWGSI8GmntU8d03kyXXU5IA+Ut3/J1JI
-	HWECOv8UulR/ARYpdayaB0ZIxf3wPGFz515oU9b8xuq+FKamqafQLlgLrSMkJUzHULlwol+j6JF
-	GNi6JLVXMh9F41xHXPbCmIbodq23knmo3agjxI+MC+DWyDiAWDvuVfD6r2/StvLy8ZjwQnKLc=
-X-Received: by 2002:a05:690e:480a:b0:668:8f89:762 with SMTP id 956f58d0204a3-6694efd03bamr9722268d50.1.1785800449430;
-        Mon, 03 Aug 2026 16:40:49 -0700 (PDT)
+        bh=+2j9pfRfEIp9EnFpow/3t02qd283vXOlzX6oo/fcXlc=;
+        b=gzS3rCzuKlTiEZydgWEXETS3O94FJ9l4dyxjUjaS+KdNK7pRZHQtp9Qld4PRsNmbKN
+         rFzgKlcIn6sVbHL6o39OCe1XwIM58ujZ8sToWnhU2bgOpgTrM4L9pAvFvbHFCm2fHiHn
+         fUmqaeMdv/EGtx5DEE8QVidokRGbk0CDwgpvlv6utgDtpl9tilS37BlIo/p4FqItDL2Y
+         WHFoDT53OTOk17P7nqVZiJvdJmfAAqUQ6bYXJYzboqucLs0rJ74+bq0YnEwinD3cKxmT
+         eZtQio28OgLOqYICrxZigtUYplnqtsU34EvgKWfkXvP+eVYNtYP+8nyyEbR6vKHvCuxv
+         Tr9w==
+X-Forwarded-Encrypted: i=1; AHgh+RpGcOSuWFGemnT+/ajGvn2TmyR6Vj2xuJ/sU7l6nGi0a3RQwW9iYqlvlZvHI6HfrXymfU0FHi2RLw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywzphmc3naBFXBGovMMQnk6F6FClyjFZPKvr85/QX/L08lb3o9G
+	QYPg5IFYdq7e016XddvaMN+FofhI2XjAizbuW3eAlyzMs0Upg48jKjyA
+X-Gm-Gg: AR+sD127G1M3PuGGv0saYPEPROhJ4cSQhMAJn6BUDFSxwNFhJDectbhPbNW0v3XYcJF
+	eYRZvWGA+vPnphlYh83d1t57Y1ZM+8Bs9JEsZxxvqi3/suHHPdDLwNjostU1EV50pCPrTpiSboF
+	1ZvTDwS0aMSUbcsc/Sno6moScvdJjD/Oj5Lvedos7yd4PlR1BjuFdvAt8BD3kRQPSqTf3enDQ/E
+	hwWPoZs4IvVHKjDqTJRybZiNi5SfnpH9XDmHmwBM7Fj0GF/if0Hyyk0WGCdueeFEFj+nGjkxUUe
+	UHC/1RrCSfTA3kH/SCEyB34ERMMIJszXfXuWL+k+BzuJz+cuvC1fAY5xDz+AIEpYXuACG+sDWbh
+	+jvQsUCQLWjVg2LaeqHIVDpUDTpQ/kMrMBV+zF3SqrU/0cD9FIr29RZWv/FELYbF9OVmPSfeuus
+	fwWq85R/ePRlP/lLxZCqX1kgIPJC9QE6wxHZl6zwHj/u4S2umgaGjw7mz2bRbh
+X-Received: by 2002:a05:690c:e3d1:b0:81e:f1e3:52ad with SMTP id 00721157ae682-81fd4ba85a4mr156253787b3.30.1785800450957;
+        Mon, 03 Aug 2026 16:40:50 -0700 (PDT)
 Received: from localhost ([2600:1702:7a90:6f9f:8bc4:8aec:108d:7a04])
-        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-66948b98babsm6681712d50.0.2026.08.03.16.40.48
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-81fccf2e2b0sm62638757b3.8.2026.08.03.16.40.50
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 03 Aug 2026 16:40:48 -0700 (PDT)
+        Mon, 03 Aug 2026 16:40:50 -0700 (PDT)
 From: Matt Turner <mattst88@gmail.com>
-Date: Mon, 03 Aug 2026 19:40:45 -0400
-Subject: [PATCH 1/3] alpha: fix ieee_swcr_to_fpcr setting FPCR_DNOD
- unconditionally
+Date: Mon, 03 Aug 2026 19:40:46 -0400
+Subject: [PATCH 2/3] alpha: don't leak hardware-fabricated FP exception
+ bits to user space
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -71,7 +71,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260803-alpha-fp-exceptions-v1-1-c99d75608e60@gmail.com>
+Message-Id: <20260803-alpha-fp-exceptions-v1-2-c99d75608e60@gmail.com>
 References: <20260803-alpha-fp-exceptions-v1-0-c99d75608e60@gmail.com>
 In-Reply-To: <20260803-alpha-fp-exceptions-v1-0-c99d75608e60@gmail.com>
 To: Richard Henderson <richard.henderson@linaro.org>, 
@@ -82,41 +82,51 @@ Cc: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
  Andreas Larsson <andreas@gaisler.com>, stable@vger.kernel.org
 X-Mailer: b4 0.14.3
 
-ieee_swcr_to_fpcr() converts the software IEEE trap-enable and status
-bits kept in thread_info.ieee_state into the hardware FPCR format.  It
-contained:
+On EV6 and later the hardware records exception status bits in the FPCR
+before delivering a software completion trap, and those bits can be wrong
+for the instruction that trapped.  Converting a double that is exactly
+representable as a subnormal float sets FPCR_UNF even though the result
+is exact, and an underflow trap additionally sets FPCR_INE even when the
+emulated operation turns out to be exact.
 
-	fp |= (~sw & IEEE_TRAP_ENABLE_DNO) << 41;
+alpha_fp_emul() only wrote the FPCR when soft-fp raised an exception, so
+whenever it determined that the instruction was exact the fabricated bits
+stayed in the FPCR and were reported to user space by fetestexcept().
 
-FPCR_DNOD (bit 47) disables denormal operand traps: with it set the
-hardware handles a denormal operand itself, treating it as zero, instead
-of trapping for software completion.  The intent was to set DNOD when the
-user has not asked for SIGFPE on denormal operands, but
-IEEE_TRAP_ENABLE_DNO is clear by default, so ieee_swcr_to_fpcr(0) always
-set DNOD.
+Pass the exception summary register down from do_entArith() so the
+handler can tell which exceptions the hardware attributed to the trapping
+instruction, and always write the FPCR.  Clear the exceptions that the
+trap reported but that soft-fp did not raise.  EXC_SUM reports only the
+underflow or overflow when the hardware also set INE, so treat INE as a
+candidate in that case, and treat a trap with no reported exception as a
+denormal operand trap, for which the hardware can fabricate INE and UNF
+as well.  Bits that software has already confirmed in ieee_state belong
+to this or an earlier instruction and are never cleared.
 
-Instructions built with the software completion suffix therefore never
-trapped on a denormal operand.  The hardware silently substituted zero
-and produced wrong results, affecting every program compiled with -mieee
-and default FPU settings, glibc included.
+The imprecise path passes no summary.  There the trap was taken somewhere
+in the trap shadow, so EXC_SUM is not attribution for the instruction
+being re-executed -- and only EV6, which traps precisely and so never
+takes that path, has fabricated bits to clear.  For the same reason the
+clearing is guarded by implver(), matching swcr_update_status().
 
-Set FPCR_DNOD only when IEEE_MAP_DMZ is requested, which is exactly the
-case where flushing denormal inputs to zero is what the user asked for.
-DNOD then encodes MAP_DMZ, which ieee_fpcr_to_swcr() already recovers
-from FPCR_DNZ, so drop its attempt to recover IEEE_TRAP_ENABLE_DNO from
-DNOD; the DNO trap enable lives solely in ieee_state.
+On an UP1500 (EV68) this takes the glibc math testsuite from 831 failures
+to 28, the remainder being unrelated to exception status.
 
-Both functions are in a uapi header, so the encoding change is visible to
-userspace, but nothing outside the kernel is known to depend on DNOD
-carrying the DNO trap enable, and the kernel is the only writer of the
-FPCR.
+This belongs with the preceding fix to ieee_swcr_to_fpcr(), and should
+not be backported without it -- nor it without this.  That fix stops
+FPCR_DNOD being set unconditionally, so denormal operand traps start
+firing again.  Those traps very often find an exact result, which is
+precisely the case where the old code left the FPCR unwritten and the
+fabricated bits visible.  Applied alone it would make spurious exception
+flags more common, not less.
 
-This must not be backported on its own.  Re-enabling denormal operand
-traps exposes a second bug, fixed in the following patch: those traps
-usually find an exact result, and for an exact result the emulator did
-not write the FPCR back, leaving hardware-fabricated exception bits
-visible to user space.  Taken alone this change would make spurious
-exception flags more common.
+One case cannot be resolved here: an inexact instruction without the
+software completion suffix never traps, so its INE reaches the FPCR
+without being recorded anywhere else.  Such a bit is indistinguishable
+from an INE the hardware fabricated for a trapping instruction, and is
+lost if an underflow or overflow trap with an exact result follows it.
+The FPCR is the only record of those instructions and it carries no
+attribution.
 
 The bug predates the git history, so there is no commit to reference in a
 Fixes tag.
@@ -124,35 +134,172 @@ Fixes tag.
 Cc: stable@vger.kernel.org # 5.15+
 Signed-off-by: Matt Turner <mattst88@gmail.com>
 ---
- arch/alpha/include/uapi/asm/fpu.h | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ arch/alpha/kernel/traps.c  |  6 ++--
+ arch/alpha/math-emu/math.c | 88 ++++++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 80 insertions(+), 14 deletions(-)
 
-diff --git a/arch/alpha/include/uapi/asm/fpu.h b/arch/alpha/include/uapi/asm/fpu.h
-index cea9eafa056f..d28dc36786e2 100644
---- a/arch/alpha/include/uapi/asm/fpu.h
-+++ b/arch/alpha/include/uapi/asm/fpu.h
-@@ -101,7 +101,12 @@ ieee_swcr_to_fpcr(unsigned long sw)
- 		      | IEEE_TRAP_ENABLE_OVF)) << 48;
- 	fp |= (~sw & (IEEE_TRAP_ENABLE_UNF | IEEE_TRAP_ENABLE_INE)) << 57;
- 	fp |= (sw & IEEE_MAP_UMZ ? FPCR_UNDZ | FPCR_UNFD : 0);
--	fp |= (~sw & IEEE_TRAP_ENABLE_DNO) << 41;
+diff --git a/arch/alpha/kernel/traps.c b/arch/alpha/kernel/traps.c
+index 7004397937cf..7cd20e5f9ee0 100644
+--- a/arch/alpha/kernel/traps.c
++++ b/arch/alpha/kernel/traps.c
+@@ -166,12 +166,12 @@ static long dummy_emul(void) { return 0; }
+ long (*alpha_fp_emul_imprecise)(struct pt_regs *regs, unsigned long writemask)
+   = (void *)dummy_emul;
+ EXPORT_SYMBOL_GPL(alpha_fp_emul_imprecise);
+-long (*alpha_fp_emul) (unsigned long pc)
++long (*alpha_fp_emul) (unsigned long pc, unsigned long summary)
+   = (void *)dummy_emul;
+ EXPORT_SYMBOL_GPL(alpha_fp_emul);
+ #else
+ long alpha_fp_emul_imprecise(struct pt_regs *regs, unsigned long writemask);
+-long alpha_fp_emul (unsigned long pc);
++long alpha_fp_emul (unsigned long pc, unsigned long summary);
+ #endif
+ 
+ asmlinkage void
+@@ -185,7 +185,7 @@ do_entArith(unsigned long summary, unsigned long write_mask,
+ 		   emulate the instruction.  If the processor supports
+ 		   precise exceptions, we don't have to search.  */
+ 		if (!amask(AMASK_PRECISE_TRAP))
+-			si_code = alpha_fp_emul(regs->pc - 4);
++			si_code = alpha_fp_emul(regs->pc - 4, summary);
+ 		else
+ 			si_code = alpha_fp_emul_imprecise(regs, write_mask);
+ 		if (si_code == 0)
+diff --git a/arch/alpha/math-emu/math.c b/arch/alpha/math-emu/math.c
+index 68d420bfd3c0..e3f2df3729e3 100644
+--- a/arch/alpha/math-emu/math.c
++++ b/arch/alpha/math-emu/math.c
+@@ -52,13 +52,13 @@ MODULE_DESCRIPTION("FP Software completion module");
+ MODULE_LICENSE("GPL v2");
+ 
+ extern long (*alpha_fp_emul_imprecise)(struct pt_regs *, unsigned long);
+-extern long (*alpha_fp_emul) (unsigned long pc);
++extern long (*alpha_fp_emul) (unsigned long pc, unsigned long summary);
+ 
+ static long (*save_emul_imprecise)(struct pt_regs *, unsigned long);
+-static long (*save_emul) (unsigned long pc);
++static long (*save_emul) (unsigned long pc, unsigned long summary);
+ 
+ long do_alpha_fp_emul_imprecise(struct pt_regs *, unsigned long);
+-long do_alpha_fp_emul(unsigned long);
++long do_alpha_fp_emul(unsigned long, unsigned long);
+ 
+ static int alpha_fp_emul_init_module(void)
+ {
+@@ -86,7 +86,22 @@ module_exit(alpha_fp_emul_cleanup_module);
+ 
+ 
+ /*
+- * Emulate the floating point instruction at address PC.  Returns -1 if the
++ * Exception bits of the exception summary register (EXC_SUM).  Bit 0 is the
++ * software completion bit; bits 1 through 5 report the exceptions the
++ * hardware attributed to the trapping instruction, and lie at the same
++ * positions as the corresponding IEEE_TRAP_ENABLE_* bits.
++ */
++#define EXC_SUM_INV	(1UL << 1)
++#define EXC_SUM_DZE	(1UL << 2)
++#define EXC_SUM_OVF	(1UL << 3)
++#define EXC_SUM_UNF	(1UL << 4)
++#define EXC_SUM_INE	(1UL << 5)
++#define EXC_SUM_MASK	(EXC_SUM_INV | EXC_SUM_DZE | EXC_SUM_OVF	\
++			 | EXC_SUM_UNF | EXC_SUM_INE)
++
++/*
++ * Emulate the floating point instruction at address PC.  SUMMARY is the
++ * exception summary register the trap was delivered with.  Returns -1 if the
+  * instruction to be emulated is illegal (such as with the opDEC trap), else
+  * the SI_CODE for a SIGFPE signal, else 0 if everything's ok.
+  *
+@@ -95,7 +110,7 @@ module_exit(alpha_fp_emul_cleanup_module);
+  * stick the result of the operation into the appropriate register.
+  */
+ long
+-alpha_fp_emul (unsigned long pc)
++alpha_fp_emul (unsigned long pc, unsigned long summary)
+ {
+ 	FP_DECL_EX;
+ 	FP_DECL_S(SA); FP_DECL_S(SB); FP_DECL_S(SR);
+@@ -300,12 +315,56 @@ alpha_fp_emul (unsigned long pc)
+ 		swcr |= (_fex << IEEE_STATUS_TO_EXCSUM_SHIFT);
+ 		current_thread_info()->ieee_state
+ 		  |= (_fex << IEEE_STATUS_TO_EXCSUM_SHIFT);
++	}
+ 
+-		/* Update hardware control register.  */
+-		fpcr &= (~FPCR_MASK | FPCR_DYN_MASK);
+-		fpcr |= ieee_swcr_to_fpcr(swcr);
+-		wrfpcr(fpcr);
 +	/*
-+	 * Disable denormal operand traps only when denormal inputs are to be
-+	 * flushed to zero.  Otherwise they must keep trapping, so that /S
-+	 * instructions reach the kernel emulation handler.
++	 * EV6 records exception status bits in the FPCR before delivering the
++	 * software completion trap, and swcr_update_status() above merged them
++	 * into SWCR.  Some can be wrong for the instruction we just emulated:
++	 * a CVTTS of a value exactly representable as a subnormal sets FPCR_UNF
++	 * even though the result is exact.  Clear the exceptions the trap
++	 * reported but that soft-fp did not raise.
 +	 */
-+	fp |= (sw & IEEE_MAP_DMZ ? FPCR_DNOD : 0);
- 	return fp;
- }
++	if (implver() == IMPLVER_EV6) {
++		unsigned long spurious = summary & EXC_SUM_MASK;
  
-@@ -116,7 +121,6 @@ ieee_fpcr_to_swcr(unsigned long fp)
- 			     | IEEE_TRAP_ENABLE_OVF);
- 	sw |= (~fp >> 57) & (IEEE_TRAP_ENABLE_UNF | IEEE_TRAP_ENABLE_INE);
- 	sw |= (fp >> 47) & IEEE_MAP_UMZ;
--	sw |= (~fp >> 41) & IEEE_TRAP_ENABLE_DNO;
- 	return sw;
- }
- 
++		if (spurious & (EXC_SUM_UNF | EXC_SUM_OVF)) {
++			/*
++			 * EXC_SUM reports only the underflow or overflow,
++			 * but the hardware sets INE alongside it in the FPCR.
++			 */
++			spurious |= EXC_SUM_INE;
++		} else if (!spurious) {
++			/*
++			 * No exception reported, so this was a denormal
++			 * operand trap, for which INE and UNF can be
++			 * fabricated as well.
++			 */
++			spurious = EXC_SUM_INE | EXC_SUM_UNF;
++		}
++
++		/*
++		 * Never clear an exception software has confirmed.  Every
++		 * instruction that genuinely raises one traps for software
++		 * completion and is recorded in ieee_state above, so a bit
++		 * found there -- including one just set from _fex -- belongs
++		 * to this or an earlier instruction and must survive.
++		 */
++		spurious &= ~(current_thread_info()->ieee_state
++			      >> IEEE_STATUS_TO_EXCSUM_SHIFT);
++
++		swcr &= ~(spurious << IEEE_STATUS_TO_EXCSUM_SHIFT);
++	}
++
++	/*
++	 * Update hardware control register.  This has to happen even when
++	 * soft-fp raised nothing, to clear any fabricated bits.
++	 */
++	fpcr &= (~FPCR_MASK | FPCR_DYN_MASK);
++	fpcr |= ieee_swcr_to_fpcr(swcr);
++	wrfpcr(fpcr);
++
++	if (_fex) {
+ 		/* Do we generate a signal?  */
+ 		_fex = _fex & swcr & IEEE_TRAP_ENABLE_MASK;
+ 		si_code = 0;
+@@ -387,9 +446,16 @@ alpha_fp_emul_imprecise (struct pt_regs *regs, unsigned long write_mask)
+ 			break;
+ 		}
+ 		if (!write_mask) {
+-			/* Re-execute insns in the trap-shadow.  */
++			/*
++			 * Re-execute insns in the trap-shadow.  Pass no
++			 * exception summary: it describes the trap, which
++			 * was taken anywhere in the shadow, and so is not
++			 * attribution for this instruction.  Nothing is
++			 * lost, since only EV6 -- which traps precisely and
++			 * never comes this way -- needs it.
++			 */
+ 			regs->pc = trigger_pc + 4;
+-			si_code = alpha_fp_emul(trigger_pc);
++			si_code = alpha_fp_emul(trigger_pc, 0);
+ 			goto egress;
+ 		}
+ 		trigger_pc -= 4;
 
 -- 
 2.54.0
