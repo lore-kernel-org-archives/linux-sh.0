@@ -1,68 +1,68 @@
-Received: from mail-yx1-f52.google.com (mail-yx1-f52.google.com [74.125.224.52])
+Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com [209.85.128.176])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3322C397943
-	for <linux-sh@vger.kernel.org>; Mon,  3 Aug 2026 23:40:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7F71A396D13
+	for <linux-sh@vger.kernel.org>; Mon,  3 Aug 2026 23:40:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.176
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785800454; cv=none; b=Mc2ZkyS6wLmKVJSQOLbcZOSqQDqPFuwG1Nx8UNba2bX/G2qJIPhMW7QX93vaMRNZ64Wz18WJ7517YlhW34AO+qZeq0BI2GD+5En58HQMEPMnHxpxUeMIuyH32OuswPGKZDQrjdO0tSaGXjc2hdZ8zj49d0XEGN4REdYZvd4SuvI=
+	t=1785800455; cv=none; b=T4B+di+6v5T711MyJLUniQAIaz7Z2QpUiYZv0/g5sakSPek/QFAStojdBSoydmYoArpg8E8+tnyEp2JQ7XPP+34+KifT/EaX+A1Xpwh5Gytw0Ro+pq2g3K6u+UCI+0S98u1dmm2Qw5httEVxV9cikMeRcIbHzNSmkfy54UxneCY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785800454; c=relaxed/simple;
-	bh=l7nUfbmcaF4fNgdDGLaluLSkk7Vtw5eJN5GAj2QQfq8=;
+	s=arc-20240116; t=1785800455; c=relaxed/simple;
+	bh=wvu0uj6TEyjFZkFm/MbHPEdtVkNq6aaBrvr0yXB4eJ0=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=b5Y02rXHerX4WOi7XlNPHBAol/teNd1v9+IiMC+dIlrPGcw9Nhbxq86Tg9EeVbE6hOadU3qJvnsFbXxMaKpBv7irnOYBPH5GnRA6SP7LnR/qGiDT9W1vt7SdlObdNa6buOKlAwOXouSLvjNUbntCgFxxczPQb+ybYsOQ69TAhhw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=UGgpVXP/; arc=none smtp.client-ip=74.125.224.52
+	 In-Reply-To:To:Cc; b=G7qRy4G/VVPrNUM3PsDBLjhdTLVDllzW9hxhN0ps/hLLMsfw+w1YCFr0FDT7gLbIjfmHVCS/Ddjhf1GMCRIJtf0Juht/uYPcnxMtYI/DByPHiyFvxzYR6LtePhXnQGEDZaaT5XXzQfc9C+I1zrH6Qkc9eG/0RCsg1Pd/1DhAyd4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=c85sAWlT; arc=none smtp.client-ip=209.85.128.176
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="UGgpVXP/"
-Received: by mail-yx1-f52.google.com with SMTP id 956f58d0204a3-6689402c7bfso4636806d50.1
-        for <linux-sh@vger.kernel.org>; Mon, 03 Aug 2026 16:40:52 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="c85sAWlT"
+Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-81eaf3709b4so51870267b3.0
+        for <linux-sh@vger.kernel.org>; Mon, 03 Aug 2026 16:40:53 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1785800451; x=1786405251; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1785800452; x=1786405252; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=+2j9pfRfEIp9EnFpow/3t02qd283vXOlzX6oo/fcXlc=;
-        b=UGgpVXP/khMSfc9ttEUIqTVy5cbTCBDtfR2MBMSdv6FTzuTDrWOSyTgB8TgqULTS5A
-         VINTeLpRFN0f85mCyyiRlwMildC/IkPd+byPa0Z9UVsOx4yjtxxnWEWQpheimZIe5/lG
-         pmxv3ALKrCSP2AcF4rIkKhBYBxrpKvwFJBjAKy9uKIxmR/aQAf8ddak57Q+cAbjE+PLb
-         ytu9n2aZ6mqfLgtVV8IvFUwZ6SV4pRWNFarSLTIQUrkt57hHJa1Bfr6FVjpg0kB4FuJu
-         4u1va7P8H+4gl12h1sIxPWx4q6tKHz5IkINuC2Y6hLny7yM3aySom7ectyQJGfODyHI1
-         4mjw==
+        bh=5Jv9folb9jOklDdXuGWBrNQv0WmbSuUwS788YmUFoOM=;
+        b=c85sAWlTEkWzRa9zoVMY3/0oeKRUVNF78t9ZDw36JqbdBa7+ObsHpT6hZ1BFV2o5VZ
+         uZe8hqrE/rwIL8+gWt0308XOasXDtW75MG09m/6537WUZzYGt8Wl7l4ElYM/yTPuYhhA
+         ECs5jND4NFMV0bN66wB1jsls/Z0JOHPFmMzroKHypMUPg6VXMjvkJ5EvBS+BXU1m7YT/
+         RsxT8UpJfjuDmMo0v6C+yP2HLtwJw9r8BbtzxqMl1nDAZ1hnlDAF+tkAr0N9JOooDu3L
+         aq5r/hG3WcqOsW28Z674iOQpcd7s0aEbACI3UgymtmQc5GJNTO8xDCSMQbKr3xmKOcuZ
+         A1XA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785800451; x=1786405251;
+        d=1e100.net; s=20251104; t=1785800452; x=1786405252;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=+2j9pfRfEIp9EnFpow/3t02qd283vXOlzX6oo/fcXlc=;
-        b=gzS3rCzuKlTiEZydgWEXETS3O94FJ9l4dyxjUjaS+KdNK7pRZHQtp9Qld4PRsNmbKN
-         rFzgKlcIn6sVbHL6o39OCe1XwIM58ujZ8sToWnhU2bgOpgTrM4L9pAvFvbHFCm2fHiHn
-         fUmqaeMdv/EGtx5DEE8QVidokRGbk0CDwgpvlv6utgDtpl9tilS37BlIo/p4FqItDL2Y
-         WHFoDT53OTOk17P7nqVZiJvdJmfAAqUQ6bYXJYzboqucLs0rJ74+bq0YnEwinD3cKxmT
-         eZtQio28OgLOqYICrxZigtUYplnqtsU34EvgKWfkXvP+eVYNtYP+8nyyEbR6vKHvCuxv
-         Tr9w==
-X-Forwarded-Encrypted: i=1; AHgh+RpGcOSuWFGemnT+/ajGvn2TmyR6Vj2xuJ/sU7l6nGi0a3RQwW9iYqlvlZvHI6HfrXymfU0FHi2RLw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywzphmc3naBFXBGovMMQnk6F6FClyjFZPKvr85/QX/L08lb3o9G
-	QYPg5IFYdq7e016XddvaMN+FofhI2XjAizbuW3eAlyzMs0Upg48jKjyA
-X-Gm-Gg: AR+sD127G1M3PuGGv0saYPEPROhJ4cSQhMAJn6BUDFSxwNFhJDectbhPbNW0v3XYcJF
-	eYRZvWGA+vPnphlYh83d1t57Y1ZM+8Bs9JEsZxxvqi3/suHHPdDLwNjostU1EV50pCPrTpiSboF
-	1ZvTDwS0aMSUbcsc/Sno6moScvdJjD/Oj5Lvedos7yd4PlR1BjuFdvAt8BD3kRQPSqTf3enDQ/E
-	hwWPoZs4IvVHKjDqTJRybZiNi5SfnpH9XDmHmwBM7Fj0GF/if0Hyyk0WGCdueeFEFj+nGjkxUUe
-	UHC/1RrCSfTA3kH/SCEyB34ERMMIJszXfXuWL+k+BzuJz+cuvC1fAY5xDz+AIEpYXuACG+sDWbh
-	+jvQsUCQLWjVg2LaeqHIVDpUDTpQ/kMrMBV+zF3SqrU/0cD9FIr29RZWv/FELYbF9OVmPSfeuus
-	fwWq85R/ePRlP/lLxZCqX1kgIPJC9QE6wxHZl6zwHj/u4S2umgaGjw7mz2bRbh
-X-Received: by 2002:a05:690c:e3d1:b0:81e:f1e3:52ad with SMTP id 00721157ae682-81fd4ba85a4mr156253787b3.30.1785800450957;
-        Mon, 03 Aug 2026 16:40:50 -0700 (PDT)
+        bh=5Jv9folb9jOklDdXuGWBrNQv0WmbSuUwS788YmUFoOM=;
+        b=RsTEFbb73gn0h38BVDNfmkddgEjdaMll9j95Wl9pjAq3xn2AIrYGNOuzK71S8vIgLx
+         7QQSlCy5yIFfx0v2wKjCRA/zv1oRIFAM/yzZETCZA/WsebQ5yADUbwqqqPlWzhCzluZn
+         B0TMDW+cO5Wd3sHdg2D21yL2jwV6ryGUWkNp1bn/3uloSOspxwXPu2QKbbn/4HeQXKlF
+         K+viqF4YBF643P0r6ekAeCrF17oPKYLXM5QoqCKdoRYF26e722U5KKKE8opxbtnjiJQV
+         3hFQE4PcGl/Gb9hFzglbmpEfKQwMSo18nIrjqh5WUyvVWa/cE2pWG7LCyLe+0gdQCn2m
+         gD9w==
+X-Forwarded-Encrypted: i=1; AHgh+Rpl/qKHQT9LrOHs8qnwHm4VTpp8BNsHGAjiqnphwturb8x+kRFc34bJMvW88Rj7vcbw5mYWQiflug==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyqSQM9NWRQ1k+Akmpr8TdsSC9RV/B4RK0I496uuUq/uawhpVNR
+	Tlh190L3vClChNZXQAdWVyawhIm2RV9WFgxtvfXVVG6M3uZypijgu591
+X-Gm-Gg: AR+sD12FcKVJTSN+sclursnOvBaTRRfYLSSlcewC+G8Gwt0Ntm4kwB1w2CVrzJtWOJS
+	FOsHIAMCUdP6x36WgApWjLSdygbeNocVPVhWghH47ZbrOkVrswDllHrh/3AakYUFUcSRlh/MORB
+	Q6NN8fSbYLHMke1An0De69UZOHbGvGwD2kThKUxfK4j2l7oURRC7IVJTjDLktQtpkvPrPjR2JOV
+	7KBgiIjJSvt0v6jBHJbg0lwHMxCS7Q5DryQOKbEqJp0SBJxx3o5vkN5dexFHIlVjkutfCCh3rqY
+	HbDsj/KifzkOP8EUXgzIlWE2Wwn/PvkH2TqE1lIuBmmDYiqHCCNt7Q6HOuzL8fqUh9ygq+Q4me/
+	5zs0RrUamFZuGnwG/8K27p8izIoCLh7ojaYObdnovbQL3psdQH33Hd4LjtdzKDpB/BpYNRFV3y3
+	ZH0texWLGbuyNMAP1eeKlUSe78U88/ugDSBsPC28ONaSXsKE+A7HmJDObuD3e4ppBmq78bGls=
+X-Received: by 2002:a05:690c:ecf:b0:814:7a54:3a93 with SMTP id 00721157ae682-81fd4b372d9mr163845447b3.23.1785800452413;
+        Mon, 03 Aug 2026 16:40:52 -0700 (PDT)
 Received: from localhost ([2600:1702:7a90:6f9f:8bc4:8aec:108d:7a04])
-        by smtp.gmail.com with ESMTPSA id 00721157ae682-81fccf2e2b0sm62638757b3.8.2026.08.03.16.40.50
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-81fcd0d68b0sm65571757b3.28.2026.08.03.16.40.51
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 03 Aug 2026 16:40:50 -0700 (PDT)
+        Mon, 03 Aug 2026 16:40:51 -0700 (PDT)
 From: Matt Turner <mattst88@gmail.com>
-Date: Mon, 03 Aug 2026 19:40:46 -0400
-Subject: [PATCH 2/3] alpha: don't leak hardware-fabricated FP exception
- bits to user space
+Date: Mon, 03 Aug 2026 19:40:47 -0400
+Subject: [PATCH 3/3] alpha: determine tininess after rounding in the FP
+ emulation
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -71,7 +71,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260803-alpha-fp-exceptions-v1-2-c99d75608e60@gmail.com>
+Message-Id: <20260803-alpha-fp-exceptions-v1-3-c99d75608e60@gmail.com>
 References: <20260803-alpha-fp-exceptions-v1-0-c99d75608e60@gmail.com>
 In-Reply-To: <20260803-alpha-fp-exceptions-v1-0-c99d75608e60@gmail.com>
 To: Richard Henderson <richard.henderson@linaro.org>, 
@@ -82,224 +82,117 @@ Cc: linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
  Andreas Larsson <andreas@gaisler.com>, stable@vger.kernel.org
 X-Mailer: b4 0.14.3
 
-On EV6 and later the hardware records exception status bits in the FPCR
-before delivering a software completion trap, and those bits can be wrong
-for the instruction that trapped.  Converting a double that is exactly
-representable as a subnormal float sets FPCR_UNF even though the result
-is exact, and an underflow trap additionally sets FPCR_INE even when the
-emulated operation turns out to be exact.
+IEEE 754 lets an architecture determine tininess of a floating-point
+result either before or after rounding, but requires the same choice for
+every operation.  Alpha determines it after rounding, and stdlib's
+tst-tininess confirms the hardware does so for the results it produces
+itself.
 
-alpha_fp_emul() only wrote the FPCR when soft-fp raised an exception, so
-whenever it determined that the instruction was exact the fabricated bits
-stayed in the FPCR and were reported to user space by fetestexcept().
+The soft-fp emulation has no notion of the distinction and always
+determines tininess before rounding, so a result that the hardware would
+not consider tiny is reported as underflowing whenever the instruction
+happens to trap for software completion.  The two paths then disagree on
+the same machine.  A multiply of the largest subnormal double by
+1 + 2^-52 rounds up to the smallest normal and raises no underflow when
+the operands are normal, but raises it when an operand is subnormal and
+the instruction traps:
 
-Pass the exception summary register down from do_entArith() so the
-handler can tell which exceptions the hardware attributed to the trapping
-instruction, and always write the FPCR.  Clear the exceptions that the
-trap reported but that soft-fp did not raise.  EXC_SUM reports only the
-underflow or overflow when the hardware also set INE, so treat INE as a
-candidate in that case, and treat a trap with no reported exception as a
-denormal operand trap, for which the hardware can fabricate INE and UNF
-as well.  Bits that software has already confirmed in ieee_state belong
-to this or an earlier instruction and are never cleared.
+  glibc math testsuite, test-float32x-float64-mul:
+    Failure: mul_double (0x3.ffffffffffffcp-1024, 0x1.0000000000001p+0):
+    Exception "Underflow" set
 
-The imprecise path passes no summary.  There the trap was taken somewhere
-in the trap shadow, so EXC_SUM is not attribution for the instruction
-being re-executed -- and only EV6, which traps precisely and so never
-takes that path, has fabricated bits to clear.  For the same reason the
-clearing is guarded by implver(), matching swcr_update_status().
-
-On an UP1500 (EV68) this takes the glibc math testsuite from 831 failures
-to 28, the remainder being unrelated to exception status.
-
-This belongs with the preceding fix to ieee_swcr_to_fpcr(), and should
-not be backported without it -- nor it without this.  That fix stops
-FPCR_DNOD being set unconditionally, so denormal operand traps start
-firing again.  Those traps very often find an exact result, which is
-precisely the case where the old code left the FPCR unwritten and the
-fabricated bits visible.  Applied alone it would make spurious exception
-flags more common, not less.
-
-One case cannot be resolved here: an inexact instruction without the
-software completion suffix never traps, so its INE reaches the FPCR
-without being recorded anywhere else.  Such a bit is indistinguishable
-from an INE the hardware fabricated for a trapping instruction, and is
-lost if an underflow or overflow trap with an exact result follows it.
-The FPCR is the only record of those instructions and it carries no
-attribution.
-
-The bug predates the git history, so there is no commit to reference in a
-Fixes tag.
+Add _FP_TININESS_AFTER_ROUNDING, as glibc's copy of soft-fp has, and set
+it for alpha.  It determines tininess by rounding a copy of the result as
+if the exponent range were unbounded, which is what the definition asks
+for; a plain check of whether the rounded result came out normal is not
+equivalent and would be wrong for values that stay tiny under an
+unbounded exponent range but round up to the smallest normal in the
+subnormal grid.  The macro defaults to zero, so powerpc, sh and sparc
+keep determining tininess before rounding as they do now.
 
 Cc: stable@vger.kernel.org # 5.15+
 Signed-off-by: Matt Turner <mattst88@gmail.com>
 ---
- arch/alpha/kernel/traps.c  |  6 ++--
- arch/alpha/math-emu/math.c | 88 ++++++++++++++++++++++++++++++++++++++++------
- 2 files changed, 80 insertions(+), 14 deletions(-)
+ arch/alpha/include/asm/sfp-machine.h |  4 ++++
+ include/math-emu/op-common.h         | 23 +++++++++++++++++++++--
+ include/math-emu/soft-fp.h           |  8 ++++++++
+ 3 files changed, 33 insertions(+), 2 deletions(-)
 
-diff --git a/arch/alpha/kernel/traps.c b/arch/alpha/kernel/traps.c
-index 7004397937cf..7cd20e5f9ee0 100644
---- a/arch/alpha/kernel/traps.c
-+++ b/arch/alpha/kernel/traps.c
-@@ -166,12 +166,12 @@ static long dummy_emul(void) { return 0; }
- long (*alpha_fp_emul_imprecise)(struct pt_regs *regs, unsigned long writemask)
-   = (void *)dummy_emul;
- EXPORT_SYMBOL_GPL(alpha_fp_emul_imprecise);
--long (*alpha_fp_emul) (unsigned long pc)
-+long (*alpha_fp_emul) (unsigned long pc, unsigned long summary)
-   = (void *)dummy_emul;
- EXPORT_SYMBOL_GPL(alpha_fp_emul);
- #else
- long alpha_fp_emul_imprecise(struct pt_regs *regs, unsigned long writemask);
--long alpha_fp_emul (unsigned long pc);
-+long alpha_fp_emul (unsigned long pc, unsigned long summary);
+diff --git a/arch/alpha/include/asm/sfp-machine.h b/arch/alpha/include/asm/sfp-machine.h
+index 5fe63afbd474..bff1ad963c68 100644
+--- a/arch/alpha/include/asm/sfp-machine.h
++++ b/arch/alpha/include/asm/sfp-machine.h
+@@ -59,6 +59,10 @@
+     R##_c = FP_CLS_NAN;						\
+   } while (0)
+ 
++/* Alpha determines tininess after rounding, so the emulation must do the
++   same as the hardware does for the results it produces itself.  */
++#define _FP_TININESS_AFTER_ROUNDING	1
++
+ /* Obtain the current rounding mode. */
+ #define FP_ROUNDMODE	mode
+ #define FP_RND_NEAREST	(FPCR_DYN_NORMAL >> FPCR_DYN_SHIFT)
+diff --git a/include/math-emu/op-common.h b/include/math-emu/op-common.h
+index 8ce066c035cf..1d1ce5c08efc 100644
+--- a/include/math-emu/op-common.h
++++ b/include/math-emu/op-common.h
+@@ -135,6 +135,24 @@ do {								\
+     else							\
+       {								\
+ 	/* we've got a denormalized number */			\
++	int _FP_PACK_CANONICAL_is_tiny = 1;			\
++	if (_FP_TININESS_AFTER_ROUNDING && X##_e == 0)		\
++	  {							\
++	    /* Architectures that detect tininess after rounding	\
++	       only signal underflow if the result is still		\
++	       subnormal once rounded as if the exponent range	\
++	       were unbounded.  Round a copy to find out.  */	\
++	    FP_DECL_##fs(_FP_PACK_CANONICAL_T);			\
++	    /* The class field is not used by the rounding below,	\
++	       and is unused entirely where this block is dead.  */	\
++	    (void)_FP_PACK_CANONICAL_T##_c;			\
++	    _FP_FRAC_COPY_##wc(_FP_PACK_CANONICAL_T, X);	\
++	    _FP_PACK_CANONICAL_T##_s = X##_s;			\
++	    _FP_PACK_CANONICAL_T##_e = X##_e;			\
++	    _FP_ROUND(wc, _FP_PACK_CANONICAL_T);		\
++	    if (_FP_FRAC_OVERP_##wc(fs, _FP_PACK_CANONICAL_T))	\
++	      _FP_PACK_CANONICAL_is_tiny = 0;			\
++	  }							\
+ 	X##_e = -X##_e + 1;					\
+ 	if (X##_e <= _FP_WFRACBITS_##fs)			\
+ 	  {							\
+@@ -161,8 +179,9 @@ do {								\
+ 		    _FP_FRAC_SRL_##wc(X, _FP_WORKBITS);		\
+ 		  }						\
+ 	      }							\
+-	    if ((FP_CUR_EXCEPTIONS & FP_EX_INEXACT) ||		\
+-		(FP_TRAPPING_EXCEPTIONS & FP_EX_UNDERFLOW))	\
++	    if (_FP_PACK_CANONICAL_is_tiny			\
++		&& ((FP_CUR_EXCEPTIONS & FP_EX_INEXACT) ||	\
++		    (FP_TRAPPING_EXCEPTIONS & FP_EX_UNDERFLOW)))	\
+ 		FP_SET_EXCEPTION(FP_EX_UNDERFLOW);		\
+ 	  }							\
+ 	else							\
+diff --git a/include/math-emu/soft-fp.h b/include/math-emu/soft-fp.h
+index 5650c1628383..02ada0a9fca1 100644
+--- a/include/math-emu/soft-fp.h
++++ b/include/math-emu/soft-fp.h
+@@ -31,6 +31,14 @@
+ #include <endian.h>
  #endif
  
- asmlinkage void
-@@ -185,7 +185,7 @@ do_entArith(unsigned long summary, unsigned long write_mask,
- 		   emulate the instruction.  If the processor supports
- 		   precise exceptions, we don't have to search.  */
- 		if (!amask(AMASK_PRECISE_TRAP))
--			si_code = alpha_fp_emul(regs->pc - 4);
-+			si_code = alpha_fp_emul(regs->pc - 4, summary);
- 		else
- 			si_code = alpha_fp_emul_imprecise(regs, write_mask);
- 		if (si_code == 0)
-diff --git a/arch/alpha/math-emu/math.c b/arch/alpha/math-emu/math.c
-index 68d420bfd3c0..e3f2df3729e3 100644
---- a/arch/alpha/math-emu/math.c
-+++ b/arch/alpha/math-emu/math.c
-@@ -52,13 +52,13 @@ MODULE_DESCRIPTION("FP Software completion module");
- MODULE_LICENSE("GPL v2");
- 
- extern long (*alpha_fp_emul_imprecise)(struct pt_regs *, unsigned long);
--extern long (*alpha_fp_emul) (unsigned long pc);
-+extern long (*alpha_fp_emul) (unsigned long pc, unsigned long summary);
- 
- static long (*save_emul_imprecise)(struct pt_regs *, unsigned long);
--static long (*save_emul) (unsigned long pc);
-+static long (*save_emul) (unsigned long pc, unsigned long summary);
- 
- long do_alpha_fp_emul_imprecise(struct pt_regs *, unsigned long);
--long do_alpha_fp_emul(unsigned long);
-+long do_alpha_fp_emul(unsigned long, unsigned long);
- 
- static int alpha_fp_emul_init_module(void)
- {
-@@ -86,7 +86,22 @@ module_exit(alpha_fp_emul_cleanup_module);
- 
- 
- /*
-- * Emulate the floating point instruction at address PC.  Returns -1 if the
-+ * Exception bits of the exception summary register (EXC_SUM).  Bit 0 is the
-+ * software completion bit; bits 1 through 5 report the exceptions the
-+ * hardware attributed to the trapping instruction, and lie at the same
-+ * positions as the corresponding IEEE_TRAP_ENABLE_* bits.
-+ */
-+#define EXC_SUM_INV	(1UL << 1)
-+#define EXC_SUM_DZE	(1UL << 2)
-+#define EXC_SUM_OVF	(1UL << 3)
-+#define EXC_SUM_UNF	(1UL << 4)
-+#define EXC_SUM_INE	(1UL << 5)
-+#define EXC_SUM_MASK	(EXC_SUM_INV | EXC_SUM_DZE | EXC_SUM_OVF	\
-+			 | EXC_SUM_UNF | EXC_SUM_INE)
++/* Whether the architecture determines tininess of a floating-point
++   result after rounding rather than before it.  IEEE 754 permits either
++   but requires the same choice for every operation, so this has to agree
++   with what the hardware does for the results it produces itself.  */
++#ifndef _FP_TININESS_AFTER_ROUNDING
++#define _FP_TININESS_AFTER_ROUNDING	0
++#endif
 +
-+/*
-+ * Emulate the floating point instruction at address PC.  SUMMARY is the
-+ * exception summary register the trap was delivered with.  Returns -1 if the
-  * instruction to be emulated is illegal (such as with the opDEC trap), else
-  * the SI_CODE for a SIGFPE signal, else 0 if everything's ok.
-  *
-@@ -95,7 +110,7 @@ module_exit(alpha_fp_emul_cleanup_module);
-  * stick the result of the operation into the appropriate register.
-  */
- long
--alpha_fp_emul (unsigned long pc)
-+alpha_fp_emul (unsigned long pc, unsigned long summary)
- {
- 	FP_DECL_EX;
- 	FP_DECL_S(SA); FP_DECL_S(SB); FP_DECL_S(SR);
-@@ -300,12 +315,56 @@ alpha_fp_emul (unsigned long pc)
- 		swcr |= (_fex << IEEE_STATUS_TO_EXCSUM_SHIFT);
- 		current_thread_info()->ieee_state
- 		  |= (_fex << IEEE_STATUS_TO_EXCSUM_SHIFT);
-+	}
- 
--		/* Update hardware control register.  */
--		fpcr &= (~FPCR_MASK | FPCR_DYN_MASK);
--		fpcr |= ieee_swcr_to_fpcr(swcr);
--		wrfpcr(fpcr);
-+	/*
-+	 * EV6 records exception status bits in the FPCR before delivering the
-+	 * software completion trap, and swcr_update_status() above merged them
-+	 * into SWCR.  Some can be wrong for the instruction we just emulated:
-+	 * a CVTTS of a value exactly representable as a subnormal sets FPCR_UNF
-+	 * even though the result is exact.  Clear the exceptions the trap
-+	 * reported but that soft-fp did not raise.
-+	 */
-+	if (implver() == IMPLVER_EV6) {
-+		unsigned long spurious = summary & EXC_SUM_MASK;
- 
-+		if (spurious & (EXC_SUM_UNF | EXC_SUM_OVF)) {
-+			/*
-+			 * EXC_SUM reports only the underflow or overflow,
-+			 * but the hardware sets INE alongside it in the FPCR.
-+			 */
-+			spurious |= EXC_SUM_INE;
-+		} else if (!spurious) {
-+			/*
-+			 * No exception reported, so this was a denormal
-+			 * operand trap, for which INE and UNF can be
-+			 * fabricated as well.
-+			 */
-+			spurious = EXC_SUM_INE | EXC_SUM_UNF;
-+		}
-+
-+		/*
-+		 * Never clear an exception software has confirmed.  Every
-+		 * instruction that genuinely raises one traps for software
-+		 * completion and is recorded in ieee_state above, so a bit
-+		 * found there -- including one just set from _fex -- belongs
-+		 * to this or an earlier instruction and must survive.
-+		 */
-+		spurious &= ~(current_thread_info()->ieee_state
-+			      >> IEEE_STATUS_TO_EXCSUM_SHIFT);
-+
-+		swcr &= ~(spurious << IEEE_STATUS_TO_EXCSUM_SHIFT);
-+	}
-+
-+	/*
-+	 * Update hardware control register.  This has to happen even when
-+	 * soft-fp raised nothing, to clear any fabricated bits.
-+	 */
-+	fpcr &= (~FPCR_MASK | FPCR_DYN_MASK);
-+	fpcr |= ieee_swcr_to_fpcr(swcr);
-+	wrfpcr(fpcr);
-+
-+	if (_fex) {
- 		/* Do we generate a signal?  */
- 		_fex = _fex & swcr & IEEE_TRAP_ENABLE_MASK;
- 		si_code = 0;
-@@ -387,9 +446,16 @@ alpha_fp_emul_imprecise (struct pt_regs *regs, unsigned long write_mask)
- 			break;
- 		}
- 		if (!write_mask) {
--			/* Re-execute insns in the trap-shadow.  */
-+			/*
-+			 * Re-execute insns in the trap-shadow.  Pass no
-+			 * exception summary: it describes the trap, which
-+			 * was taken anywhere in the shadow, and so is not
-+			 * attribution for this instruction.  Nothing is
-+			 * lost, since only EV6 -- which traps precisely and
-+			 * never comes this way -- needs it.
-+			 */
- 			regs->pc = trigger_pc + 4;
--			si_code = alpha_fp_emul(trigger_pc);
-+			si_code = alpha_fp_emul(trigger_pc, 0);
- 			goto egress;
- 		}
- 		trigger_pc -= 4;
+ #define _FP_WORKBITS		3
+ #define _FP_WORK_LSB		((_FP_W_TYPE)1 << 3)
+ #define _FP_WORK_ROUND		((_FP_W_TYPE)1 << 2)
 
 -- 
 2.54.0
