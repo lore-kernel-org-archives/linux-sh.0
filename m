@@ -1,97 +1,122 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pg1-f181.google.com (mail-pg1-f181.google.com [209.85.215.181])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5483A25B0B3;
-	Mon,  3 Aug 2026 05:48:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 94B411BF33
+	for <linux-sh@vger.kernel.org>; Mon,  3 Aug 2026 06:07:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.181
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785736088; cv=none; b=cTB1n9JB6cNe27gRHBUPK2EV6WyIG7bbcnl/cW//1U5FjF66MuGiEzJX3rlff+N//ozBNJCh59vai8grlj8CuTW9PUPd+e2QHltNAPhzXWXkqhY+73bvjZwRE9sbjobrS3PkpdZ69MGGLunGlLglzDM5YBrZmcG/F8uuwBc1HJo=
+	t=1785737234; cv=none; b=PUMM0CPlgHaF9vV2NyANqQFGVnQcUlfqVR2Z43u+OLZrvDhx0I6F7Dpgix266Nf4wIxdsR67VIuAhP/4J2D7GQbA+t0tBjbU1WAfWiV/3t0KKGkZgrf3MR3bCfcBE4VzIzKiYUChjKc73XFTuXza6YL36Hwo0zYh4PHuF83A6KQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785736088; c=relaxed/simple;
-	bh=KKkhm0x0PswMk5fTmMZ046+NBgMprmXtaMVED65x/+g=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=IsSqu3lf8uth6GP7xI7MbNu+60cYDcMBkKbClF9MDXQYU8lnxE+VyEam3tzs3JJCkpjc8MEh39t/npvOTp8FNcRwyYDPTXoEGLOKEXClgmmCuAJx7V+ManIGPhOmhlRdaM9qZJAHSxtE9TtDs+LSUHhCbNFgqvfWtDou6dvkLEI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=dxECExoZ; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1785737234; c=relaxed/simple;
+	bh=VpuUzNZIeLkJLIkoXwftqmDNHRolrZYRf8l4gCk8KQE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=r8ssw8tW1NqQ+0hFSK5d2+0mdDd+N79SGr7JydPy83qlQ7MUFHNwxxBhT89VyobZmjm1tOiZ+8mCydufNkzUjoSyGOfHaq0Igoc8e43a3fzONy5gv0qSLYeqsvD/Iay6aDiZohHmqKT6/a6xGHO6FseGE4AfS2sZe7pGKSgPgrM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MGmmdb9s; arc=none smtp.client-ip=209.85.215.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="dxECExoZ"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=MbYMA1z0gDPsLiUzsbAO8Hg1Ch6czRJUmSwRGriZ+VQ=; t=1785736084;
-	x=1786340884; b=dxECExoZM4B6I5rjnzkkzN5IDsm5+PdoiZO9x/ZfwJ2v3mQ7Z7Pw8KyrpNh8r
-	6OTuo3BnoVBa19G6ZhsNp/sE2vsuD/Sunry+cBCrFXEiHer1Z3AM2oyLFEggL9I4FGMRBu0OtSsco
-	b27pAg7s42CkWUn9dhtP/bXgSQVnD/B/5gbg7/B8nWPz/SN0NiS61oVX7g1faCIwUkO9Heh96bEgf
-	WdR9Kvr/yNMFsj2p4DmmRWSa8m3yjxLgaP6cJBMRQUVhhV6bTia54Wz/x+pHb41QVImU9ysr9/Wc8
-	93BoGB4g1MAnBWBDnAqO3S6pMq5ZWOysYx17Yidtix+vPkIXMQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1wqlWh-00000000JkN-0N9N; Mon, 03 Aug 2026 07:47:51 +0200
-Received: from p5dc558fe.dip0.t-ipconnect.de ([93.197.88.254] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1wqlWg-00000002Bbj-3cew; Mon, 03 Aug 2026 07:47:51 +0200
-Message-ID: <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MGmmdb9s"
+Received: by mail-pg1-f181.google.com with SMTP id 41be03b00d2f7-c9ef3e1337fso2108138a12.2
+        for <linux-sh@vger.kernel.org>; Sun, 02 Aug 2026 23:07:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1785737233; x=1786342033; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=438aZJFh3TYGe28EMm9S/1fNbKwuwZnuyyU/vtthY80=;
+        b=MGmmdb9sHhAiNEHrS3RB/K4nJjneUpGLrhBXysxIPEH/hIHQTwTjQt4Qmx40BKl9uW
+         PFsojvHCNkxwVJoJB3/BNXz9Tmd9DVo+syMI+ZEKtkjtX0Dca6tMkL/eVIJ/0aPLKlid
+         FDKFtxGMsDhKizTyZ+LeOhwnBxyv90x5ZoPjZQuFcCEaFIzXJ47d731GW2DObMc6GHE4
+         9Egknpi7lXso3YTlOnoMZFRnv8kgk488802wdG1hX7sBV/POhjaXAmbbxkIPBfu5jxs7
+         NIySeFnEh1j3QTv1KCdwMt8JDVy87h8fLVku5pzI798OweoUByCim2hBjfsBCxE9CH7A
+         7ceg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1785737233; x=1786342033;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=438aZJFh3TYGe28EMm9S/1fNbKwuwZnuyyU/vtthY80=;
+        b=S0giJ6Yrbc9Ah5Ba5S72Ua3e6ADcurNYiQMhj6l2AvWLr/PZ8Feu2pJghIy5aCKAHS
+         vb8PjZk0Ll8CpHm0vbv1hXxjGqms1h5C/+rTchm2yrKeXpop4w9jXSqX5+fxPlxbmCgp
+         x7P6spYlGzePdNvKRwnGU5svvYm5nrzfqEeDNzGgv4AScVPb5y2HNyHiqxfuK7hM0hI9
+         BnPfylriEv9lF42e16q6sw8KWp2LNlob7JVuohq99QxFtwNiaz505lofBMnK9Bl/vb/4
+         8Ffz3+V7L//KVlLd/Y8b8BF0ZMM4klYB0EtVR7sSh5iQGp/l9sJHvmBHS54V84/UVxyP
+         tJbQ==
+X-Forwarded-Encrypted: i=1; AHgh+RpA1pkbt4Ifkn73LZZX6D5PRLMS1Yx2HSu6d5izFQBzEHw2w1NLDogw3fI3jwetAcugiwom3gNN/A==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyVy3vfZppiYOog3Nw+7bU1HGSoLAGIUcVQD+oQbQaOqivdvAXu
+	9xwLIwG8QbXaBDFMKQNIBNjBmbTOeyRmuTdU0qtJXsCfIzZ/byAPO1d4
+X-Gm-Gg: AR+sD11oVAjAP3Xg/LRZF/f6kEviKVKtBhDoAaGivrOAw3N0cI2Cb3uv7EsXll6Ueg/
+	RoBYg3qM5hC0HP/R0lFqL0N3vAfWiV2b6N9BsHsbC7fW3QsVgQwmBx3VA0rJS6pu4wam2ucwFBa
+	kxaN7KflrOjMV9vLaRIBJ2ZuUhJlyQ3EnxzAVNBYDNj/GL8b+utje/qg53ADeXHl6+lur8nMPqr
+	OhFrtx/VcHgN/beOrOqFzo/DrHpUXg+HTigInDOmO8DROb5ZG22zB+h4GBsQXGfECLdBHwZTstH
+	kLx/ulI+jjIE2JsRdqeM65V1pcbl9ggzoqTMSxTvg6ONF/e5QmJVomvho5FMGMGtZEnbatECEGN
+	3sZCkeIw0bwzBmgPzMCxClyVXLZmlGlJt5Jj7J0CMoWDRBUiDnlTVx57Co61rwY0z9R7sCNhVbG
+	FDYYzFQSpQcjkAWjgAzWufeN27OnW2NLuDPRLjrfGXc80cPbMgK0mCV8Vv2MBf0CnhAXW0yC2Q5
+	PIsx2koVJBTAO18z++pIf7dBiewMw==
+X-Received: by 2002:a05:6a21:7a82:b0:3c3:652c:664e with SMTP id adf61e73a8af0-3c92a98f2camr9231223637.69.1785737233015;
+        Sun, 02 Aug 2026 23:07:13 -0700 (PDT)
+Received: from google.com ([2a00:79e0:2ebe:8:4fff:876c:cdae:e53c])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3153db2f911sm37519963eec.0.2026.08.02.23.07.11
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 02 Aug 2026 23:07:12 -0700 (PDT)
+Date: Sun, 2 Aug 2026 23:07:09 -0700
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, Linus Walleij <linusw@kernel.org>, 
+	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	kernel test robot <lkp@intel.com>
 Subject: Re: [PATCH] sh: mach-rsk: rsk7203: avoid using inline compound
  literals
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Yoshinori Sato	
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linus Walleij	
- <linusw@kernel.org>, Bartosz Golaszewski
- <bartosz.golaszewski@oss.qualcomm.com>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, kernel test
- robot	 <lkp@intel.com>
-Date: Mon, 03 Aug 2026 07:47:50 +0200
-In-Reply-To: <20260802-sh-rsk7203-swnode-props-v1-1-7a790cbac9e6@gmail.com>
+Message-ID: <anAvJM0u_TIgL4ck@google.com>
 References: <20260802-sh-rsk7203-swnode-props-v1-1-7a790cbac9e6@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+ <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
 
-Hello Dmitry,
+On Mon, Aug 03, 2026 at 07:47:50AM +0200, John Paul Adrian Glaubitz wrote:
+> Hello Dmitry,
+> 
+> On Sun, 2026-08-02 at 16:18 -0700, Dmitry Torokhov wrote:
+> > Using inline compound literals for property entries in software node
+> > initializers causes older compilers (GCC < 14) to fail with "initializer
+> > element is not constant".
+> > 
+> > Under C11 (6.6/6.7.9), initializers for objects with static storage
+> > duration must be constant expressions. Taking the address of an unnamed
+> > compound literal nested inside an anonymous compound literal array is
+> > not guaranteed by standard C to be a compile-time constant address,
+> > causing older GCC versions to reject it.
+> > 
+> > Fix this by declaring property entry arrays as named static const
+> > variables, ensuring their symbols evaluate to unambiguous compile-time
+> > address constants.
+> > 
+> > Fixes: 6905cdac0e51 ("sh: mach-rsk: rsk7203: use static device properties for LEDs and GPIO buttons")
+> 
+> Isn't that the patch that was forced into the kernel, overriding me
+> as the maintainer of arch/sh because Linus Walleij got impatient and
+> merged the patch into an immutable tree?
 
-On Sun, 2026-08-02 at 16:18 -0700, Dmitry Torokhov wrote:
-> Using inline compound literals for property entries in software node
-> initializers causes older compilers (GCC < 14) to fail with "initializer
-> element is not constant".
->=20
-> Under C11 (6.6/6.7.9), initializers for objects with static storage
-> duration must be constant expressions. Taking the address of an unnamed
-> compound literal nested inside an anonymous compound literal array is
-> not guaranteed by standard C to be a compile-time constant address,
-> causing older GCC versions to reject it.
->=20
-> Fix this by declaring property entry arrays as named static const
-> variables, ensuring their symbols evaluate to unambiguous compile-time
-> address constants.
->=20
-> Fixes: 6905cdac0e51 ("sh: mach-rsk: rsk7203: use static device properties=
- for LEDs and GPIO buttons")
+Yes, but incompatibility with older GCCs is not something that you'd
+recognize on the spot, would you?
 
-Isn't that the patch that was forced into the kernel, overriding me
-as the maintainer of arch/sh because Linus Walleij got impatient and
-merged the patch into an immutable tree?
+Also, you seem to be hung up on the notion of immutable branch. This is
+simply a branch that creator promises not to rewind/rebase so that it
+can be easily shared between different subsystems.
 
-Adrian
+While we are at this, there are a few more patch series for SH that I
+would like you to take a look at, pretty please...
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Thanks.
+
+-- 
+Dmitry
