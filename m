@@ -1,122 +1,98 @@
-Received: from mail-pl1-f180.google.com (mail-pl1-f180.google.com [209.85.214.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D4FB3438B0
-	for <linux-sh@vger.kernel.org>; Tue, 11 Aug 2026 06:55:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.180
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 052573B635B;
+	Tue, 11 Aug 2026 07:05:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786431353; cv=none; b=HetkXplx8ggrGYkT7An2m0ONceDcNqX2lwlofSrKcAy48/VlPXFs9zCB9KnUOf7O8KxFhVTXF+/tBzh/K6tGq36psWjFg4LW8U3fY8Vchog8MYXJMFQ5xpwk+45GZ6QO6qdCdBpk9p61/VIeOyzvnf6fomXvRlF+WA380Ho+xgU=
+	t=1786431921; cv=none; b=Jt2YB7lV+wi0sqsbOLdIktya0FX+U7TWQM+NFYJv8Gccfp45i6V7PWDnLXD/IVWki9rUfZpn+14Wqoq+hkmUwKTmPCK3eGVhpNiZQ8se9Fw23evk3rCVKT9itrJIdUtJe2gn3wqJeSctlsdkb5/UGIDFHLRsSFJKswBnbHl+Y/M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786431353; c=relaxed/simple;
-	bh=tZZLV6eyiwcGv5N3oyI6rD0AMUqGK1dWtQ5SUdhqr2s=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=kaZJPSWoMPvkBD3nw4ITO+gYhaieCMtxIxWvuxymQcbBrz3rWQoNpp6GUW1a+yqcOqISdhdk0De/GeV5UAdvJgaPwaDK6Im7VsykETMtojK9jS9n72UtU6xr76/wl6Y+bG3Lqe0VjiV6ZWNH4qe0u/Vqv1a65nUjIiEiD9gzPpo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.214.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-pl1-f180.google.com with SMTP id d9443c01a7336-2ce7d2adef4so36286535ad.3
-        for <linux-sh@vger.kernel.org>; Mon, 10 Aug 2026 23:55:47 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786431346; x=1787036146;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=0iZRfAdzYvTsaTTh/J3ab87cNtJMKi7JiQC3Jqumorg=;
-        b=C8xWoM3kvR9n3lp/wOTpl7TejvCW0T7KDj1rPVtigx2ioWP2wsqGv2EJANnQaKAKJg
-         MFYd7EZv7e1mFAtB28kc8kcSmE6yhwGMDCIWM9xauX0lQUT6vQcU/IrZJARB676CblkE
-         pp5iQ5U6DNfaQY21lPsNpUGa82lski95HpLskDwlC9DBldDi+4KBznu7E7oUIgmIvBJJ
-         S4b5ZJjqT/18ZfNl8FLgQjjRtf3pjMLNnzLJhPXQhXNEZhSpix+U8rr74rnaty1rHt64
-         UBhnmgwFboDXVj4sOeptS/KRyMWAashGjm6+Q8aDlK/QdPFLYiMPunPlMp9T0Bth8RGM
-         0zFw==
-X-Forwarded-Encrypted: i=1; AHgh+RpzdVvEQ03WBeD5H8OiN5YI0wENSpFccuSie2e5CnKZZmDn8sskVYpboDTRxLjLCxdUBlMEbefHUg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw7OTLnHuiB2XPsvklmwqK/gxtEFIWZF6Ocw/fiWMNKwoyTLH5I
-	2B0TMogbdtPbZwSjt9dJQV8S9Xk/YXGwn+xWSjNweVft/pDZ55VdK8tSYZ348Gqn
-X-Gm-Gg: AR+sD12t3damAW4oLHcC/FdbHd81ANg6Zmo9zEZy+ENxgHA9gNDlZrnqNWctOHTREXm
-	msy1bz+n5El9fXmxV3P7leFUrCSqP79qke3ezFAKX2OE2mSavDCMmDIYGXdbzXUt5PqGjeHeqN2
-	XiBnx18uEfninrm2UNYShKqo89sj7DDLLMO9OV31Ih4DuqGz9bMsOEYGafEeQtrjEYar57lb77J
-	8KFAzWuFhE5lWRLoGoMlctAJ/1D283zttx3PNHoiuaXOV8RZY9MrBOS24yKEDP3g+7k6POeZXgn
-	EiY98m3stoH5FfMSDLWhvYmcQKNdCYEvN8ALVY6UMAE0f9i3JBOQO6ebfBcvIbIclz3se3Aase5
-	Yy5xyPhHTWXW35CpwqfM2xObjrGkzG1BCllh0c75Px+G+y4MRUFwef24vX0fIDOCW7n7kSJ37EY
-	0jiD0pOvv5MJOtOYlsVfmZ6/blD4n2DJgLUpKhefhj1PrY2y+17nkRcN/z9YuIKfWEgoXgdwg6E
-	vAJJPQdzjmHoupk64dIIjPpHn+tSw==
-X-Received: by 2002:a17:902:d58b:b0:2c9:ceb9:865b with SMTP id d9443c01a7336-2d317992f47mr17977985ad.21.1786431345913;
-        Mon, 10 Aug 2026 23:55:45 -0700 (PDT)
-Received: from mail-pl1-f174.google.com (mail-pl1-f174.google.com. [209.85.214.174])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2d315ef024esm2686405ad.10.2026.08.10.23.55.45
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 10 Aug 2026 23:55:45 -0700 (PDT)
-Received: by mail-pl1-f174.google.com with SMTP id d9443c01a7336-2cacf197759so47024565ad.2
-        for <linux-sh@vger.kernel.org>; Mon, 10 Aug 2026 23:55:45 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RqShO5A5HM2WUSo3oYp+M09aDxUKcN0Ry88107K3YSwwu7kyMwnfLO8D0mYZbibhQHP0KkDhg8c2w==@vger.kernel.org
-X-Received: by 2002:a05:6102:c4a:b0:738:ecd7:1984 with SMTP id
- ada2fe7eead31-76b54a7a17fmr283026137.3.1786430995503; Mon, 10 Aug 2026
- 23:49:55 -0700 (PDT)
+	s=arc-20240116; t=1786431921; c=relaxed/simple;
+	bh=DIMOPBVekP6L2BK936FqUInSum7lh/bsRY6w9e7IhqA=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=SAuYGcsQBxCDSUJjD3XgFpIm5dD6QGtw2kC64P7DCh+x6Qe0IQkJPg+RIVP2VYNpg/2FEMJojETUCP9jONMPmkxP4cTpr0pRzX4tsNaIiDx8ID9AU6yedcmiZQFfevFicVyrcrGc1N6n94CUY4dPVj26WFjkNNFm42CW1rF3XqE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=IdKM7dVZ; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="IdKM7dVZ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=Ex4q7ykPfIR19PS0JSgYzk10qmPo/yRZsmrtNkk/C0c=; t=1786431917;
+	x=1787036717; b=IdKM7dVZqTLUYwj13QbLRapW0T21izq26saOWGxzH1MVtQBNYm+gt3zsI+msh
+	KrP9yw952+4RT6pgRiRtHS5M1TpcEBtg7+1BiI/gXRzKXKwdWonr1jGB16Ey7MOgZKiPICz6Xxcgw
+	170XGCKfkYOc1KGXujkgMGUSpI8KgAxWi5vpkCUqywFE6euSmCbEjX37HIMOIgwhqcvBK4bvtwpal
+	rE8FH/3wKdw6oe7jZxBYDWAKFj3PV9zPlvhIq4PnDYgm8l4rq5m/9nFHu9RofUcW+qKtg/xq7cO3q
+	EQEPu2qbQngHHMo1XGpKNc/B8VXofGGeEDjbC5/RIC8ilEjHZA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1wtgSK-00000002QmD-3YGh; Tue, 11 Aug 2026 08:59:24 +0200
+Received: from p5dc558fe.dip0.t-ipconnect.de ([93.197.88.254] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1wtgSK-00000000ni5-2Tov; Tue, 11 Aug 2026 08:59:24 +0200
+Message-ID: <b9b5a0c24433c4a191a504f652127ef1fb9b1731.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: mach-rsk: rsk7203: avoid using inline compound
+ literals
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Linus Walleij <linusw@kernel.org>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Yoshinori Sato	
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Bartosz
+ Golaszewski <bartosz.golaszewski@oss.qualcomm.com>,
+ linux-sh@vger.kernel.org, 	linux-kernel@vger.kernel.org, kernel test robot
+ <lkp@intel.com>
+Date: Tue, 11 Aug 2026 08:59:23 +0200
+In-Reply-To: <CAD++jLmNry6DwjDm490_n1Z2AmBb7viaOTEv_Ntnsc77dBHmJQ@mail.gmail.com>
+References: <20260802-sh-rsk7203-swnode-props-v1-1-7a790cbac9e6@gmail.com>
+	 <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
+	 <anAvJM0u_TIgL4ck@google.com>
+	 <70cb2e4d8a6fd11cbeb534dbf269f67148a00a8d.camel@physik.fu-berlin.de>
+	 <CAD++jLkxXYfZadV26956yMAaCtZYr7mRGPA8_kixufbXFW1B=Q@mail.gmail.com>
+	 <CAD++jLmNry6DwjDm490_n1Z2AmBb7viaOTEv_Ntnsc77dBHmJQ@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260811042119.3652929-1-anshuman.khandual@arm.com> <20260811042119.3652929-7-anshuman.khandual@arm.com>
-In-Reply-To: <20260811042119.3652929-7-anshuman.khandual@arm.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Aug 2026 08:49:43 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXfpkpYzZWGVb0fQrdn3uYHU3pyCkyAX9o2ux_Jj=2ByA@mail.gmail.com>
-X-Gm-Features: AUfX_mwgji-OqM2d70As4nCfmG84npBMa5IuhuEcV5XEKzcXYS3fe_Pqx16lD20
-Message-ID: <CAMuHMdXfpkpYzZWGVb0fQrdn3uYHU3pyCkyAX9o2ux_Jj=2ByA@mail.gmail.com>
-Subject: Re: [RFC V2 6/6] mm: Drop pxd_ERROR()
-To: Anshuman Khandual <anshuman.khandual@arm.com>
-Cc: linux-mm@kvack.org, akpm@linux-foundation.org, david@kernel.org, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, Helge Deller <deller@gmx.de>, 
-	Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, linux-alpha@vger.kernel.org, 
-	linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, 
-	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
-	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, 
-	linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org, 
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
-	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
-	linux-um@lists.infradead.org, linux-arch@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Hi Anshuman,
+Hi Linus,
 
-Thanks for your patch!
+On Tue, 2026-08-11 at 08:52 +0200, Linus Walleij wrote:
+> On Fri, Aug 7, 2026 at 12:05=E2=80=AFAM Linus Walleij <linusw@kernel.org>=
+ wrote:
+>=20
+> > 1. (easiest): tell me to just revert this out of my tree.
+> >  Deal with this whole ordeal later.
+>=20
+> The merge window is coming up and I can't send a broken tree
+> to Linus so I went with this option now.
+>=20
+> John: the patches are all yours, I have dropped them from my
+> tree.
 
-On Tue, 11 Aug 2026 at 06:22, Anshuman Khandual
-<anshuman.khandual@arm.com> wrote:
-> pxd_ERROR() has been used in generic mm just to print the page table entry
-> in pxd_clear_bad() before clearing those out with pxd_clear() later. These
-> pxd_ERROR() macros have been provided by all platforms which basically did
-> the same thing.
->
-> Make pxd_clear_bad() use recently added ptval_to_str() instead for printing
-> page table entries thus completely dropping dependency on platform provided
-> pxd_ERROR() macros which can then be dropped off. First move all required
-> helpers in core MM into a header file which could then be used else where.
+OK, I will pick them up this week. My workload has settled a bit, so that
+I have some time for kernel stuff again.
 
-Oh, the "x" in "pxd" is a wildcard?
-Except that is not, as it does not match "pte" ;-)
+Did you revert Dmitry's patches in the kernel as well?
 
-> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
+Adrian
 
->  arch/m68k/include/asm/mcf_pgtable.h           |  6 ---
->  arch/m68k/include/asm/motorola_pgtable.h      |  8 ----
->  arch/m68k/include/asm/sun3_pgtable.h          |  7 ----
-
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org> # m68k
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
