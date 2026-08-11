@@ -1,102 +1,101 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A56793EC81B
-	for <linux-sh@vger.kernel.org>; Tue, 11 Aug 2026 07:51:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 4C1D441166E;
+	Tue, 11 Aug 2026 08:34:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786434697; cv=none; b=HEPtwqS7ZRphPvhv/cWQAN25AJk3uLm2GwlvTtc8nilvtAn/AsKASB28C2N3i63rADYFVXx5kJNGtiHszycQ09C1t7U0TqVZV0PC59Gha+uSSPmR4yRcFso5/EujbWpodOD6+Vh6H23V5hz7A9Bl5lkhaAfP+wCSrZ4mOqcxq6w=
+	t=1786437277; cv=none; b=u0T8KGVhyRjlENCxY7QJyDVJCiWXmi/uQglOoLhY0u3NV9ARx6PPLsifNxkMuOSCqtdBJ/REBmiGmryaJTwG+jzs5SBQUTGj6HAvxRodvudLZhSj3rMD3txU4sOjfFA9Q2D91fdA0ZSLAuT/Ah07x14pjHiiIpkU3bLNSTNUs1U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786434697; c=relaxed/simple;
-	bh=0qxxrXYVSEfWFzbuHGJKRBL9EjyYN+jDS6A6yAibSn8=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=NxOsXIU1VuHHKfm702fbu9mN+92NSmbnW2g8i0WiN9Yn0wGffhO7YP6Z2jCNq711N5NOdscBGfnBcYm2hFxCVhQksXX0C4OuWQYbqzhspAKgPjR2StiWrNXi4uiA+fyLECJOWvuTWhOSbpSP22tHdn/UPZjAluK2dsyfbNPCqas=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=nMIeja9M; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1786437277; c=relaxed/simple;
+	bh=ZT08f1GiOgKpD31g66zZnUhmuNu7zNORWfMHkMNA+MM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=gwwb2tPc+fbOTZuclvcVlBkR0mpNeQhYxiHNbs74MRtylRQ86RNcz3xcBTiYyl4mGZuFWlXuTjBzCeXq7xfVBarWabECoVSMlZ3qvcpNMHVucpFyszGPypuTShYIeCjflaa+LTxUtcInS4/7/hKmc5QkhVHdYYpxqS/LthLo5BE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b=ILvmNn+1; arc=none smtp.client-ip=217.140.110.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="nMIeja9M"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 539C71F00A3F
-	for <linux-sh@vger.kernel.org>; Tue, 11 Aug 2026 07:51:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1786434696;
-	bh=KHnZR25WmWegesrPwzg1l6hMq9EwqrehsZnY2Ik2coU=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=nMIeja9MXe40HkmBGLsiX8ExFBEDEq7BtvhCb7AjhPsTX2oMJ6BnTCJoaAQ3kAEF3
-	 cUBcG63AyOXSEM4JDwH7ODTqTHtTRl8xaIkcnYxt7mRvHpHLrRAKckp8BjII+Hc625
-	 2w/H28a3ReqDvzwh5KsS0M9FS6Lqsg+kNdczY04pbFswYw78VrixLY/Wed0H1R0J99
-	 rifJT6OIWkZuXmKyeEHqKWdONhIoM1+Vk2k7cGuk6LkMnPGizPPAiM1hPP9+gtZiAh
-	 V0aKBloPejrMTidY/quKO/6DTfHBuy7LW6NzmCE7TjhheCBswiLsv+AXKcSSVWhBDl
-	 49uSdjkNq4GkQ==
-Received: by mail-lf1-f43.google.com with SMTP id 2adb3069b0e04-5b28c91fba5so915912e87.1
-        for <linux-sh@vger.kernel.org>; Tue, 11 Aug 2026 00:51:36 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+Rr1pONEDGnE2TcT/tA4r0GINccFBBh0D5Jsh8nUBO40tR2j0oeHie61mNlfSkN3uIInpiMnr1WflA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzHKL60713Qpdo5cyfDLgQI3XRGq+rGps/6cmxS2MGfj/c6onnR
-	kVM29PHHTwtWyOJVGyD6CzcUoFblmb/LuselAigcrDdKQzBGyqKMxkao6jUusb1fmeNmtU2lVvT
-	uZJrS4NUKmqu8hr27MZtBByCLcdFTmuA=
-X-Received: by 2002:a05:6512:230c:b0:5b1:5f9a:96bf with SMTP id
- 2adb3069b0e04-5b448a288c0mr236907e87.8.1786434695088; Tue, 11 Aug 2026
- 00:51:35 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b="ILvmNn+1"
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id B295E1516;
+	Tue, 11 Aug 2026 01:34:31 -0700 (PDT)
+Received: from localhost (a085714.arm.com [10.164.19.28])
+	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id EA58F3F673;
+	Tue, 11 Aug 2026 01:34:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=arm.com; s=foss;
+	t=1786437275; bh=ZT08f1GiOgKpD31g66zZnUhmuNu7zNORWfMHkMNA+MM=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=ILvmNn+1uP0GCjTeWxHAARq3POjelk/zkkggHRqr669N5vBlnXQv9Yg8uShAHAWPV
+	 r+uFJpIr4Ahch5mMzxC2ouczYWRZPMGrkwVkFNIVMPn+HCacIXd33isOumG+cExtcS
+	 egAiyy/T4cf+1AQQkz3B427/hIS4SjOBaBYGwt8M=
+Date: Tue, 11 Aug 2026 14:04:32 +0530
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-mm@kvack.org, akpm@linux-foundation.org, david@kernel.org, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, 
+	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, 
+	WANG Xuerui <kernel@xen0n.name>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, 
+	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org, linux-arch@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Subject: Re: [RFC V2 6/6] mm: Drop pxd_ERROR()
+Message-ID: <ijjadks7zjpwqlw4nbcawr3tva2r4y6gn3weuc73vbec46petn@ovlf52m2kugw>
+References: <20260811042119.3652929-1-anshuman.khandual@arm.com>
+ <20260811042119.3652929-7-anshuman.khandual@arm.com>
+ <CAMuHMdXfpkpYzZWGVb0fQrdn3uYHU3pyCkyAX9o2ux_Jj=2ByA@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260802-sh-rsk7203-swnode-props-v1-1-7a790cbac9e6@gmail.com>
- <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
- <anAvJM0u_TIgL4ck@google.com> <70cb2e4d8a6fd11cbeb534dbf269f67148a00a8d.camel@physik.fu-berlin.de>
- <CAD++jLkxXYfZadV26956yMAaCtZYr7mRGPA8_kixufbXFW1B=Q@mail.gmail.com>
- <CAD++jLmNry6DwjDm490_n1Z2AmBb7viaOTEv_Ntnsc77dBHmJQ@mail.gmail.com> <b9b5a0c24433c4a191a504f652127ef1fb9b1731.camel@physik.fu-berlin.de>
-In-Reply-To: <b9b5a0c24433c4a191a504f652127ef1fb9b1731.camel@physik.fu-berlin.de>
-From: Linus Walleij <linusw@kernel.org>
-Date: Tue, 11 Aug 2026 09:51:22 +0200
-X-Gmail-Original-Message-ID: <CAD++jLnh3GX=Sht9e1C1nyb0=cxCXembBwBf7=Gq0wLsV74KmQ@mail.gmail.com>
-X-Gm-Features: AUfX_mzu-6sIF8gqi3eOPlyzOFd1tR-W8Z7dsTWBChEfDRBkOF5SgZs_RRwglVs
-Message-ID: <CAD++jLnh3GX=Sht9e1C1nyb0=cxCXembBwBf7=Gq0wLsV74KmQ@mail.gmail.com>
-Subject: Re: [PATCH] sh: mach-rsk: rsk7203: avoid using inline compound literals
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, 
-	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, kernel test robot <lkp@intel.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdXfpkpYzZWGVb0fQrdn3uYHU3pyCkyAX9o2ux_Jj=2ByA@mail.gmail.com>
 
-Hi John,
-
-On Tue, Aug 11, 2026 at 8:59=E2=80=AFAM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Tue, 2026-08-11 at 08:52 +0200, Linus Walleij wrote:
-> > On Fri, Aug 7, 2026 at 12:05=E2=80=AFAM Linus Walleij <linusw@kernel.or=
-g> wrote:
+On Tue, Aug 11, 2026 at 08:49:43AM +0200, Geert Uytterhoeven wrote:
+> Hi Anshuman,
+> 
+> Thanks for your patch!
+> 
+> On Tue, 11 Aug 2026 at 06:22, Anshuman Khandual
+> <anshuman.khandual@arm.com> wrote:
+> > pxd_ERROR() has been used in generic mm just to print the page table entry
+> > in pxd_clear_bad() before clearing those out with pxd_clear() later. These
+> > pxd_ERROR() macros have been provided by all platforms which basically did
+> > the same thing.
 > >
-> > > 1. (easiest): tell me to just revert this out of my tree.
-> > >  Deal with this whole ordeal later.
-> >
-> > The merge window is coming up and I can't send a broken tree
-> > to Linus so I went with this option now.
-> >
-> > John: the patches are all yours, I have dropped them from my
-> > tree.
->
-> OK, I will pick them up this week. My workload has settled a bit, so that
-> I have some time for kernel stuff again.
->
-> Did you revert Dmitry's patches in the kernel as well?
+> > Make pxd_clear_bad() use recently added ptval_to_str() instead for printing
+> > page table entries thus completely dropping dependency on platform provided
+> > pxd_ERROR() macros which can then be dropped off. First move all required
+> > helpers in core MM into a header file which could then be used else where.
+> 
+> Oh, the "x" in "pxd" is a wildcard?
+> Except that is not, as it does not match "pte" ;-)
 
-I took out these:
-106dc49414c4 sh: mach-rsk: rsk7203: convert pin configuration to using
-software nodes
-c5b962b6023d pinctrl: renesas: gpio: support software nodes for function GP=
-IOs
-6905cdac0e51 sh: mach-rsk: rsk7203: use static device properties for
-LEDs and GPIO buttons
-62067bc0a083 sh: pfc: attach software node to the GPIO chip
-4c870bbaba1b pinctrl: renesas: gpio: isolate function gpiochip from
-parent fwnode
+Unfortunately that's the odd one but "pxd" was the closest possible :)
 
-I have added my review tag to 4c870bbaba1b and c5b962b6023d
-so you can just apply them to the SH tree. They don't conflict with
-anything, at least not this merge window, so you can safely queue them.
+> 
+> > Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
+> 
+> >  arch/m68k/include/asm/mcf_pgtable.h           |  6 ---
+> >  arch/m68k/include/asm/motorola_pgtable.h      |  8 ----
+> >  arch/m68k/include/asm/sun3_pgtable.h          |  7 ----
+> 
+> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org> # m68k
 
-Yours,
-Linus Walleij
+Thanks !
+
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> -- 
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
