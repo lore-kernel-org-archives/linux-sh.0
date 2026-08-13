@@ -1,180 +1,145 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8E3231A065;
-	Wed, 12 Aug 2026 14:26:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 99191345749;
+	Thu, 13 Aug 2026 04:34:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786544813; cv=none; b=ajsdv/rTeJ0rLCl2ffBi8TnCT53PbR8uA9wfhh4C+L7Slg1iZ7VcydhodVPNJZH87Qss0fHHUJZUUKO8MpmOVdyNk0m58+s7jgB1H+zuZOtKj8JSmeDy0LUrB6NKrQmvGAgO6T5vXB3AWtiPl0Iq923HsOLf/iWGrp1J5HeIF10=
+	t=1786595662; cv=none; b=GzT0Vamh6EB4IYNMm3L97CwgWT1EkfdRW13GZpBMDv5XKcp21zk3i1uWgS6SG9jCql4XHG5i0YpXlKVBS+RGBpDVRliDN9dlH8J1bLyWltVEuhX/CYHBOFWFvI/M7OoPetrxUc+z232XFg/F/l9J+0PWIRcsr1MbnTuF4B7VrvM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786544813; c=relaxed/simple;
-	bh=kNWtMK/mej0FN9Edig2KzXEa4cQq0CIbyIfgbvXKrCM=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=W/8gCzfGosXrhlxZN/keptGEDOAsx/fsdO8eyOqJn2p2MGBA0nOoex4Mn8mFyM1Wyar9QdEq9gNdhwgA/gNaae6awfI/yimWL7ZCA0eU2ptgz7T6IPfkQJ7gy07EbDc/ZY3tY4/Uzz3zFQm4ptvw0k6PjoBmOWukBOqjgQOEMdE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=nAdphn+y; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1786595662; c=relaxed/simple;
+	bh=mO6mrRKNqP+ykHI/mGROppdDnXxIwgWT7LgXJj+JezI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=PSPFvuKsku569kd4Nk6gztsu27KRVylGr0S956nCg8L9fJetIHsu+xJFQEMxgxrAT1HDx2jmEvAejcsBY45T0xyeVjXC3KAXA4k+KUYzW9Q1nLwCb+TfDJzmakdvBaxbsUyJixpNi/AZs+dDshY/nMyWKSUbI7Tl7R64c92VeKE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b=ucFab0TP; arc=none smtp.client-ip=217.140.110.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="nAdphn+y"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8709C1F000E9;
-	Wed, 12 Aug 2026 14:26:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1786544811;
-	bh=KEqXzzUG0ZMr6EIyJK/HpR1+jzT22D0QTw+Xc3rpw0Q=;
-	h=From:To:Cc:Subject:Date;
-	b=nAdphn+ybSzCkjP18sFMSl8mntiY0478lhzqjfHvcVm95USsB9VklDokE+kEh6C6h
-	 /3Dy7trGb3K2iONX72hPzVom0QLQXvA5c7Lg6IA9jVZ1BmrIkt4IynD9oEcpSje5Jb
-	 9qsWHi0fgEFWfBVs/q75xwRvt62OF5as5XY6q14H3FKKZlNqraby/PdflYO7dJ7FsH
-	 xpyyv9+nQ8zHKFhd1KeuA6nuWZkDk07xobmdl/Sq5tQBX9c5G+wxQgSOWGyNT8YMTr
-	 l1fNbYJACIAUIAZZMPlK8hu5PCi9WgP2P+QnL9LqLSRAW+J9oi/7l7BGuYLRL8TRfG
-	 xrJP+uH9sFL2g==
-Received: from johan by xi.lan with local (Exim 4.99.4)
-	(envelope-from <johan@kernel.org>)
-	id 1wu9ur-00000000ESW-08yK;
-	Wed, 12 Aug 2026 16:26:49 +0200
-From: Johan Hovold <johan@kernel.org>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Johan Hovold <johan@kernel.org>,
-	Artur Rojek <contact@artur-rojek.eu>
-Subject: [PATCH v2] maple: switch to dynamic root device
-Date: Wed, 12 Aug 2026 16:26:36 +0200
-Message-ID: <20260812142636.55563-1-johan@kernel.org>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (1024-bit key) header.d=arm.com header.i=@arm.com header.b="ucFab0TP"
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id B8A551596;
+	Wed, 12 Aug 2026 21:34:14 -0700 (PDT)
+Received: from localhost (a085714.arm.com [10.164.19.28])
+	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id E593D3F632;
+	Wed, 12 Aug 2026 21:34:17 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=arm.com; s=foss;
+	t=1786595658; bh=mO6mrRKNqP+ykHI/mGROppdDnXxIwgWT7LgXJj+JezI=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=ucFab0TPnxvbqz3KEVyBy+XPNcRzGlpGCroO3Eciy3LZ0+X/OxqSrfgUvooo+EVnM
+	 CkkbCWk5eaKn4RSc34lEp7tZQ4pnzvhzXI1BWphp8/e5uuWc6hv5uSnA/KhXLfZVFZ
+	 sIXAXG2CvPJZ7I27QA35Hy/JfVFzGZIK3afmsQfQ=
+Date: Thu, 13 Aug 2026 10:04:15 +0530
+From: Anshuman Khandual <anshuman.khandual@arm.com>
+To: "David Hildenbrand (Arm)" <david@kernel.org>
+Cc: linux-mm@kvack.org, akpm@linux-foundation.org, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, 
+	Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, 
+	WANG Xuerui <kernel@xen0n.name>, linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, 
+	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
+	sparclinux@vger.kernel.org, linux-um@lists.infradead.org, linux-arch@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Subject: Re: [RFC V2 1/6] loongarch/mm: Stop using pte_ERROR()
+Message-ID: <qymuy4grl654s6jwwyhlwwo6kfr3ongxpfnxifojkvism2ddwg@5lyq7iooel6b>
+References: <20260811042119.3652929-1-anshuman.khandual@arm.com>
+ <20260811042119.3652929-2-anshuman.khandual@arm.com>
+ <e0ada89f-26b2-4e82-8273-8ea7b391c147@kernel.org>
+ <9a66d741-536e-44ac-b02f-395b5fc8ab6d@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <9a66d741-536e-44ac-b02f-395b5fc8ab6d@kernel.org>
 
-Driver core expects devices to be dynamically allocated and will, for
-example, complain loudly when no release function has been provided.
+On Wed, Aug 12, 2026 at 01:27:54PM +0200, David Hildenbrand (Arm) wrote:
+> On 8/12/26 13:19, David Hildenbrand (Arm) wrote:
+> > On 8/11/26 06:21, Anshuman Khandual wrote:
+> >> Directly use pr_err() in __set_fixmap() and drop pte_ERROR() which helps in
+> >> eventually dropping pte_ERROR() macro across the tree. In this new printing
+> >> __FILE__ and __LINE__ has been dropped because they are always the same and
+> >> don't really add any value.
+> >>
+> >> Cc: Huacai Chen <chenhuacai@kernel.org>
+> >> Cc: WANG Xuerui <kernel@xen0n.name>
+> >> Cc: loongarch@lists.linux.dev
+> >> Cc: linux-kernel@vger.kernel.org
+> >> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
+> >> ---
+> >>  arch/loongarch/include/asm/pgtable.h | 2 --
+> >>  arch/loongarch/mm/init.c             | 2 +-
+> >>  2 files changed, 1 insertion(+), 3 deletions(-)
+> >>
+> >> diff --git a/arch/loongarch/include/asm/pgtable.h b/arch/loongarch/include/asm/pgtable.h
+> >> index 223528c04d73..a32a8fff70c1 100644
+> >> --- a/arch/loongarch/include/asm/pgtable.h
+> >> +++ b/arch/loongarch/include/asm/pgtable.h
+> >> @@ -128,8 +128,6 @@ struct vm_area_struct;
+> >>  #define ptep_get(ptep) READ_ONCE(*(ptep))
+> >>  #define pmdp_get(pmdp) READ_ONCE(*(pmdp))
+> >>  
+> >> -#define pte_ERROR(e) \
+> >> -	pr_err("%s:%d: bad pte %016lx.\n", __FILE__, __LINE__, pte_val(e))
+> >>  #ifndef __PAGETABLE_PMD_FOLDED
+> >>  #define pmd_ERROR(e) \
+> >>  	pr_err("%s:%d: bad pmd %016lx.\n", __FILE__, __LINE__, pmd_val(e))
+> >> diff --git a/arch/loongarch/mm/init.c b/arch/loongarch/mm/init.c
+> >> index 3407030f3e7a..be9b127daef2 100644
+> >> --- a/arch/loongarch/mm/init.c
+> >> +++ b/arch/loongarch/mm/init.c
+> >> @@ -203,7 +203,7 @@ void __init __set_fixmap(enum fixed_addresses idx,
+> >>  
+> >>  	ptep = populate_kernel_pte(addr);
+> >>  	if (!pte_none(ptep_get(ptep))) {
+> >> -		pte_ERROR(*ptep);
+> >> +		pr_err("bad pte %016lx\n", pte_val(*ptep));
+> >>  		return;
+> >>  	}
+> >>  
+> > 
+> > Ah, I missed that we want to print actual values, I somehow thought that we
+> > would be printing pte_none() ...
+> > 
+> > Maybe we should just be more verbose while at it?
 
-Use root_device_register() to allocate and register the root device
-instead of open coding using a static device.
+Initially thought that these new prints should be right close to the
+original via pxd_ERROR() but I guess making them verbose while doing
+the replacements should be indeed acceptable.
 
-Note that this also fixes a reference leak in case device_register()
-fails which may be flagged by static checkers.
+> > 
+> > pr_err("unexpected set PTE at %ul in __set_fixmap: %016lx\n",
+> >        addr, pte_val(*ptep));
+> > 
+> 
+> On second thought, why not simply use ptval_to_str() here as well?
 
-Acked-by: Artur Rojek <contact@artur-rojek.eu>
-Tested-by: Artur Rojek <contact@artur-rojek.eu>
-Signed-off-by: Johan Hovold <johan@kernel.org>
----
+Sure will do the required changes - the following builds successfully.
 
-It's been over three months (and one reminder) since this series was
-posted so resending as a v2 with Artur's tags added.
-
-Johan
-
-
- drivers/sh/maple/maple.c | 30 +++++++++++-------------------
- 1 file changed, 11 insertions(+), 19 deletions(-)
-
-diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-index 5585f220e495..7c0f847ee368 100644
---- a/drivers/sh/maple/maple.c
-+++ b/drivers/sh/maple/maple.c
-@@ -44,7 +44,7 @@ static LIST_HEAD(maple_sentq);
- static DEFINE_MUTEX(maple_wlist_lock);
- 
- static struct maple_driver maple_unsupported_device;
--static struct device maple_bus;
-+static struct device *maple_bus;
- static int subdevice_map[MAPLE_PORTS];
- static unsigned long *maple_sendbuf, *maple_sendptr, *maple_lastptr;
- static unsigned long maple_pnp_time;
-@@ -229,7 +229,7 @@ static struct maple_device *maple_alloc_dev(int port, int unit)
- 		return NULL;
- 	}
- 	mdev->dev.bus = &maple_bus_type;
--	mdev->dev.parent = &maple_bus;
-+	mdev->dev.parent = maple_bus;
- 	init_waitqueue_head(&mdev->maple_wait);
- 	return mdev;
- }
-@@ -761,10 +761,6 @@ static int maple_match_bus_driver(struct device *devptr,
- 	return 0;
- }
- 
--static void maple_bus_release(struct device *dev)
--{
--}
--
- static struct maple_driver maple_unsupported_device = {
- 	.drv = {
- 		.name = "maple_unsupported_device",
-@@ -779,11 +775,6 @@ static const struct bus_type maple_bus_type = {
- 	.match = maple_match_bus_driver,
- };
- 
--static struct device maple_bus = {
--	.init_name = "maple",
--	.release = maple_bus_release,
--};
--
- static int __init maple_bus_init(void)
+--- a/arch/loongarch/mm/init.c
++++ b/arch/loongarch/mm/init.c
+@@ -197,13 +197,15 @@ void __init __set_fixmap(enum fixed_addresses idx,
+                               phys_addr_t phys, pgprot_t flags)
  {
- 	int retval, i;
-@@ -791,9 +782,11 @@ static int __init maple_bus_init(void)
- 
- 	__raw_writel(0, MAPLE_ENABLE);
- 
--	retval = device_register(&maple_bus);
--	if (retval)
-+	maple_bus = root_device_register("maple");
-+	if (IS_ERR(maple_bus)) {
-+		retval = PTR_ERR(maple_bus);
- 		goto cleanup;
-+	}
- 
- 	retval = bus_register(&maple_bus_type);
- 	if (retval)
-@@ -806,22 +799,21 @@ static int __init maple_bus_init(void)
- 	/* allocate memory for maple bus dma */
- 	retval = maple_get_dma_buffer();
- 	if (retval) {
--		dev_err(&maple_bus, "failed to allocate DMA buffers\n");
-+		dev_err(maple_bus, "failed to allocate DMA buffers\n");
- 		goto cleanup_basic;
- 	}
- 
- 	/* set up DMA interrupt handler */
- 	retval = maple_set_dma_interrupt_handler();
- 	if (retval) {
--		dev_err(&maple_bus, "bus failed to grab maple "
--			"DMA IRQ\n");
-+		dev_err(maple_bus, "bus failed to grab maple DMA IRQ\n");
- 		goto cleanup_dma;
- 	}
- 
- 	/* set up VBLANK interrupt handler */
- 	retval = maple_set_vblank_interrupt_handler();
- 	if (retval) {
--		dev_err(&maple_bus, "bus failed to grab VBLANK IRQ\n");
-+		dev_err(maple_bus, "bus failed to grab VBLANK IRQ\n");
- 		goto cleanup_irq;
- 	}
- 
-@@ -855,7 +847,7 @@ static int __init maple_bus_init(void)
- 	maple_pnp_time = jiffies + HZ;
- 	/* prepare initial queue */
- 	maple_send();
--	dev_info(&maple_bus, "bus core now registered\n");
-+	dev_info(maple_bus, "bus core now registered\n");
- 
- 	return 0;
- 
-@@ -878,7 +870,7 @@ static int __init maple_bus_init(void)
- 	bus_unregister(&maple_bus_type);
- 
- cleanup_device:
--	device_unregister(&maple_bus);
-+	root_device_unregister(maple_bus);
- 
- cleanup:
- 	printk(KERN_ERR "Maple bus registration failed\n");
--- 
-2.54.0
+        unsigned long addr = __fix_to_virt(idx);
++       char str[PTVAL_STR_MAX];
+        pte_t *ptep;
 
+        BUG_ON(idx <= FIX_HOLE || idx >= __end_of_fixed_addresses);
+
+        ptep = populate_kernel_pte(addr);
+        if (!pte_none(ptep_get(ptep))) {
+-               pr_err("bad pte %016lx\n", pte_val(*ptep));
++               ptval_to_str(str, pte_val(*ptep));
++               pr_err("unexpected set PTE at %lx in __set_fixmap: %s\n", addr, str);
+                return;
+        }
+
+> 
+> -- 
+> Cheers,
+> 
+> David
