@@ -1,106 +1,101 @@
-Received: from brightrain.aerifal.cx (brightrain.aerifal.cx [104.156.224.86])
+Received: from mail-vs1-f52.google.com (mail-vs1-f52.google.com [209.85.217.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 986F12EEE7B
-	for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 12:26:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=104.156.224.86
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E503390C85
+	for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 13:15:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.217.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787315213; cv=none; b=o6U+cC0WD2+wTAGtdkHyJxDRsUKGL2wCyW3scuqTlJnNx2aG88hu4Zfc280P8IS9tzZ1kJMlUPi3cD3ca9QzovB5fzIIiM0Se1zj9Qu3DT8uJjK8AXRUQ0Jwpapx/75UhvzF8c14AsvIvnLB61wg3AF7wCUPfO33rSuJFnnY5Pw=
+	t=1787318142; cv=none; b=uUJhwzAY1XwtjsLqX+H1GLq+7h0SECAiEQLGPzxQUu+8RyG6u18+h0Xz5bzEjL0WX637Joc4gssvevvk9fbzGuraO7cmKZDMr0Wx7XI7mf4L+14dZ5ErP6nrSboS63GPeCCsgnB0Vo2fAniTrDFCNnlxKeG+aab5s27t1D+wPTw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787315213; c=relaxed/simple;
-	bh=Utzxh2pWuqvqvFDcklksUNutlFJ2fclQJ0/1Zb08fcY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=q1wDZJWh+RTI5WxzTbPSvy12KML+zk9Z6eUpMulAvmYtf57A+Ax599c5hnbwe3zV+I81GVnwbk+l9PRZSESrwNtFfPY48CiRK9SbpF8qQYIcQu4MXmSphztB4LCJOqjg0mJpQ1hLlIJc/VlSuLZC6CRb5XaHek5bpp6PIb8GFdk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=libc.org; spf=pass smtp.mailfrom=aerifal.cx; arc=none smtp.client-ip=104.156.224.86
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=libc.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=aerifal.cx
-Date: Fri, 21 Aug 2026 08:11:19 -0400
-From: Rich Felker <dalias@libc.org>
-To: =?utf-8?B?SsOpcsOpbXk=?= Jean <Jeremy.Jean@oss.cyber.gouv.fr>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Oleg Nesterov <oleg@redhat.com>, linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] sh: prevent ptrace from changing privileged SR bits
-Message-ID: <20260821121119.GO25906@brightrain.aerifal.cx>
-References: <20260821103335.3627506-2-Jeremy.Jean@oss.cyber.gouv.fr>
+	s=arc-20240116; t=1787318142; c=relaxed/simple;
+	bh=6kQbT1gIu0XiHuVTt+KxzuS97ZAU3Rgnj/AF0hkWYXw=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=DnF/ORmWhZewND42JOP+oTMAszYpzj+GvszWnsfjUbcfvewnOOYdbMnvd1i+Bh1ynYlRa8TbYGQNMjDmSyF1Sg349WsFZAf0upIJ4cGvCQWa4Dl50w9mispzG28P/ALrmn7003oU5XhiAEnHztXnL+evwhH4VwL7ZxJzK/yd0EU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.217.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-vs1-f52.google.com with SMTP id ada2fe7eead31-74dce749cc5so231362137.3
+        for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 06:15:21 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1787318118; x=1787922918;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=KbR/IqWWJ9SoTQBLflO8X0Oc5JuNMDe4oTcqikxJVts=;
+        b=UgRKl50yl3HzJkImZ3V46WvcDAYaQGTAb8GPrSRjazmo6bFKDvd1iQlDlWiVUmsmYo
+         jLcEmprtLWECMgOm4HO5HGF6+ns+8dFCH0fGBMCo33tehVHtYkDQoAC7Ik5L8gDdPcFf
+         mWQWHNHdAIO8OsjSO1oYHY3D4cT/qv3v6lF+1kgkQ676p4gi/+0ZRAhdlGkzb9A3UF0b
+         OIj1dLay26p71GNNtWZoC1rBn9UxV6S5gUPrDXASSUVVthEjAd4OZEcejF2LR4ii/Y5Q
+         p5/2pHAIdA+Xea1GsuDIauBv0gUvaRKezRzJwYlI6azpBcVdic8KIiz0OWNunAQuIhFd
+         b74w==
+X-Forwarded-Encrypted: i=1; AHgh+Rp5UPYT2X6VLcWDIFY3lOqPq2iXEbf2rop8w+055xlL4/1okRDuUj71PVFowbj+KJTQ5KWqvROiCQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++mGDMLrMNZu94VKkEpFPFGTLunbk7/HKWBkI9KMpFpuKSAfMG7c
+	7nCwBQbpOj4Q6gK+m1/fe3KoVl6aTvsxnbuO1yp20BcoL5Mz4KxcrmiPDBAVqDgZ
+X-Gm-Gg: AR+sD12BQncXqu1om6OFbybjrVvH/zq2E1lr7mRAD5v96gBzwrt5bfc6IzVQIAS0d4u
+	w51LEg3TMryqrsMHjx2GrbKJxhY8bS0Kq1ct3k6omcI/Ilqp8STpm4g6oWtdFfSEbjg9L27xcgy
+	+MIVCGjAGNw4ky97Evl0FRUnIClQJfEfKvqS+yFPmo1TJ+ymrZ/SxWDQi1dgUx8uCoTpgFdR1pa
+	OzondaeqqB8ZfEJDk7cxZGO5s/AWt97w1AiAhxxka2iDzAkNo4431MB+FiOqvIadfCHcsRvz8hf
+	s9uzGYJ7JiLhtlWkBMZEqQ6mWLHIgpwtsFBmDdiNJvI4WQ4Dt2DUlVMKu9D/Ylhs9VQwTdALAez
+	ctlZGuegoTHFkLIgBF+i8Pc3dvSSLYPkW5zna8lsl9FOQtloQ9jpsQM9DgS1szefQhae+764EUo
+	pj8kpEmFtfCqPHlI8olxPSbq6WTLEna7Q3y6ZweSXxEXiSAF1wNYq5QEhQp33i0xiMwaueqIfOz
+	kEEVsu0k1SHQ834VKJBxmUxwUJd01zbv4+E
+X-Received: by 2002:a05:6102:390d:b0:73a:128b:ea07 with SMTP id ada2fe7eead31-77a65474816mr1986145137.14.1787318118274;
+        Fri, 21 Aug 2026 06:15:18 -0700 (PDT)
+Received: from mail-vs1-f48.google.com (mail-vs1-f48.google.com. [209.85.217.48])
+        by smtp.gmail.com with ESMTPSA id ada2fe7eead31-777dafa9b1dsm8562988137.1.2026.08.21.06.15.17
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 21 Aug 2026 06:15:17 -0700 (PDT)
+Received: by mail-vs1-f48.google.com with SMTP id ada2fe7eead31-75738fcb0d9so254085137.0
+        for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 06:15:17 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AHgh+RpaJkAGRCZZzIhXM1y78Q702XU9vURFVMlib0aT8y3xjlzfbFJ+Jg2C7ZpLnEAwyIfQm+v59+dH9Q==@vger.kernel.org
+X-Received: by 2002:a05:6102:d8e:b0:739:478b:5bf2 with SMTP id
+ ada2fe7eead31-77a65274602mr1722130137.13.1787318117087; Fri, 21 Aug 2026
+ 06:15:17 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20260821103335.3627506-2-Jeremy.Jean@oss.cyber.gouv.fr>
-User-Agent: Mutt/1.9.5 (2018-04-13)
+References: <20260820123931.142532-1-ailiop@suse.com> <047975cb5fdeb0e3cb52cb78d55c3a45023cc992.camel@physik.fu-berlin.de>
+In-Reply-To: <047975cb5fdeb0e3cb52cb78d55c3a45023cc992.camel@physik.fu-berlin.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 Aug 2026 15:15:05 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXT44zxeNmNZeufKxUWz3_iYPqAY7Nu6g8eL4EBx1grnw@mail.gmail.com>
+X-Gm-Features: AcwNN1UgxukBrqyPOvtFT8QN7xa-BgXMe0TLSK2N3359or-fT7NvoBUgyvML6JU
+Message-ID: <CAMuHMdXT44zxeNmNZeufKxUWz3_iYPqAY7Nu6g8eL4EBx1grnw@mail.gmail.com>
+Subject: Re: [PATCH] sh: remove unused setup_profiling_timer function
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Anthony Iliopoulos <ailiop@suse.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On Fri, Aug 21, 2026 at 10:33:36AM +0000, Jérémy Jean wrote:
-> PTRACE_POKEUSR writes every word in struct pt_regs, including SR, without
-> filtering privileged bits. The general register regset setter exposes the
-> same write through PTRACE_SETREGS and PTRACE_SETREGSET.
-> 
-> The exception return path restores the saved SR with rte after adjusting
-> only the interrupt mask. An unprivileged same-UID tracer can set SR.MD and
-> make its tracee resume at a user address in privileged mode.
-> 
-> Preserve the saved non-user SR bits in both write paths and accept only
-> the bits in SR_USER_MASK. Recompose SR after user_regset_copyin() even on
-> error because the copy may have updated a prefix of the register set.
-> 
-> Assisted-by: Codex:gpt-5
+Hi Adrian,
 
-I'm only nominally a maintainer for the arch anymore, but about this:
-could we please not?
+On Fri, 21 Aug 2026 at 14:11, John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On Thu, 2026-08-20 at 14:39 +0200, Anthony Iliopoulos wrote:
+> > setup_profiling_timer() is not used by any code at this point. Since a
+> > default weak implementation exists, there is no need to keep this
+> > arch-specific definition around. Remove it along with the now-redundant
+> > profile header includes.
+>
+> Do you have any clue why it was still implemented for LoongArch which is
+> a rather new architecture? I'm also seeing that it's not used anywhere,
+> I'm just wondering why it was not removed before and why it was even
+> included when LoongArch was added.
 
-> Signed-off-by: Jérémy Jean <Jeremy.Jean@oss.cyber.gouv.fr>
-> ---
->  arch/sh/kernel/ptrace_32.c | 7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-> index 8794081483fb..bb69c35cb9a7 100644
-> --- a/arch/sh/kernel/ptrace_32.c
-> +++ b/arch/sh/kernel/ptrace_32.c
-> @@ -146,6 +146,7 @@ static int genregs_set(struct task_struct *target,
->  		       const void *kbuf, const void __user *ubuf)
->  {
->  	struct pt_regs *regs = task_pt_regs(target);
-> +	unsigned long sr = regs->sr & ~SR_USER_MASK;
->  	int ret;
->  
->  	ret = user_regset_copyin(&pos, &count, &kbuf, &ubuf,
-> @@ -159,6 +160,7 @@ static int genregs_set(struct task_struct *target,
->  	if (!ret)
->  		user_regset_copyin_ignore(&pos, &count, &kbuf, &ubuf,
->  					  sizeof(struct pt_regs), -1);
-> +	regs->sr = (regs->sr & SR_USER_MASK) | sr;
->  
->  	return ret;
->  }
-> @@ -391,6 +393,11 @@ long arch_ptrace(struct task_struct *child, long request,
->  		    addr > sizeof(struct user) - 3)
->  			break;
->  
-> +		if (addr == offsetof(struct pt_regs, sr)) {
-> +			unsigned long sr = get_stack_long(child, addr);
-> +
-> +			data = (data & SR_USER_MASK) | (sr & ~SR_USER_MASK);
-> +		}
->  		if (addr < sizeof(struct pt_regs))
->  			ret = put_stack_long(child, addr, data);
->  		else if (addr >= offsetof(struct user, fpu) &&
-> -- 
-> 2.47.3
+To make it _succeed_ when writing an integer value to that file?
+The default weak implementation returns an error code.
 
-While I'm not against having ptrace enforce this too, I think for
-safety the return path from kernelspace to userspace should also
-enforce it. Blindly restoring privileged mode bits from the task
-context structure when returning to userspace is just *asking for*
-this exact same vuln to arise again and again via other vectors.
+Gr{oetje,eeting}s,
 
-It should be possible to enforce this in the same place the interrupt
-mask is adjusted on return to user.
+                        Geert
 
-Rich
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
