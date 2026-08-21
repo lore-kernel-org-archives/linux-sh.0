@@ -1,146 +1,119 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from oss.cyber.gouv.fr (oss.cyber.gouv.fr [51.159.188.251])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1AF3C472541;
-	Fri, 21 Aug 2026 09:52:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A970476CD2;
+	Fri, 21 Aug 2026 10:34:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=51.159.188.251
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787305925; cv=none; b=sO3fD8GGTEb4jQxfKQdoh+zDKz/VKI4oSqAFtG5AvxsnmdjxYf78Y2lFA+9Blgyd/x3U7yc+sEXSoWvos4583votVyqkp8th13kjjZaz1zMy7KhOuXZH+Wu2dH230Jpbmb5JsurRoB6PeTX35ciB4yQ4DYuixRyNqLh/hRGRzks=
+	t=1787308456; cv=none; b=pEYH00/ziotnb5E3ZK8K6lUwRksCY0E5H4W6itlXpjnXmgJm3Wax3zU1LtLOTnhrEkBnkuAPo2ECFzuwcB2ahppsA7hP1ZIoiAu0vX1N/bfT7JZ8FxNIHTZxczRKaOgcI750OZ0keK1ty36S45d8EyBzlzGCIy7nUWvQTRj2Ba0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787305925; c=relaxed/simple;
-	bh=kLg6rxppdXsRXc3eX/KwcYrGSDxhxXHPL5NJ4HE8Wxg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=eJbcrYHoMlC9BFP9NObJeOIE5GhhyTQbpZ8EUowpt8qMUroaHS3gztC3dKt7FLXdJUBnBTposaUVuZ59eazTwGUIRMOseciKAefaEVo3atUcc7NdOD2gxRwT3B0J3aSP/Jwfnk+jHzmSgSjCSZ7LzVXbYqLMGcbVhNn5+dnhwNo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EomOlTbC; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WUwYnaM4; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1787308456; c=relaxed/simple;
+	bh=pHOBcl8/Q+K9bP7Hsrv/yMaehK6NWXwZxywf8BXFayI=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=Th3h0ZsB36h++UzO1SYn9wx0JcAxEdE+ns4/bE1S4V5ur2fexJ0luJ3RnZUaOdkIZccm1dahZVbDaamPW1inUxqfyPyI+UG1N+icCcTKC1/juwjpCr/FvfmW/+NZicxb1yhi/ptl8lN4k/l3VPZSc8JJEPwffsBwy7ZGkfWkiZw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=oss.cyber.gouv.fr; spf=pass smtp.mailfrom=oss.cyber.gouv.fr; dkim=pass (2048-bit key) header.d=oss.cyber.gouv.fr header.i=@oss.cyber.gouv.fr header.b=HrmCOd4n; arc=none smtp.client-ip=51.159.188.251
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=oss.cyber.gouv.fr
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=oss.cyber.gouv.fr
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EomOlTbC";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WUwYnaM4"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 36E09855F7;
-	Fri, 21 Aug 2026 09:51:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787305911; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=uKxWwwHG8gRJg8ogphsUlyDVcogiiYe2ZzPUGYpvWGs=;
-	b=EomOlTbC576dnU5b9xLOEYu1NjH5y5IwT+bbys2ftNi6WqamJ056PzyvmFTHM17Q5flUsv
-	3vgb7L3PCGNE9TkaY6b5qILynRyIGJR2jgdqsJu8JUcf3Jx9Iv1BcaQ/dKcHwAtuUkF3A+
-	GE2dS87Lm1JPtk5RVEf46SEqguHc78E=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787305907; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=uKxWwwHG8gRJg8ogphsUlyDVcogiiYe2ZzPUGYpvWGs=;
-	b=WUwYnaM46TbIF9/4M5mN8JaYy9SPDVHtZy8CQ7ZM4QQzBQ8nDmBkCbG8z4CQpven3PBUmJ
-	S63BLA0Qk3oTW9B6OSqcV1BnD3yI5N1Mzx048LSkDrU6E5FyL3wvCNEFLoDgp57CFxlbTs
-	jyTSZ/VJ4OX26ZaIw6ZfPXu7iy2lA1Q=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BF82026F8;
-	Fri, 21 Aug 2026 09:51:46 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qLuqK7IfiGoBQQAAD6G6ig
-	(envelope-from <ailiop@suse.com>); Fri, 21 Aug 2026 09:51:46 +0000
-Date: Fri, 21 Aug 2026 11:51:42 +0200
-From: Anthony Iliopoulos <ailiop@suse.com>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	dkim=pass (2048-bit key) header.d=oss.cyber.gouv.fr header.i=@oss.cyber.gouv.fr header.b="HrmCOd4n"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=oss.cyber.gouv.fr; s=default; h=Content-Transfer-Encoding:Content-Type:
+	MIME-Version:Message-ID:Date:Subject:Cc:To:From:Sender:Reply-To:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=UMsFCm+qYgJKHAiyRTdxYoM65XCm+oJPeQyzj0hxfIo=; b=HrmCOd4nLcUtCK7qfyUmKPtuqj
+	i0oeWCU2byqPUc9nE+Cw7KOplMnW7oJSdWpjKD0NtZM1E3u8GJWJOrgRiaCROBT/mScA54ZzOU52S
+	pi6QzpqWU3kH8Z45lc9ulGefD6Id3vdJCy/HtD/8UyQaaXPydtlSIBVGLl7Y+mjhDR00AVmFIL9Xj
+	txd4M2d37pWDBPOPsBMEwt/2syl7Ar/uLvEM1msMppKUjXycRTy9mLiQGo//ijWkslYtk4a0FCuOB
+	mVZTo08jsd+qvvoPuwXX5NOKJCJ2KKE1SK3zqA2BY25WBnZ23BjdC99tZppQsoh2aRWtwhjZdrdP9
+	z21nsZYg==;
+Received: from [151.115.150.205] (port=40542 helo=gepetto..)
+	by pf-012.whm.fr-par.scw.cloud with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.99.5)
+	(envelope-from <Jeremy.Jean@oss.cyber.gouv.fr>)
+	id 1wxMZa-00000004veU-3gM0;
+	Fri, 21 Aug 2026 12:34:06 +0200
+From: =?UTF-8?q?J=C3=A9r=C3=A9my=20Jean?= <Jeremy.Jean@oss.cyber.gouv.fr>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] sh: remove unused setup_profiling_timer function
-Message-ID: <aogfrl6URpwMKxsk@technoir>
-References: <20260820123931.142532-1-ailiop@suse.com>
- <CAMuHMdUxpgiMSgjcR2-Vz33iYUrjBNKO29yXk8oEdXG6RLFRtg@mail.gmail.com>
+	Oleg Nesterov <oleg@redhat.com>
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	=?UTF-8?q?J=C3=A9r=C3=A9my=20Jean?= <Jeremy.Jean@oss.cyber.gouv.fr>
+Subject: [PATCH] sh: prevent ptrace from changing privileged SR bits
+Date: Fri, 21 Aug 2026 10:33:36 +0000
+Message-ID: <20260821103335.3627506-2-Jeremy.Jean@oss.cyber.gouv.fr>
+X-Mailer: git-send-email 2.47.3
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdUxpgiMSgjcR2-Vz33iYUrjBNKO29yXk8oEdXG6RLFRtg@mail.gmail.com>
-X-Spamd-Result: default: False [-3.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	MISSING_XM_UA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_FIVE(0.00)[6];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
-X-Spam-Flag: NO
-X-Spam-Score: -3.80
-X-Spam-Level: 
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - pf-012.whm.fr-par.scw.cloud
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - oss.cyber.gouv.fr
+X-Get-Message-Sender-Via: pf-012.whm.fr-par.scw.cloud: authenticated_id: jeremy.jean@oss.cyber.gouv.fr
+X-Authenticated-Sender: pf-012.whm.fr-par.scw.cloud: jeremy.jean@oss.cyber.gouv.fr
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
 
-On Fri, Aug 21, 2026 at 09:36:46AM +0200, Geert Uytterhoeven wrote:
-> Hi Anthony,
-> 
-> Thanks for your patch!
-> 
-> On Fri, 21 Aug 2026 at 09:27, Anthony Iliopoulos <ailiop@suse.com> wrote:
-> > setup_profiling_timer() is not used by any code at this point. Since a
-> 
-> It is used in write_profile()
-> https://elixir.bootlin.com/linux/v7.2/source/kernel/profile.c#L202
-> 
-> > default weak implementation exists, there is no need to keep this
-> > arch-specific definition around. Remove it along with the now-redundant
-> > profile header includes.
-> >
-> > Signed-off-by: Anthony Iliopoulos <ailiop@suse.com>
-> 
-> > --- a/arch/sh/kernel/smp.c
-> > +++ b/arch/sh/kernel/smp.c
-> > @@ -21,7 +21,6 @@
-> >  #include <linux/sched/hotplug.h>
-> >  #include <linux/atomic.h>
-> >  #include <linux/clockchips.h>
-> > -#include <linux/profile.h>
-> >
-> >  #include <asm/processor.h>
-> >  #include <asm/mmu_context.h>
-> > @@ -322,14 +321,6 @@ void smp_message_recv(unsigned int msg)
-> >         }
-> >  }
-> >
-> > -#ifdef CONFIG_PROFILING
-> > -/* Not really SMP stuff ... */
-> > -int setup_profiling_timer(unsigned int multiplier)
-> > -{
-> > -       return 0;
-> 
-> This returns zero (success), while the default weak implementation
-> returns -EINVAL, so your change breaks write_profile().
-> https://elixir.bootlin.com/linux/v7.2/source/kernel/profile.c#L181
+PTRACE_POKEUSR writes every word in struct pt_regs, including SR, without
+filtering privileged bits. The general register regset setter exposes the
+same write through PTRACE_SETREGS and PTRACE_SETREGSET.
 
-Thanks for the review, yes the plan was to also remove the call entirely
-from profile code itself, so that the resetting functionality can remain
-and the arch-specific stubs could be dropped. I should clearly have sent
-that patch first. I just did it now:
+The exception return path restores the saved SR with rte after adjusting
+only the interrupt mask. An unprivileged same-UID tracer can set SR.MD and
+make its tracee resume at a user address in privileged mode.
 
-https://lore.kernel.org/all/20260821091744.91496-1-ailiop@suse.com/
+Preserve the saved non-user SR bits in both write paths and accept only
+the bits in SR_USER_MASK. Recompose SR after user_regset_copyin() even on
+error because the copy may have updated a prefix of the register set.
 
-Regards,
-Anthony
+Assisted-by: Codex:gpt-5
+Signed-off-by: Jérémy Jean <Jeremy.Jean@oss.cyber.gouv.fr>
+---
+ arch/sh/kernel/ptrace_32.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index 8794081483fb..bb69c35cb9a7 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -146,6 +146,7 @@ static int genregs_set(struct task_struct *target,
+ 		       const void *kbuf, const void __user *ubuf)
+ {
+ 	struct pt_regs *regs = task_pt_regs(target);
++	unsigned long sr = regs->sr & ~SR_USER_MASK;
+ 	int ret;
+ 
+ 	ret = user_regset_copyin(&pos, &count, &kbuf, &ubuf,
+@@ -159,6 +160,7 @@ static int genregs_set(struct task_struct *target,
+ 	if (!ret)
+ 		user_regset_copyin_ignore(&pos, &count, &kbuf, &ubuf,
+ 					  sizeof(struct pt_regs), -1);
++	regs->sr = (regs->sr & SR_USER_MASK) | sr;
+ 
+ 	return ret;
+ }
+@@ -391,6 +393,11 @@ long arch_ptrace(struct task_struct *child, long request,
+ 		    addr > sizeof(struct user) - 3)
+ 			break;
+ 
++		if (addr == offsetof(struct pt_regs, sr)) {
++			unsigned long sr = get_stack_long(child, addr);
++
++			data = (data & SR_USER_MASK) | (sr & ~SR_USER_MASK);
++		}
+ 		if (addr < sizeof(struct pt_regs))
+ 			ret = put_stack_long(child, addr, data);
+ 		else if (addr >= offsetof(struct user, fpu) &&
+-- 
+2.47.3
+
