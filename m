@@ -1,131 +1,117 @@
-Received: from mail-vk1-f177.google.com (mail-vk1-f177.google.com [209.85.221.177])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3666A3AAF5A
-	for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 07:37:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.177
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D77534582CC;
+	Fri, 21 Aug 2026 09:41:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787297828; cv=none; b=u9oUq15OznxvlEAZGpEsZ8WabqWUYO/fYylWyIgMUo5QMA6+S1ofUjtBVznVSGkoIO2ACPdMshnEXoXqbKe7edS/+lRaMIgJBfcXNNOmIocsX4EsG4a4rkhNsH4BikZqCtqZajnqD6TEzjiy6KidDEQgp7vClx+pomZapOPiHb0=
+	t=1787305311; cv=none; b=auzWUYpf8A2OR2TNcwxeep62eQjfQo1A3UOrXZ/6oTU061BPBelGjgP4uvLLgApplpwLvY0tUJ4OOcdLXGKplK7uDOYYpNBU4PHtZJDUaKWWnbg7bRA+ozyZpwE4xwWzYWmM/1GXedUPcN3oOq/jF8uYadX9KL6jVo/HHKU1YqU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787297828; c=relaxed/simple;
-	bh=GCjeeH4gPGLPIfKsaG5xaGeOjvO4t9Nhl/Zgc2w0nJY=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Ov8F+WCjsWxZg+pmN28toGC8nvdOEmv2DBWdS54K8aMOAbjBERcgTj7PStu/MMBEwiRqJo7z3riurvofmODH7iCHjqsAcNgfZxz7T/S0imePcUNmoxs6w/mZG3xi4HcIfVNxASdvh9TvoySyebaZxuytaK+KKv0zFCnysjYDIU0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.177
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vk1-f177.google.com with SMTP id 71dfb90a1353d-5c2c0e261aeso310360e0c.0
-        for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 00:36:59 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787297818; x=1787902618;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Xw9nFUr2QvBubT6nLTxxHmulcSTxEsty5Myw/2/X0oI=;
-        b=f1vSzB6uhksLO9XABP5WvuXXGWMJAQhNGowHJgklBZFuhf5Y94aKIeIxOGz6dPcA00
-         DHK2yOQ8Vr2N1PApROVxslF+BDfMbAh/jN8ECySmKGTzdgTN443TlXbSOLP5Kah3b466
-         yjL6rAFstSO76FMYWBRAzXBAxKnFgIIdLuf7YuhiloYkuxS1y79QLAO7Ni8VnWk6bH8o
-         qxSWM876W7l1d+0C/3j9XeEdkWx0nMTZRKoHrg58I3fhDbc43khtfsknkgrLI/0f8KVP
-         HrZsZUABJ1kiQehV0oPD+0adKU4/6z8gvsjS/N81jjATgtrnKSJC90wloPP42oWFjEWf
-         LwoQ==
-X-Forwarded-Encrypted: i=1; AHgh+RqHsEuu2fh8uf/PN1NuoX9fRcpQ6s5zcXJPttA6w2ZZOivJALHAUQamduFK3JA3jv60c1G/yVIadw==@vger.kernel.org
-X-Gm-Message-State: AFuF++mOK4GVTcG8S9Vnj7iMONsTr4S86radviHI0/6uPBzuKe1pypw/
-	GNn5u+kdL0eeHea3UVSn+GtUgPGOkqHfQLpT5UQwZD3JwE8nSoxdge2Dz7mvGMhc
-X-Gm-Gg: AR+sD10Inz2vYRdTrr+xt/RBn8I2pfEl2c8f7LeWOSVfkb31VGTh3NHuxEDgykVOg2/
-	sn9k6C/1XrAmuB765/wFRoZvaa2jdpmbFbU+eeHKc5H7kuQfcSvuevL1/AosK3DFRzidRZOmItf
-	CnF7RFmgGgCTjFZg0ziiv8jh1lZGte2KmzO/Tf+Zqkr/SGNgvCL5fuh3DvZCj4M3rTVxej/KTJm
-	1J9F1xLMeN5shKhRz6yAoIPa96IF9IdK5eNTdGrIIXf/QyXb2FKCNVKYYG3KgAyA4lp0LUjx/YM
-	dsMpe6OQT6OHqnCWCPNH7HogPYidqRlYtjXG+vyQyrhuGUWfSS9hAHlOn7TWHpIl0awubP6YK+T
-	4eJtUq4AUJb+7Elol7kgMWHEwKeVZCSGlo0GGlcu4I5dhCa0MDWlDElm4sGknhHTXcJLQMZF3XI
-	pKvN4e5/PXo7YCl0v+k+vaOX9O+JFxbekSrxlrtfsG7s3XKS8wYhi9/ZX6b/Gxwyu1RigjNEfJU
-	LHNzfqWOfSspqKsXtuNSBBVSg==
-X-Received: by 2002:a05:6122:2202:b0:5bd:c27a:dafd with SMTP id 71dfb90a1353d-5c5ff779777mr1782649e0c.3.1787297818483;
-        Fri, 21 Aug 2026 00:36:58 -0700 (PDT)
-Received: from mail-ua1-f52.google.com (mail-ua1-f52.google.com. [209.85.222.52])
-        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-97c4e76040fsm8104275241.3.2026.08.21.00.36.58
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 21 Aug 2026 00:36:58 -0700 (PDT)
-Received: by mail-ua1-f52.google.com with SMTP id a1e0cc1a2514c-97bf910aa70so189419241.2
-        for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 00:36:58 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+Rp5V2l0J6QKKxRIUvY9JCHVDpP6yoWBRbfVSOvL2NZjY/Ew3foFCCWNQy3d7kAMcm8PKQgqqzQKHw==@vger.kernel.org
-X-Received: by 2002:a05:6102:3bf9:b0:77b:2881:580b with SMTP id
- ada2fe7eead31-77b2890fb0dmr88639137.4.1787297817842; Fri, 21 Aug 2026
- 00:36:57 -0700 (PDT)
+	s=arc-20240116; t=1787305311; c=relaxed/simple;
+	bh=FmkDQCnbrYwsSA6IkKc1BKZOJumquomHcgUGfPDdCf4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=n1GYBk6Zly6xmIYWtHYhuRRQL6S7ExKiYPbvmbQcDah+86q4MgctWDvfHMTHxp2ww9tATeXwmU+F1yHh5QKIYVQIvlTuTEEz5MJHwECfhigW/ut/Rlrmu4bbyW/8Ua6wt2xMB5Wfr2ohBU3qv/MpDHRrEc76Qzg49R2MolfVVOs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=IfFSpkuj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gOxJ958b; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="IfFSpkuj";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gOxJ958b"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 920E53EFC;
+	Fri, 21 Aug 2026 09:41:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787305294; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=lp996p4ro/fsbltsyWi4yBjbpcypgEnTiXPjo9NWNro=;
+	b=IfFSpkujE1QpIfxf2vKYu2UvwHze62rvwlHS9egQckoj6hSLO+SZHDthyjIhDlQI5qAeQs
+	sCHdcIGvW8bFcVdaUsza7LoDj/wmIaEvnJX9BHBHMfRTGOdyI8o9uVbutOs1JLtdjOg0pC
+	o4atlf1YXarYyUVWqckH4JkKue3kKi0=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787305290; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=lp996p4ro/fsbltsyWi4yBjbpcypgEnTiXPjo9NWNro=;
+	b=gOxJ958biRSh01UAe9qw4SpnmWraiifrHoTHfkAqIYFb0cPmCICPwUYvMAwkJsHZ+UdMBQ
+	bGDcTpmtA5hbebYtdoGYfUoeDKurBb7ycz4yQtzY0a8D2L2pbnYzN/EZBw9VLrdlnnTFum
+	pmPHOPwygd/4fwKmFu0rbd+hU0A09lI=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 33CAB26F8;
+	Fri, 21 Aug 2026 09:41:30 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 3fmTCUodiGp9NgAAD6G6ig
+	(envelope-from <ailiop@suse.com>); Fri, 21 Aug 2026 09:41:30 +0000
+Date: Fri, 21 Aug 2026 11:41:29 +0200
+From: Anthony Iliopoulos <ailiop@suse.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: remove unused setup_profiling_timer function
+Message-ID: <aogdSZi3gWqaSfnc@technoir>
+References: <20260820123931.142532-1-ailiop@suse.com>
+ <047975cb5fdeb0e3cb52cb78d55c3a45023cc992.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260820123931.142532-1-ailiop@suse.com>
-In-Reply-To: <20260820123931.142532-1-ailiop@suse.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 21 Aug 2026 09:36:46 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUxpgiMSgjcR2-Vz33iYUrjBNKO29yXk8oEdXG6RLFRtg@mail.gmail.com>
-X-Gm-Features: AcwNN1VFSBtkYc0uhJ34y6d8TYOgnAnTdieHd3auyFQfTIP6x1Ev7AgPzaPonCg
-Message-ID: <CAMuHMdUxpgiMSgjcR2-Vz33iYUrjBNKO29yXk8oEdXG6RLFRtg@mail.gmail.com>
-Subject: Re: [PATCH] sh: remove unused setup_profiling_timer function
-To: Anthony Iliopoulos <ailiop@suse.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <047975cb5fdeb0e3cb52cb78d55c3a45023cc992.camel@physik.fu-berlin.de>
+X-Spam-Score: -3.80
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-3.80 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	MISSING_XM_UA(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_FIVE(0.00)[5];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo]
 
-Hi Anthony,
+On Thu, Aug 20, 2026 at 04:00:37PM +0200, John Paul Adrian Glaubitz wrote:
+> Hi Anthony,
+> 
+> On Thu, 2026-08-20 at 14:39 +0200, Anthony Iliopoulos wrote:
+> > setup_profiling_timer() is not used by any code at this point. Since a
+> > default weak implementation exists, there is no need to keep this
+> > arch-specific definition around. Remove it along with the now-redundant
+> > profile header includes.
+> 
+> Do you have any clue why it was still implemented for LoongArch which is
+> a rather new architecture? I'm also seeing that it's not used anywhere,
+> I'm just wondering why it was not removed before and why it was even
+> included when LoongArch was added.
 
-Thanks for your patch!
+Its addition to LoongArch [1] slightly predates converting it to a weak
+function [2], so up until that point all archs had to include the stub.
 
-On Fri, 21 Aug 2026 at 09:27, Anthony Iliopoulos <ailiop@suse.com> wrote:
-> setup_profiling_timer() is not used by any code at this point. Since a
+Regards,
+Anthony
 
-It is used in write_profile()
-https://elixir.bootlin.com/linux/v7.2/source/kernel/profile.c#L202
-
-> default weak implementation exists, there is no need to keep this
-> arch-specific definition around. Remove it along with the now-redundant
-> profile header includes.
->
-> Signed-off-by: Anthony Iliopoulos <ailiop@suse.com>
-
-> --- a/arch/sh/kernel/smp.c
-> +++ b/arch/sh/kernel/smp.c
-> @@ -21,7 +21,6 @@
->  #include <linux/sched/hotplug.h>
->  #include <linux/atomic.h>
->  #include <linux/clockchips.h>
-> -#include <linux/profile.h>
->
->  #include <asm/processor.h>
->  #include <asm/mmu_context.h>
-> @@ -322,14 +321,6 @@ void smp_message_recv(unsigned int msg)
->         }
->  }
->
-> -#ifdef CONFIG_PROFILING
-> -/* Not really SMP stuff ... */
-> -int setup_profiling_timer(unsigned int multiplier)
-> -{
-> -       return 0;
-
-This returns zero (success), while the default weak implementation
-returns -EINVAL, so your change breaks write_profile().
-https://elixir.bootlin.com/linux/v7.2/source/kernel/profile.c#L181
-
-> -}
-> -#endif
-> -
->  #ifdef CONFIG_MMU
->
->  static void flush_tlb_all_ipi(void *info)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+[1] 46859ac8af52 ("LoongArch: Add multi-processor (SMP) support")
+[2] 787dbea11a5d ("profile: setup_profiling_timer() is moslty not implemented")
