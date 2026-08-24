@@ -1,67 +1,66 @@
-Received: from mail-pg1-f169.google.com (mail-pg1-f169.google.com [209.85.215.169])
+Received: from mail-pf1-f180.google.com (mail-pf1-f180.google.com [209.85.210.180])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C768367B6D
-	for <linux-sh@vger.kernel.org>; Mon, 24 Aug 2026 15:45:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.169
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 210F34137BC
+	for <linux-sh@vger.kernel.org>; Mon, 24 Aug 2026 15:50:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.180
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787586315; cv=none; b=XKmlxDUcz7zzO20GWcfdk4KCPDpPm4K4L0KBngSHCuehJjWl6nvl7mhjDL1INYNkBMC3CLSIKHqzjNR2R8hqFxjeHKI1i9O704IPfo6+Z0vuS9lNNMm+b5V3463VpZC/VLAYr3EI0LmGF2cK6gTycFsLG/kAGiBla/cIOL9g8rM=
+	t=1787586646; cv=none; b=CeYcjjo/k900iDECRBmfchh2Z9rcBLe7HA8cbKB4HXSFOUErkr5T/gE+CfJ8IWJxUUABETlEBcZ0Lrupl0phTp83Cq6g+qGW3weOC+LsIsPyrOiSu2u9Ypi3ywt5urqW2CxBkYa22D5W5Xe5bnUPHhYFj/R0+hva9Oq2WYE1NAc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787586315; c=relaxed/simple;
-	bh=rH5ooTmhOET3vAsIUkA6yaGvEUpGPYpVuc1a+dr0RM0=;
+	s=arc-20240116; t=1787586646; c=relaxed/simple;
+	bh=O+UlH1d73+sx98gD+jonoek56k6WXXcHy6glAIcE6hw=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=GKC3WfRv2rO5TLozaaTPTVtjlUumBSM9cY9QxV8XxlXEDQNKCAYbXRHwiNJEt3TmYi6kfnHKOi2iklHxyZ/wSiNdd0lmWiVy0WF2demFPIMcEwUXxUysmWbLB7e/2t160BiZZ/3PLQF5eCkBWwr5iAfDbuHaxNL7euiQVXh+ibY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=sifive.com; spf=pass smtp.mailfrom=sifive.com; dkim=pass (2048-bit key) header.d=sifive.com header.i=@sifive.com header.b=XiWO3OjI; arc=none smtp.client-ip=209.85.215.169
+	 In-Reply-To:Content-Type; b=k612vyzOwgJordgkEcOA6LACUsC3DFSinpmh2gLjiged14WKTByJ2AKXOkGdwjdVWeCymdtco7wBm0OIw3BrqpkeCTtGOuNi+M11nmTg+OXRR2BqBvh0ZzmNhN5nswK22dh3bl5qAelpbbo/tvVb7/xwPfDUZnUOBVO9RbRRX0g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=sifive.com; spf=pass smtp.mailfrom=sifive.com; dkim=pass (2048-bit key) header.d=sifive.com header.i=@sifive.com header.b=gzpY5h5W; arc=none smtp.client-ip=209.85.210.180
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=sifive.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sifive.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=sifive.com header.i=@sifive.com header.b="XiWO3OjI"
-Received: by mail-pg1-f169.google.com with SMTP id 41be03b00d2f7-ca12086c06eso2767711a12.0
-        for <linux-sh@vger.kernel.org>; Mon, 24 Aug 2026 08:45:13 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=sifive.com header.i=@sifive.com header.b="gzpY5h5W"
+Received: by mail-pf1-f180.google.com with SMTP id d2e1a72fcca58-84874b52eabso4705960b3a.0
+        for <linux-sh@vger.kernel.org>; Mon, 24 Aug 2026 08:50:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=sifive.com; s=google; t=1787586312; x=1788191112; darn=vger.kernel.org;
+        d=sifive.com; s=google; t=1787586639; x=1788191439; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:content-language
          :from:references:cc:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=QEtJVtkW7q375yAi3A0GskrIJ2s9H0yJ3yupt0Y509Y=;
-        b=XiWO3OjIqdcETuZVZGtwjGh/ridNShPFkWNE3WtqLgW/OCUrW4ceSniPCnuw3SK9w1
-         XTU8Ys9ZLukdPh1w7VDEanB/FM0sqiWMGyN4dR5evFWNqo6ePuO07HrlNh2fuCx4GNru
-         vGoj5lnIz6IFL6b637DRdsu/jePBVR3paCUUy1VRsZi5Dp/5l5BDabEV2rm4s/++FuVi
-         7cSrGkjkmZ9dSZmXjXXxqZfPXtq1iTfhvn/lNVGmVmKesYI+fa9ppS+0qqeikflC0VM+
-         JFIvYdhKOwdGtQFELrlmbm4uwP6XS2FYISN62wP3zDXL1mZB+3qq3TjDJETwgSTW2eHm
-         A9Bg==
+        bh=8n2sUFyNkTeeyJ480adWKOU51gCub2/F4WE3r3BRNf0=;
+        b=gzpY5h5WE22LnAQ59IZ1aQ4RvBrfX1TLQn3SeYIVWwfWG6YEj9tCVYFWrUXI5/d3Fk
+         ILuo5xbw0dVb1q+vkio3LO2q1/7BYar7Kd5kiSrhH/zpU1K6ai1dgXhfcC2bU4BUgpP7
+         Q0N6hK6rjCO+W1AsSr1BhsqykjtQISFsHVj6HskgrREPOVxF0BlSLr54YV62XFF35Fe4
+         rHfJtt2Pm+mN20xIIEFapc1pnvYItHz7b3meyYbyZAgGU5QRDNt0yIj93oWX9aeRV0yW
+         v8tyoX1WzdbToiE2o68NzxuqsIcwGG6oMLnng9z/nrOw6AUsqUwGBuNpHV94z+vHBfbN
+         EZpg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787586312; x=1788191112;
+        d=1e100.net; s=20251104; t=1787586639; x=1788191439;
         h=content-transfer-encoding:content-type:in-reply-to:content-language
          :from:references:cc:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=QEtJVtkW7q375yAi3A0GskrIJ2s9H0yJ3yupt0Y509Y=;
-        b=C1oArJ+48QwzKOtBHINTXYZSktymIkzPn10a8MGj1b6lfl0Aw3//9kslW6X2TY207l
-         R9dVoSDk31xF6IfmzvS6pRTJfo2nfwcgfOR8u/GEprBK12BDJdF5+NzgLg+W45WjC/Os
-         uhIZISJVth+G6rY6C6Om9tnO4SGmJl+4X503FPZ5vgGBJ8qiNWqMsdvEq9irvtD4GJGe
-         fICmVSh1vs7LgfmRRSL9GJJFXJeCQrqOeEjqRbGfHndxsLEUiVLqJlwfjC2cPvCCFbv3
-         Z67V2hMAtAPS0UJyZt+FG0jk7F7b5sFL41MyZn/uiSUaZQE5AEuRwLOj6rFqgUD2bTNc
-         Bbfw==
-X-Forwarded-Encrypted: i=1; AHgh+RpO9IPxwlfLBNo4AaHlxA7QP/c/biZapv5Kid9j2O663hfOSj8sAbr5PDQrK/p3WuabySrU/FFcWA==@vger.kernel.org
-X-Gm-Message-State: AFuF++np6QGVvPlGrssrFJVP9IxDy9Ebc19NhaKYehMVuiuBMcR2hPp9
-	QOH1lIFdg9HjAOnD91G++aiHDQGibiuLYquXGAIcXMrD4VlsJRLgHZGVeZ1UCgr0FxI=
-X-Gm-Gg: AR+sD11xO9R613xGmOBliTY5UJdNZwpgjQNLec1XmL0asD46KUqgii7LdXtNB2ouabC
-	SRFAH6quPQZKluO153tQRtuJebX66/4bcp6Po1HV1YvZu/6eWt8D2B0ikn89KuNR1dY5tE8kusF
-	tn9qoYAQL4IcXDHGR/CZvYgKxPg1H2xakzmG6pCd8l+dT1dk1XcMkp6dm8wQrktsiWkhal8b1nG
-	gLTw4wjtQQw3HHio6RQkhQmca0iwHRSNddeJh9gROSRh9NwEKQAU7s3BU876rTgus0Nk/uCGkCq
-	qS6jQMGWqStj5vrX/adkmSu2j7FYJmwFU+Amz2saWiXPj5s/C2n5sOaSil6ZQYVJXp8fTJxgyUU
-	WP2GeO4bmNVTILK6IF3cdepKkcgbAg7M+BAAT2O2l4/Kmqr4onhnnFrGa42OONXou/FidNeuLM5
-	6UbypIlMujxCdHVWF7UTSFYGEWGGqxCdV0ZLOmDhk3RGE6gkRncQo+yxB6jgmdHiQ/rQpHoP9J2
-	AeCoTNDh7GjuTY=
-X-Received: by 2002:a17:90b:5867:b0:395:4de4:92c8 with SMTP id 98e67ed59e1d1-395df4dcdbcmr39252435a91.15.1787586312489;
-        Mon, 24 Aug 2026 08:45:12 -0700 (PDT)
+        bh=8n2sUFyNkTeeyJ480adWKOU51gCub2/F4WE3r3BRNf0=;
+        b=Mq7LGkqUdppWJa8FU5gaJC/FWozrl2o7hImRX8TqwXmKE6MJFGcvQnCuzQcKEsS6NI
+         H9eqL9N++fswnTHphlOSyWEdeckSbVUalH47ra1yWtzaTFG4RDwacWevTQeytUuffcwT
+         iAHAIAU5dFAeNOGrdJrZ6Pke4jFcviB6S01yNv1RNfIhqZH/KxYnuMyBlDDhm5BWHMUI
+         Z8mC6wqmfvLzmxHZQqmA4grMrTEvy5pbffE+QdVzqM/n4Nl1JiLTu8500cO3Y2zrQkUR
+         H3la8bAD2DqW+nsviF6EiA1pajNuwdHREFR6mFNAVwvIV7i5rsufM2FLHaxA/9/fKbRp
+         OPUA==
+X-Forwarded-Encrypted: i=1; AHgh+RrsEUgvabCnkBRb0u7H/c+SdP2hVdMFEdeGVBnfrf9Ss5WriQ+Z2DUZPkSy0T1QTObqSJtq7sSrlg==@vger.kernel.org
+X-Gm-Message-State: AFuF++mxouK792mXiH3IVgmGHTXndVfC+Hb8rW8Fq5BvHOEUxk7SbPKV
+	W2sNKBisQfmXIHOriv7RrOOlYAHIOJn0poFpAhYny3bVJHwwTdBoBxbxTglH23CQoVo=
+X-Gm-Gg: AR+sD12dfymKVnvuIr4e52MdRed6Iz4k1FdGot7+JUpo7JPpqq2doCwQ6fQEK+5qZRL
+	idFtwTGVzmP7iZHRq4SZppr/UbA8lT1mMiCivgalOgoFYBeikIZDKhfgmRNOi/tyEzcoj9YKAnM
+	KK7SIOSyGEVuJsaI/FIWrCQU2B47vf3OJ0YA3pUYyFogxeMXh2s0dOyY9GgFpw69rNJv2jGsQhI
+	CILA2Q4+7eAW9cdjSuotbXvUDj0ztJDognh2Exz3zCLheiLNw0B7f8+/KLLISh7VZjHpbSRe+k5
+	jKjTfCvRkQ5Uy2zx+fQks6D29s4rlYdYkEOVpWkz9zOPQ0tBU2XJIINnrQsf4IAo+XneWUP0SKF
+	SBYIHbtiM3QEO3Q3S63wxdpeDD4Bc5iFDVJW1FeletHklvsE/vzbfDufbus16g5XMuPyVyxg3XV
+	Oei5Q6jRUT4snHRuO+SJZMdIpnVecG/NEgCHYbJBo98Xun86OTTpvBZ0PaPu5bwE/h
+X-Received: by 2002:a05:6a00:10d1:b0:848:5540:2377 with SMTP id d2e1a72fcca58-851fa070c14mr40910400b3a.17.1787586639434;
+        Mon, 24 Aug 2026 08:50:39 -0700 (PDT)
 Received: from [100.64.0.1] ([165.225.242.163])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39645b7ff6dsm23611a91.10.2026.08.24.08.45.10
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8520ef36048sm2219670b3a.26.2026.08.24.08.50.37
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 24 Aug 2026 08:45:11 -0700 (PDT)
-Message-ID: <029cfde8-74fc-4437-bc18-b1b53d44cab2@sifive.com>
-Date: Mon, 24 Aug 2026 10:45:09 -0500
+        Mon, 24 Aug 2026 08:50:38 -0700 (PDT)
+Message-ID: <6dae9cae-9665-4dc8-9a49-d6e5acda221b@sifive.com>
+Date: Mon, 24 Aug 2026 10:50:37 -0500
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -69,7 +68,7 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [RFC V3 1/8] mm: Make ptrval_to_str() generally available
+Subject: Re: [RFC V3 8/8] mm: Drop pxd_ERROR()
 To: Anshuman Khandual <anshuman.khandual@arm.com>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
  <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
@@ -84,44 +83,102 @@ Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
  linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
  linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
  linux-um@lists.infradead.org, linux-arch@vger.kernel.org,
- linux-kernel@vger.kernel.org, Lorenzo Stoakes <ljs@kernel.org>,
+ linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>,
  linux-mm@kvack.org, akpm@linux-foundation.org, david@kernel.org
 References: <20260818040041.1891769-1-anshuman.khandual@arm.com>
- <20260818040041.1891769-2-anshuman.khandual@arm.com>
+ <20260818040041.1891769-9-anshuman.khandual@arm.com>
 From: Samuel Holland <samuel.holland@sifive.com>
 Content-Language: en-US
-In-Reply-To: <20260818040041.1891769-2-anshuman.khandual@arm.com>
+In-Reply-To: <20260818040041.1891769-9-anshuman.khandual@arm.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 2026-08-17 11:00 PM, Anshuman Khandual wrote:
-> Move ptrval_to_str() inside a header thus making the helper more generally
-
-Typo here and in subject: ptrval -> ptval
-
-> available for new users which are being added later. While here, also move
-> another related string size macro PTVAL_STR_MAX inside the header as well.
+> There are no more users left for any pxd_ERROR() either in generic MM or in
+> the platform MM. Hence all these platform macros along with their generic
+> fallback could be dropped across the tree.
 > 
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: David Hildenbrand <david@kernel.org>
-> Cc: Lorenzo Stoakes <ljs@kernel.org>
+> Cc: linux-alpha@vger.kernel.org
+> Cc: linux-snps-arc@lists.infradead.org
+> Cc: linux-arm-kernel@lists.infradead.org
+> Cc: linux-csky@vger.kernel.org
+> Cc: linux-hexagon@vger.kernel.org
+> Cc: loongarch@lists.linux.dev
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: linux-mips@vger.kernel.org
+> Cc: linux-openrisc@vger.kernel.org
+> Cc: linux-parisc@vger.kernel.org
+> Cc: linuxppc-dev@lists.ozlabs.org
+> Cc: linux-riscv@lists.infradead.org
+> Cc: linux-s390@vger.kernel.org
+> Cc: linux-sh@vger.kernel.org
+> Cc: sparclinux@vger.kernel.org
+> Cc: linux-um@lists.infradead.org
+> Cc: linux-arch@vger.kernel.org
 > Cc: linux-mm@kvack.org
 > Cc: linux-kernel@vger.kernel.org
+> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org> # m68k
 > Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
 > ---
->  include/linux/mm_types.h | 15 +++++++++++++++
->  mm/memory.c              | 16 ++--------------
->  2 files changed, 17 insertions(+), 14 deletions(-)
+> Changes in RFC V3
 > 
-> diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-> index b18c2b2e7d2c..a5b514e55dd7 100644
-> --- a/include/linux/mm_types.h
-> +++ b/include/linux/mm_types.h
-> @@ -2001,4 +2001,19 @@ static inline unsigned long mmf_init_legacy_flags(unsigned long flags)
->  	return flags & MMF_INIT_LEGACY_MASK;
+> - Moved ptrval_to_str() as header in a [PATCH 1/8]
+> - Stopped using pxd_ERROR() in generic MM in [PATCH 2/8]
+> - Dropped pxd_ERRO() macros from all platforms in this patch
+> 
+>  arch/alpha/include/asm/pgtable.h               |  7 -------
+>  arch/arc/include/asm/pgtable-levels.h          | 11 -----------
+>  arch/arm/include/asm/pgtable.h                 |  7 -------
+>  arch/arm/kernel/traps.c                        | 17 -----------------
+>  arch/arm64/include/asm/pgtable.h               | 15 ---------------
+>  arch/csky/include/asm/pgtable.h                |  4 ----
+>  arch/hexagon/include/asm/pgtable.h             |  3 ---
+>  arch/loongarch/include/asm/pgtable.h           | 11 -----------
+>  arch/m68k/include/asm/mcf_pgtable.h            |  6 ------
+>  arch/m68k/include/asm/motorola_pgtable.h       |  8 --------
+>  arch/m68k/include/asm/sun3_pgtable.h           |  7 -------
+>  arch/microblaze/include/asm/pgtable.h          |  7 -------
+>  arch/mips/include/asm/pgtable-32.h             | 10 ----------
+>  arch/mips/include/asm/pgtable-64.h             | 13 -------------
+>  arch/nios2/include/asm/pgtable.h               |  7 -------
+>  arch/openrisc/include/asm/pgtable.h            |  7 -------
+>  arch/parisc/include/asm/pgtable.h              |  9 ---------
+>  arch/powerpc/include/asm/book3s/32/pgtable.h   |  2 --
+>  arch/powerpc/include/asm/book3s/64/pgtable.h   |  7 -------
+>  arch/powerpc/include/asm/nohash/32/pgtable.h   |  2 --
+>  .../powerpc/include/asm/nohash/64/pgtable-4k.h |  3 ---
+>  arch/powerpc/include/asm/nohash/64/pgtable.h   |  5 -----
+>  arch/riscv/include/asm/pgtable-64.h            |  9 ---------
+>  arch/riscv/include/asm/pgtable.h               |  4 ----
+>  arch/s390/include/asm/pgtable.h                | 11 -----------
+>  arch/sh/include/asm/pgtable-3level.h           |  3 ---
+>  arch/sh/include/asm/pgtable_32.h               |  8 --------
+>  arch/sparc/include/asm/pgtable_32.h            |  3 ---
+>  arch/sparc/include/asm/pgtable_64.h            | 10 ----------
+>  arch/um/include/asm/pgtable-2level.h           |  7 -------
+>  arch/um/include/asm/pgtable-4level.h           | 13 -------------
+>  arch/x86/include/asm/pgtable-2level.h          |  5 -----
+>  arch/x86/include/asm/pgtable-3level.h          | 11 -----------
+>  arch/x86/include/asm/pgtable_64.h              | 18 ------------------
+>  arch/xtensa/include/asm/pgtable.h              |  4 ----
+>  include/asm-generic/pgtable-nop4d.h            |  1 -
+>  include/asm-generic/pgtable-nopmd.h            |  1 -
+>  include/asm-generic/pgtable-nopud.h            |  1 -
+>  38 files changed, 277 deletions(-)
+> ...
+> diff --git a/arch/riscv/include/asm/pgtable.h b/arch/riscv/include/asm/pgtable.h
+> index 5d5756bda82e..993a6505eb8f 100644
+> --- a/arch/riscv/include/asm/pgtable.h
+> +++ b/arch/riscv/include/asm/pgtable.h
+> @@ -559,10 +559,6 @@ static inline pte_t pte_modify(pte_t pte, pgprot_t newprot)
+>  	return __pte((pte_val(pte) & _PAGE_CHG_MASK) | newprot_val);
 >  }
 >  
-> +void ptval_bytes_to_hex_str(char *buf, size_t buf_size, const void *entry, size_t entry_size);
-> +
-> +#define ptval_to_str(buf, val)								\
->...
+> -#define pgd_ERROR(e) \
+> -	pr_err("%s:%d: bad pgd " PTE_FMT ".\n", __FILE__, __LINE__, pgd_val(e))
+
+We can drop the PTE_FMT macro now too.
+
+Regards,
+Samuel
+
