@@ -1,101 +1,79 @@
-Received: from mail-vs1-f52.google.com (mail-vs1-f52.google.com [209.85.217.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E503390C85
-	for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 13:15:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.217.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B21D30EF77;
+	Mon, 24 Aug 2026 07:27:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787318142; cv=none; b=uUJhwzAY1XwtjsLqX+H1GLq+7h0SECAiEQLGPzxQUu+8RyG6u18+h0Xz5bzEjL0WX637Joc4gssvevvk9fbzGuraO7cmKZDMr0Wx7XI7mf4L+14dZ5ErP6nrSboS63GPeCCsgnB0Vo2fAniTrDFCNnlxKeG+aab5s27t1D+wPTw=
+	t=1787556466; cv=none; b=mqWOOeaDdExeDi2jMqhdnaLKma8ExNC/Ty6vwIBMvAxsMFyq953NxkVVXhwAZdYLodMg6TyV6S/v2czOPAHreFpU3yubf4dcN9dhTNhCT8h5jfJ0+1GvX/8cxZ5X7jO+ZMdupZLXCVs7RgpkRik9h3w+gtaYBfaghzfHwOez/+w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787318142; c=relaxed/simple;
-	bh=6kQbT1gIu0XiHuVTt+KxzuS97ZAU3Rgnj/AF0hkWYXw=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=DnF/ORmWhZewND42JOP+oTMAszYpzj+GvszWnsfjUbcfvewnOOYdbMnvd1i+Bh1ynYlRa8TbYGQNMjDmSyF1Sg349WsFZAf0upIJ4cGvCQWa4Dl50w9mispzG28P/ALrmn7003oU5XhiAEnHztXnL+evwhH4VwL7ZxJzK/yd0EU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.217.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vs1-f52.google.com with SMTP id ada2fe7eead31-74dce749cc5so231362137.3
-        for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 06:15:21 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787318118; x=1787922918;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=KbR/IqWWJ9SoTQBLflO8X0Oc5JuNMDe4oTcqikxJVts=;
-        b=UgRKl50yl3HzJkImZ3V46WvcDAYaQGTAb8GPrSRjazmo6bFKDvd1iQlDlWiVUmsmYo
-         jLcEmprtLWECMgOm4HO5HGF6+ns+8dFCH0fGBMCo33tehVHtYkDQoAC7Ik5L8gDdPcFf
-         mWQWHNHdAIO8OsjSO1oYHY3D4cT/qv3v6lF+1kgkQ676p4gi/+0ZRAhdlGkzb9A3UF0b
-         OIj1dLay26p71GNNtWZoC1rBn9UxV6S5gUPrDXASSUVVthEjAd4OZEcejF2LR4ii/Y5Q
-         p5/2pHAIdA+Xea1GsuDIauBv0gUvaRKezRzJwYlI6azpBcVdic8KIiz0OWNunAQuIhFd
-         b74w==
-X-Forwarded-Encrypted: i=1; AHgh+Rp5UPYT2X6VLcWDIFY3lOqPq2iXEbf2rop8w+055xlL4/1okRDuUj71PVFowbj+KJTQ5KWqvROiCQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++mGDMLrMNZu94VKkEpFPFGTLunbk7/HKWBkI9KMpFpuKSAfMG7c
-	7nCwBQbpOj4Q6gK+m1/fe3KoVl6aTvsxnbuO1yp20BcoL5Mz4KxcrmiPDBAVqDgZ
-X-Gm-Gg: AR+sD12BQncXqu1om6OFbybjrVvH/zq2E1lr7mRAD5v96gBzwrt5bfc6IzVQIAS0d4u
-	w51LEg3TMryqrsMHjx2GrbKJxhY8bS0Kq1ct3k6omcI/Ilqp8STpm4g6oWtdFfSEbjg9L27xcgy
-	+MIVCGjAGNw4ky97Evl0FRUnIClQJfEfKvqS+yFPmo1TJ+ymrZ/SxWDQi1dgUx8uCoTpgFdR1pa
-	OzondaeqqB8ZfEJDk7cxZGO5s/AWt97w1AiAhxxka2iDzAkNo4431MB+FiOqvIadfCHcsRvz8hf
-	s9uzGYJ7JiLhtlWkBMZEqQ6mWLHIgpwtsFBmDdiNJvI4WQ4Dt2DUlVMKu9D/Ylhs9VQwTdALAez
-	ctlZGuegoTHFkLIgBF+i8Pc3dvSSLYPkW5zna8lsl9FOQtloQ9jpsQM9DgS1szefQhae+764EUo
-	pj8kpEmFtfCqPHlI8olxPSbq6WTLEna7Q3y6ZweSXxEXiSAF1wNYq5QEhQp33i0xiMwaueqIfOz
-	kEEVsu0k1SHQ834VKJBxmUxwUJd01zbv4+E
-X-Received: by 2002:a05:6102:390d:b0:73a:128b:ea07 with SMTP id ada2fe7eead31-77a65474816mr1986145137.14.1787318118274;
-        Fri, 21 Aug 2026 06:15:18 -0700 (PDT)
-Received: from mail-vs1-f48.google.com (mail-vs1-f48.google.com. [209.85.217.48])
-        by smtp.gmail.com with ESMTPSA id ada2fe7eead31-777dafa9b1dsm8562988137.1.2026.08.21.06.15.17
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 21 Aug 2026 06:15:17 -0700 (PDT)
-Received: by mail-vs1-f48.google.com with SMTP id ada2fe7eead31-75738fcb0d9so254085137.0
-        for <linux-sh@vger.kernel.org>; Fri, 21 Aug 2026 06:15:17 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RpaJkAGRCZZzIhXM1y78Q702XU9vURFVMlib0aT8y3xjlzfbFJ+Jg2C7ZpLnEAwyIfQm+v59+dH9Q==@vger.kernel.org
-X-Received: by 2002:a05:6102:d8e:b0:739:478b:5bf2 with SMTP id
- ada2fe7eead31-77a65274602mr1722130137.13.1787318117087; Fri, 21 Aug 2026
- 06:15:17 -0700 (PDT)
+	s=arc-20240116; t=1787556466; c=relaxed/simple;
+	bh=KfXzxN/sCr/F7pK2AdyGUYO5OQQU04dyr7yb+QQZaKI=;
+	h=MIME-Version:Content-Type:Subject:From:To:Cc:In-Reply-To:
+	 References:Date:Message-Id; b=PYyMCQf/X63XR8h67xJHxoL3YSwIU1JoEI6gUpk9VjAKRiGb8rdUoQtgmjXziCQs29ea6m4hVRSoMOJj5EcThtAogunVaAeDF+qgCyQL887RXBLZEMbQW8lc+17O2tIm9dJNzWuzrs9mA3fYxpzT5s9KlD3BhMZG+2uMtBafQZs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Hghfi3F3; arc=none smtp.client-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Hghfi3F3"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B017B1F000E9;
+	Mon, 24 Aug 2026 07:27:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1787556464;
+	bh=hpXldSP37oQmlhckItfAzwUOG6JobW41WzP0kSdLesI=;
+	h=Subject:From:To:Cc:In-Reply-To:References:Date;
+	b=Hghfi3F3hhjgblfEVPUEEPHALjTTBAgKBK8MbewWtmMLpyrYB+8Jo29/224FAiShM
+	 0SLcU5txHHDDVRBQmZbs0Km1ZqbqYphsVzR3okw73rVZzhWFSwmbPshMJk+4ij8Gwk
+	 wBlW/tVqVoMXtxSb8VWH+7r37m/WC7KmAwdV5lxYZr50+jzu/iInwaVg4PoIgWPYV+
+	 C5co0jxq4J2+miGm/bYP5+zECjtlCOUz+jUuPUU4mw1mdcjIPjf5Qqh658+sfYqF50
+	 oCrhxE7AzAMSOiSyXc8TzEpXzk6qb68sZUnHfTQBzsRUMB6GzKuCnUN8V+wutnGyd3
+	 qgVllw8rmVK3Q==
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260820123931.142532-1-ailiop@suse.com> <047975cb5fdeb0e3cb52cb78d55c3a45023cc992.camel@physik.fu-berlin.de>
-In-Reply-To: <047975cb5fdeb0e3cb52cb78d55c3a45023cc992.camel@physik.fu-berlin.de>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 21 Aug 2026 15:15:05 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXT44zxeNmNZeufKxUWz3_iYPqAY7Nu6g8eL4EBx1grnw@mail.gmail.com>
-X-Gm-Features: AcwNN1UgxukBrqyPOvtFT8QN7xa-BgXMe0TLSK2N3359or-fT7NvoBUgyvML6JU
-Message-ID: <CAMuHMdXT44zxeNmNZeufKxUWz3_iYPqAY7Nu6g8eL4EBx1grnw@mail.gmail.com>
-Subject: Re: [PATCH] sh: remove unused setup_profiling_timer function
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Anthony Iliopoulos <ailiop@suse.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Subject: Re: [RFC V3 0/8] mm: Drop pxd_ERROR()
+From: Mike Rapoport <rppt@kernel.org>
+To: Anshuman Khandual <anshuman.khandual@arm.com>
+Cc: linux-mm@kvack.org, akpm@linux-foundation.org, david@kernel.org, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
+ Helge Deller <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, 
+ WANG Xuerui <kernel@xen0n.name>, linux-alpha@vger.kernel.org, 
+ linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org, 
+ linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
+ loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org, 
+ linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org, 
+ linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+ linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, 
+ linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
+ linux-um@lists.infradead.org, linux-arch@vger.kernel.org, 
+ linux-kernel@vger.kernel.org
+In-Reply-To: <20260818040041.1891769-1-anshuman.khandual@arm.com>
+References: <20260818040041.1891769-1-anshuman.khandual@arm.com>
+Date: Mon, 24 Aug 2026 10:27:34 +0300
+Message-Id: <178755645423.3606540.14531883744138096395.b4-review@b4>
+X-Mailer: b4 0.17-dev
 
-Hi Adrian,
+On Tue, 18 Aug 2026 09:30:33 +0530, Anshuman Khandual <anshuman.khandual@arm.com> wrote:
+> mm: Drop pxd_ERROR()
+> 
+> pxd_ERROR() macros have been provided by all platforms, which are very much
+> identical and can be dropped off completely if these pgtable printing could
+> be moved to callers in generic MM aka all pxd_clear_bad().
+> 
+> But first cleanups and re-organizations are required in some platforms that
+> are using these macros internally. Afterwards [pte|pmd|pud|p4d|pgd]_ERROR()
+> macros have been completely dropped from the entire tree.
+> 
+> [...]
 
-On Fri, 21 Aug 2026 at 14:11, John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Thu, 2026-08-20 at 14:39 +0200, Anthony Iliopoulos wrote:
-> > setup_profiling_timer() is not used by any code at this point. Since a
-> > default weak implementation exists, there is no need to keep this
-> > arch-specific definition around. Remove it along with the now-redundant
-> > profile header includes.
->
-> Do you have any clue why it was still implemented for LoongArch which is
-> a rather new architecture? I'm also seeing that it's not used anywhere,
-> I'm just wondering why it was not removed before and why it was even
-> included when LoongArch was added.
-
-To make it _succeed_ when writing an integer value to that file?
-The default weak implementation returns an error code.
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Acked-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Sincerely yours,
+Mike.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
