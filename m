@@ -1,99 +1,237 @@
-Received: from mail-vs1-f51.google.com (mail-vs1-f51.google.com [209.85.217.51])
+Received: from mail-qk2-f12.google.com (mail-qk2-f12.google.com [74.125.230.204])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 392AD44E656
-	for <linux-sh@vger.kernel.org>; Mon,  7 Sep 2026 09:50:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.217.51
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788774638; cv=none; b=BKBd1SnWIwLXUStdOekU/MHnfCNMJNlJw15J82ynHgsvoazwQ0iEWPQ1zeCt21t1SDWzwbpug06yTNSLIzgG/EwXh0VpnjvH4NAn85B0o2n/ZZ8lZJ4R5k95TcHW+xf/VBEcx4cdyaJtJOIZyahDd1Em5ed9vEO+FKdltGDu3fA=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788774638; c=relaxed/simple;
-	bh=EJi4g5va8T1f1BIn66h2FvU8Mw088XXg+dMLppSZj+Y=;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 109F651E431
+	for <linux-sh@vger.kernel.org>; Mon,  7 Sep 2026 16:53:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.230.204
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1788800039; cv=pass; b=IzmZrzo3fMSfqs6GUlMlzPzY4bPzfIz0Ucdj2erzkwgH24tNQhoF+kvaaxEE3ehVx0O6SVh9ToTnDw68Mh1jIVF0sPjqklIM8XOjRu5QHyWHR8xTAPm0s0SUb4dN3xx0RYhwhlHGLmVir+UKDQ9AGuOROu5vcVYFaYSC1ta5U5k=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1788800039; c=relaxed/simple;
+	bh=7nZvXQAXFpGDq6OvBtcrjZaQ3gxcarFF2OJUmuf6SHc=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=CN9orNHonrvys/uaCmrPugvOZODDifYX9U7w/jvQf7V2QOkr/r1xCaezAiI+XxH898IeJ+2Tq06aPQ/jLpjouBJucS/4dSic/f5KafvZq6I6uBBhP1Cg3ZxE650AZnqdNfMvsobzUydLZZi9GsSwO6QM+A+0X9/vk/Q8+Chx544=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.217.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vs1-f51.google.com with SMTP id ada2fe7eead31-789fef9422fso918483137.2
-        for <linux-sh@vger.kernel.org>; Mon, 07 Sep 2026 02:50:33 -0700 (PDT)
+	 To:Cc:Content-Type; b=S52C6h4vJNwuoBBF0OVWf0tNg549gh1fzPg/2QyRy4hRAt5Yn1ND+Rv/se3AeJWJi/jzITpO80P3xqcOb2/HcSKy58LVhiliHAF00F89VQpTzyNzAk1MSsMS44nm3BEOO99ejYvl7bt6J9YzZ0pqO5PjWY0FPAcan2reDxvKg8U=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=ZOEcfTft; arc=pass smtp.client-ip=74.125.230.204
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="ZOEcfTft"
+Received: by mail-qk2-f12.google.com with SMTP id d75a77b69052e-530411c7ee1so368541cf.0
+        for <linux-sh@vger.kernel.org>; Mon, 07 Sep 2026 09:53:56 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1788800036; cv=none;
+        d=google.com; s=arc-20260327;
+        b=ejKA5hQ1O/NrBFzy8BtmZF/J1bBF+Uou1FquGXkZ7QWPe+6yZS1KgtuJXa3lrCce6c
+         3Iq+o+5bPQIUmNa9uvAg4U8YDIh/UKYeehse0/gxvb2zHJYM8HT1d+6zx7VNgHKXDzjl
+         zMDDXqbmPAck0UlxlmSDEBxG0cWlBejBDp8tv6Y+adtE9DafmVhmaxp+ZsTmQLNismBQ
+         i4uCzNGj9SBMP/UW/7piWhHXi6NdSUqew4mDf32HtGTBX1YhQrwNDukYQB2tbW6hyINv
+         navxz8nhBJ6bzDPE5dL4lFb2IzZj2JTf+Dt8fAxXpNswHITbVlc0MhICWQq8fk6ckv1K
+         z1uw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=WOgo3zFXzbtiQDjz57z5HXaLiQwAncd9HG4Gw1Bp/lg=;
+        fh=LRbj+Odm5eK9cnw+2P2LqkK0dSP3kTPIotV03wYpXQ4=;
+        b=VRHXrZC+Bb2yU91TEWWTVNoSqZRBAkFEC/G6RbMTaKtJpTVmQeC8ExmqsHE4SvNFCA
+         zKC6KVfKGDoE5yTTk1Ye2wa8WP/ZpX+sRbA4V75aY/x3t/WTIA9zIH51rRDnATo606l8
+         9Ur2NMh+qHmmGqMT9F3mSXOGsTsvzIq9V5j6OxVSaVUY51TSOihcHIyn3ptQTdJ1YIkb
+         RNnaY0EuJ79vedUrguVb7niOOjIYUc6t9JLNXbYrM7vuQZWg6YxeyeJuSj+3m77/1Vp+
+         Jg3fdocE92LDNgansFTdCOGLdehwTnmp4u9xaxHsfB+P9ZnrdW6nN8i0piK8TsfsayI5
+         p4BA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20251104; t=1788800036; x=1789404836; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=WOgo3zFXzbtiQDjz57z5HXaLiQwAncd9HG4Gw1Bp/lg=;
+        b=ZOEcfTftJhzBn8TSOkOKtoVoBUfs0xbVZP9wHIME5s8DaKMIumqZANXdTWAZZQG4bO
+         PsjF2/5Q7dfdSw5e/4doJHeaSAcrrwzHm5okWijPOCxUqMYTFuITP+L3zhdL7LBMLzBT
+         Jt+SHOoAutj1CLKQTV1FN0mPF2EGxDqFcsLwjlFwQHiJXiI0RuPd1xWARyOCutR3amvc
+         sQxz5M40LQ87mSFr29zXtVACvT1zPuvn5cV0my4RhbsT0V7tcqvEyDMudV1T+uNnLK+a
+         Py2kZwd1qLLizUDEbVxEWP3v9J2sunX74cBomy/fdJ0WlRZ+GPuOIbhrioUU/SARwrl5
+         i5kA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788774631; x=1789379431;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=jpyiT01uqi3z67FMkXpZRYNDQ41NByhvT2i+cHhX0n0=;
-        b=FW4uSlivCuJSSVKZSwzE8jiPgWkM1GP2POwGMmFcQapNYjOIPm+Ponc+6dKFeONtJZ
-         g2Lxqg7v9tHaJ7Ev8R24Q6DRwqOFPVtZYfCG7RgucwH8ELoK0pQbe2CkpLGk+lstuuzz
-         VkE+HaGuIe+dm3ho9N9OTst8QJEEv+2TcKfEUUlRe7oYLSOuCJyyTrDk17hcaG0YpiLg
-         85Lun4FR8F3C2LmSlTPhOOwL7cBSg6mL4myDXA/REWJwinglRNlYiCI8dA9WhmSBwEp8
-         Fgmb3xzKddlH6kAn14vIBAInGkVMHcWY1sQF9HfwbmEx9G9/mvAZDeHMtIbs7+LST1BX
-         0gYQ==
-X-Forwarded-Encrypted: i=1; AKwUvByi4U+XYCSiIhNjXRM2TbVhVli4UM73pgnWOfPUPHNFW/ekFXbLjN2zicF8+1lypilT0fRBCv+OKw==@vger.kernel.org
-X-Gm-Message-State: AFuF++m0di3zP2Aqb0kTRbw/tAonYf97qgBykXUT2z1Ja85LZBltoC/D
-	+FnuQXs6dVRvyO8f74dNd+zbFbmNUYvbjxkr5bTbdFKuMatBZuGU+tpNkuSIroV2
-X-Gm-Gg: AYBFou0fCzexw6MoqiJV2wDjov7UYvBxWoPgx9c6i5IkoWHwtkTFSzAAnzGd6arjrMm
-	67NiU3/mU7EEig+nnz0jhBYNFn8xP99Cv42EySf3r356hNdMDf/GdEjtRMR5qr8IMabahFDWnqR
-	SMSCGf+c/7x69+lPK8BRLcDNI0zYXjL5qxOETTRy30v/FtIfr/zhTcpYrntpbLZSwKDZZru5sli
-	XUz7hTegtX7qxJwinHg/1MT2fDsJKGVS2VG+zsHjRTQGuiGcBgdA9iTAb+lpoaLXyDNz4CzoG4y
-	eh1Xvt2cdW3XfMN43mUVqlAYzpvVAEGkpY1l5aEb3xRs66/PZJXPUpEkAPHOMwowbUKGh1DVQdf
-	MX5CvgVyfpXt9jgl1C6NiR6nrvLxRv9sNzlroq4qw+yaxu1ncaNF+jhtWd+944RVMeAo/bklP+p
-	449bprHUJakhBZ6QhTewavyLFSW9oxzwcjSrpidOWXW9z+nqxIk8TXBX8qw6y4JbAWkNguxUTvH
-	7hS5yQdhq0L54nUAic6/BqkFw==
-X-Received: by 2002:a05:6102:554a:b0:780:5605:743f with SMTP id ada2fe7eead31-78a4a8bb311mr7033730137.3.1788774631140;
-        Mon, 07 Sep 2026 02:50:31 -0700 (PDT)
-Received: from mail-vs1-f41.google.com (mail-vs1-f41.google.com. [209.85.217.41])
-        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-9808edd3d81sm6912507241.7.2026.09.07.02.50.31
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 07 Sep 2026 02:50:31 -0700 (PDT)
-Received: by mail-vs1-f41.google.com with SMTP id ada2fe7eead31-784980b88acso1051575137.0
-        for <linux-sh@vger.kernel.org>; Mon, 07 Sep 2026 02:50:31 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AKwUvBz5Wps1qDWT3P5X6tOirfQyZLawE0b7B/nxjpCo+oCrddTbaVZmeaP5OqzK+CbXHybUDevuCxNzvg==@vger.kernel.org
-X-Received: by 2002:a05:6102:2ac4:b0:778:30ee:f44b with SMTP id
- ada2fe7eead31-78a4ab31a99mr6505412137.13.1788774630709; Mon, 07 Sep 2026
- 02:50:30 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1788800036; x=1789404836;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=WOgo3zFXzbtiQDjz57z5HXaLiQwAncd9HG4Gw1Bp/lg=;
+        b=ZqcBuN8STrEffzLegOMs2gHc9Nj+gp3syD4w1WzyHY5A0A5ChPCHbZZGf0TMKTHZL9
+         qpUDhaCa7AmAlc51AOZpYAXZ5PvkgJsiz0Wj3IgB6947GYwZxGgtXMCwcwicqP/mohpG
+         iVizT232bsc6cLxU1gkC00vQ0PFEnv/XwsF7aq1ESR1O3/KhtY37HXSA0LAg9BSKcrEV
+         3AYb8KLBdg2q8/SkSwKrD5d6iy2HuENnNrOrufYffXbPAuwms/UDjp4sP3DK9PGEoHT9
+         ljxk70TkxcCwkEY3ZrJbG1WdP7AO5DT4OdUai1JNYAv8wxpH0MXiFe73e1RkTSwwrujR
+         uFWA==
+X-Forwarded-Encrypted: i=1; AKwUvBwzDSzDT1hveTOk88Go/JfQMHkINE9FY6vBhb/5V31bhS+KAxHe6NCT7A+CjoB5NzQsseFGagcZnQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++mFZ8anP/R7d0s6GsNiJazHfzpQxJckkzh8guCEIvZ4QymDCajd
+	SdzQ2utysX3pElcbo027V2HFZJm8OIYM7Q+C3Jn/6cCFN9fjfhMLIfnjdI7MlCtGKu/rAUVpAG6
+	4zs2R2yBdNuZpDwx7vOQZNbXk+7EC5ga84EDm5cWZ
+X-Gm-Gg: AYBFou2LOBXXJxwV6tgpqjSOZgWbI+NvgiERTFRBfUTgqtnJSNL8Lw+qAXGwf6i6vox
+	KuR7A1pp8BRwV2ZxRoCdyCCwp7TYjzOmgSjrcEcRMJuk8dMpRdZoarN2So0J8O/duBl5IKDRDmn
+	hxDBk5eL+hklBS46jhj8QMJG6ypKS4t4Vf25PhvhTYuwNwH9UwmobyB3F7KstLAjKkBCa6NPUY/
+	bn9xWjsu3Jq/rbVrd3673n4ju7OsMU3tL9/pEc0ubQ60VS4fNnE/5R7ljUbWuD4Ads8BvLwL/fB
+	nLxeeO3ezOUJAfdyX1veGBvtB4uG1oIMaE9CF3i5ToQ=
+X-Received: by 2002:a05:622a:28e:b0:52f:8389:29e0 with SMTP id
+ d75a77b69052e-530920caba6mr3560401cf.0.1788800035234; Mon, 07 Sep 2026
+ 09:53:55 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260907090956.2825703-1-arnd@kernel.org> <20260907090956.2825703-3-arnd@kernel.org>
-In-Reply-To: <20260907090956.2825703-3-arnd@kernel.org>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 7 Sep 2026 11:50:18 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdULSA1XeuyNR2oM0m3bGt6HzKMZkYYKEchy49nztpgNww@mail.gmail.com>
-X-Gm-Features: AcwNN1VEYucUOC047DGmcAJRGb8pjtBq2r0j3GGqGyncqZYd9LFOaI3FEXXAmV4
-Message-ID: <CAMuHMdULSA1XeuyNR2oM0m3bGt6HzKMZkYYKEchy49nztpgNww@mail.gmail.com>
-Subject: Re: [PATCH 2/2 v7] gpiolib: remove linux/gpio.h
-To: Arnd Bergmann <arnd@kernel.org>
-Cc: Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, Arnd Bergmann <arnd@arndb.de>, 
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Kent Gibson <warthog618@gmail.com>, 
-	Johannes Berg <johannes@sipsolutions.net>, linux-kernel@vger.kernel.org, 
-	linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, 
-	linux-gpio@vger.kernel.org, linux-wireless@vger.kernel.org, 
-	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+References: <20260901-rcu-pagetable-freeing-v1-0-5456a81c8212@kernel.org>
+ <20260901-rcu-pagetable-freeing-v1-12-5456a81c8212@kernel.org>
+ <apbUpMDJglS99_yK@thinkstation> <apbfzUwBQyxe3P9R@gremlin>
+ <apcH74QsR5I-DIbL@thinkstation> <apcJhtvnd45EkjJI@gremlin>
+In-Reply-To: <apcJhtvnd45EkjJI@gremlin>
+From: Suren Baghdasaryan <surenb@google.com>
+Date: Mon, 7 Sep 2026 09:53:43 -0700
+X-Gm-Features: AcwNN1WRGdFWOzxEbOcmfkztqDuQQAGpor7Xm60pdWlD2DjKNo1Y7S4S7DNXdgs
+Message-ID: <CAJuCfpH_v4YU+hsQDU_yQ4HZDf-2C6DuiJU5PGL+uVAsTwkZug@mail.gmail.com>
+Subject: Re: [PATCH 12/12] mm: change the contract for free_pgtables(), update docs
+To: "Lorenzo Stoakes (ARM)" <ljs@kernel.org>
+Cc: Kiryl Shutsemau <kas@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, 
+	David Hildenbrand <david@kernel.org>, Zi Yan <ziy@nvidia.com>, 
+	Baolin Wang <baolin.wang@linux.alibaba.com>, "Liam R. Howlett" <liam@infradead.org>, 
+	Nico Pache <nico.pache@linux.dev>, Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>, 
+	Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>, 
+	Usama Arif <usama.arif@linux.dev>, Guo Ren <guoren@kernel.org>, Brian Cain <bcain@kernel.org>, 
+	Geert Uytterhoeven <geert@linux-m68k.org>, Dinh Nguyen <dinguyen@kernel.org>, 
+	Simon Schuster <schuster.simon@siemens-energy.com>, Jonas Bonn <jonas@southpole.se>, 
+	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, Stafford Horne <shorne@gmail.com>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Paul Walmsley <pjw@kernel.org>, 
+	Palmer Dabbelt <palmer@dabbelt.com>, Albert Ou <aou@eecs.berkeley.edu>, 
+	Alexandre Ghiti <alex@ghiti.fr>, Russell King <linux@armlinux.org.uk>, Vineet Gupta <vgupta@kernel.org>, 
+	Michal Simek <monstr@monstr.eu>, Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, 
+	Will Deacon <will@kernel.org>, "Aneesh Kumar K.V" <aneesh.kumar@kernel.org>, 
+	Nick Piggin <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>, 
+	"David S. Miller" <davem@davemloft.net>, Andreas Larsson <andreas@gaisler.com>, 
+	Richard Henderson <richard.henderson@linaro.org>, Matt Turner <mattst88@gmail.com>, 
+	Magnus Lindholm <linmag7@gmail.com>, Catalin Marinas <catalin.marinas@arm.com>, 
+	Mark Rutland <mark.rutland@arm.com>, Huacai Chen <chenhuacai@kernel.org>, 
+	WANG Xuerui <kernel@xen0n.name>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, Helge Deller <deller@gmx.de>, 
+	Madhavan Srinivasan <maddy@linux.ibm.com>, Michael Ellerman <mpe@ellerman.id.au>, 
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, Heiko Carstens <hca@linux.ibm.com>, 
+	Vasily Gorbik <gor@linux.ibm.com>, Alexander Gordeev <agordeev@linux.ibm.com>, 
+	Christian Borntraeger <borntraeger@linux.ibm.com>, Sven Schnelle <svens@linux.ibm.com>, 
+	Richard Weinberger <richard@nod.at>, Anton Ivanov <anton.ivanov@cambridgegreys.com>, 
+	Johannes Berg <johannes@sipsolutions.net>, Thomas Gleixner <tglx@kernel.org>, 
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, 
+	"H. Peter Anvin" <hpa@zytor.com>, Arnd Bergmann <arnd@arndb.de>, Vlastimil Babka <vbabka@kernel.org>, 
+	Mike Rapoport <rppt@kernel.org>, Michal Hocko <mhocko@suse.com>, Jason Gunthorpe <jgg@ziepe.ca>, 
+	John Hubbard <jhubbard@nvidia.com>, Peter Xu <peterx@redhat.com>, linux-mm@kvack.org, 
+	linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org, 
+	linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org, 
+	linux-openrisc@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, 
+	linux-snps-arc@lists.infradead.org, linux-arch@vger.kernel.org, 
+	sparclinux@vger.kernel.org, linux-alpha@vger.kernel.org, 
+	loongarch@lists.linux.dev, linux-mips@vger.kernel.org, 
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-s390@vger.kernel.org, linux-um@lists.infradead.org, 
+	Hugh Dickins <hughd@google.com>, Qi Zheng <qi.zheng@linux.dev>
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Mon, 7 Sept 2026 at 11:10, Arnd Bergmann <arnd@kernel.org> wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
+On Tue, Sep 1, 2026 at 10:25=E2=80=AFAM Lorenzo Stoakes (ARM) <ljs@kernel.o=
+rg> wrote:
 >
-> After all other drivers have converted to linux/gpio/consumer.h
-> or linux/gpio/legacy.h, remove the final leftover bits here.
+> On Tue, Sep 01, 2026 at 06:15:17PM +0100, Kiryl Shutsemau wrote:
+> > On Tue, Sep 01, 2026 at 03:31:26PM +0100, Lorenzo Stoakes (ARM) wrote:
+> > > On Tue, Sep 01, 2026 at 02:57:13PM +0100, Kiryl Shutsemau wrote:
+> > > > On Tue, Sep 01, 2026 at 12:01:32PM +0100, Lorenzo Stoakes (ARM) wro=
+te:
+> > > > > diff --git a/mm/pgtable-generic.c b/mm/pgtable-generic.c
+> > > > > index b91b1a98029c..ff8ff3706485 100644
+> > > > > --- a/mm/pgtable-generic.c
+> > > > > +++ b/mm/pgtable-generic.c
+> > > > > @@ -386,9 +386,21 @@ pte_t *pte_offset_map_rw_nolock(struct mm_st=
+ruct *mm, pmd_t *pmd,
+> > > > >   * be read-only/read-write protected.
+> > > > >   *
+> > > > >   * Note that free_pgtables(), used after unmapping detached vmas=
+, or when
+> > > > > - * exiting the whole mm, does not take page table lock before fr=
+eeing a page
+> > > > > - * table, and may not use RCU at all: "outsiders" like khugepage=
+d should avoid
+> > > > > - * pte_offset_map() and co once the vma is detached from mm or m=
+m_users is zero.
+> > > > > + * exiting the whole mm, does not take the page table lock befor=
+e freeing a
+> > > > > + * table.
+> > > > > + *
+> > > > > + * However, the PMD entry is cleared first, and the table freed =
+only after
+> > > > > + * an RCU grace period, so a walker that mapped the table under
+> > > > > + * rcu_read_lock() stays safe, and the pmd_same() recheck in
+> > > > > + * pte_offset_map_lock() detects the teardown.
+> > > > > + *
+> > > > > + * Therefore it is safe for "outsiders" like khugepaged to use
+> > > > > + * pte_offset_map() and co. for VMAs that might be undergoing pa=
+ge table
+> > > > > + * teardown.
+> > > >
+> > > > Is it strictly true?
+> > > >
+> > > > free_pte_range() clears the pmd without taking the PTL, so the
+> > > > pmd_same() recheck in pte_offset_map_lock() can pass and the pmd ge=
+ts
+> > > > cleared right after.
+> > > >
+> > > > Readers are fine -- __pte_offset_map() holds rcu_read_lock() until
+> > > > pte_unmap(), so the table cannot go away.
+> > > >
+> > > > khugepaged is an odd example here. collapse_pte_mapped_thp() and
+> > > > retract_page_tables() don't rely on this recheck -- they take pmd_l=
+ock()
+> > > > plus the ptl and do their own pmd_same() under both.
+> > > >
+> > > > Can we say walks are safe and leave the write rule where it is?
+> > >
+> > > Hmm yeah, ah page tables, what a rabbit hole of horror :)
+> > >
+> > > I guess this is effectively a reflection of the 'write lock on write,=
+ RCU load
+> > > on read' pattern in RCU itself generally.
+> > >
+> > > So, maybe something like:
+> > >
+> > >  * Note that free_pgtables(), used after unampping detached vmas, or =
+when
+> > >  * exiting the whoel mm, does not take a page table lock before freei=
+ng a page
+> > >  * table.
+> > >  *
+> > >  * As page table freeing itself is RCU-safe, page table readers can s=
+afely run
+> > >  * concurrently with page table teardown. However, writers cannot, as=
+ without
+> > >  * a lock nothing prevents concurrent teardown.
+> > >  */
+> > >
+> > > Instead? What do you think?
+> >
+> > s/whoel/whole/
 >
-> Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> Haha yup the inevitable typo...
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Also s/unampping/unmapping please.
+>
+> >
+> > Otherwise, LGTM.
+>
+> Thanks! :)
+>
+> >
+> > --
+> >   Kiryl Shutsemau / Kirill A. Shutemov
+>
+> --
+> Cheers, Lorenzo
