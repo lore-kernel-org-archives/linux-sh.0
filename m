@@ -1,133 +1,97 @@
-Received: from mail-pj1-f41.google.com (mail-pj1-f41.google.com [209.85.216.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF04F367F26
-	for <linux-sh@vger.kernel.org>; Wed,  9 Sep 2026 17:36:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 690AC374E60;
+	Wed,  9 Sep 2026 18:06:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788975384; cv=none; b=RznmncU2Vl9d8ODzfmSbfOqetkp8w/q0KMoPj+IbzI/TPLdI5yNpZySjDI2xfBQAU17VXUmAkYAodokuqBgmi296H1cSH9CtEA3y/DpYy0kA0pfKXoxMvpNCnTES2aJ9JiqMxJROHjHj2moIxvHWjQIZ8LQ/i2X/9hZqnKGb4vE=
+	t=1788977200; cv=none; b=nQdYO2Vh6hoCQ9/o3hhytqD6SuKLyoJ6zxUA9kHD1qNXD8q3+ujfGOqfa+2rwogWVrbaRvky+Bo3aZRlIiui0SOFKHDWr/i+PbBp8vuzd6gsykJjsvepCW0+YoIMfEjLMc+YmPgCVP2cp+wYyhx4vWEA3ZVSKu6TLYpUqMNSRQc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788975384; c=relaxed/simple;
-	bh=de2c94jsaMSI3BlsBM6ZrMHN3E6NBtnbTSuL7f6PKL4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=eyz0SIwOay1+AvXfuWX6mFbOCjcWnImh57grXUWfa8zIIKRzPn5Uj8W5Kr01p9F2Oj0Ro/qPEAE2j6R6GBALvxxS3qjRHxz9oq4F4lmT6vhLLUJHXkouX9BN2+g1iA2MWtI5PPzF98uFxPhNyBBGUORpIv1A+N4vCGWBpqkSUkg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iLCB4Gcn; arc=none smtp.client-ip=209.85.216.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1788977200; c=relaxed/simple;
+	bh=l0m3Ux5xZ0vuhSpFRUUWmk714VYfYDaSZlcTIzFt8Ok=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=Wu84tHwHi60VMQTh6ZMqrpCMx6BwiCHY1o44VILhyaovNIhOdR8dFEn2JQd5c0rebipQbn0IxeON6kD6204TpZ/Gfyhy5yQCHimFmJgn/A8Sn/jtPE0hMs3OycL2R+74Hv4cx3Uveb/jcJ8R8OTSW4Tacw5iyq807xlOF8DqOo0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=ZHSodg0P; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iLCB4Gcn"
-Received: by mail-pj1-f41.google.com with SMTP id 98e67ed59e1d1-398e9698a70so5689692a91.0
-        for <linux-sh@vger.kernel.org>; Wed, 09 Sep 2026 10:36:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1788975382; x=1789580182; darn=vger.kernel.org;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :content-type:mime-version:references:message-id:subject:cc:to:from
-         :date:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=5ekCRN7odE9ehADxGc5HnpQu5KPcb6xzeMBDX6gZFh4=;
-        b=iLCB4GcnlvxhzkUUkgoyKKtpk/lvl7Ti2JE79eKETxu4oTg+NLIvSR2D6uos7WR+h2
-         iaeSSLQjH6KhqF5uj7//51YKzcHjKvr77CjXG9oAYiXKYIbeye5ZNqqE3PD+VunTJwKG
-         0mvAUtIYKI1fzyTItMmHhMqf1PL3AzIfzkRo8VS+OLP/IWY+wjmoG7CJvXbic/2bMNC9
-         6iB1lyC6tiAeDL00ObTOAs36s9jfyQGIHEc2g51Flp6nVKxb6EcaggOefqK0YVrcXDHU
-         vd+b6KayswmZA7dYguNqM7nVoJgZHZCPt/S1elAqNy9BGKJmGR1i1RIrpl3/JLmpaHYA
-         m4SA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788975382; x=1789580182;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :content-type:mime-version:references:message-id:subject:cc:to:from
-         :date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=5ekCRN7odE9ehADxGc5HnpQu5KPcb6xzeMBDX6gZFh4=;
-        b=CEQ+VgMI7M8Cq2BY2Y+KBc/T+hM0a5AkQ3x2/+QjABx6WRZ3WQgmUr8TViY54jb6W/
-         d00LVhXcPgMmJoy8gOB35p+7SmMEUyH0CVZzbK/EutVtHCg8gF5KiAkEjta+DNS0Mm1P
-         RqkcAXfTcdxAaupcNv5ibr2Dw0taRS0j6m9VkjXr52aeWlLusD3MKZL6xA2ZfkQ0swMg
-         QxPV18COwTuyADthPMCTK2dj2qHYultuE0W9qJMxCfbCsbuWCr3GTH4GnRJD4mzeglyl
-         JfShoaqlyg2eTbMOqFAOCMy//JDPxjyJPOpGwefF0WjyanGwo0NSez2RBKfmtCBOYWp3
-         yLMA==
-X-Forwarded-Encrypted: i=1; AKwUvBwbaUctLHD9fTRA8HvhlmOPdsJwhBDeEQnhh3VXxoZPUbk+sGWxzEiT8oFlqQduTRvi27KXNNCoRA==@vger.kernel.org
-X-Gm-Message-State: AFuF++nKPcJov8DNs9qp2KNS3Cx6Gnw2SFNDYiyvNXEm7MDIm04M+kOb
-	fW239OmhgaO4dXcAgxiQEdB6zF2vXnFQT0aGwvKA2SHULz7pKGYiQ2pl
-X-Gm-Gg: AYBFou0fYI9ZU71CpxsjfDrzMa4AjvXBYeU1rFjeNUhGyu4oERMUH/+WdZWHE32MSg1
-	CNtTeucYv6w5F8Tfwsn9E8NdkvMzs+zeCzBHPkw3mJTLsyNNm5+1b54UL/qyRlOb/cKCNxp2LIr
-	dQ7a0xTPcKvb4rOrnCNQlOa8+Xlr+FRrA3sk3u/DHZZu9NQBSGBSIsPcXSt0a6BHH8PlkF6c7HW
-	YWaxMqF4fMmJ+W9/zfG2670gO6a/iOwFVrTcVkBeaUE0bkYFzCoUPHPW2YHJgem0mWNUraHoJhX
-	br0u4CJXA5SpK8GGKmMcOhLPGI3mQ2OORpQV/lI65Q822+78pg9mlvZ/LFsO9KUV5tnghQYoZLF
-	FMhKoIDPyobN6FG06MPfEu1fI8mETGBtvEZJczhEivJKIEGPplNtY2U4/aWf8QaTxsmowbpT03P
-	iSuJ6EaI9gGWAkwnVDO5V0WPjQ2N6Lez7rbYzvoEHWJUYYF4vytdY1cPgsPGMFZTFVEHzUJqe2v
-	cPLIc8pa/gyeU1BmCAWXQr1prBWHZFeOmW0LQ2r
-X-Received: by 2002:a17:90b:5826:b0:38e:7168:281 with SMTP id 98e67ed59e1d1-39b261b07b6mr55962764a91.10.1788975382029;
-        Wed, 09 Sep 2026 10:36:22 -0700 (PDT)
-Received: from google.com ([2a00:79e0:2ebe:8:2d43:5153:5c50:643e])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-143243bfbe3sm42267002c88.11.2026.09.09.10.36.20
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 09 Sep 2026 10:36:21 -0700 (PDT)
-Date: Wed, 9 Sep 2026 10:36:18 -0700
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-To: Linus Walleij <linusw@kernel.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	kernel test robot <lkp@intel.com>
-Subject: Re: [PATCH] sh: mach-rsk: rsk7203: avoid using inline compound
- literals
-Message-ID: <aqGYVMQlskhA60Na@google.com>
-References: <20260802-sh-rsk7203-swnode-props-v1-1-7a790cbac9e6@gmail.com>
- <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
- <anAvJM0u_TIgL4ck@google.com>
- <70cb2e4d8a6fd11cbeb534dbf269f67148a00a8d.camel@physik.fu-berlin.de>
- <CAD++jLkxXYfZadV26956yMAaCtZYr7mRGPA8_kixufbXFW1B=Q@mail.gmail.com>
- <CAD++jLmNry6DwjDm490_n1Z2AmBb7viaOTEv_Ntnsc77dBHmJQ@mail.gmail.com>
- <b9b5a0c24433c4a191a504f652127ef1fb9b1731.camel@physik.fu-berlin.de>
- <CAD++jLnh3GX=Sht9e1C1nyb0=cxCXembBwBf7=Gq0wLsV74KmQ@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="ZHSodg0P"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=OpboOaOWUbhlwyhTIuDYmVK+kuJNqamu/RLlaR+oHOQ=; t=1788977196;
+	x=1789581996; b=ZHSodg0P9IM3XigihLz34mQ+sh9FfvEN7vgVRgq9Sx0ZV4i2Bw4k3cp3gyyVm
+	RkU0c5KNy8vI4zop66wL9RvV0HBQQSvyjGIOQYFnlWreElOSzNpbUyTmb5OBmSX6EFyYuXKdY1XHH
+	UlawXOaLQZ7LwOR5rNZr2fDsCaxNyDd5JvLv8PsVj6pVUMs2+wjdf3nGRB/He9TthXTqdZPTg2+cm
+	kD0W88U1ytIAwIToqnTCtOu5fnsMQ71Wsc0z0bvdv/kjsjYE4xER7hZO1PRlZJn7Gd9pwj3JmJBXk
+	sPik4Pz5C/CKuzW6MZ4CisEZrkIc4JAhmWupaiSk7ep/Ypl4wQ==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1x4Mgl-00000000HDV-1cU5; Wed, 09 Sep 2026 20:06:27 +0200
+Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1x4Mgl-00000001qN6-0Yx8; Wed, 09 Sep 2026 20:06:27 +0200
+Message-ID: <299ae94b6fc60cc660b2a5492052ca1375f22001.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/2] sh: mach-x3proto: convert gpio-keys to software
+ nodes
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski
+ <brgl@kernel.org>,  Arnd Bergmann	 <arnd@arndb.de>,
+ linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,  Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Date: Wed, 09 Sep 2026 20:06:26 +0200
+In-Reply-To: <aqGP2P3-44dmCyjz@google.com>
+References: <20260704-sh-x3proto-swnode-v1-0-0c039549dc46@gmail.com>
+	 <aqGP2P3-44dmCyjz@google.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAD++jLnh3GX=Sht9e1C1nyb0=cxCXembBwBf7=Gq0wLsV74KmQ@mail.gmail.com>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Tue, Aug 11, 2026 at 09:51:22AM +0200, Linus Walleij wrote:
+Hi Dmitry,
+
+On Wed, 2026-09-09 at 10:00 -0700, Dmitry Torokhov wrote:
+> On Sat, Jul 04, 2026 at 10:04:36PM -0700, Dmitry Torokhov wrote:
+> > This series converts the legacy gpio-keys platform device on the SH-X3
+> > Prototype board to use software nodes and static properties.
+> >=20
+> > This is part of the ongoing effort to remove platform data support
+> > from the gpio-keys driver, allowing it to rely purely on generic
+> > device properties.
+> >=20
+> > The first patch adds the software node to the GPIO controller, and
+> > the second patch performs the conversion for the gpio-keys device.
+> >=20
+> > Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+>=20
 > Hi John,
-> 
-> On Tue, Aug 11, 2026 at 8:59 AM John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
-> > On Tue, 2026-08-11 at 08:52 +0200, Linus Walleij wrote:
-> > > On Fri, Aug 7, 2026 at 12:05 AM Linus Walleij <linusw@kernel.org> wrote:
-> > >
-> > > > 1. (easiest): tell me to just revert this out of my tree.
-> > > >  Deal with this whole ordeal later.
-> > >
-> > > The merge window is coming up and I can't send a broken tree
-> > > to Linus so I went with this option now.
-> > >
-> > > John: the patches are all yours, I have dropped them from my
-> > > tree.
-> >
-> > OK, I will pick them up this week. My workload has settled a bit, so that
-> > I have some time for kernel stuff again.
-> >
-> > Did you revert Dmitry's patches in the kernel as well?
-> 
-> I took out these:
-> 106dc49414c4 sh: mach-rsk: rsk7203: convert pin configuration to using
-> software nodes
-> c5b962b6023d pinctrl: renesas: gpio: support software nodes for function GPIOs
-> 6905cdac0e51 sh: mach-rsk: rsk7203: use static device properties for
-> LEDs and GPIO buttons
-> 62067bc0a083 sh: pfc: attach software node to the GPIO chip
-> 4c870bbaba1b pinctrl: renesas: gpio: isolate function gpiochip from
-> parent fwnode
-> 
-> I have added my review tag to 4c870bbaba1b and c5b962b6023d
-> so you can just apply them to the SH tree. They don't conflict with
-> anything, at least not this merge window, so you can safely queue them.
+>=20
+> Could this be applied please or maybe you want me to make some changes?
 
-So can this be applied please?
+I have reserved the upcoming Saturday for kernel review now.
 
-Thanks.
+If I find anything, I'll let you know.
 
--- 
-Dmitry
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
