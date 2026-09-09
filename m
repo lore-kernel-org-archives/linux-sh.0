@@ -1,213 +1,133 @@
-Received: from mail-pj2-f12.google.com (mail-pj2-f12.google.com [74.125.227.140])
+Received: from mail-pj1-f41.google.com (mail-pj1-f41.google.com [209.85.216.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA3FA37B02D
-	for <linux-sh@vger.kernel.org>; Wed,  9 Sep 2026 17:29:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.140
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF04F367F26
+	for <linux-sh@vger.kernel.org>; Wed,  9 Sep 2026 17:36:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788974984; cv=none; b=V/6MUbN2ARrurxO+rDUfnwoq6mtxbVPIwMGPqIAc2ucktXp3UqanAjv2mmCibptHdvF82OEZzhGvnRriiMUL0fRQkWuLM5d6fBzkhEKM2ImrCOfoXIsCYweXXgpbJ6FoZBsDT9TEaakzLTbnGYzyUkPKk0gC/acNl8egR0D+NI0=
+	t=1788975384; cv=none; b=RznmncU2Vl9d8ODzfmSbfOqetkp8w/q0KMoPj+IbzI/TPLdI5yNpZySjDI2xfBQAU17VXUmAkYAodokuqBgmi296H1cSH9CtEA3y/DpYy0kA0pfKXoxMvpNCnTES2aJ9JiqMxJROHjHj2moIxvHWjQIZ8LQ/i2X/9hZqnKGb4vE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788974984; c=relaxed/simple;
-	bh=3XHuEAHmF9mZh+23lL0Y/SKnX00eK8sbmtD5tQwkD3A=;
+	s=arc-20240116; t=1788975384; c=relaxed/simple;
+	bh=de2c94jsaMSI3BlsBM6ZrMHN3E6NBtnbTSuL7f6PKL4=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=XtTik9NM5wAdjdiBS4DlDI1cOwH0nELve7cHr43VvU4rd9f6ztEnMrIfQvYeMkA5BX4ET2pMeaqVUn+O9w9o4uZuHjqi8qXsHTMyOtKj2VI/N/qGCWq9d6bjUojDjpjN1Uw7SRjUO0rJj4MVIO5Gz7u9T9ocnk9hqMyOOQilVcQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=K8QDTIVN; arc=none smtp.client-ip=74.125.227.140
+	 Content-Type:Content-Disposition:In-Reply-To; b=eyz0SIwOay1+AvXfuWX6mFbOCjcWnImh57grXUWfa8zIIKRzPn5Uj8W5Kr01p9F2Oj0Ro/qPEAE2j6R6GBALvxxS3qjRHxz9oq4F4lmT6vhLLUJHXkouX9BN2+g1iA2MWtI5PPzF98uFxPhNyBBGUORpIv1A+N4vCGWBpqkSUkg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iLCB4Gcn; arc=none smtp.client-ip=209.85.216.41
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="K8QDTIVN"
-Received: by mail-pj2-f12.google.com with SMTP id 98e67ed59e1d1-396ccc02279so537744a91.1
-        for <linux-sh@vger.kernel.org>; Wed, 09 Sep 2026 10:29:42 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iLCB4Gcn"
+Received: by mail-pj1-f41.google.com with SMTP id 98e67ed59e1d1-398e9698a70so5689692a91.0
+        for <linux-sh@vger.kernel.org>; Wed, 09 Sep 2026 10:36:22 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1788974982; x=1789579782; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=doXhXrJthHFYgvoQ59t6i4yuIdUh6fUHC6pQJIIVyWE=;
-        b=K8QDTIVNhfLASTp3QphzlEUfrSvguuCg5pG4jCmWw9B7cxs5OOMcWg+MyeZMlQE2s/
-         iD1b9Lm1HxiHaT1c5K2N1lCkrWuVY/v236AcLxp/UYrKdudm9hC4ppaUdSSREiVpl36W
-         PZud1RO8O+XqaFoDSoShPh4PZGDP1pAI5L7/LOyYLP+MZPAPHz2E8gPTJk7GsiLxCEHX
-         SY9GUkq4SebbICg+ysSv2+I92KkXS6tROdlau6CdOKhaqfoyhY5d0UJuZDLmeqeE6z4y
-         FCUbaUkkMZxkC+1TDYwKrdCYkoGGIxy8D0XMQUJblDH05mquDPEM9lNIPgiBPAZyajW6
-         Alqw==
+        d=gmail.com; s=20251104; t=1788975382; x=1789580182; darn=vger.kernel.org;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :content-type:mime-version:references:message-id:subject:cc:to:from
+         :date:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=5ekCRN7odE9ehADxGc5HnpQu5KPcb6xzeMBDX6gZFh4=;
+        b=iLCB4GcnlvxhzkUUkgoyKKtpk/lvl7Ti2JE79eKETxu4oTg+NLIvSR2D6uos7WR+h2
+         iaeSSLQjH6KhqF5uj7//51YKzcHjKvr77CjXG9oAYiXKYIbeye5ZNqqE3PD+VunTJwKG
+         0mvAUtIYKI1fzyTItMmHhMqf1PL3AzIfzkRo8VS+OLP/IWY+wjmoG7CJvXbic/2bMNC9
+         6iB1lyC6tiAeDL00ObTOAs36s9jfyQGIHEc2g51Flp6nVKxb6EcaggOefqK0YVrcXDHU
+         vd+b6KayswmZA7dYguNqM7nVoJgZHZCPt/S1elAqNy9BGKJmGR1i1RIrpl3/JLmpaHYA
+         m4SA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788974982; x=1789579782;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=doXhXrJthHFYgvoQ59t6i4yuIdUh6fUHC6pQJIIVyWE=;
-        b=SUVUgjeDIb3YLdVNlbnYODqVRkqqjAb1wJLSmIs9YvC8MF7RyM+S1kE9H4N+fESmqT
-         C33HefCy2WPjrydjZEoQzcQcGYHjojjNNVXH76DMiHypwNkR8BXcDJt91uJ7sNIyg2G8
-         FyN7+tcKuNk6+V8Q5nYaZjNdzvGzQ9AwxrRoyPHTmOVM/BmRkwDaTptggw1wq8KrpyWj
-         zmQGxIBEY7mav3oTKRQFG4n/EfqEczvO0WTYHBYfN24UM8vfrHj3KBa6gVQLyxqAuYtY
-         FMo/EGH0GZRxJ1yqL2Sdc4mHaZkfe5+PMVVheeJvxD0oKRWMLiwiE22kLohumey+6yNt
-         A+Ew==
-X-Forwarded-Encrypted: i=1; AKwUvBzsOd9sEfZ6DTW7UpjWg9dw7k44ifaZepol44HnFFJZUh1ZOdst2xLaUVyksE7fiv6WOW01phzfYg==@vger.kernel.org
-X-Gm-Message-State: AFuF++m4aVEknMZdRucGQWJ27ut/j3uhaQ97kkWfq3TbxObhsa7onkGe
-	me5YevwDe3ssFgygIKnPBYi8/M5v3pNj9pkFVpSxA9A3h4gA+nQoOT5M+tpVmg==
-X-Gm-Gg: AYBFou0W84HHwqvxFdgQ6XAxnJL2OJsSo3sE7lRq5/A7H/UU0mImPlwimFreO9bqNPf
-	aFKHEqVXuPyD7WyDibWJRq2WwGcpUxU21MK2YH3OHXatRbX5UO2ecA3CiP7FlO97N6jJQ+k+J2S
-	3zLY6xNiKPIkzuQ9LSD3ZagYgKe1/ZLxfmqRBfAikHmiU3y0tudiibmoc30VPGxYJYrmIdywLeS
-	kdwvl2gR4D8UyNTxNLPolHyBOTE7MBZGz3E6uJuTwxDj/vcasuDUaewZy124Tsr4lvcynfV7cdp
-	d3Db4i34AQPpF0kxwqNY6iUsFym2NM16O7pwIGVYop2pPfrXMuU1QarVv9kWoi6pK7pyCjGRkhz
-	YkCK1zGEd7ng/EOfsyHY1ktvoLVV2k3eIk/V/HlGifny3mYTsxmbwduqiVezzPLNE06/IDF9CI/
-	QulZ0J4HyrPrB3YsiDUe1E3hYBC38ZrqQdK1u1aHM356IzYSq2yk7QLodkyNaiLJERHKDJnmlX8
-	WaekZBk6uibotjxHdDrcQSGN3nG/YssdxzfFs0F
-X-Received: by 2002:a17:90b:3809:b0:398:9bd4:d12 with SMTP id 98e67ed59e1d1-39d70b1a9d7mr2622732a91.17.1788974982000;
-        Wed, 09 Sep 2026 10:29:42 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1788975382; x=1789580182;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :content-type:mime-version:references:message-id:subject:cc:to:from
+         :date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=5ekCRN7odE9ehADxGc5HnpQu5KPcb6xzeMBDX6gZFh4=;
+        b=CEQ+VgMI7M8Cq2BY2Y+KBc/T+hM0a5AkQ3x2/+QjABx6WRZ3WQgmUr8TViY54jb6W/
+         d00LVhXcPgMmJoy8gOB35p+7SmMEUyH0CVZzbK/EutVtHCg8gF5KiAkEjta+DNS0Mm1P
+         RqkcAXfTcdxAaupcNv5ibr2Dw0taRS0j6m9VkjXr52aeWlLusD3MKZL6xA2ZfkQ0swMg
+         QxPV18COwTuyADthPMCTK2dj2qHYultuE0W9qJMxCfbCsbuWCr3GTH4GnRJD4mzeglyl
+         JfShoaqlyg2eTbMOqFAOCMy//JDPxjyJPOpGwefF0WjyanGwo0NSez2RBKfmtCBOYWp3
+         yLMA==
+X-Forwarded-Encrypted: i=1; AKwUvBwbaUctLHD9fTRA8HvhlmOPdsJwhBDeEQnhh3VXxoZPUbk+sGWxzEiT8oFlqQduTRvi27KXNNCoRA==@vger.kernel.org
+X-Gm-Message-State: AFuF++nKPcJov8DNs9qp2KNS3Cx6Gnw2SFNDYiyvNXEm7MDIm04M+kOb
+	fW239OmhgaO4dXcAgxiQEdB6zF2vXnFQT0aGwvKA2SHULz7pKGYiQ2pl
+X-Gm-Gg: AYBFou0fYI9ZU71CpxsjfDrzMa4AjvXBYeU1rFjeNUhGyu4oERMUH/+WdZWHE32MSg1
+	CNtTeucYv6w5F8Tfwsn9E8NdkvMzs+zeCzBHPkw3mJTLsyNNm5+1b54UL/qyRlOb/cKCNxp2LIr
+	dQ7a0xTPcKvb4rOrnCNQlOa8+Xlr+FRrA3sk3u/DHZZu9NQBSGBSIsPcXSt0a6BHH8PlkF6c7HW
+	YWaxMqF4fMmJ+W9/zfG2670gO6a/iOwFVrTcVkBeaUE0bkYFzCoUPHPW2YHJgem0mWNUraHoJhX
+	br0u4CJXA5SpK8GGKmMcOhLPGI3mQ2OORpQV/lI65Q822+78pg9mlvZ/LFsO9KUV5tnghQYoZLF
+	FMhKoIDPyobN6FG06MPfEu1fI8mETGBtvEZJczhEivJKIEGPplNtY2U4/aWf8QaTxsmowbpT03P
+	iSuJ6EaI9gGWAkwnVDO5V0WPjQ2N6Lez7rbYzvoEHWJUYYF4vytdY1cPgsPGMFZTFVEHzUJqe2v
+	cPLIc8pa/gyeU1BmCAWXQr1prBWHZFeOmW0LQ2r
+X-Received: by 2002:a17:90b:5826:b0:38e:7168:281 with SMTP id 98e67ed59e1d1-39b261b07b6mr55962764a91.10.1788975382029;
+        Wed, 09 Sep 2026 10:36:22 -0700 (PDT)
 Received: from google.com ([2a00:79e0:2ebe:8:2d43:5153:5c50:643e])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1432435ec2bsm40462438c88.3.2026.09.09.10.29.40
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-143243bfbe3sm42267002c88.11.2026.09.09.10.36.20
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 09 Sep 2026 10:29:41 -0700 (PDT)
-Date: Wed, 9 Sep 2026 10:29:38 -0700
+        Wed, 09 Sep 2026 10:36:21 -0700 (PDT)
+Date: Wed, 9 Sep 2026 10:36:18 -0700
 From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linus Walleij <linusw@kernel.org>, 
-	Bartosz Golaszewski <brgl@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, 
-	Mark Brown <broonie@kernel.org>, jacopo mondi <jacopo@jmondi.org>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-gpio@vger.kernel.org, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Subject: Re: [RESEND PATCH] sh: ecovec24: use static device properties to
- describe the touchscreen
-Message-ID: <aqGXSGr87b3NPDBI@google.com>
-References: <alUyZ2zVWCPhyHHX@google.com>
+To: Linus Walleij <linusw@kernel.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	kernel test robot <lkp@intel.com>
+Subject: Re: [PATCH] sh: mach-rsk: rsk7203: avoid using inline compound
+ literals
+Message-ID: <aqGYVMQlskhA60Na@google.com>
+References: <20260802-sh-rsk7203-swnode-props-v1-1-7a790cbac9e6@gmail.com>
+ <32a0d810bfc56029453aa72cefa49cb40466f64e.camel@physik.fu-berlin.de>
+ <anAvJM0u_TIgL4ck@google.com>
+ <70cb2e4d8a6fd11cbeb534dbf269f67148a00a8d.camel@physik.fu-berlin.de>
+ <CAD++jLkxXYfZadV26956yMAaCtZYr7mRGPA8_kixufbXFW1B=Q@mail.gmail.com>
+ <CAD++jLmNry6DwjDm490_n1Z2AmBb7viaOTEv_Ntnsc77dBHmJQ@mail.gmail.com>
+ <b9b5a0c24433c4a191a504f652127ef1fb9b1731.camel@physik.fu-berlin.de>
+ <CAD++jLnh3GX=Sht9e1C1nyb0=cxCXembBwBf7=Gq0wLsV74KmQ@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <alUyZ2zVWCPhyHHX@google.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAD++jLnh3GX=Sht9e1C1nyb0=cxCXembBwBf7=Gq0wLsV74KmQ@mail.gmail.com>
 
-On Mon, Jul 13, 2026 at 02:41:31PM -0700, Dmitry Torokhov wrote:
-> Convert the board to use static device properties instead of platform
-> data to describe the touchscreen, so that support for platform data can
-> be removed from tsc2007 driver (ecovec24 is the last board using this
-> mechanism of describing tsc2007).
+On Tue, Aug 11, 2026 at 09:51:22AM +0200, Linus Walleij wrote:
+> Hi John,
 > 
-> Device properties do not allow custom board methods, so the method for
-> getting "pen down" state was removed (the driver is capable of working
-> without it). If this functionality is needed proper pin control/gpio
-> support needs to be implemented so that the same pin can serve as an
-> input GPIO and an interrupt.
+> On Tue, Aug 11, 2026 at 8:59 AM John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+> > On Tue, 2026-08-11 at 08:52 +0200, Linus Walleij wrote:
+> > > On Fri, Aug 7, 2026 at 12:05 AM Linus Walleij <linusw@kernel.org> wrote:
+> > >
+> > > > 1. (easiest): tell me to just revert this out of my tree.
+> > > >  Deal with this whole ordeal later.
+> > >
+> > > The merge window is coming up and I can't send a broken tree
+> > > to Linus so I went with this option now.
+> > >
+> > > John: the patches are all yours, I have dropped them from my
+> > > tree.
+> >
+> > OK, I will pick them up this week. My workload has settled a bit, so that
+> > I have some time for kernel stuff again.
+> >
+> > Did you revert Dmitry's patches in the kernel as well?
 > 
-> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> ---
+> I took out these:
+> 106dc49414c4 sh: mach-rsk: rsk7203: convert pin configuration to using
+> software nodes
+> c5b962b6023d pinctrl: renesas: gpio: support software nodes for function GPIOs
+> 6905cdac0e51 sh: mach-rsk: rsk7203: use static device properties for
+> LEDs and GPIO buttons
+> 62067bc0a083 sh: pfc: attach software node to the GPIO chip
+> 4c870bbaba1b pinctrl: renesas: gpio: isolate function gpiochip from
+> parent fwnode
 > 
-> This is a resend of the patch I sent in August of 2024. My fault of not
-> noticing reply from Adrian inquiring about potential negative impact
-> from not having GPIO-based "pen down" detection. I believe this is fine,
-> the "pen down" is an optional feature and the driver can detect the
-> touches even when it is not specified. Additionally, this is an
-> evaluation board, so user impact should be negligible.
-> 
-> However the bigger question is whether ecovec24 board still relevant.
-> According to my research it has the following regressions currently
-> unfixed:
-> 
-> 5716fb9bd9c6 ("mmc: spi: Convert to use GPIO descriptors")
->   - MMC SPI device naming broken (broke SD fallback mode)
-> 
-> 9fda6693335c ("spi: sh-msiof: Convert to use GPIO descriptors")
->   - SPI CS polarity inverted (broke initialization on the MSIOF0 SPI bus)
-> 
-> c2f9b05fd5c1 ("media: arch: sh: ecovec: Use new renesas-ceu camera driver")
->   - Camera array sentinel missing (causes out-of-bounds reads and
->     potentially kernel panics)
->   - Camera standby polarity inverted (enadvertently keeps cameras
->     permanently powered off)
->   - Camera disabled iby default (board defconfig points to a deleted
->     driver)
-> 
-> They are ~6 years old, so I wonder: do people actually *actively* use
-> this board with modern kernels? Should it simply be removed?
+> I have added my review tag to 4c870bbaba1b and c5b962b6023d
+> so you can just apply them to the SH tree. They don't conflict with
+> anything, at least not this merge window, so you can safely queue them.
 
-John, gentle ping...
+So can this be applied please?
 
-> 
-> Thanks!
-> 
->  arch/sh/boards/mach-ecovec24/setup.c | 38 ++++++++--------------------
->  1 file changed, 11 insertions(+), 27 deletions(-)
-> 
-> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-> index a641e26f8fdf..110a77f903b5 100644
-> --- a/arch/sh/boards/mach-ecovec24/setup.c
-> +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> @@ -26,6 +26,7 @@
->  #include <linux/platform_data/tmio.h>
->  #include <linux/platform_data/tsc2007.h>
->  #include <linux/platform_device.h>
-> +#include <linux/property.h>
->  #include <linux/regulator/fixed.h>
->  #include <linux/regulator/machine.h>
->  #include <linux/sh_eth.h>
-> @@ -589,39 +590,21 @@ static struct platform_device keysc_device = {
->  /* TouchScreen */
->  #define IRQ0 evt2irq(0x600)
->  
-> -static int ts_get_pendown_state(struct device *dev)
-> -{
-> -	int val = 0;
-> -	gpio_free(GPIO_FN_INTC_IRQ0);
-> -	gpio_request(GPIO_PTZ0, NULL);
-> -	gpio_direction_input(GPIO_PTZ0);
-> -
-> -	val = gpio_get_value(GPIO_PTZ0);
-> -
-> -	gpio_free(GPIO_PTZ0);
-> -	gpio_request(GPIO_FN_INTC_IRQ0, NULL);
-> -
-> -	return val ? 0 : 1;
-> -}
-> -
-> -static int ts_init(void)
-> -{
-> -	gpio_request(GPIO_FN_INTC_IRQ0, NULL);
-> -	return 0;
-> -}
-> +static const struct property_entry tsc2007_properties[] = {
-> +	PROPERTY_ENTRY_U32("ti,x-plate-ohms", 180),
-> +	{ }
-> +};
->  
-> -static struct tsc2007_platform_data tsc2007_info = {
-> -	.model			= 2007,
-> -	.x_plate_ohms		= 180,
-> -	.get_pendown_state	= ts_get_pendown_state,
-> -	.init_platform_hw	= ts_init,
-> +static const struct software_node tsc2007_swnode = {
-> +	.name = "tsc2007",
-> +	.properties = tsc2007_properties,
->  };
->  
->  static struct i2c_board_info ts_i2c_clients = {
->  	I2C_BOARD_INFO("tsc2007", 0x48),
->  	.type		= "tsc2007",
-> -	.platform_data	= &tsc2007_info,
->  	.irq		= IRQ0,
-> +	.swnode		= &tsc2007_swnode,
->  };
->  
->  static struct regulator_consumer_supply cn12_power_consumers[] =
-> @@ -1242,8 +1225,9 @@ static int __init arch_setup(void)
->  		gpio_direction_output(GPIO_PTF4, 1);
->  
->  		/* enable TouchScreen */
-> -		i2c_register_board_info(0, &ts_i2c_clients, 1);
-> +		gpio_request(GPIO_FN_INTC_IRQ0, NULL);
->  		irq_set_irq_type(IRQ0, IRQ_TYPE_LEVEL_LOW);
-> +		i2c_register_board_info(0, &ts_i2c_clients, 1);
->  	}
->  
->  	/* enable CEU0 */
-> -- 
-> 2.55.0.795.g602f6c329a-goog
-> 
-> 
+Thanks.
 
 -- 
 Dmitry
