@@ -1,97 +1,82 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 690AC374E60;
-	Wed,  9 Sep 2026 18:06:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C9AD53CEB9D
+	for <linux-sh@vger.kernel.org>; Thu, 10 Sep 2026 07:24:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788977200; cv=none; b=nQdYO2Vh6hoCQ9/o3hhytqD6SuKLyoJ6zxUA9kHD1qNXD8q3+ujfGOqfa+2rwogWVrbaRvky+Bo3aZRlIiui0SOFKHDWr/i+PbBp8vuzd6gsykJjsvepCW0+YoIMfEjLMc+YmPgCVP2cp+wYyhx4vWEA3ZVSKu6TLYpUqMNSRQc=
+	t=1789025069; cv=none; b=DXZVLu2CzR1eTTxLXmJVzQULHaRN7oVZAZjx+5aKafrQfDBI5bnWFIH31k7SZ5K55Zsc1vJZBzZqxWaeZUO3jrkBtkGfnhPCjhVA9iviI/rUWYtmcNZGyYgLuOiF3ESxo915iJlwn7JiB72ibawi7XzjgGyNYDPxCptWdMHTZG0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788977200; c=relaxed/simple;
-	bh=l0m3Ux5xZ0vuhSpFRUUWmk714VYfYDaSZlcTIzFt8Ok=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=Wu84tHwHi60VMQTh6ZMqrpCMx6BwiCHY1o44VILhyaovNIhOdR8dFEn2JQd5c0rebipQbn0IxeON6kD6204TpZ/Gfyhy5yQCHimFmJgn/A8Sn/jtPE0hMs3OycL2R+74Hv4cx3Uveb/jcJ8R8OTSW4Tacw5iyq807xlOF8DqOo0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=ZHSodg0P; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1789025069; c=relaxed/simple;
+	bh=+U3CsgVsX98Bv1eArnHlNvqaVE6TND6nINIu7hrzK+U=;
+	h=From:In-Reply-To:MIME-Version:References:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=BScvfCcBVwPEu+OMyvAONV/+60B2ENRta6WWnQ+R5pAYsDWF/+cH0Vo01QzaD+OKKnTYfg6wasLKwwfPTCP4sPJymgZCoPbO+Ltv1kFXAekEMztemrfx5l2o+KnNHDV+FFJPydckPefqlGzSq4yg6MF+MaQna1tYRyBpJkLQqfc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Lx475Gaz; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="ZHSodg0P"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=OpboOaOWUbhlwyhTIuDYmVK+kuJNqamu/RLlaR+oHOQ=; t=1788977196;
-	x=1789581996; b=ZHSodg0P9IM3XigihLz34mQ+sh9FfvEN7vgVRgq9Sx0ZV4i2Bw4k3cp3gyyVm
-	RkU0c5KNy8vI4zop66wL9RvV0HBQQSvyjGIOQYFnlWreElOSzNpbUyTmb5OBmSX6EFyYuXKdY1XHH
-	UlawXOaLQZ7LwOR5rNZr2fDsCaxNyDd5JvLv8PsVj6pVUMs2+wjdf3nGRB/He9TthXTqdZPTg2+cm
-	kD0W88U1ytIAwIToqnTCtOu5fnsMQ71Wsc0z0bvdv/kjsjYE4xER7hZO1PRlZJn7Gd9pwj3JmJBXk
-	sPik4Pz5C/CKuzW6MZ4CisEZrkIc4JAhmWupaiSk7ep/Ypl4wQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1x4Mgl-00000000HDV-1cU5; Wed, 09 Sep 2026 20:06:27 +0200
-Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1x4Mgl-00000001qN6-0Yx8; Wed, 09 Sep 2026 20:06:27 +0200
-Message-ID: <299ae94b6fc60cc660b2a5492052ca1375f22001.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 0/2] sh: mach-x3proto: convert gpio-keys to software
- nodes
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski
- <brgl@kernel.org>,  Arnd Bergmann	 <arnd@arndb.de>,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,  Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Date: Wed, 09 Sep 2026 20:06:26 +0200
-In-Reply-To: <aqGP2P3-44dmCyjz@google.com>
-References: <20260704-sh-x3proto-swnode-v1-0-0c039549dc46@gmail.com>
-	 <aqGP2P3-44dmCyjz@google.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Lx475Gaz"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BA5BA1F0089C
+	for <linux-sh@vger.kernel.org>; Thu, 10 Sep 2026 07:24:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1789025060;
+	bh=+U3CsgVsX98Bv1eArnHlNvqaVE6TND6nINIu7hrzK+U=;
+	h=From:In-Reply-To:References:Date:Subject:To:Cc;
+	b=Lx475Gazuys68iHJTZl+TWFJfxPzg25YPfTf/ER633EImwQXGSeBqjSlTGiplBfsV
+	 OJadQw319gQC2RFH7nBUXLQnsKnBifshyHeUzK/Mec8oz7mBNM9BcIcSyyF+qO7Qso
+	 pyHiBL3AZ6cOzmXZwKUo+7e6gXlyOF7EM+HWPaAzc7gPD0Fm3FA8zH7jyoSfOTthEG
+	 FOeYF14nMn9Be7eRZjJn1CgKolofuy0WEEKelLDnqe8OUHVHPtSBvcpDWFHec06yHQ
+	 7huu/H2ys0ZwN0woMeHAAkW1XcuV6LeQcJXopl+6TE9YY2TVzuZi5108bcGIIRFNfQ
+	 Kew04k0H75ewQ==
+Received: by mail-lj1-f172.google.com with SMTP id 38308e7fff4ca-3a33307ecd9so72708501fa.2
+        for <linux-sh@vger.kernel.org>; Thu, 10 Sep 2026 00:24:20 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AKwUvByhDSy5LeY3wRQZFqQFH5IUMuXPj+dfRxPvJzNEzB0aD+MFRKZYm/dVDrACaxFD+vTp9G/jDv2/Dg==@vger.kernel.org
+X-Gm-Message-State: AFuF++nRqY/mA08cXXREHde3lOD7QyoiNiCc3x6CJMRZucdNjK7k+HE5
+	rkBRD8wPHrLxNzJvGIW1rMvnWr68oSsOLJ0jzmf6TzCBzjs/ety+9GGRcD7iCvKN0U2FWBcGJxl
+	reXZkjzyv8lFnSd2jLjH4QfMWf+abaG2rcfBRZfc0Tg==
+X-Received: by 2002:a05:651c:19a9:b0:3a3:462f:329a with SMTP id
+ 38308e7fff4ca-3a371be7d52mr49246631fa.13.1789025059432; Thu, 10 Sep 2026
+ 00:24:19 -0700 (PDT)
+Received: from 969154062570 named unknown by gmailapi.google.com with
+ HTTPREST; Thu, 10 Sep 2026 00:24:18 -0700
+Received: from 969154062570 named unknown by gmailapi.google.com with
+ HTTPREST; Thu, 10 Sep 2026 00:24:18 -0700
+From: Bartosz Golaszewski <brgl@kernel.org>
+In-Reply-To: <alUyZ2zVWCPhyHHX@google.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+References: <alUyZ2zVWCPhyHHX@google.com>
+Date: Thu, 10 Sep 2026 00:24:18 -0700
+X-Gmail-Original-Message-ID: <CAMRc=Me5FPXqLzpMvr6MMGJcSqfah4yaRU0EDrV+jOn=X7iTbg@mail.gmail.com>
+X-Gm-Features: AcwNN1VcRf3mEWCD3x1wh-CxVmrq8hB-EFgGIfSDmr_ZS3mGsHSgozFtnP9n4xk
+Message-ID: <CAMRc=Me5FPXqLzpMvr6MMGJcSqfah4yaRU0EDrV+jOn=X7iTbg@mail.gmail.com>
+Subject: Re: [RESEND PATCH] sh: ecovec24: use static device properties to
+ describe the touchscreen
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski <brgl@kernel.org>, 
+	Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Mark Brown <broonie@kernel.org>, 
+	jacopo mondi <jacopo@jmondi.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-gpio@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Content-Type: text/plain; charset="UTF-8"
 
-Hi Dmitry,
+On Mon, 13 Jul 2026 23:41:31 +0200, Dmitry Torokhov
+<dmitry.torokhov@gmail.com> said:
+> Convert the board to use static device properties instead of platform
+> data to describe the touchscreen, so that support for platform data can
+> be removed from tsc2007 driver (ecovec24 is the last board using this
+> mechanism of describing tsc2007).
+>
+> Device properties do not allow custom board methods, so the method for
+> getting "pen down" state was removed (the driver is capable of working
+> without it). If this functionality is needed proper pin control/gpio
+> support needs to be implemented so that the same pin can serve as an
+> input GPIO and an interrupt.
+>
+> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+> ---
+>
 
-On Wed, 2026-09-09 at 10:00 -0700, Dmitry Torokhov wrote:
-> On Sat, Jul 04, 2026 at 10:04:36PM -0700, Dmitry Torokhov wrote:
-> > This series converts the legacy gpio-keys platform device on the SH-X3
-> > Prototype board to use software nodes and static properties.
-> >=20
-> > This is part of the ongoing effort to remove platform data support
-> > from the gpio-keys driver, allowing it to rely purely on generic
-> > device properties.
-> >=20
-> > The first patch adds the software node to the GPIO controller, and
-> > the second patch performs the conversion for the gpio-keys device.
-> >=20
-> > Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
->=20
-> Hi John,
->=20
-> Could this be applied please or maybe you want me to make some changes?
-
-I have reserved the upcoming Saturday for kernel review now.
-
-If I find anything, I'll let you know.
-
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
