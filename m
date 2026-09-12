@@ -1,101 +1,147 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48B75386C21;
-	Sat, 12 Sep 2026 11:14:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5AD8E2C08D0;
+	Sat, 12 Sep 2026 18:58:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789211680; cv=none; b=u/UgezX3l2YWSxDhHI6WsFiNfDhUndCgMbAmvva2bjNbReOWnyf2AYeHkZZcXCMcYTu4FKTsCqOSI7fvKI+UWEzK46742ES//NtPfP+7QNX2t+/Q/KWz1mR+EsT9XsqP66iQGbY8LTalpL81Rht3titE+4vXQnX+JSYBeT9V68M=
+	t=1789239484; cv=none; b=W+jqHYHvIOKsB4iGlTCmGPU5KyQsow8KyBAJjbTJrWBLh+61wJUWM2+V0mrNF5Q6W0hwcpljD8aBnPbpmCx9pw9eyDhPxEQ4Qk6cPNHIuFbEdVINwJkzDK4nqrFoLm9Vm6TyHLEPZcIotByL8pZ90cenocqEG9Gr+X3r46JlmEg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789211680; c=relaxed/simple;
-	bh=U+lClmhuzt+gqdwQa1S1c5SuZvBYgc6VErdQaa0P48I=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=hxyvrZf0yy73mqR1DfK6gbuKLxBGBGSe/vJ64Lp76r7DR3XKOCVNK6KRVGexvPLOv0TUh1JPlyD6ywT71rTzbjLYVV7D8wIGS3+T6bhW/5QrmSLcOg1wjTPDjgcCg4bzNDzsz0uYH+UrztPe0U9DGA5DSoOtVxoyl6IHi/Sg/88=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=KfPigndx; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1789239484; c=relaxed/simple;
+	bh=y3CQirMNKJQfcwKc4KuXVIcD4nkiaw5eX7+nHt9Rmz8=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=UgeCRQjhdX9Ukol/KJx6HNLGQ3iLu6hp0DzahC/Ak8+AxYz1CDscCsvZh18twz+KmI/60QkiLb1qr6MqNkc72p/K3mKqvb1uTtjUO49mIf1+QnDadyLxi3VcEygYd3DReB8V++kxuFAN+6yIm/72L1GZCQ3eUqnZvhCj4wSmTls=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=b129hE7D; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="KfPigndx"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=4rmi7EhOu14XDxpWxjmlow07gdhu0OV5ClVfW5zsdpY=; t=1789211677;
-	x=1789816477; b=KfPigndx1nnXjGv7aL8ITyu8iKg8lADrfxbjXO2Lux4SMHBYus0y/BQdAplmI
-	KC5afdnA7CSN1kc5ZNJUMQtcjAUODa+Mlx1oIU8+AfN94rTyRsnf1TlnVLYH8h0ih4GPzXJvKjPiu
-	prB3pagbm/0t36JtR4vHUUY+qi45kvXkP0mCqcL+SOnVCQHnaqtMsgLjTUpv9kHTujSs7p7yMxcsg
-	Kf9EMFXXBBtfae9PvzuN64Yc1D4n7SqhRnJbVYMOtpAv7pNou9djtAR/C+qvfu3tpMTPgHrhvChqk
-	BhJqnBA65+p4ewQrLhgWsWM4qtQHsWrxUh5puMHVx3eIwgu5Kw==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1x5Lgi-000000011Ot-27cZ; Sat, 12 Sep 2026 13:14:28 +0200
-Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1x5Lgi-00000003kIl-1B02; Sat, 12 Sep 2026 13:14:28 +0200
-Message-ID: <f0d9374747362835a67ce51b17fb3794553fc692.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 0/2] sh: mach-x3proto: convert gpio-keys to software
- nodes
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski
- <brgl@kernel.org>,  Arnd Bergmann	 <arnd@arndb.de>,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,  Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Date: Sat, 12 Sep 2026 13:14:27 +0200
-In-Reply-To: <299ae94b6fc60cc660b2a5492052ca1375f22001.camel@physik.fu-berlin.de>
-References: <20260704-sh-x3proto-swnode-v1-0-0c039549dc46@gmail.com>
-		 <aqGP2P3-44dmCyjz@google.com>
-	 <299ae94b6fc60cc660b2a5492052ca1375f22001.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="b129hE7D"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3B3411F000FF;
+	Sat, 12 Sep 2026 18:58:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1789239483;
+	bh=6BluU+mCWJjFo1z+n6s87f5KoVwieJ3DCesot+22iUM=;
+	h=Date:From:To:Cc:Subject:Reply-To:References:In-Reply-To;
+	b=b129hE7DRPv2I9AH7m/fRZZ/wUraKivazDVqrrdnPPQTFkC4bOPRxSFQ921pq+u1x
+	 cGQkMb6MKHfzBNpFFu9GL8/4I146UwIzNCQt+WAS7CsRsoRRUfAPNubcl71S8L93/T
+	 M4BxXA2lx75Yt6sFb7qTFJM3fkyQTG7/VCGedhz8RGzs5iM0+wGZ6iy3eDAI/3jJhb
+	 HBXihJbQv+/HFP/CY31Aq+Ze+g0B0G+g5Nr9EsIqty/z7SMqrf6FAQQndY7tYg6Nv2
+	 Tughn9iBXX5fCq4stHOZiAfKrE2zDe1NEUpSQS1R739nv5jL0eK4meZvyKZABMuXt1
+	 T4Ysbtv5zQTRA==
+Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
+	id 01B51CE1578; Sat, 12 Sep 2026 11:58:02 -0700 (PDT)
+Date: Sat, 12 Sep 2026 11:58:02 -0700
+From: "Paul E. McKenney" <paulmck@kernel.org>
+To: David Laight <david.laight.linux@gmail.com>
+Cc: Bradley Morgan <brads@mainlining.org>, frederic@kernel.org,
+	neeraj.upadhyay@kernel.org, boqun@kernel.org, joelagnelf@nvidia.com,
+	rcu@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org,
+	Vineet Gupta <vgupta@kernel.org>,
+	linux-snps-arc@lists.infradead.org,
+	Russell King <linux@armlinux.org.uk>,
+	linux-arm-kernel@lists.infradead.org, Guo Ren <guoren@kernel.org>,
+	linux-csky@vger.kernel.org,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org, Chris Zankel <chris@zankel.net>,
+	Max Filippov <jcmvbkbc@gmail.com>, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/6] lib: Add two-byte cmpxchg emulation function
+Message-ID: <17a92c0b-8062-48ae-b5fa-f61a3e0ff24c@paulmck-laptop>
+Reply-To: paulmck@kernel.org
+References: <20260911192540.20983-1-brads@mainlining.org>
+ <20260911192540.20983-2-brads@mainlining.org>
+ <20260911231017.550f8cd1@pumpkin>
+ <d0ef7beb-6952-49cc-9b33-e7542e831ba6@paulmck-laptop>
+ <20260912103047.1b95bb03@pumpkin>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260912103047.1b95bb03@pumpkin>
 
-On Wed, 2026-09-09 at 20:06 +0200, John Paul Adrian Glaubitz wrote:
-> Hi Dmitry,
->=20
-> On Wed, 2026-09-09 at 10:00 -0700, Dmitry Torokhov wrote:
-> > On Sat, Jul 04, 2026 at 10:04:36PM -0700, Dmitry Torokhov wrote:
-> > > This series converts the legacy gpio-keys platform device on the SH-X=
-3
-> > > Prototype board to use software nodes and static properties.
-> > >=20
-> > > This is part of the ongoing effort to remove platform data support
-> > > from the gpio-keys driver, allowing it to rely purely on generic
-> > > device properties.
-> > >=20
-> > > The first patch adds the software node to the GPIO controller, and
-> > > the second patch performs the conversion for the gpio-keys device.
-> > >=20
-> > > Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> >=20
-> > Hi John,
-> >=20
-> > Could this be applied please or maybe you want me to make some changes?
->=20
-> I have reserved the upcoming Saturday for kernel review now.
+On Sat, Sep 12, 2026 at 10:30:47AM +0100, David Laight wrote:
+> On Fri, 11 Sep 2026 16:09:16 -0700
+> "Paul E. McKenney" <paulmck@kernel.org> wrote:
+> 
+> > On Fri, Sep 11, 2026 at 11:10:17PM +0100, David Laight wrote:
+> > > On Fri, 11 Sep 2026 19:25:34 +0000
+> > > Bradley Morgan <brads@mainlining.org> wrote:
+> > >   
+> > > > cmpxchg_emu_u8() emulates one-byte cmpxchg() in terms of four-byte
+> > > > cmpxchg() for the architectures lacking native one-byte atomics.
+> > > > The same architectures also lack native two-byte cmpxchg(), where
+> > > > such an operation is not supported and either fails to compile via
+> > > > BUILD_BUG() or fails to link, because the bad pointer sentinels
+> > > > these architectures declare are never defined.
+> > > > 
+> > > > Add cmpxchg_emu_u16(), the two-byte sibling. It reads the enclosing
+> > > > word with READ_ONCE(), splices the two target bytes through a union
+> > > > and loops on cmpxchg() of the full word until the compare succeeds.
+> > > > Like cmpxchg_emu_u8() it is fully ordered.
+> > > > 
+> > > > The Kconfig symbol gating this file is renamed from
+> > > > ARCH_NEED_CMPXCHG_1_EMU to ARCH_NEED_CMPXCHG_1_2_EMU, as it now
+> > > > selects both the one-byte and the two-byte emulation.
+> > > > 
+> > > > Suggested-by: Paul E. McKenney <paulmck@kernel.org>
+> > > > Signed-off-by: Bradley Morgan <brads@mainlining.org>
+> > > > ---
+> > > >  arch/Kconfig                |  2 +-
+> > > >  arch/arc/Kconfig            |  2 +-
+> > > >  arch/arm/Kconfig            |  2 +-
+> > > >  arch/csky/Kconfig           |  2 +-
+> > > >  arch/sh/Kconfig             |  2 +-
+> > > >  arch/xtensa/Kconfig         |  2 +-
+> > > >  include/linux/cmpxchg-emu.h |  1 +
+> > > >  lib/Makefile                |  2 +-
+> > > >  lib/cmpxchg-emu.c           | 35 ++++++++++++++++++++++++++++++++---
+> > > >  9 files changed, 40 insertions(+), 10 deletions(-)
+> > > >   
+> > > ...  
+> > > > diff --git a/include/linux/cmpxchg-emu.h b/include/linux/cmpxchg-emu.h
+> > > > index 998deec67740..fee8171fa05e 100644
+> > > > --- a/include/linux/cmpxchg-emu.h
+> > > > +++ b/include/linux/cmpxchg-emu.h
+> > > > @@ -11,5 +11,6 @@
+> > > >  #define __LINUX_CMPXCHG_EMU_H
+> > > >  
+> > > >  uintptr_t cmpxchg_emu_u8(volatile u8 *p, uintptr_t old, uintptr_t new);
+> > > > +uintptr_t cmpxchg_emu_u16(volatile u16 *p, uintptr_t old, uintptr_t new);  
+> > > 
+> > > Why uintptr_t? Shouldn't it just be u16?
+> > > (Which probably means the code would better if it was just 'unsigned int')  
+> > 
+> > I suspect that Bradley is just following my cmpxchg_emu_u8() example,
+> > which also returns uintptr_t.
+> > 
+> > I remember that *something* broke when I made this be u8, but I cannot
+> > recall what the problem was.
+> > 
+> > Bradley, could you please try making it be u16 as David suggests just to
+> > see what happens?  Who knows?  Maybe it was a compiler issue that has
+> > since been fixed.  Or maybe the macros and asms using cmpxchg_emu_u8()
+> > need that uintptr_t for some reason.
+> 
+> I think the uintptr (unsigned long) cast is needed to stop a compile
+> error when exchanging pointers.
+> But that is an issue with the #define not the called functions.
+> 
+> Possibly changing the #define to have:
+> 	unsigned long ul_old = (unsigned long)(old);
+> Or even, with the type check from:
+> 	unsigned long ul_old = (unsigned long)(0 ? *(ptr) : (old));
+> (with the same for 'new')
+> and the removing all the casts where the value are used might be better.
 
-Correction: I will do that tomorrow (Sunday) as I got an appointment on a s=
-hort notice.
+It does sound worth a try, especially since we have the uintptr_t version
+to fall back on should that fail, or in case it somehow makes things
+more complicated.
 
-Adrian
+But we have been living with uintptr_t for some years with the 8-bit
+code, so this should be able to be a follow-on patch.
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+							Thanx, Paul
