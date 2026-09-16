@@ -1,57 +1,56 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 61F8349A3DD;
-	Wed, 16 Sep 2026 19:02:08 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93CD64BF921;
+	Wed, 16 Sep 2026 19:07:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789585335; cv=none; b=iiOLq4u4txt+14vaHU7vD2dp8BGcYIQcwIIwUrx2EplQZbswYKlFqB7Fzz5L326TcqJmsZN8Rf0QdbSw3SNjJHr9dyLnZO0shh2E+4tDLfyKK1s4dcxbuzMsEQLduqzi3Mj5qQ8zKCiuk2cZMJtoUf0N1yKIeshl75uQCOHHykU=
+	t=1789585688; cv=none; b=kd507vsMbNMf0BxilBMZuGht/ayFCQepNAtMM9n+mpDQytLB6phIxmi1S3NjmcDR6wun0B6Q6bWMkNfUUISPR0ZN0iJ1Tn215jYKRMLWoeyVQQRHJFm5wXLUVkrJEa8SrVEqg5e56Ym69V8qf/Uk1FPYEAnMpefTFwiSgmCqBVc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789585335; c=relaxed/simple;
-	bh=EI8ULIbBrDvRXrJW5Q2Smr4/pWyac6UYfVhBkBYaouY=;
+	s=arc-20240116; t=1789585688; c=relaxed/simple;
+	bh=gu8G4dVWtsCiOpCF0KB7HhZktPSYMCZCLknTTefr//U=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=rPk4dBK7at7RR7D/xB4O1psRJyD89lyfY4jIZx84V2mssPTQpVKP5O+uxenSdi4rfqZMJ76K5gGjHNdbpPPyp31/weNngDbz6Bp3tQ8NzbDBhNq6hAZwAQZLtfpgWBBAKhD6Ups1T/oh5vUR3FQzbA0BPsxSS0qlVYbuds6r30g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=MVkXWlzo; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=cCNtnLFcFHYjuMVcFC7Ndy3polF3zxClf8Swg/NkKZujHD0lkA2MEOLv4G5t6EgwHobWwqy3guHiRi7KT0Hk7OoK+IYmPvn4Ttq/r/OyrAzu01Pbs1uPgEvJ8FaouwM6KIIodApcOvXh3TvxiTRRoGszXY8ARiRfzaYP6GLQfYQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Lb9FlTS2; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="MVkXWlzo"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Lb9FlTS2"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
 	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
 	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=Qljgg2HuwrDs6FB5Z7besedOOauzUgeW51ZsZoEhveQ=; t=1789585329;
-	x=1790190129; b=MVkXWlzownt6DqBM7DPADbbwqiDGNVqerMeHL9+8tynYYOAMYDrt7pUSjQNFF
-	zPwT1vPb+oCaZ6NNBOjxCbcovWBV4y32ql18b5w5pkLrzGWPXiPQrHJUPBi9DPjOsdudWJAiDpBAx
-	5ReH3cvFGYueeaShA2oluPaYz0Uc6XhxjSRbOM+wQx37rcHYbFZ49BJAP0nFBzYIiBGAU9ueJWI0o
-	hdjeM8B05+2ApBDtOW37p/cDwPRdJ70shyK7Qdbm9MZpYRxD7oBxJMOIB37GlLuFhQYhLoAL8kPI2
-	CLmh8ffZ6GE7Od24MQ0MajKLtlBfO5HyiMQRlt0LD/PgeeNqZQ==;
+	References; bh=c49o+u2lVVrnBZQ4GHd/1O9S2d4rwlq0WakWbVmbbeA=; t=1789585680;
+	x=1790190480; b=Lb9FlTS2Rj+CLf5KgSngdBEh24EvyqHJSNI0gymDv4hN6ib1PdyQSv7AEOjqf
+	yv3Ah56nD7Hr2mBVUkd0wD1EAQUCGf/Sllj2SY/4J6anhYEpXvkPkQNNDBeYrW9zz1PxPMQrBqBGY
+	xk7/ibi8/WUyPewmg0Wl/BHMngMgDtjo4P+1SKuOlKBftfyQUkAJrhQT8yq5+warlkrdobvd+QM26
+	gMyL1H4AIkmx9hl2IbdrnMhcYZjZgrl4RTQvywOfciBv/4x8pHh8xpTfqAg0zRK07DlZcl3mUJwxF
+	tjg7fDZS6JySsQeQyqFZVVJzPqTP7lRba/wR3YtQlizeHyJ7qA==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.99)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1x6utQ-0000000192f-04Al; Wed, 16 Sep 2026 21:02:04 +0200
+          id 1x6uz2-00000001AXT-3NcN; Wed, 16 Sep 2026 21:07:52 +0200
 Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=suse-laptop.fritz.box)
           by inpost2.zedat.fu-berlin.de (Exim 4.99)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1x6utP-0000000324a-3KcW; Wed, 16 Sep 2026 21:02:03 +0200
-Message-ID: <84a0f85161d26174f47965b3ae760dc3b9beee2a.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: defconfig: enable the current M66592 UDC symbol
+          id 1x6uz2-000000032vo-2Nro; Wed, 16 Sep 2026 21:07:52 +0200
+Message-ID: <6f21b23babf5a3792b65de7bd1dd010b9c268453.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: Fix built-in DTB build with generic rule
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Pengpeng Hou
-	 <pengpeng@iscas.ac.cn>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>,  Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
- linux-sh@vger.kernel.org, linux-usb@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Date: Wed, 16 Sep 2026 21:02:03 +0200
-In-Reply-To: <CAMuHMdUZdv6FdhgSB_u5wU4YoqpKFqKmhs8x+bZeGFYyvZ5Puw@mail.gmail.com>
-References: <20260814075531.15446-1-pengpeng@iscas.ac.cn>
-	 <CAMuHMdUZdv6FdhgSB_u5wU4YoqpKFqKmhs8x+bZeGFYyvZ5Puw@mail.gmail.com>
+To: Florian Fuchs <fuchsfl@gmail.com>, Rob Herring <robh@kernel.org>, 
+ Krzysztof Kozlowski
+	 <krzk+dt@kernel.org>, Conor Dooley <conor+dt@kernel.org>, 
+	linux-sh@vger.kernel.org
+Cc: Rich Felker <dalias@libc.org>, Masahiro Yamada <masahiroy@kernel.org>, 
+	devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Wed, 16 Sep 2026 21:07:51 +0200
+In-Reply-To: <20260711000146.3348854-1-fuchsfl@gmail.com>
+References: <20260711000146.3348854-1-fuchsfl@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.60.2 
@@ -64,31 +63,41 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Geert,
+Hi Florian,
 
-On Fri, 2026-08-14 at 10:32 +0200, Geert Uytterhoeven wrote:
-> On Fri, 14 Aug 2026 at 10:01, Pengpeng Hou <pengpeng@iscas.ac.cn> wrote:
-> > The M66592 UDC provider is built under CONFIG_USB_M66592. Several
-> > SuperH defconfigs still enable the removed CONFIG_USB_GADGET_M66592
-> > symbol.
-> >=20
-> > Replace the stale entries with the current provider symbol.
-> >=20
-> > Assisted-by: Codex:gpt-5
-> > Signed-off-by: Pengpeng Hou <pengpeng@iscas.ac.cn>
+On Sat, 2026-07-11 at 02:01 +0200, Florian Fuchs wrote:
+> Commit 21bcc49974c2 ("sh: Migrate to the generic rule for built-in DTB")
+> selected GENERIC_BUILTIN_DTB and renamed the Kconfig symbols, but left
+> arch/sh/boot/dts/Makefile using the old obj-y form. So convert them as
+> well, to fix the build error when using CONFIG_BUILTIN_DTB.
 >=20
-> Fixes: 193ab2a6070039e7 ("usb: gadget: allow multiple gadgets to be built=
-")
+> Fixes: 21bcc49974c2 ("sh: Migrate to the generic rule for built-in DTB")
+> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+> ---
+> The fix is the same like at other places like openrisc or nios.
+> Without that, the build fails, when building with builtin device tree:
+> CONFIG_BUILTIN_DTB=3Dy
+> CONFIG_BUILTIN_DTB_NAME=3D"j2_mimas_v2"
+> with an error like:
+> .builtin-dtbs.S:6: Error: file not found: arch/sh/boot/dts/j2_mimas_v2.dt=
+b
+> ---
+>  arch/sh/boot/dts/Makefile | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 >=20
-> > The Kconfig/provider mapping was reviewed statically; no SuperH kernel
-> > build was performed.
->=20
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be> # build-tested
+> diff --git a/arch/sh/boot/dts/Makefile b/arch/sh/boot/dts/Makefile
+> index d109978a5eb9..16e281b859ae 100644
+> --- a/arch/sh/boot/dts/Makefile
+> +++ b/arch/sh/boot/dts/Makefile
+> @@ -1,2 +1,2 @@
+>  # SPDX-License-Identifier: GPL-2.0-only
+> -obj-$(CONFIG_BUILTIN_DTB) +=3D $(addsuffix .dtb.o, $(CONFIG_BUILTIN_DTB_=
+NAME))
+> +dtb-y +=3D $(addsuffix .dtb, $(CONFIG_BUILTIN_DTB_NAME))
 
-Thanks, I'll pick up this patch and add the Fixes tag manually if b4 doesn'=
-t
-do it automatically when downloading the series.
+Good catch, thanks a lot!
+
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 Adrian
 
