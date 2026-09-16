@@ -1,93 +1,158 @@
-Received: from mail.mainlining.org (mail.mainlining.org [5.75.144.95])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DCB964156FB;
-	Wed, 16 Sep 2026 19:27:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=5.75.144.95
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 01DBA436342;
+	Wed, 16 Sep 2026 19:35:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789586902; cv=none; b=sHUnCsvUDNqpH8w/OTzfp0kqDaV5p4f7UiYMTBJI///PYOZS30e89YwsLcLZYzlOaVnSinsc1NDX98V06mD4/1c2INlgy5bTxxODSfH3U6U9mI4vQyHhjYaHyKxLmHinTd0Lj0Og+v1e3PsKGVK9/roIGFG2YjqxOET/Gk6Ch3Q=
+	t=1789587370; cv=none; b=dn6uJ5mOGHcV5IxT+RthuB/BTVxRlkgx8VoalzlVEd3+ISkHdhRLY7nifJt/6e8R2xu/cQyzKegYNfdeiAWOgGXOzCETndviBOWDwXnWx5qPfdcLDNBx23++aUj7vZh61FH8eC/rIMPWD7JMpRL/F6aeleG70TNCB0LJX/+xROU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789586902; c=relaxed/simple;
-	bh=aZ9HBAB5EPGjOS+Oyn0SySJBAMHqTTY661V3TKy8j/o=;
-	h=Date:From:To:CC:Subject:In-Reply-To:References:Message-ID:
-	 MIME-Version:Content-Type; b=AeCxAlfG5bZXGk48FF5ghyvUfUEHQsmY5NkjxqEz0Y+TG0w8oP48IF0GNwgDCeNwZVMXmCM8iLWM/jUqQ0H6X/BbJ2lEjc481TUD+6k8zlNPiuMH/iHD+rDe9cp2Bj4kLat77ohx/CMxdB13ELKhN5/F5ZlIeplqWIzbu+nOWTM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mainlining.org; spf=pass smtp.helo=mail.mainlining.org; arc=none smtp.client-ip=5.75.144.95
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mainlining.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.helo=mail.mainlining.org
-Date: Wed, 16 Sep 2026 20:27:11 +0100
-From: Bradley Morgan <brads@mainlining.org>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- "Paul E. McKenney" <paulmck@kernel.org>
-CC: frederic@kernel.org, neeraj.upadhyay@kernel.org, boqun@kernel.org,
- joelagnelf@nvidia.com, rcu@vger.kernel.org,
- Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>,
- linux-arch@vger.kernel.org, Vineet Gupta <vgupta@kernel.org>,
- linux-snps-arc@lists.infradead.org, Russell King <linux@armlinux.org.uk>,
- linux-arm-kernel@lists.infradead.org, Guo Ren <guoren@kernel.org>,
- linux-csky@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>,
- Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
- Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>,
- linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 5/6] sh: Emulate two-byte cmpxchg
-In-Reply-To: <1835e3f1b7e936479964f5e40583133484510d25.camel@physik.fu-berlin.de>
-References: <20260911192540.20983-1-brads@mainlining.org> <20260911192540.20983-6-brads@mainlining.org> <1835e3f1b7e936479964f5e40583133484510d25.camel@physik.fu-berlin.de>
-Message-ID: <0BA8FB21-8118-4D8B-B284-A79149AC3B4D@mainlining.org>
+	s=arc-20240116; t=1789587370; c=relaxed/simple;
+	bh=Tcb/S5YjwdxcjDkN5WDNWAixscZY3lgBbLCh+dDFu9I=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=UnCRd0DygUb0qJsi3kTe5qqCU3Bmqn2yXNRrrawQ1dpczAZmYoPGvSbQjSTDJ9oa7mWLzRzP6I9pFz+zgYqeVUL50kHBV+OPeO1SbVTwekDoH27s8TETPdUMgmimr437P9XozJxqbR7AAwqUSdnW8l0H4v4csCt26oVMZtXCOdY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=a10Exl+t; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="a10Exl+t"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=c53S+pbiTHmrP9RTo7GY1zF1sPNtykP7X8lXQBRCBLs=; t=1789587350;
+	x=1790192150; b=a10Exl+tjd3nGOyZQs4ptP8Tc3USll2CP19nk5esS2JXsR83/1VsFC07MsrQb
+	YgJ+DZfl+9PK64HMBZ9M3Xrdj0t9U3NA/V92KZp5ju+qugPI9ox90P4NS0EbN7aYiRDdVWUuz37OY
+	oATtxte9DccWWEMZYmQzbFpPMB21UKx7hTNKi7alb1azdQhOF9Eu4VV3E4/usaIttv4CfKKto4nIw
+	bwNV13s3KMBAawviSbHBIf6ZOhjYFgIkl+35+KQqxY7cMdHigbeCLDahaPu7835gLvHGkWV9FV6aD
+	9ogXA/j0M+hWPnLgv6sNrhPmfc0W6bjh9WVVdzG4AMUzQXlA2g==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.99)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1x6vPz-00000001HHH-0BXx; Wed, 16 Sep 2026 21:35:43 +0200
+Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.99)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1x6vPy-000000036ws-3LeZ; Wed, 16 Sep 2026 21:35:42 +0200
+Message-ID: <39b2e329b1db35a1171833deb497f7e1a0850918.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: lib: Restore r4 in shift helpers
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Florian Fuchs <fuchsfl@gmail.com>, Rich Felker <dalias@libc.org>, 
+	linux-sh@vger.kernel.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Yoshinori Sato
+	 <yoshinori.sato@nifty.com>, linux-kernel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Date: Wed, 16 Sep 2026 21:35:42 +0200
+In-Reply-To: <20260714104147.2016549-1-fuchsfl@gmail.com>
+References: <20260714104147.2016549-1-fuchsfl@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On 16 September 2026 20:16:16 BST, John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
->Hi Bradley,
->
->On Fri, 2026-09-11 at 19:25 +0000, Bradley Morgan wrote:
->> SH has no byte or halfword atomic memory operations, so the
->> __cmpxchg() switch routes case 1 through cmpxchg_emu_u8() and
->> lets case 2 fall through to __cmpxchg_called_with_bad_pointer(),
->> which is declared but never defined, so a two-byte cmpxchg()
->> fails at link time. Route case 2 through the new cmpxchg_emu_u16().
->> 
->> Signed-off-by: Bradley Morgan <brads@mainlining.org>
->> ---
->>  arch/sh/include/asm/cmpxchg.h | 2 ++
->>  1 file changed, 2 insertions(+)
->> 
->> diff --git a/arch/sh/include/asm/cmpxchg.h
->b/arch/sh/include/asm/cmpxchg.h
->> index 1e5dc5ccf7bf..477d3025a441 100644
->> --- a/arch/sh/include/asm/cmpxchg.h
->> +++ b/arch/sh/include/asm/cmpxchg.h
->> @@ -59,6 +59,8 @@ static inline unsigned long __cmpxchg(volatile void *
->ptr, unsigned long old,
->>  	switch (size) {
->>  	case 1:
->>  		return cmpxchg_emu_u8(ptr, old, new);
->> +	case 2:
->> +		return cmpxchg_emu_u16(ptr, old, new);
->>  	case 4:
->>  		return __cmpxchg_u32(ptr, old, new);
->>  	}
->
->Odd, I thought this series was merged long time ago. Was there anything
->holding it back?
->
+Hi Florian,
 
-ARM had a board where 16 bit wouldn't have been supported, so the V2 is
-ready now anyway, let me add ur a-b and submit 
+On Tue, 2026-07-14 at 12:41 +0200, Florian Fuchs wrote:
+> Commit 940d4113f330 ("sh: New gcc support") added new shift helpers
+> that use r4 as a scratch register while dispatching to the selected shift
+> sequence. But, the helpers return without restoring r4. With GCC 17, the
+> register allocator can keep a live value in r4 across the helper call.
+> Clobbering it results in runtime data corruption. Restore r4 before
+> jumping to the selected shift sequence.
+>=20
+> Fixes: 940d4113f330 ("sh: New gcc support")
+> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+> ---
+> Without the patch, the early boot on e.g J2 gets a kernel BUG at
+> mm/percpu.c:2604 / "can't handle more than one group."
+>         PCPU_SETUP_BUG_ON(pcpu_verify_alloc_info(ai) < 0);
+> As the static condition in mm/percpu-km.c wasn't true:
+>         ai->nr_groups !=3D 1
+> nr_groups contained 60 - the clobbered value from the shift helper.
+>=20
+> This change was tested on the J2 core on the Mimas v2 board. It can
+> theoretically also target other SH2 devices, but I don't have any other
+> than J2 sadly.
+>=20
+> The flow of operations matches now the state in the libgcc, see also
+> in gcc: libgcc/config/sh/lib1funcs.S
+> ---
+>  arch/sh/lib/ashlsi3.S | 3 ++-
+>  arch/sh/lib/ashrsi3.S | 3 ++-
+>  arch/sh/lib/lshrsi3.S | 3 ++-
+>  3 files changed, 6 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/arch/sh/lib/ashlsi3.S b/arch/sh/lib/ashlsi3.S
+> index 4df4401cdf31..73a9d709b169 100644
+> --- a/arch/sh/lib/ashlsi3.S
+> +++ b/arch/sh/lib/ashlsi3.S
+> @@ -63,8 +63,9 @@ __ashlsi3_r0:
+>  	mova	ashlsi3_table,r0
+>  	mov.b	@(r0,r4),r4
+>  	add	r4,r0
+> +	mov.l	@r15+,r4
+>  	jmp	@r0
+> -	mov.l	@r15+,r0
+> +	mov	r4,r0
+> =20
+>  	.align	2
+>  ashlsi3_table:
+> diff --git a/arch/sh/lib/ashrsi3.S b/arch/sh/lib/ashrsi3.S
+> index bf3c4e03e6ff..9962d7c587df 100644
+> --- a/arch/sh/lib/ashrsi3.S
+> +++ b/arch/sh/lib/ashrsi3.S
+> @@ -62,8 +62,9 @@ __ashrsi3_r0:
+>  	mova	ashrsi3_table,r0
+>  	mov.b	@(r0,r4),r4
+>  	add	r4,r0
+> +	mov.l	@r15+,r4
+>  	jmp	@r0
+> -	mov.l	@r15+,r0
+> +	mov	r4,r0
+> =20
+>  	.align	2
+>  ashrsi3_table:
+> diff --git a/arch/sh/lib/lshrsi3.S b/arch/sh/lib/lshrsi3.S
+> index b79b8170061f..9218f0bad1cc 100644
+> --- a/arch/sh/lib/lshrsi3.S
+> +++ b/arch/sh/lib/lshrsi3.S
+> @@ -62,8 +62,9 @@ __lshrsi3_r0:
+>  	mova	lshrsi3_table,r0
+>  	mov.b	@(r0,r4),r4
+>  	add	r4,r0
+> +	mov.l	@r15+,r4
+>  	jmp	@r0
+> -	mov.l	@r15+,r0
+> +	mov	r4,r0
+> =20
+>  	.align	2
+>  lshrsi3_table:
 
->Either way:
->
->Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
->
->Adrian
->
->
+The change looks reasonable to me, but I'm not 100% sure I understand the
+code in detail at the moment, so I'll have to take another look tomorrow
+when I'm more awake and had a coffee.
 
---- Thanks!
-https://lore.kernel.org/all/EE579805-42F2-4C58-B752-F28779EEB717@grrlz.net/
+Given the fact that this unbreaks J2, we should pick it up for v7.4 once
+I have fully understood the changes.
+
+@Geert: Could you have another look at this and let me know what you think?
+
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
