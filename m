@@ -1,165 +1,318 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DCC84B44AE
-	for <linux-sh@vger.kernel.org>; Thu, 17 Sep 2026 16:47:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1F763DD86A;
+	Thu, 17 Sep 2026 18:49:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789663663; cv=none; b=DhZtr/hKxJ422KTDoPwV+1B5ZAVaAawq4l4Ro8XtZpw+Smp0mG6xZ/E+A+NQY5didH8d6mCrMv/94S1lERYIbMOk/wH0Z/0gZGyFCTZp/MJmpPhf3CPqVJE0jNdmoGC3x9UoFTJBTkS1xu2msFep/xVuzIQTaJFzqYG3L2TeOlg=
+	t=1789670970; cv=none; b=igzvNnXudzH8F+8XqvNb6sioXRLCun5LaXHtP4Aq/DrBKL23qbn87jwocx4n50Y3NNDf9hjWXodH6fplzU0vAKMxV4Rh6L9OjbF+gZhR+3ckffhjuMHg6t4qaSU6KtnQyk+r8cBqq2bRzo3p+BXm7+iYsPMAnq1FQWCTvbkoUUE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789663663; c=relaxed/simple;
-	bh=OXoyJpegabl0ocESy43SWOAVnutZsDrl9ix8aJurgKM=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=HtiqroDrBSTKrKYFGqedt+OPZG8Y/7UwXupygj1yY0ty3WNByww/egswuaGCY74AQSCbipqZmc5V/0bxja8fzAXx+1xWO35C2pAn78d5FYT2YDLGpRWUPNkST5dYtMV+AoyebeA7AbwpLQIdzz0AOGqDG2MPKlDLAK8hvjbP3cQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=h/C9mgWL; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1789670970; c=relaxed/simple;
+	bh=Xpbl1k6sLrFTFOh5ZGV0rrvsR4KOlgA2n+Zm+v+sUx0=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=rSJRAxQOwLTSPqp0VMic9duFptVjJfRp9ClWMfK2XzEZeOxMQdI4hN/66T3XHmBPaVgDOu2AMI1jh6iDVU1hxE/2ZHnjYedGkiF2fxiXqkzkVH1ST6sgadVhfYSoNBSmRuuthgISv8/D5ePQOr75aaDvY9l0eqbiGAX5lqcHlvU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=mkFwOHRD; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="h/C9mgWL"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1789663660;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=ghsNMjszr/YVVrzwI9L3VChkEhVa9VAV3CWSeRoOujg=;
-	b=h/C9mgWLVKUE3XGeurN8VBjS/UsjoM5ZJ9tPSlsW3dzKSEAFnd4gOI4xE4ErfI2eOvIN4S
-	1xiJOWqAUg3ahtdZBoIQpTeKpK7kQL5ctrbOz1AE33GVCC/fChAbPFI/5ecAUhXRVRV1+g
-	akJs722ULOhvBfgMe2Kgrdhy6k8idRY=
-Received: from mail-ed1-f71.google.com (mail-ed1-f71.google.com
- [209.85.208.71]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-317-l0XINPw5Ome1SK4mtHkcIQ-1; Thu, 17 Sep 2026 12:47:39 -0400
-X-MC-Unique: l0XINPw5Ome1SK4mtHkcIQ-1
-X-Mimecast-MFC-AGG-ID: l0XINPw5Ome1SK4mtHkcIQ_1789663658
-Received: by mail-ed1-f71.google.com with SMTP id 4fb4d7f45d1cf-6a9b5240fb3so1397881a12.1
-        for <linux-sh@vger.kernel.org>; Thu, 17 Sep 2026 09:47:38 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789663658; x=1790268458;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=ghsNMjszr/YVVrzwI9L3VChkEhVa9VAV3CWSeRoOujg=;
-        b=e0sKiHm6vh7DzyY8Hhyli9P89Y/uTQ8mXH9gBVOEJQfDVjm8cNM1NiOSqrXjTpDrzr
-         V36zxCdcwi0uQI6aFMYgJkpx2hupnoAmIaYDp5fG5VpjxrRbX5j2pfy4XsY00HeCZLnD
-         8sMF9DYO+bl8H/ggsh4A3lvqS4NzKC0NI2tWTV7BbntS6RNICFzQnbLBjShtJzAuhS2h
-         3I+yCTab2YZt5UqcmYPV4dw3Q45RGQn4VQeoq1x7+N3m/iH90KQNBZwr/jXu4g9S4DEI
-         IrPuQTQmPpqSD115mTH/Mp/MYssjmyPhL0I3TXG06NFwwWgV/iDNDuNOsmd2RuBI7Hx8
-         V56A==
-X-Forwarded-Encrypted: i=1; AKwUvBzc53wVPX2dW4+pQurFVC95aAjGCUonWcpXuPmxBtrUHWpg+Z33fGCbn6tJk/cofPfipnwaTC1EqA==@vger.kernel.org
-X-Gm-Message-State: AFuF++msVyeQXj/oC1reVUvi3CXcuDedaRrNZIrDsT3wCrNNmG0XUPpJ
-	J0z3OAGNTeNR+RzatUZUeIks2oVUf+H1s2WXpqjXMsptZvpSytwx/aX2/UlgL0nYM+tAJqxT9OH
-	xhooha6JT36bvMZfexkFPCdQxAKaG33unngSiDlFGOIqnJaESQuEHt92hduqsPwWGf1IQNNbBt2
-	AwwA+qf0YXVssESnJzwOUOZ+7mQGInE1JpnwE=
-X-Gm-Gg: AYBFou2d2Mejouo9Zr6g9X5kBWd9d7OaB3HYvtb3LNNPlTpz31pNzmRqRgiwFqkqK70
-	ytVqAnwR8+mEIGMaEWjqsGQg84tw5t8MHw+GXLHyeYN3tN3pJ/I/ATd92Fc79cnZpPwvkUVGG28
-	t2HLc2XxnigHiwi/Y3zq1mAvA/6Oon40L/a6BKxgtfZpE/PudUZdieZ7Z1PpXgWYn6DT6gbMTFR
-	b04gOMblvLt98XcQk15DNW6PQsggNbOYHFUhQKbr0YFAqw3qn8jitbIG/op+V8I/b437mI752gt
-	9m0=
-X-Received: by 2002:a17:907:1c29:b0:c25:fdbc:52df with SMTP id a640c23a62f3a-c29e5244c19mr627701266b.10.1789663657717;
-        Thu, 17 Sep 2026 09:47:37 -0700 (PDT)
-X-Received: by 2002:a17:907:1c29:b0:c25:fdbc:52df with SMTP id
- a640c23a62f3a-c29e5244c19mr627698766b.10.1789663657315; Thu, 17 Sep 2026
- 09:47:37 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="mkFwOHRD"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=peHEbB5d41kYnaZ/xtoDqvT4hGsveZjLDVlql+Swn+A=; t=1789670965;
+	x=1790275765; b=mkFwOHRD1Vy4xl92XcywYIvThRPUr0KeOWt24RCFRaOg6VYWcP7CKi3iYdLHM
+	eVpdmsGqEll35PkqHMu/Xch1cwWHASvYNjRzr9gi75YAyRLDfe6lmy4tqSnr8hG9SkLeYRpjlgFP/
+	ShNMXZ9EOZutRSmliA3ElG4vEzix2u8Y+yHBXHKEHiK0vTRxdTxaYyyFF7PjYgY5ryycQDJqZs0cn
+	FjZ4LXhKJr59BtrlhfHAMDPoF3pTMhgCzW+cJCpHzcFjAMYagEHmHhi9oMR5IMz8SPcxx8hGzPhal
+	dz3ETwExY16X8uwojN0OhtN4siR+EYr7MTL/UXm1Q1+jZwfHwA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.100)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1x7HAa-00000003udl-2gbW; Thu, 17 Sep 2026 20:49:16 +0200
+Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.100)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1x7HAa-00000003oEF-1gc9; Thu, 17 Sep 2026 20:49:16 +0200
+Message-ID: <d3a2875ba34bf10ddae3626b77da071cd4624348.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 2/2] sh: mach-x3proto: convert gpio-keys to software
+ nodes
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski
+ <brgl@kernel.org>,  Arnd Bergmann	 <arnd@arndb.de>,
+ linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Thu, 17 Sep 2026 20:49:15 +0200
+In-Reply-To: <20260704-sh-x3proto-swnode-v1-2-0c039549dc46@gmail.com>
+References: <20260704-sh-x3proto-swnode-v1-0-0c039549dc46@gmail.com>
+	 <20260704-sh-x3proto-swnode-v1-2-0c039549dc46@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1788351089.git.rrobaina@redhat.com> <4ada9fcbb93af8d5c1c9bfe2c83d94fc10bfe327.1788351089.git.rrobaina@redhat.com>
- <CA+=Fv5T4826T2sd0Gbh-nfZsqcWK_phdBKy4BLWOvDTt92t5Eg@mail.gmail.com>
-In-Reply-To: <CA+=Fv5T4826T2sd0Gbh-nfZsqcWK_phdBKy4BLWOvDTt92t5Eg@mail.gmail.com>
-From: Ricardo Robaina <rrobaina@redhat.com>
-Date: Thu, 17 Sep 2026 13:47:26 -0300
-X-Gm-Features: AcwNN1UQ-9H3EW5aAPKYI2mYiHxV9kMvBFdM8jP3WAhZbefwH7qcxYHE69PGYDs
-Message-ID: <CAABTaaAUBzp1uaLve2piMhEB1R5po5n5+Sy+U0mbbe70Ak-SUw@mail.gmail.com>
-Subject: Re: [PATCH v2 02/13] alpha: pass pt_regs to audit_syscall_entry()
-To: Magnus Lindholm <linmag7@gmail.com>
-Cc: audit@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-csky@vger.kernel.org, linux-mips@vger.kernel.org, 
-	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
-	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
-	linux-um@lists.infradead.org, bpf@vger.kernel.org, paul@paul-moore.com, 
-	eparis@redhat.com, sgrubb@redhat.com, oleg@redhat.com, 
-	richard.henderson@linaro.org, mattst88@gmail.com, linux@armlinux.org.uk, 
-	catalin.marinas@arm.com, will@kernel.org, guoren@kernel.org, monstr@monstr.eu, 
-	tsbogend@alpha.franken.de, jonas@southpole.se, 
-	stefan.kristiansson@saunalahti.fi, shorne@gmail.com, 
-	James.Bottomley@hansenpartnership.com, deller@gmx.de, 
-	ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
-	davem@davemloft.net, andreas@gaisler.com, richard@nod.at, 
-	anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net, chris@zankel.net, 
-	jcmvbkbc@gmail.com, tglx@kernel.org, peterz@infradead.org, luto@kernel.org
-X-Mimecast-Spam-Score: 0
-X-Mimecast-MFC-PROC-ID: oTTw16rAL3WcTrh_SuAJZbGEOSOX-3vXSO0nkAXXIOM_1789663658
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Fri, Sep 4, 2026 at 2:21=E2=80=AFPM Magnus Lindholm <linmag7@gmail.com> =
-wrote:
->
-> Hi Ricardo,
->
-> On Wed, Sep 2, 2026 at 4:44=E2=80=AFPM Ricardo Robaina <rrobaina@redhat.c=
-om> wrote:
-> >
-> > audit_syscall_entry() now takes a pointer to pt_regs and extracts
-> > the syscall arguments itself via syscall_get_arguments(). Drop the
-> > individual argument registers from the call and pass regs instead.
-> >
-> > Signed-off-by: Ricardo Robaina <rrobaina@redhat.com>
-> > ---
-> >  arch/alpha/kernel/ptrace.c | 3 +--
-> >  1 file changed, 1 insertion(+), 2 deletions(-)
-> >
-> > diff --git a/arch/alpha/kernel/ptrace.c b/arch/alpha/kernel/ptrace.c
-> > index fc8f6cedbb28..8a39c0473297 100644
-> > --- a/arch/alpha/kernel/ptrace.c
-> > +++ b/arch/alpha/kernel/ptrace.c
-> > @@ -496,8 +496,7 @@ asmlinkage unsigned long syscall_trace_enter(void)
-> >         }
-> >
-> >  #ifdef CONFIG_AUDITSYSCALL
-> > -       audit_syscall_entry(syscall_get_nr(current, regs),
-> > -               regs->r16, regs->r17, regs->r18, regs->r19);
-> > +       audit_syscall_entry(syscall_get_nr(current, regs), regs);
-> >  #endif
-> >         return syscall_get_nr(current, regs);
-> >  }
-> > --
-> > 2.55.0
-> >
-> This doesn't apply on top of my "alpha: enable GENERIC_ENTRY" series
->
-> https://lore.kernel.org/linux-alpha/20260902184058.198679-1-linmag7@gmail=
-.com/T/#t
->
-> That series moves alpha's syscall entry onto the generic entry
-> framework and removes syscall_trace_enter() and its direct
-> audit_syscall_entry() call entirely - verified with git am against
-> GENERIC_ENTRY applied, it fails at exactly this hunk.
-> You don't need a replacement alpha patch, though. Once GENERIC_ENTRY
-> lands, alpha's syscall entry goes through
-> syscall_enter_from_user_mode_randomize_stack(), which already calls
-> syscall_enter_audit() as part of the shared entry helpers
-> (include/linux/entry-common.h). I applied patch 1/13 alone on top of
-> GENERIC_ENTRY and confirmed alpha's entry path already routes through
-> the updated __audit_syscall_entry() - no alpha-specific code needed.
-> So for alpha, you can drop this patch in the next revision rather
-> than rebase it.
->
-> Regards
-> Magnus
->
+Hi Dmitry,
 
-Hi Magnus,
+On Sat, 2026-07-04 at 22:04 -0700, Dmitry Torokhov wrote:
+> Convert the legacy gpio-keys platform device on the SH-X3 Prototype
+> board to use software nodes/properties. This allows us to describe
+> the GPIO keys and their GPIO bindings using software nodes, so that
+> support for platform data can eventually be removed from the
+> gpio-keys driver.
+>=20
+> Assisted-by: Antigravity:gemini-3.5-flash
+> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+> ---
+>  arch/sh/boards/mach-x3proto/setup.c | 165 +++++++++++++++++-------------=
+------
+>  1 file changed, 78 insertions(+), 87 deletions(-)
+>=20
+> diff --git a/arch/sh/boards/mach-x3proto/setup.c b/arch/sh/boards/mach-x3=
+proto/setup.c
+> index ca2802d30565..0d9d5982cf0c 100644
+> --- a/arch/sh/boards/mach-x3proto/setup.c
+> +++ b/arch/sh/boards/mach-x3proto/setup.c
+> @@ -16,8 +16,8 @@
+>  #include <linux/input.h>
+>  #include <linux/usb/r8a66597.h>
+>  #include <linux/usb/m66592.h>
+> -#include <linux/gpio/driver.h>
+> -#include <linux/gpio_keys.h>
+> +#include <linux/gpio/machine.h>
+> +#include <linux/gpio/property.h>
+>  #include <mach/ilsel.h>
+>  #include <mach/hardware.h>
+>  #include <asm/smp-ops.h>
+> @@ -123,87 +123,74 @@ static struct platform_device m66592_usb_peripheral=
+_device =3D {
+>  	.resource	=3D m66592_usb_peripheral_resources,
+>  };
+> =20
+> -static struct gpio_keys_button baseboard_buttons[NR_BASEBOARD_GPIOS] =3D=
+ {
+> -	{
+> -		.desc		=3D "key44",
+> -		.code		=3D KEY_POWER,
+> -		.active_low	=3D 1,
+> -		.wakeup		=3D 1,
+> -	}, {
+> -		.desc		=3D "key43",
+> -		.code		=3D KEY_SUSPEND,
+> -		.active_low	=3D 1,
+> -		.wakeup		=3D 1,
+> -	}, {
+> -		.desc		=3D "key42",
+> -		.code		=3D KEY_KATAKANAHIRAGANA,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key41",
+> -		.code		=3D KEY_SWITCHVIDEOMODE,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key34",
+> -		.code		=3D KEY_F12,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key33",
+> -		.code		=3D KEY_F11,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key32",
+> -		.code		=3D KEY_F10,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key31",
+> -		.code		=3D KEY_F9,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key24",
+> -		.code		=3D KEY_F8,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key23",
+> -		.code		=3D KEY_F7,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key22",
+> -		.code		=3D KEY_F6,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key21",
+> -		.code		=3D KEY_F5,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key14",
+> -		.code		=3D KEY_F4,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key13",
+> -		.code		=3D KEY_F3,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key12",
+> -		.code		=3D KEY_F2,
+> -		.active_low	=3D 1,
+> -	}, {
+> -		.desc		=3D "key11",
+> -		.code		=3D KEY_F1,
+> -		.active_low	=3D 1,
+> -	},
+> +static const struct software_node x3proto_gpio_keys_node =3D {
+> +	.name =3D "x3proto-gpio-keys",
+>  };
+> =20
+> -static struct gpio_keys_platform_data baseboard_buttons_data =3D {
+> -	.buttons	=3D baseboard_buttons,
+> -	.nbuttons	=3D ARRAY_SIZE(baseboard_buttons),
+> +#define __X3PROTO_KEY(_id, _code, _gpio, ...)				\
+> +static const struct property_entry x3proto_key##_id##_props[] =3D {	\
+> +	PROPERTY_ENTRY_STRING("label", "key" #_id),			\
+> +	PROPERTY_ENTRY_U32("linux,code", _code),			\
+> +	PROPERTY_ENTRY_GPIO("gpios", &x3proto_gpiochip_node,		\
+> +			    _gpio, GPIO_ACTIVE_LOW),			\
+> +	__VA_ARGS__							\
+> +	{ }								\
+> +};									\
+> +static const struct software_node x3proto_key##_id##_node =3D {		\
+> +	.parent =3D &x3proto_gpio_keys_node,				\
+> +	.properties =3D x3proto_key##_id##_props,				\
+> +}
+> +
+> +#define X3PROTO_KEY(_id, _code, _gpio)					\
+> +	__X3PROTO_KEY(_id, _code, _gpio)
+> +
+> +#define X3PROTO_KEY_WAKEUP(_id, _code, _gpio)				\
+> +	__X3PROTO_KEY(_id, _code, _gpio,				\
+> +		      PROPERTY_ENTRY_BOOL("wakeup-source"),		\
+> +	)
+> +
+> +X3PROTO_KEY_WAKEUP(44, KEY_POWER, 0);
+> +X3PROTO_KEY_WAKEUP(43, KEY_SUSPEND, 1);
+> +X3PROTO_KEY(42, KEY_KATAKANAHIRAGANA, 2);
+> +X3PROTO_KEY(41, KEY_SWITCHVIDEOMODE, 3);
+> +X3PROTO_KEY(34, KEY_F12, 4);
+> +X3PROTO_KEY(33, KEY_F11, 5);
+> +X3PROTO_KEY(32, KEY_F10, 6);
+> +X3PROTO_KEY(31, KEY_F9, 7);
+> +X3PROTO_KEY(24, KEY_F8, 8);
+> +X3PROTO_KEY(23, KEY_F7, 9);
+> +X3PROTO_KEY(22, KEY_F6, 10);
+> +X3PROTO_KEY(21, KEY_F5, 11);
+> +X3PROTO_KEY(14, KEY_F4, 12);
+> +X3PROTO_KEY(13, KEY_F3, 13);
+> +X3PROTO_KEY(12, KEY_F2, 14);
+> +X3PROTO_KEY(11, KEY_F1, 15);
+> +
+> +static const struct software_node *const x3proto_swnodes[] __initconst =
+=3D {
+> +	&x3proto_gpio_keys_node,
+> +	&x3proto_key44_node,
+> +	&x3proto_key43_node,
+> +	&x3proto_key42_node,
+> +	&x3proto_key41_node,
+> +	&x3proto_key34_node,
+> +	&x3proto_key33_node,
+> +	&x3proto_key32_node,
+> +	&x3proto_key31_node,
+> +	&x3proto_key24_node,
+> +	&x3proto_key23_node,
+> +	&x3proto_key22_node,
+> +	&x3proto_key21_node,
+> +	&x3proto_key14_node,
+> +	&x3proto_key13_node,
+> +	&x3proto_key12_node,
+> +	&x3proto_key11_node,
+> +	NULL
+>  };
+> =20
+> -static struct platform_device baseboard_buttons_device =3D {
+> +static const struct platform_device_info x3proto_gpio_keys_device_info _=
+_initconst =3D {
+>  	.name		=3D "gpio-keys",
+> -	.id		=3D -1,
+> -	.dev		=3D {
+> -		.platform_data	=3D &baseboard_buttons_data,
+> -	},
+> +	.id		=3D PLATFORM_DEVID_NONE,
+> +	.swnode		=3D &x3proto_gpio_keys_node,
+>  };
+> =20
+>  static struct platform_device *x3proto_devices[] __initdata =3D {
+> @@ -211,7 +198,6 @@ static struct platform_device *x3proto_devices[] __in=
+itdata =3D {
+>  	&smc91x_device,
+>  	&r8a66597_usb_host_device,
+>  	&m66592_usb_peripheral_device,
+> -	&baseboard_buttons_device,
+>  };
+> =20
+>  static void __init x3proto_init_irq(void)
+> @@ -224,7 +210,8 @@ static void __init x3proto_init_irq(void)
+> =20
+>  static int __init x3proto_devices_setup(void)
+>  {
+> -	int ret, i;
+> +	struct platform_device *pd;
+> +	int ret;
+> =20
+>  	/*
+>  	 * IRLs are only needed for ILSEL mappings, so flip over the INTC
+> @@ -239,11 +226,11 @@ static int __init x3proto_devices_setup(void)
+>  	if (unlikely(ret))
+>  		return ret;
+> =20
+> -	/*
+> -	 * Propagate dynamic GPIOs for the baseboard button device.
+> -	 */
+> -	for (i =3D 0; i < ARRAY_SIZE(baseboard_buttons); i++)
+> -		baseboard_buttons[i].gpio =3D x3proto_gpio_chip.base + i;
+> +	ret =3D software_node_register_node_group(x3proto_swnodes);
+> +	if (ret) {
+> +		pr_err("Failed to register software nodes: %d\n", ret);
+> +		return ret;
+> +	}
+> =20
+>  	r8a66597_usb_host_resources[1].start =3D
+>  		r8a66597_usb_host_resources[1].end =3D ilsel_enable(ILSEL_USBH_I);
+> @@ -254,8 +241,12 @@ static int __init x3proto_devices_setup(void)
+>  	smc91x_resources[1].start =3D
+>  		smc91x_resources[1].end =3D ilsel_enable(ILSEL_LAN);
+> =20
+> -	return platform_add_devices(x3proto_devices,
+> -				    ARRAY_SIZE(x3proto_devices));
+> +	ret =3D platform_add_devices(x3proto_devices, ARRAY_SIZE(x3proto_device=
+s));
+> +	if (ret)
+> +		return ret;
+> +
+> +	pd =3D platform_device_register_full(&x3proto_gpio_keys_device_info);
+> +	return PTR_ERR_OR_ZERO(pd);
+>  }
+>  device_initcall(x3proto_devices_setup);
+> =20
 
-Thanks for reviewing this patch! Ok, I'll drop this patch from the series.
+It took me some time to fully grasp the rewrite, but I think this should wo=
+rk as expected.
 
-Thanks!
--Ricardo
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
