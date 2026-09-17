@@ -1,133 +1,164 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm2-f13.google.com (mail-wm2-f13.google.com [74.125.225.141])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 701F1374735;
-	Thu, 17 Sep 2026 07:17:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4546D4A1E13
+	for <linux-sh@vger.kernel.org>; Thu, 17 Sep 2026 09:04:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789629429; cv=none; b=ezwjjPSLkv4oC4sIQ2no+mrz2okQKS7p9dFCFuBowQ27vQ/vPt9OLBmbY4V69NUWqUxUEFAbKN/dmhurwSeDaCEIrvzv2E7vyOyIt7Zxi9qZgYk3/JSjVXvT+gSuQ1OYRV7AtYKfd0XLNDBr/7mZRan8dDfHbWIzjahb98GSkJo=
+	t=1789635883; cv=none; b=G2hFo0HuL8U6w/J8z+yLzvZpHa9o4GTE88tIS6oOD0HhA3CG6aFBoZBb9k4k9CfrlsCOS3+nhAi6oXammpgA9/pnrrEzCXjh8A44ZauckiYeQBgapocAusOtWLJJaZx/7oa7o+/ktv6TgpHaWN5I3iOnRNttfWj77dV7Kwo5NCw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789629429; c=relaxed/simple;
-	bh=6jpcI/gnGPXCuIu9T+DoZYnzF/oxOh2gSFbbipL4bWA=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=LH0lVeaRQyeubiz0bd6si8t9cHcMkUB6Usol11P8HuPvB/gBnEpJ3VxSvIYvylsgqKNrL0suu25mfEsdo/qeVB8jWMeFPtc27Vag0Rf9BniwhdwixbAY61xhJWCgRBFdoeUcsxMs0l4VwFIVqka1ACi3KIIYi4mxEo1pziau+/I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=AzF4ENGd; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1789635883; c=relaxed/simple;
+	bh=O2KQJ1oKfBO/5CnrRZnd83vrj2aJY4SGdqRh0iO7Yh0=;
+	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=aWyJUiTkwUuaYpT1xjga/Lefr2kEsy5XUrWJNWO+6LX7Rg7LP1HFjOKOGH84KSiWv7xcNoehYIHMMnZGZNUz6YEJVXdWj/AZft732nCXTybNMV0DQ2lGXjL2SAi+KK9FzADN0KqZgg+H3B348+4N5IdeASBTU00eFlb4p/x1l8I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iSBK39xX; arc=none smtp.client-ip=74.125.225.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="AzF4ENGd"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=ewSGL9omp7E5j2kipp6vgIKxit9QEcUNRslfVeTSeSA=; t=1789629425;
-	x=1790234225; b=AzF4ENGdMHF18QeTlMHxe4ny+uUXdm7NveeeRCKyLRV+8ZxwDluQOlphdLe8v
-	BZH9DIOQ9rpOkv2cTdGfeMRChT8DNON9NoL4zorq8PxxWUuPOqvursHR2UBiX312X/IVxy4W25jlD
-	4bTQznxfaaIg8UiPm25PdSSqFnR2rHifFQ3reb/NogvRsnk2du0d2rQPGMurIXJrOeImYUQrUv+Sz
-	YnPQiI74DiBzeBexfyvsqPk6h6rvxCnD9SjfuYavolT9EugAlxYvxOuyqblKnsFRoxmXrxwy1Zbm4
-	X63bFo55NrdpAvMLS6t1o7oovrcx5SR/Uzhi8tVW15Lr60aAxA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.99)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1x76Mf-000000043lr-1ssK; Thu, 17 Sep 2026 09:17:01 +0200
-Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.99)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1x76Mf-00000000jWn-0y41; Thu, 17 Sep 2026 09:17:01 +0200
-Message-ID: <85c4e0b40ec4b52b73c1525c2340cdaf31fd7d6a.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: lib: Restore r4 in shift helpers
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Florian Fuchs <fuchsfl@gmail.com>, Rich Felker <dalias@libc.org>, 
-	linux-sh@vger.kernel.org
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Yoshinori Sato
-	 <yoshinori.sato@nifty.com>, linux-kernel@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Date: Thu, 17 Sep 2026 09:17:00 +0200
-In-Reply-To: <20260714104147.2016549-1-fuchsfl@gmail.com>
-References: <20260714104147.2016549-1-fuchsfl@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iSBK39xX"
+Received: by mail-wm2-f13.google.com with SMTP id 5b1f17b1804b1-49e6b885ef8so3186115e9.1
+        for <linux-sh@vger.kernel.org>; Thu, 17 Sep 2026 02:04:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1789635878; x=1790240678; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:subject:cc:to:from:date:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=2k9dKahryNmpFDhF3eaPjWDHVr7V9Y/xYKcgApds+0s=;
+        b=iSBK39xX/iIQsJwG59yvwujfCzQtHvDgVdprqro+xGlKvv63U1/5qGFdkpqecO3Kg3
+         Vb6NwNbeDDM0lUHMAGdq1AbtYFfe9YBfaqMI913+9gZwtk11uRLkzuwaQ5kd3sEMpIx1
+         wvgUJVJeH4m9+ixPhWycFZ9hYI1ZKLCnFapE2qJe9X2z8yzJ5UDORQpsRJF9hh/kDaYg
+         4nC4f8ERpsJm+ohouVO3Oc43+euk4yENAS1wGTXBQ5F8cfz7wNfthfCp5MSG5lTEwYup
+         QIuMC5W5UVzkO+LKRudpW7dy/grsmpDgpjD6GGyx20Uw1uha726T1DgrALDq7VC6kY8r
+         fibg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1789635878; x=1790240678;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=2k9dKahryNmpFDhF3eaPjWDHVr7V9Y/xYKcgApds+0s=;
+        b=CaDK8KuhmglDiG0RJI81UxhN4pSFVQEtkDhaBcmzh65WBT36k3IdLBB1ADMsLBuy1C
+         HFsa6jlK7sbY46RLAtRTDiFDkppProNe0lYebTrzyLbmE/lQKx61S1yWR3waY+7pORQX
+         d5eSkHjK4EhajQntuQlAo57o50hefO1om5VXKKcBBjGXt43lZQjXAkiHnGV0bJv8fpKn
+         +eBXD4nQwWm9jR8I2uPnq2aVVUMW6joWa8m0F9fRyvgRpEMrTUXiq1VcxvEM1ImYQcOa
+         q18w3VRKpT30ziMm7EGh8lktqcgBBnt/lo5ztl9Vk+jnJYthY4gDKvDIngtzzrIQS7I/
+         M+lQ==
+X-Forwarded-Encrypted: i=1; AKwUvBz/Y0FF1ZSDfbJNuRvNAZ3UOoffGHxxkySP8vvFUAgz6raS1898KROy4vgWCZCCZXR+znttmP/2wA==@vger.kernel.org
+X-Gm-Message-State: AFuF++kK08xnqTBYKt44K/8tS6t12pyfBJy3ZwQyXzfddFRtzVoycADq
+	Qn+FqjUkJHhrHa4al9rLXCBFUrLt1nOLErOtBGFwzLXKOboWm8xVMCPp
+X-Gm-Gg: AYBFou1aBuUVP8HwWpMbimyPhqXvHfjO+DsLVBs9iQqey7afHZ5v6etGCpKIkZAVNfK
+	Jqw0c9b1ub8ytkqsNuKDJOvwpOnQdjLi/34hO8H8TKdQYrex56aibvNcySsoyDFrdsaZ1oY8B8J
+	2YLEbzOf2bHGxHwVrB0OcWblJObANgDsc04KjNv9SKKPYZAnnDOj9YWa3gOOiF73VM40+EtwDb9
+	NNWS6WHZ38hv4UY9cIAVIFbZDnycar+GGAm5rsBgadR9bbxGHinlsILFGi/tsTtVK8oG5LMKHyi
+	sLuuiY2PLyzK02TiHEzJlrelPhTiS0R+M9vzRQeg9s+InvxIVo3eN23nBEiIbSx/RZqc05BUVev
+	XC8roPsmUrfOvSYbnA7q1Y8ELsRQISaaw4Q/e2QxUuDDd8wIgXoktrXntwK450OfjtHBErOwwYO
+	5z5LkquuHVQbGUiZ6TKHz86dD6JKBcgQ28RBxi3CpGWSmHSbIUOJfQzu/HyUcM/bwc1HG65UC3d
+	cI0YO8QhwcwVOuG/LomUHEdxn5yZTi97zUe
+X-Received: by 2002:a05:600c:1d29:b0:499:9240:9a1c with SMTP id 5b1f17b1804b1-49eb72fc10fmr71803655e9.15.1789635878139;
+        Thu, 17 Sep 2026 02:04:38 -0700 (PDT)
+Received: from pumpkin (82-69-66-36.dsl.in-addr.zen.co.uk. [82.69.66.36])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-49fbbcf5277sm74911055e9.3.2026.09.17.02.04.36
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 17 Sep 2026 02:04:37 -0700 (PDT)
+Date: Thu, 17 Sep 2026 10:04:35 +0100
+From: David Laight <david.laight.linux@gmail.com>
+To: Bradley Morgan <brads@mainlining.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Vineet Gupta
+ <vgupta@kernel.org>, Guo Ren <guoren@kernel.org>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Chris Zankel
+ <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, Arnd Bergmann
+ <arnd@arndb.de>, "Paul E . McKenney" <paulmck@kernel.org>, John Paul Adrian
+ Glaubitz <glaubitz@physik.fu-berlin.de>,
+ linux-snps-arc@lists.infradead.org, linux-csky@vger.kernel.org,
+ linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 3/5] csky: Emulate two-byte cmpxchg
+Message-ID: <20260917100435.664cf00d@pumpkin>
+In-Reply-To: <20260916200215.21774-4-brads@mainlining.org>
+References: <20260916200215.21774-1-brads@mainlining.org>
+	<20260916200215.21774-4-brads@mainlining.org>
+X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; arm-unknown-linux-gnueabihf)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-Hi Florian.
+On Wed, 16 Sep 2026 20:02:13 +0000
+Bradley Morgan <brads@mainlining.org> wrote:
 
-On Tue, 2026-07-14 at 12:41 +0200, Florian Fuchs wrote:
-> Commit 940d4113f330 ("sh: New gcc support") added new shift helpers
-> that use r4 as a scratch register while dispatching to the selected shift
-> sequence. But, the helpers return without restoring r4. With GCC 17, the
-> register allocator can keep a live value in r4 across the helper call.
-> Clobbering it results in runtime data corruption. Restore r4 before
-> jumping to the selected shift sequence.
->=20
-> Fixes: 940d4113f330 ("sh: New gcc support")
-> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+> CSKY has no two-byte atomic compare and swap, so the __cmpxchg()
+> switches in cmpxchg.h let case 2 fall through to the undefined
+> __cmpxchg_called_with_bad_pointer(), failing at link time. Route case
+> 2 through the new cmpxchg_emu_u16(), which now takes natural u16
+> arguments, so the (uintptr_t) casts on __old and __new become (u16)
+> casts in all three switch instances.
+> 
+> Signed-off-by: Bradley Morgan <brads@mainlining.org>
 > ---
-> Without the patch, the early boot on e.g J2 gets a kernel BUG at
-> mm/percpu.c:2604 / "can't handle more than one group."
->         PCPU_SETUP_BUG_ON(pcpu_verify_alloc_info(ai) < 0);
-> As the static condition in mm/percpu-km.c wasn't true:
->         ai->nr_groups !=3D 1
-> nr_groups contained 60 - the clobbered value from the shift helper.
->=20
-> This change was tested on the J2 core on the Mimas v2 board. It can
-> theoretically also target other SH2 devices, but I don't have any other
-> than J2 sadly.
->=20
-> The flow of operations matches now the state in the libgcc, see also
-> in gcc: libgcc/config/sh/lib1funcs.S
-> ---
->  arch/sh/lib/ashlsi3.S | 3 ++-
->  arch/sh/lib/ashrsi3.S | 3 ++-
->  arch/sh/lib/lshrsi3.S | 3 ++-
->  3 files changed, 6 insertions(+), 3 deletions(-)
->=20
-> diff --git a/arch/sh/lib/ashlsi3.S b/arch/sh/lib/ashlsi3.S
-> index 4df4401cdf31..73a9d709b169 100644
-> --- a/arch/sh/lib/ashlsi3.S
-> +++ b/arch/sh/lib/ashlsi3.S
-> @@ -63,8 +63,9 @@ __ashlsi3_r0:
->  	mova	ashlsi3_table,r0
->  	mov.b	@(r0,r4),r4
->  	add	r4,r0
-> +	mov.l	@r15+,r4
->  	jmp	@r0
-> -	mov.l	@r15+,r0
-> +	mov	r4,r0
->=20
+>  arch/csky/include/asm/cmpxchg.h | 9 +++++++++
+>  1 file changed, 9 insertions(+)
+> 
+> diff --git a/arch/csky/include/asm/cmpxchg.h b/arch/csky/include/asm/cmpxchg.h
+> index db6dda47184e..e53628268e8c 100644
+> --- a/arch/csky/include/asm/cmpxchg.h
+> +++ b/arch/csky/include/asm/cmpxchg.h
+> @@ -65,6 +65,9 @@
+>  	case 1:							\
+>  		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)__ptr, (uintptr_t)__old, (uintptr_t)__new); \
+>  		break;						\
+> +	case 2:							\
+> +		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u16((volatile u16 *)__ptr, (u16)__old, (u16)__new); \
+> +		break;						\
 
-Please correct me if I'm wrong, but after reading the code in [1], it looks
-to me as your patch doesn't preserve r4 but it's actually storing it into
-r0 to be used by the selected shift sequence.
+Did you check that compiles?
+It needs to compile without a warning when exchanging a pointer type.
+I think it would be better to make both __old and __new 'unsigned long'
+adding a cast in the definition/assignment to convert pointers.
+aka:
+	unsigned long __old = (unsigned long)(old);
 
-With the previous code, r4 is pushed onto the stack first but not restored
-before the shift sequence is jumped to, so what your patch does not make su=
-re
-that r4 is restored across the complete call of the shift helper but rather
-restore the input value in r4 from the stack before calling the jump sequen=
-ce.
+(The cast on the call is separate from the type of the function parameters.)
 
-What am I missing?
+Not a new bug, but there also doesn't seem to be a pointer-integer type
+check here (there is probably one in another architecture).
 
-Adrian
+I think that means these compile:
+	int i;
+	int *p;
+	...
+	cmpxchg(&p, 4, 5);
+	cmpxchg(&i, p, 5);
 
-> [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tr=
-ee/arch/sh/lib/ashlsi3.S
+Simplest fix is probably:
+	unsigned long __old = (unsigned long)(0 ? *__ptr : (old));
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+David
+
+
+>  	case 4:							\
+>  		asm volatile (					\
+>  		"1:	ldex.w		%0, (%3) \n"		\
+> @@ -98,6 +101,9 @@
+>  	case 1:							\
+>  		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)__ptr, (uintptr_t)__old, (uintptr_t)__new); \
+>  		break;						\
+> +	case 2:							\
+> +		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u16((volatile u16 *)__ptr, (u16)__old, (u16)__new); \
+> +		break;						\
+>  	case 4:							\
+>  		asm volatile (					\
+>  		"1:	ldex.w		%0, (%3) \n"		\
+> @@ -132,6 +138,9 @@
+>  	case 1:							\
+>  		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)__ptr, (uintptr_t)__old, (uintptr_t)__new); \
+>  		break;						\
+> +	case 2:							\
+> +		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u16((volatile u16 *)__ptr, (u16)__old, (u16)__new); \
+> +		break;						\
+>  	case 4:							\
+>  		asm volatile (					\
+>  		RELEASE_FENCE					\
+
