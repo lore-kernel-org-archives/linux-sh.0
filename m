@@ -1,318 +1,162 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f47.google.com (mail-wr1-f47.google.com [209.85.221.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1F763DD86A;
-	Thu, 17 Sep 2026 18:49:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4CF634BF939
+	for <linux-sh@vger.kernel.org>; Fri, 18 Sep 2026 08:59:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789670970; cv=none; b=igzvNnXudzH8F+8XqvNb6sioXRLCun5LaXHtP4Aq/DrBKL23qbn87jwocx4n50Y3NNDf9hjWXodH6fplzU0vAKMxV4Rh6L9OjbF+gZhR+3ckffhjuMHg6t4qaSU6KtnQyk+r8cBqq2bRzo3p+BXm7+iYsPMAnq1FQWCTvbkoUUE=
+	t=1789721984; cv=none; b=BkGX0WWB5ZBYoOTP7aU/qwPAPyXbwyYe7dzPyIZPvLkXL6jtuBDNN+M+yjFLXijNvmYkjDUeYpNTcJcwx8ib6+upPIhONmGXJIsPPhs8OFNJdzo4hldf/NV1NEkDzuKfQuiDRQQhDpZEUp+j2hU6FlvWnUMAdZX0AudQfP9LfMg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789670970; c=relaxed/simple;
-	bh=Xpbl1k6sLrFTFOh5ZGV0rrvsR4KOlgA2n+Zm+v+sUx0=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=rSJRAxQOwLTSPqp0VMic9duFptVjJfRp9ClWMfK2XzEZeOxMQdI4hN/66T3XHmBPaVgDOu2AMI1jh6iDVU1hxE/2ZHnjYedGkiF2fxiXqkzkVH1ST6sgadVhfYSoNBSmRuuthgISv8/D5ePQOr75aaDvY9l0eqbiGAX5lqcHlvU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=mkFwOHRD; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1789721984; c=relaxed/simple;
+	bh=ag8wHUMdvAkX5UXW/sgiiILfewkFHxwIL+3xC1CLLP0=;
+	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=u/zMWoxCz0ztQovTc7n9OgIQcqJzTYMgGUqSd41Zx1uB5P2ZIBLjmzjU7Dkl3dQRCbRHgOobUXUivMYH6xTaICLcEvfGtInYgMuC0rYvJ2776Z5cyOZ4ODg4Zib8hX5+1nJNEh6MkRF4lRR7DQgfuUwWFZd0EroXPg2qbdquWOg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Tw7XcUZm; arc=none smtp.client-ip=209.85.221.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="mkFwOHRD"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=peHEbB5d41kYnaZ/xtoDqvT4hGsveZjLDVlql+Swn+A=; t=1789670965;
-	x=1790275765; b=mkFwOHRD1Vy4xl92XcywYIvThRPUr0KeOWt24RCFRaOg6VYWcP7CKi3iYdLHM
-	eVpdmsGqEll35PkqHMu/Xch1cwWHASvYNjRzr9gi75YAyRLDfe6lmy4tqSnr8hG9SkLeYRpjlgFP/
-	ShNMXZ9EOZutRSmliA3ElG4vEzix2u8Y+yHBXHKEHiK0vTRxdTxaYyyFF7PjYgY5ryycQDJqZs0cn
-	FjZ4LXhKJr59BtrlhfHAMDPoF3pTMhgCzW+cJCpHzcFjAMYagEHmHhi9oMR5IMz8SPcxx8hGzPhal
-	dz3ETwExY16X8uwojN0OhtN4siR+EYr7MTL/UXm1Q1+jZwfHwA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1x7HAa-00000003udl-2gbW; Thu, 17 Sep 2026 20:49:16 +0200
-Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1x7HAa-00000003oEF-1gc9; Thu, 17 Sep 2026 20:49:16 +0200
-Message-ID: <d3a2875ba34bf10ddae3626b77da071cd4624348.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 2/2] sh: mach-x3proto: convert gpio-keys to software
- nodes
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Yoshinori Sato
-	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Linus Walleij <linusw@kernel.org>, Bartosz Golaszewski
- <brgl@kernel.org>,  Arnd Bergmann	 <arnd@arndb.de>,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Tw7XcUZm"
+Received: by mail-wr1-f47.google.com with SMTP id ffacd0b85a97d-48442ea8f59so673917f8f.1
+        for <linux-sh@vger.kernel.org>; Fri, 18 Sep 2026 01:59:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1789721980; x=1790326780; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:subject:cc:to:from:date:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=ebKeWW1b/FCTysKRCA2qCKC9jXPhUpw/tMxPeazltLI=;
+        b=Tw7XcUZm0rC0dkuh5w5E/veMnAhHyo0i7FcBH07sfDYi3aAAUsIle064UkwLQIZSMe
+         useq7JQAeSSaz08P4uG5jY5l10RZd7riLVIKipTE9RnSidBNPtYxPGEWSjBSnPqpNux2
+         qVzVyMbACCUE/cE4CgY/Kec/zkb0hCVMAz/BXbqxKszI3bTE5A3+TFTczN13inT5sLFt
+         Zm0WVYEHp4fl6PyZYQOO+yiI1UcBFS2DETFGYgkUW9tLY3uwCTRMSYNgt+A87U8/iJl8
+         fF4FViJlCDt6G3SGpB1D06SoBeUUvIyOIhYkF8ejii0kdeyP+cV23dJ4736Kqzd0u1H8
+         qbSg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1789721980; x=1790326780;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=ebKeWW1b/FCTysKRCA2qCKC9jXPhUpw/tMxPeazltLI=;
+        b=BFrESRnMSgM55K3QoSfc/XWGfRPf89/HBriFNb10DvT6rNkUWXu+WiV06NhRo3TxMf
+         OiOR/yd9mImkMrDRZB2bBCYcBXcQyeapg6hxNcG/6n/A4PMbnDIBlgn5l0Pa1dqVu0rw
+         p/+fuyb8LAqNO5ZcwT7Rv3wYfJRLWKjeedkBmee8h7YTEkXrp59ky6oQOd7Nz33dzgaE
+         6VcvdmRyL9ELyznj1eY2BL9ihna8oBpkKwdvKUYtWlCkKosKYH0g+DRJYa9caUlxszNf
+         sr/IF5aX3DcSZDPTs55u0grsHaAaZc4wUYMK/SwIdD1tEAQJUQ6Lj7VTx/Ob9kHVRozN
+         ffDQ==
+X-Forwarded-Encrypted: i=1; AKwUvBwBycVJTKCrYUAlXSWbnkt58zsG22aOZNx/Ra8B4CMe14XkkvTb34UKqgbHScWFVATAoNce/AgaBw==@vger.kernel.org
+X-Gm-Message-State: AFuF++l1pp271hGfq/1rK21n70WhbWWj/WqhNiijDczCw+JyZVWUYlK5
+	CypZkS7cFm5i6DyWLrik4jEnC2Y7C8RVuj+fCGATyLv5ms7tORs29/Mm
+X-Gm-Gg: AYBFou1HJ7HMu86yDguekI0PdyFDEKXUtaTaRsFuAr28+sKao/fjyO6ij3wELUfW6hk
+	+qo0yuD+MbcdAYz0rEoX+LhifGmvD7plR/AehJUrQIB9D30+bLTeBUVMnORGCff2U3dztQaLzpx
+	uOe8cEh7wlkqW1nVkH7zJOs2YeL7medomAWphJqf9v1YDbmyUIxbW/x/Sd0kp2HPPTkiPqnGe3X
+	gZ0dzi3JR4MlHaGuSUkxk7T5JF5P2N/6CUH2f/948JbG1nd4Os5kftjENSxP6R3CU1tRo3A/BdY
+	mDlqHCaCUfPl0ZVGa0dSAFhSXY1cSMZwW6OROfTg6PUt0jF+zO4C8ZEttwbOmeXiaujUG3FcbaF
+	KogOYopNQJfmdIwb9jcJf6nA/f7h32u8BB7YOw6lwYC8S6WE2fcBieN6qZdAtpF7InHQh0H8Kai
+	1/R2tJZhbi+rTb2tm0nUTjsJ8INnMHIe50YNtjDyNHD8g60/foDlUsmNpJ+JL3rZiAWop33YSvL
+	1edgdMR62hv/xhELRv2RuzOnmawaLa6I+Nz
+X-Received: by 2002:a5d:6f06:0:b0:485:8d9c:47d2 with SMTP id ffacd0b85a97d-48713c7ef38mr9129868f8f.30.1789721980248;
+        Fri, 18 Sep 2026 01:59:40 -0700 (PDT)
+Received: from pumpkin (82-69-66-36.dsl.in-addr.zen.co.uk. [82.69.66.36])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4872008f34dsm2547841f8f.36.2026.09.18.01.59.39
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 18 Sep 2026 01:59:39 -0700 (PDT)
+Date: Fri, 18 Sep 2026 09:59:38 +0100
+From: David Laight <david.laight.linux@gmail.com>
+To: Bradley Morgan <brads@mainlining.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Vineet Gupta
+ <vgupta@kernel.org>, Guo Ren <guoren@kernel.org>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Chris Zankel
+ <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>, Arnd Bergmann
+ <arnd@arndb.de>, "Paul E . McKenney" <paulmck@kernel.org>, John Paul Adrian
+ Glaubitz <glaubitz@physik.fu-berlin.de>,
+ linux-snps-arc@lists.infradead.org, linux-csky@vger.kernel.org,
  linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date: Thu, 17 Sep 2026 20:49:15 +0200
-In-Reply-To: <20260704-sh-x3proto-swnode-v1-2-0c039549dc46@gmail.com>
-References: <20260704-sh-x3proto-swnode-v1-0-0c039549dc46@gmail.com>
-	 <20260704-sh-x3proto-swnode-v1-2-0c039549dc46@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+Subject: Re: [PATCH v3 1/5] lib: Add two-byte cmpxchg emulation function
+Message-ID: <20260918095938.6082a31a@pumpkin>
+In-Reply-To: <20260917163830.3748-2-brads@mainlining.org>
+References: <20260917163830.3748-1-brads@mainlining.org>
+	<20260917163830.3748-2-brads@mainlining.org>
+X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; arm-unknown-linux-gnueabihf)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-Hi Dmitry,
+On Thu, 17 Sep 2026 16:38:26 +0000
+Bradley Morgan <brads@mainlining.org> wrote:
 
-On Sat, 2026-07-04 at 22:04 -0700, Dmitry Torokhov wrote:
-> Convert the legacy gpio-keys platform device on the SH-X3 Prototype
-> board to use software nodes/properties. This allows us to describe
-> the GPIO keys and their GPIO bindings using software nodes, so that
-> support for platform data can eventually be removed from the
-> gpio-keys driver.
->=20
-> Assisted-by: Antigravity:gemini-3.5-flash
-> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+> cmpxchg_emu_u8() emulates one-byte cmpxchg() in terms of four-byte
+> cmpxchg() for the architectures lacking native one-byte atomics.
+> The same architectures also lack native two-byte cmpxchg(), where
+> such an operation is not supported and either fails to compile via
+> BUILD_BUG() or fails to link, because the bad pointer sentinels
+> these architectures declare are never defined.
+> 
+> Add cmpxchg_emu_u16(), the two-byte sibling. It reads the enclosing
+> word with READ_ONCE(), splices the two target bytes through a union
+> and loops on cmpxchg() of the full word until the compare succeeds.
+> Like cmpxchg_emu_u8() it is fully ordered.
+> 
+> Unlike cmpxchg_emu_u8() it casts the old and new values to u16
+> internally and returns unsigned long, taking the old and new values
+> as unsigned long, per the suggestion from David Laight. The switch
+> statements in the architecture macros instantiate every size case,
+> so a cmpxchg() on a pointer type checks the two-byte case as well,
+> and a u16 parameter or return would make the macro casts and return
+> conversions warn there. With unsigned long parameters and return the
+> call sites need no narrowing casts, pointer exchanges compile warning
+> free, and the function still compares and returns exactly the 16 bits
+> the caller asked for, which matches the hardware cmpxchg r16
+> behaviour where a 16-bit compare only looks at the low 16 bits of
+> the register.
+> 
+> The Kconfig symbol gating this file is renamed from
+> ARCH_NEED_CMPXCHG_1_EMU to ARCH_NEED_CMPXCHG_1_2_EMU, as it now
+> selects both the one-byte and the two-byte emulation.
+> 
+> Suggested-by: Paul E. McKenney <paulmck@kernel.org>
+> Suggested-by: David Laight <david.laight.linux@gmail.com>
+> Signed-off-by: Bradley Morgan <brads@mainlining.org>
 > ---
->  arch/sh/boards/mach-x3proto/setup.c | 165 +++++++++++++++++-------------=
-------
->  1 file changed, 78 insertions(+), 87 deletions(-)
->=20
-> diff --git a/arch/sh/boards/mach-x3proto/setup.c b/arch/sh/boards/mach-x3=
-proto/setup.c
-> index ca2802d30565..0d9d5982cf0c 100644
-> --- a/arch/sh/boards/mach-x3proto/setup.c
-> +++ b/arch/sh/boards/mach-x3proto/setup.c
-> @@ -16,8 +16,8 @@
->  #include <linux/input.h>
->  #include <linux/usb/r8a66597.h>
->  #include <linux/usb/m66592.h>
-> -#include <linux/gpio/driver.h>
-> -#include <linux/gpio_keys.h>
-> +#include <linux/gpio/machine.h>
-> +#include <linux/gpio/property.h>
->  #include <mach/ilsel.h>
->  #include <mach/hardware.h>
->  #include <asm/smp-ops.h>
-> @@ -123,87 +123,74 @@ static struct platform_device m66592_usb_peripheral=
-_device =3D {
->  	.resource	=3D m66592_usb_peripheral_resources,
->  };
-> =20
-> -static struct gpio_keys_button baseboard_buttons[NR_BASEBOARD_GPIOS] =3D=
- {
-> -	{
-> -		.desc		=3D "key44",
-> -		.code		=3D KEY_POWER,
-> -		.active_low	=3D 1,
-> -		.wakeup		=3D 1,
-> -	}, {
-> -		.desc		=3D "key43",
-> -		.code		=3D KEY_SUSPEND,
-> -		.active_low	=3D 1,
-> -		.wakeup		=3D 1,
-> -	}, {
-> -		.desc		=3D "key42",
-> -		.code		=3D KEY_KATAKANAHIRAGANA,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key41",
-> -		.code		=3D KEY_SWITCHVIDEOMODE,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key34",
-> -		.code		=3D KEY_F12,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key33",
-> -		.code		=3D KEY_F11,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key32",
-> -		.code		=3D KEY_F10,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key31",
-> -		.code		=3D KEY_F9,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key24",
-> -		.code		=3D KEY_F8,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key23",
-> -		.code		=3D KEY_F7,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key22",
-> -		.code		=3D KEY_F6,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key21",
-> -		.code		=3D KEY_F5,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key14",
-> -		.code		=3D KEY_F4,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key13",
-> -		.code		=3D KEY_F3,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key12",
-> -		.code		=3D KEY_F2,
-> -		.active_low	=3D 1,
-> -	}, {
-> -		.desc		=3D "key11",
-> -		.code		=3D KEY_F1,
-> -		.active_low	=3D 1,
-> -	},
-> +static const struct software_node x3proto_gpio_keys_node =3D {
-> +	.name =3D "x3proto-gpio-keys",
->  };
-> =20
-> -static struct gpio_keys_platform_data baseboard_buttons_data =3D {
-> -	.buttons	=3D baseboard_buttons,
-> -	.nbuttons	=3D ARRAY_SIZE(baseboard_buttons),
-> +#define __X3PROTO_KEY(_id, _code, _gpio, ...)				\
-> +static const struct property_entry x3proto_key##_id##_props[] =3D {	\
-> +	PROPERTY_ENTRY_STRING("label", "key" #_id),			\
-> +	PROPERTY_ENTRY_U32("linux,code", _code),			\
-> +	PROPERTY_ENTRY_GPIO("gpios", &x3proto_gpiochip_node,		\
-> +			    _gpio, GPIO_ACTIVE_LOW),			\
-> +	__VA_ARGS__							\
-> +	{ }								\
-> +};									\
-> +static const struct software_node x3proto_key##_id##_node =3D {		\
-> +	.parent =3D &x3proto_gpio_keys_node,				\
-> +	.properties =3D x3proto_key##_id##_props,				\
-> +}
-> +
-> +#define X3PROTO_KEY(_id, _code, _gpio)					\
-> +	__X3PROTO_KEY(_id, _code, _gpio)
-> +
-> +#define X3PROTO_KEY_WAKEUP(_id, _code, _gpio)				\
-> +	__X3PROTO_KEY(_id, _code, _gpio,				\
-> +		      PROPERTY_ENTRY_BOOL("wakeup-source"),		\
-> +	)
-> +
-> +X3PROTO_KEY_WAKEUP(44, KEY_POWER, 0);
-> +X3PROTO_KEY_WAKEUP(43, KEY_SUSPEND, 1);
-> +X3PROTO_KEY(42, KEY_KATAKANAHIRAGANA, 2);
-> +X3PROTO_KEY(41, KEY_SWITCHVIDEOMODE, 3);
-> +X3PROTO_KEY(34, KEY_F12, 4);
-> +X3PROTO_KEY(33, KEY_F11, 5);
-> +X3PROTO_KEY(32, KEY_F10, 6);
-> +X3PROTO_KEY(31, KEY_F9, 7);
-> +X3PROTO_KEY(24, KEY_F8, 8);
-> +X3PROTO_KEY(23, KEY_F7, 9);
-> +X3PROTO_KEY(22, KEY_F6, 10);
-> +X3PROTO_KEY(21, KEY_F5, 11);
-> +X3PROTO_KEY(14, KEY_F4, 12);
-> +X3PROTO_KEY(13, KEY_F3, 13);
-> +X3PROTO_KEY(12, KEY_F2, 14);
-> +X3PROTO_KEY(11, KEY_F1, 15);
-> +
-> +static const struct software_node *const x3proto_swnodes[] __initconst =
-=3D {
-> +	&x3proto_gpio_keys_node,
-> +	&x3proto_key44_node,
-> +	&x3proto_key43_node,
-> +	&x3proto_key42_node,
-> +	&x3proto_key41_node,
-> +	&x3proto_key34_node,
-> +	&x3proto_key33_node,
-> +	&x3proto_key32_node,
-> +	&x3proto_key31_node,
-> +	&x3proto_key24_node,
-> +	&x3proto_key23_node,
-> +	&x3proto_key22_node,
-> +	&x3proto_key21_node,
-> +	&x3proto_key14_node,
-> +	&x3proto_key13_node,
-> +	&x3proto_key12_node,
-> +	&x3proto_key11_node,
-> +	NULL
->  };
-> =20
-> -static struct platform_device baseboard_buttons_device =3D {
-> +static const struct platform_device_info x3proto_gpio_keys_device_info _=
-_initconst =3D {
->  	.name		=3D "gpio-keys",
-> -	.id		=3D -1,
-> -	.dev		=3D {
-> -		.platform_data	=3D &baseboard_buttons_data,
-> -	},
-> +	.id		=3D PLATFORM_DEVID_NONE,
-> +	.swnode		=3D &x3proto_gpio_keys_node,
->  };
-> =20
->  static struct platform_device *x3proto_devices[] __initdata =3D {
-> @@ -211,7 +198,6 @@ static struct platform_device *x3proto_devices[] __in=
-itdata =3D {
->  	&smc91x_device,
->  	&r8a66597_usb_host_device,
->  	&m66592_usb_peripheral_device,
-> -	&baseboard_buttons_device,
->  };
-> =20
->  static void __init x3proto_init_irq(void)
-> @@ -224,7 +210,8 @@ static void __init x3proto_init_irq(void)
-> =20
->  static int __init x3proto_devices_setup(void)
->  {
-> -	int ret, i;
-> +	struct platform_device *pd;
-> +	int ret;
-> =20
->  	/*
->  	 * IRLs are only needed for ILSEL mappings, so flip over the INTC
-> @@ -239,11 +226,11 @@ static int __init x3proto_devices_setup(void)
->  	if (unlikely(ret))
->  		return ret;
-> =20
-> -	/*
-> -	 * Propagate dynamic GPIOs for the baseboard button device.
-> -	 */
-> -	for (i =3D 0; i < ARRAY_SIZE(baseboard_buttons); i++)
-> -		baseboard_buttons[i].gpio =3D x3proto_gpio_chip.base + i;
-> +	ret =3D software_node_register_node_group(x3proto_swnodes);
-> +	if (ret) {
-> +		pr_err("Failed to register software nodes: %d\n", ret);
-> +		return ret;
-> +	}
-> =20
->  	r8a66597_usb_host_resources[1].start =3D
->  		r8a66597_usb_host_resources[1].end =3D ilsel_enable(ILSEL_USBH_I);
-> @@ -254,8 +241,12 @@ static int __init x3proto_devices_setup(void)
->  	smc91x_resources[1].start =3D
->  		smc91x_resources[1].end =3D ilsel_enable(ILSEL_LAN);
-> =20
-> -	return platform_add_devices(x3proto_devices,
-> -				    ARRAY_SIZE(x3proto_devices));
-> +	ret =3D platform_add_devices(x3proto_devices, ARRAY_SIZE(x3proto_device=
-s));
-> +	if (ret)
-> +		return ret;
-> +
-> +	pd =3D platform_device_register_full(&x3proto_gpio_keys_device_info);
-> +	return PTR_ERR_OR_ZERO(pd);
+...
+> diff --git a/lib/cmpxchg-emu.c b/lib/cmpxchg-emu.c
+> index 27f6f97cb60d..ac1c84383887 100644
+> --- a/lib/cmpxchg-emu.c
+> +++ b/lib/cmpxchg-emu.c
+> @@ -1,10 +1,11 @@
+>  // SPDX-License-Identifier: GPL-2.0+
+>  /*
+> - * Emulated 1-byte cmpxchg operation for architectures lacking direct
+> - * support for this size.  This is implemented in terms of 4-byte cmpxchg
+> - * operations.
+> + * Emulated 1-byte and 2-byte cmpxchg operations for architectures lacking
+> + * direct support for these sizes.  These are implemented in terms of
+> + * 4-byte cmpxchg operations.
+>   *
+> - * Copyright (C) 2024 Paul E. McKenney.
+> + * Copyright (C) 2024 Paul E. McKenney <paulmck@kernel.org>
+> + * Copyright (C) 2026 Bradley Morgan <brads@mainlining.org>
+>   */
+>  
+>  #include <linux/types.h>
+> @@ -40,6 +41,35 @@ uintptr_t cmpxchg_emu_u8(volatile u8 *p, uintptr_t old, uintptr_t new)
+>  		instrument_atomic_read_write(p, 1);
+>  		ret = data_race(cmpxchg(p32, old32.w, new32.w)); // Overridden above.
+>  	} while (ret != old32.w);
+> -	return old;
+> +	return (u16)old;
 >  }
->  device_initcall(x3proto_devices_setup);
-> =20
+>  EXPORT_SYMBOL_GPL(cmpxchg_emu_u8);
 
-It took me some time to fully grasp the rewrite, but I think this should wo=
-rk as expected.
+Where did the (u16) cast come from?
+If you want to mask 'old' to 8 bits it would be more reasonable to change
+the function prototype.
+(Although I can never remember whether the caller or called code is
+responsible for masking the value.)
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+David
 
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
