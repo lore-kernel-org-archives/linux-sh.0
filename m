@@ -1,55 +1,49 @@
-Received: from mail.mainlining.org (mail.mainlining.org [5.75.144.95])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 55954563FC3;
-	Tue, 22 Sep 2026 17:36:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=5.75.144.95
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E4BA47F2FA;
+	Tue, 22 Sep 2026 18:29:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790098590; cv=none; b=kM+2BwmlFODQryA0grLh1xd3dnVIGQOuQZxoMjBSbypJzdgvn5oss2vRHc8GC7m0hy+afnhmA2op1+XyT2Fl7OOWrq5GDxvArZCVL7qAme3dOw7NHA4yAgHRAgn1yUsVMuiDrbANMhgFFIjs2baLjlEHQ4w+SgumjNAvvrDYIcI=
+	t=1790101774; cv=none; b=Tc7cSwSsTgXnumLfq0arB+pzZppI67Ucg+WNqvC13PzpOyirH+shOQL3yZvF3qlisfKt+cRri1xmQP7shqugFooLeE38TBA+VWiNxOtix6YiEPRLydJ75ErPsq7t6M6U/w3GIijS2nTeYquevjk3t+0kpErhm+oK+Sc8bHUqH4s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790098590; c=relaxed/simple;
-	bh=Zzf1rbgihCrOyP1/qqfesaFc+2OZGZF5hAiHzrg6Xrs=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=k+oQ1CsNpwq9K+dHgN5k39hua2+QdCX89T8h3uT9UF5lQXye0o4yvFjzpjPiMmcaZOnToLcMnRgopvokTwtGPKQgCJlPt/wght4brj7O1jmECFk5tQaMOKm4xAen0O2pW5xGk15WecowjV8jnkShm51mxqYuuFuePaQFKtfrDdg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mainlining.org; spf=pass smtp.mailfrom=mainlining.org; dkim=pass (2048-bit key) header.d=mainlining.org header.i=@mainlining.org header.b=hxyhNKhp; dkim=permerror (0-bit key) header.d=mainlining.org header.i=@mainlining.org header.b=mIt3IqqS; arc=none smtp.client-ip=5.75.144.95
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mainlining.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mainlining.org
+	s=arc-20240116; t=1790101774; c=relaxed/simple;
+	bh=ZSlmIGSmykGtvMK35ndbLUCO68mHzc/Wud2cPObji8Q=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=kySws8fytTR4r339asL1EzrgWbQBSHmvH7dK05mkBINRGapAxmH+sHuftG/li0aZuk5+kpHRL3WvNZpagNcG3uT2S7Nr11QebEIgzDwb0YzgrLSSiNWclPnEutL/DBRDe5SmV+etY/NhC/AG0O84+ZAbngaNhw0VLgYY788bUoo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=j1crwmL8; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mainlining.org header.i=@mainlining.org header.b="hxyhNKhp";
-	dkim=permerror (0-bit key) header.d=mainlining.org header.i=@mainlining.org header.b="mIt3IqqS"
-DKIM-Signature: v=1; a=rsa-sha256; s=202507r; d=mainlining.org; c=relaxed/relaxed;
-	h=Message-ID:Date:Subject:To:From; t=1790098435; bh=4wVfAlEcovYJiLRAiW1UExN
-	eq/b3xEK1OUjxcP/7QYQ=; b=hxyhNKhpHnG4LHB+IQytsfxPMEf6YigYhmBGZ6P1fc8JdTpofF
-	6/G3CK5eZbESW1khN3Oxuk3tTVRtyjIbZxXm7V/HRQMWqDGh17DVaXZRIj+dplFovWqMFx6Qd/N
-	HYEuhDiGM8wwpRWslxqJozCj/owYlqjVph49yfKRkBOvKGP/olaRr80OLt3TX6jlUFhNPfXQASk
-	UQuRL00HYhzZ/jl7YWoEfFoMh0jYwokqxLaO14TRt4zS0R4tL5JIgaJwdbMzvfPphucuTBMnKFP
-	jjNQE9iV8ZIxOPszyZmfCQkHSxGLynC1RjC3MsaMYSL/3LD5RIP4ZC1boH5HOoZSaVw==;
-DKIM-Signature: v=1; a=ed25519-sha256; s=202507e; d=mainlining.org; c=relaxed/relaxed;
-	h=Message-ID:Date:Subject:To:From; t=1790098435; bh=4wVfAlEcovYJiLRAiW1UExN
-	eq/b3xEK1OUjxcP/7QYQ=; b=mIt3IqqSgxeINDfPOkt7tdWMzH4kExoyXkiMgmIYJl8N/S4dZ9
-	2BgUIRlcxsvR2j6OPj3KfJzB0NPulRzvSkDg==;
-From: Bradley Morgan <brads@mainlining.org>
-To: Andrew Morton <akpm@linux-foundation.org>,
-	Vineet Gupta <vgupta@kernel.org>,
-	Guo Ren <guoren@kernel.org>,
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="j1crwmL8"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A48141F0089C;
+	Tue, 22 Sep 2026 18:29:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1790101772;
+	bh=Xv5xLK8KOo7dSSMzLTTX5jv3aEEFwtmmbrVvdDw+CEo=;
+	h=Date:From:To:Cc:Subject:Reply-To:References:In-Reply-To;
+	b=j1crwmL8NxK06lnevOQ7tdcqPik5Zf5n6nAszWGxR/vEls7Sapq7BJzsNjICE/oCQ
+	 dyG3Zt1RcpmTiX7U1vC7SsRDJu790V1YxxKr50YYL8pCGhf3/7FLK0KPBDh1b1z4ZP
+	 QRntkGXQFbrHlmxtIS6HjTfMMM6NCVYj12n6kcihmpF0QH+93QpSEMLhXUYiqumMln
+	 lWyZGrUFJIBspHXf4lULPKxikVQGj6oBfgv6n8DvLWSb2H49MdszqOpMXTTPzljFI8
+	 y7abFBjUd7XhqUk46eUGvIMbgnMUPSpN7XLNxtwPTLS5hJbQN5YduRKcD9oRgWEnaM
+	 ckkzKobWuWYrQ==
+Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
+	id 66197CE0836; Tue, 22 Sep 2026 11:29:32 -0700 (PDT)
+Date: Tue, 22 Sep 2026 11:29:32 -0700
+From: "Paul E. McKenney" <paulmck@kernel.org>
+To: Bradley Morgan <brads@mainlining.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Vineet Gupta <vgupta@kernel.org>, Guo Ren <guoren@kernel.org>,
 	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	Chris Zankel <chris@zankel.net>,
-	Max Filippov <jcmvbkbc@gmail.com>
-Cc: Arnd Bergmann <arnd@arndb.de>,
-	"Paul E . McKenney" <paulmck@kernel.org>,
+	Rich Felker <dalias@libc.org>, Chris Zankel <chris@zankel.net>,
+	Max Filippov <jcmvbkbc@gmail.com>, Arnd Bergmann <arnd@arndb.de>,
 	David Laight <david.laight.linux@gmail.com>,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	linux-snps-arc@lists.infradead.org,
-	linux-csky@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Bradley Morgan <brads@mainlining.org>
-Subject: [PATCH 5/5] xtensa: Emulate two-byte cmpxchg
-Date: Tue, 22 Sep 2026 17:33:54 +0000
-Message-ID: <20260922173354.14404-6-brads@mainlining.org>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20260922173354.14404-1-brads@mainlining.org>
+	linux-snps-arc@lists.infradead.org, linux-csky@vger.kernel.org,
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v4 0/5] Add two-byte cmpxchg emulation and wire it into
+ the architectures
+Message-ID: <78f7ab38-46c8-4968-a2ae-4c3c98e32f4d@paulmck-laptop>
+Reply-To: paulmck@kernel.org
 References: <20260922173354.14404-1-brads@mainlining.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -57,50 +51,68 @@ List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260922173354.14404-1-brads@mainlining.org>
 
-Xtensa has no two-byte atomic compare and swap, so the __cmpxchg()
-switch lets case 2 fall through to __cmpxchg_called_with_bad_pointer(),
-which is declared but never defined, so a two-byte cmpxchg() fails at
-link time. Route case 2 through the new cmpxchg_emu_u16(), which takes
-the old and new values as unsigned long, so the (unsigned long) casts
-on _o_ and _n_ move off the call and into _old_ and _new_ declarations
-that type check the old and new arguments against *ptr through
-(unsigned long)(0 ? *ptr : (o)), the idiom David Laight suggested,
-so cmpxchg(&p, 4, 5) no longer compiles silently.
+On Tue, Sep 22, 2026 at 05:33:49PM +0000, Bradley Morgan wrote:
+> This is v4 of the two byte cmpxchg emulation series, wiring
+> cmpxchg_emu_u16() into arc, csky, sh and xtensa.
+> 
+> v3 had changed cmpxchg_emu_u8()'s success return to (u16)old, which was
+> a 16-bit mask in the 8-bit function, and a dead one at that, since the
+> compare guarantees the low 8 bits of old are the byte being returned.
+> David Laight asked where that cast came from. v4 returns old unmasked,
+> the exact behaviour the one-byte emulator always had, so nothing that
+> uses cmpxchg_emu_u8() through the widened prototypes sees a change.
+> 
+> David also noted v3 extended the (unsigned long)(0 ? *ptr : (old)) type
+> check to csky and sh but not arc and xtensa. v4 adds it there too, so a
+> cmpxchg(&p, 4, 5) fails to compile on every architecture in the series,
+> verified with each architecture's macro instantiated standalone.
+> 
+> While adding the type check to arc, the switch subject turned out to be
+> sizeof((_p_)), the pointer, not sizeof(*(_p_)), the pointee. On 32-bit
+> arc the switch was always 4, so the size 1 and size 2 cases were dead
+> code and every sub-word cmpxchg() went through the 32-bit llock/scond
+> pair, comparing whole words against sub-word values, so the compare
+> almost never succeeded. The switch now tests the pointee, and the u8
+> path it was always meant to dispatch actually runs, so the one-byte
+> emulation works on arc for the first time since the sizeof bug landed
+> with the original cmpxchg_emu_u8() wiring.
+> 
+> The host test of 972 cases across both halfword offsets against a byte
+> level reference model still passes, and a 20000 case randomized run
+> checking the masked compare and return against a hardware cmpxchg r16
+> model passes with zero mismatches.
+> 
+> David pointed out on v1 that a u16 prototype does not compile warning
+> free when exchanging a pointer type, because the switch statements in
+> the architecture macros instantiate every size case, so a pointer
+> cmpxchg() type checks the two byte case, and the (u16) casts there
+> warn. v4 keeps taking the old and new values as unsigned long and
+> casting to u16 inside the function, so the call sites need no narrowing
+> casts and pointer exchanges compile clean. The function still compares
+> and returns exactly the 16 bits the caller asked for, which matches
+> hardware cmpxchg r16 behaviour.
+> 
+> The ARMv6 wiring stays dropped from v1, per Arnd Bergmann's offer to
+> take the INTEGRATOR_CM1136JFS cleanup in his platform removal series.
 
-Signed-off-by: Bradley Morgan <brads@mainlining.org>
----
- arch/xtensa/include/asm/cmpxchg.h | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+I have pulled these in, but only to expose them to things like the kernel
+test robot.  My guess is that they will go in by some other path.
 
-diff --git a/arch/xtensa/include/asm/cmpxchg.h b/arch/xtensa/include/asm/cmpxchg.h
-index b6db4838b175..f6bed4221b43 100644
---- a/arch/xtensa/include/asm/cmpxchg.h
-+++ b/arch/xtensa/include/asm/cmpxchg.h
-@@ -76,6 +76,7 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
- {
- 	switch (size) {
- 	case 1:  return cmpxchg_emu_u8(ptr, old, new);
-+	case 2:  return cmpxchg_emu_u16(ptr, old, new);
- 	case 4:  return __cmpxchg_u32(ptr, old, new);
- 	default: __cmpxchg_called_with_bad_pointer();
- 		 return old;
-@@ -83,10 +84,10 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
- }
- 
- #define arch_cmpxchg(ptr,o,n)						      \
--	({ __typeof__(*(ptr)) _o_ = (o);				      \
--	   __typeof__(*(ptr)) _n_ = (n);				      \
--	   (__typeof__(*(ptr))) __cmpxchg((ptr), (unsigned long)_o_,	      \
--	   			        (unsigned long)_n_, sizeof (*(ptr))); \
-+	({ unsigned long _old_ = (unsigned long)(0 ? *(ptr) : (o));	      \
-+	unsigned long _new_ = (unsigned long)(0 ? *(ptr) : (n));	      \
-+	(__typeof__(*(ptr))) __cmpxchg((ptr), _old_,		      \
-+				_new_, sizeof (*(ptr))); \
- 	})
- 
- #include <asm-generic/cmpxchg-local.h>
--- 
-2.47.3
+And to that end:
 
+Reviewed-by: Paul E. McKenney <paulmck@kernel.org>
+
+But I could of course easily be missing subtle arch-specific bugs.
+
+							Thanx, Paul
+
+> Bradley Morgan (5):
+>   lib: Add two-byte cmpxchg emulation function
+>   ARC: Emulate two-byte cmpxchg
+>   sh: Emulate two-byte cmpxchg
+>   csky: Emulate two-byte cmpxchg
+>   xtensa: Emulate two-byte cmpxchg
