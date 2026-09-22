@@ -1,175 +1,231 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4EF4849E156;
-	Tue, 22 Sep 2026 19:13:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C74A04A13AD
+	for <linux-sh@vger.kernel.org>; Tue, 22 Sep 2026 19:21:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790104425; cv=none; b=ptezWlfmlI0jgxtvE2nbQ2WLabZnb9PiwmsuWNMZOk4w9H173qxC4h/O5Rq92jzr8VrYL38A1AuoxTjVFOHqR3S3fiLnmP/1XTeKNgHwaQhD6IQ/jNoblhkJwW91Q3q89c5IQD4EGZxIsCTDD6H1G7ntFlLcvm4i4q89TuvkRqY=
+	t=1790104863; cv=none; b=RB53H7gk7nGXc9WC3VUlvK1tSATavm+mmIiJx5uhg7+4LHmn4zp1dM3l4rLOusHEnrtUccA7agN80dLiPUkyUCu8j/olD44K4RWnHYUzSKS41yTLaEn3h5uexURijX3xBlxC5Zesbf1VJCFhPx9kb8fl8FFOXoJwX4mIAgxQTJ8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790104425; c=relaxed/simple;
-	bh=rR1EL8/uETi0kdR5BwFXTnu7VdlMxCGpwfXzN9NwMOk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=MxN1T23i9dPJSxRny6Mis5cSU7qqfwqisafmH/rRTnQTMcdb+WbyJo2C4dkCATtCObXkjdEQonFodngXwVsKuJTEepDkaefost8If7g5qc1YJPjOCdjs4QlQwaqEOnkhkdKKydkAoWYgrLb0hRE2tspegm+MRhJcBICG7+FIBBQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ESgDYzTw; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1790104863; c=relaxed/simple;
+	bh=HNLThOlE1asNKxutytllN747m0edkEmIk81s1jcMJjY=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:content-type; b=vBeT2DEdbCsnqMQXBdaMdXA9+dwbxUf48ntgOWwQ36WkymBo8wTs82uVcOARoIfCPCFD9TVG6sf3YK/2Mr4Qi0v+EXd0gv7Cme0MemDYdN9Lu/0wBcFZG/zCxgPdds5iuJ43rMPR/xSj7KVycJomeQqBYswG6lDFWejVLTSrNT8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=DUGvYlHh; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ESgDYzTw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3544D1F000FF;
-	Tue, 22 Sep 2026 19:13:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790104423;
-	bh=P3Ya6gL5lqDmQh37Ds5gf/OXCVXUI3GNgJ/UIYOLRFM=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=ESgDYzTwnMtwlQXgpjL9WDvp4H3rgvcimPLplN0w0m/I4e9jcNlJyPuFYwAHecmkh
-	 fRNxR9TDd/ESjd1ktRkzDLp7oabXDs81ua65/TwvvA7MAL7FiAkP/sFN7+1EgcFpue
-	 0Obn7wCviF2sfjCpfMSMhxiI+coBt5eAuj/FhC4HvmnK3/6agBXw1IROSq4hn+5W+b
-	 Cfxl4cj5tXtWgZCy01dE+QQvUNfy+hxTczQgmgiRfdixF+QPzP4hKEKPjeEoBQU+Z7
-	 Pefw2Ue97skgld2AL8BwvcXdXJaytEzlFawO7zjKVAJHP0imPdhS4Uc9zzH93dDR4B
-	 l5CvtevHVdFqg==
-Message-ID: <ddde3609-f068-4f26-92c0-e9244f290eaf@kernel.org>
-Date: Tue, 22 Sep 2026 12:13:42 -0700
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="DUGvYlHh"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1790104860;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=kEUEdL6PQ0y4Z2Ibs3e9Oc0v1TI6Cd/Tg+0kQahnhZg=;
+	b=DUGvYlHh2iFS+ExHNKIWGc7TvifDLkx6YAQEp1jT3eVbgKZhv2e5gzj2KMv7NGARi/vwX/
+	5KX1IEZSPAzzS9ds78mBdrz1o5GGAyd3qFsmAjaoViI388IbOkFeyyaa0HsTiFRBTBbbUY
+	XF4h82VqkhCqZUBjja82rpBQIhtB9Wo=
+Received: from mx-prod-mc-08.mail-002.prod.us-west-2.aws.redhat.com
+ (ec2-35-165-154-97.us-west-2.compute.amazonaws.com [35.165.154.97]) by
+ relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-546--qBL0tg0PMOQ1u-kgEOasQ-1; Tue,
+ 22 Sep 2026 15:20:56 -0400
+X-MC-Unique: -qBL0tg0PMOQ1u-kgEOasQ-1
+X-Mimecast-MFC-AGG-ID: -qBL0tg0PMOQ1u-kgEOasQ_1790104852
+Received: from mx-prod-int-01.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-01.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.4])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mx-prod-mc-08.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 5E30618011F0;
+	Tue, 22 Sep 2026 19:20:47 +0000 (UTC)
+Received: from wsxc.redhat.corp (headnet04.pony-001.prod.iad2.dc.redhat.com [10.2.32.116])
+	by mx-prod-int-01.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTP id F291530001B9;
+	Tue, 22 Sep 2026 19:20:23 +0000 (UTC)
+From: Ricardo Robaina <rrobaina@redhat.com>
+To: audit@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-alpha@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org,
+	linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	linux-um@lists.infradead.org,
+	bpf@vger.kernel.org
+Cc: paul@paul-moore.com,
+	eparis@redhat.com,
+	sgrubb@redhat.com,
+	oleg@redhat.com,
+	richard.henderson@linaro.org,
+	mattst88@gmail.com,
+	linmag7@gmail.com,
+	linux@armlinux.org.uk,
+	catalin.marinas@arm.com,
+	will@kernel.org,
+	guoren@kernel.org,
+	monstr@monstr.eu,
+	tsbogend@alpha.franken.de,
+	jonas@southpole.se,
+	stefan.kristiansson@saunalahti.fi,
+	shorne@gmail.com,
+	James.Bottomley@HansenPartnership.com,
+	deller@gmx.de,
+	ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	davem@davemloft.net,
+	andreas@gaisler.com,
+	richard@nod.at,
+	anton.ivanov@cambridgegreys.com,
+	johannes@sipsolutions.net,
+	chris@zankel.net,
+	jcmvbkbc@gmail.com,
+	tglx@kernel.org,
+	peterz@infradead.org,
+	luto@kernel.org,
+	Ricardo Robaina <rrobaina@redhat.com>
+Subject: [PATCH v3 00/14] audit: log all six syscall arguments in the SYSCALL record
+Date: Tue, 22 Sep 2026 16:19:52 -0300
+Message-ID: <cover.1790088067.git.rrobaina@redhat.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 0/5] Add two-byte cmpxchg emulation and wire it into
- the architectures
-To: paulmck@kernel.org, Bradley Morgan <brads@mainlining.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
- Vineet Gupta <vgupta@kernel.org>, Guo Ren <guoren@kernel.org>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- Chris Zankel <chris@zankel.net>, Max Filippov <jcmvbkbc@gmail.com>,
- Arnd Bergmann <arnd@arndb.de>, David Laight <david.laight.linux@gmail.com>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- linux-snps-arc@lists.infradead.org, linux-csky@vger.kernel.org,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20260922173354.14404-1-brads@mainlining.org>
- <78f7ab38-46c8-4968-a2ae-4c3c98e32f4d@paulmck-laptop>
- <7BE5B8EA-FAFB-4CBB-8FF1-ECDEEB1618B0@mainlining.org>
- <9a7883a3-a1b1-4d37-8234-f4c62b2e6e27@paulmck-laptop>
-From: Vineet Gupta <vgupta@kernel.org>
-Content-Language: en-US
-In-Reply-To: <9a7883a3-a1b1-4d37-8234-f4c62b2e6e27@paulmck-laptop>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+X-Scanned-By: MIMEDefang 3.4.1 on 10.30.177.4
+X-Mimecast-MFC-PROC-ID: Q9pjCu2pJILgd7Q-P4gzH4HGsOI827MpUwrGVwrfgJk_1790104852
+X-Mimecast-Originator: redhat.com
+Content-Transfer-Encoding: 8bit
+content-type: text/plain; charset="US-ASCII"; x-default=true
 
+The SYSCALL record currently logs only four of the six syscall
+arguments (a0-a3), silently discarding the remaining two. This
+leads to the need for auxiliary records when audit-relevant
+data lands in the 5th or 6th argument of a syscall.
 
+This series extends the SYSCALL record to log all six arguments,
+by adding arguments a4 and a5 inline within the existing record.
 
-On 9/22/26 11:59, Paul E. McKenney wrote:
-> On Tue, Sep 22, 2026 at 07:37:54PM +0100, Bradley Morgan wrote:
->> On 22 September 2026 19:29:32 BST, "Paul E. McKenney" <paulmck@kernel.org>
->> wrote:
->>> On Tue, Sep 22, 2026 at 05:33:49PM +0000, Bradley Morgan wrote:
->>>> This is v4 of the two byte cmpxchg emulation series, wiring
->>>> cmpxchg_emu_u16() into arc, csky, sh and xtensa.
->>>>
->>>> v3 had changed cmpxchg_emu_u8()'s success return to (u16)old, which was
->>>> a 16-bit mask in the 8-bit function, and a dead one at that, since the
->>>> compare guarantees the low 8 bits of old are the byte being returned.
->>>> David Laight asked where that cast came from. v4 returns old unmasked,
->>>> the exact behaviour the one-byte emulator always had, so nothing that
->>>> uses cmpxchg_emu_u8() through the widened prototypes sees a change.
->>>>
->>>> David also noted v3 extended the (unsigned long)(0 ? *ptr : (old)) type
->>>> check to csky and sh but not arc and xtensa. v4 adds it there too, so a
->>>> cmpxchg(&p, 4, 5) fails to compile on every architecture in the series,
->>>> verified with each architecture's macro instantiated standalone.
->>>>
->>>> While adding the type check to arc, the switch subject turned out to be
->>>> sizeof((_p_)), the pointer, not sizeof(*(_p_)), the pointee. On 32-bit
->>>> arc the switch was always 4, so the size 1 and size 2 cases were dead
->>>> code and every sub-word cmpxchg() went through the 32-bit llock/scond
->>>> pair, comparing whole words against sub-word values, so the compare
->>>> almost never succeeded. The switch now tests the pointee, and the u8
->>>> path it was always meant to dispatch actually runs, so the one-byte
->>>> emulation works on arc for the first time since the sizeof bug landed
->>>> with the original cmpxchg_emu_u8() wiring.
->>>>
->>>> The host test of 972 cases across both halfword offsets against a byte
->>>> level reference model still passes, and a 20000 case randomized run
->>>> checking the masked compare and return against a hardware cmpxchg r16
->>>> model passes with zero mismatches.
->>>>
->>>> David pointed out on v1 that a u16 prototype does not compile warning
->>>> free when exchanging a pointer type, because the switch statements in
->>>> the architecture macros instantiate every size case, so a pointer
->>>> cmpxchg() type checks the two byte case, and the (u16) casts there
->>>> warn. v4 keeps taking the old and new values as unsigned long and
->>>> casting to u16 inside the function, so the call sites need no narrowing
->>>> casts and pointer exchanges compile clean. The function still compares
->>>> and returns exactly the 16 bits the caller asked for, which matches
->>>> hardware cmpxchg r16 behaviour.
->>>>
->>>> The ARMv6 wiring stays dropped from v1, per Arnd Bergmann's offer to
->>>> take the INTEGRATOR_CM1136JFS cleanup in his platform removal series.
->>> I have pulled these in, but only to expose them to things like the kernel
->>> test robot.  My guess is that they will go in by some other path.
->>>
->>> And to that end:
->>>
->>> Reviewed-by: Paul E. McKenney <paulmck@kernel.org>
->>>
->>> But I could of course easily be missing subtle arch-specific bugs.
->> There are, according to sashiko, but I can't seem to make that thing happy
->> no matter what I do
-> Hahahahaha!!!
->
-> We forgot to CC the architecture maintainers.
+Rather than plumbing two more argument registers through every
+architecture's syscall entry path, audit_syscall_entry() now takes a
+struct pt_regs * and retrieves all six arguments itself via
+syscall_get_arguments(); the per-arch patches simply pass regs. The two
+new arguments are also wired into the audit filter, so rules can match
+on a4 and a5.
 
-No you didn't - they were CC'ed all along.
-I'll give this is a test run and report back later.
+To keep the series bisectable, the new pt_regs-based helpers are added
+first (patch 1), each architecture is converted one per patch, and the
+final patch removes the legacy argument-register helpers and renames the
+new ones back to audit_syscall_entry(). Every commit builds on its own.
 
-Both the cover letter and 1/5 explain what is being done and not clearly 
-why ?
-Is there an existing or proposed user for this API.
-Otherwise it will just bit-rot. No big deal from arch code pov but just 
-saying...
+The audit testsuite runs successfully:
 
-Thx,
--Vineet
+ # make test
+ make -C tests test
+ Running as   user    root
+        with context unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+        on   system  Fedora
 
->
-> For the changes to lib/cmpxchg-emu.c:
->
-> 	Cc: Andrew Morton <akpm@linux-foundation.org>
-> 	Cc: Arnd Bergmann <arnd@kernel.org>
->
-> For ARC:
->
-> 	Cc: Vineet Gupta <vgupta@kernel.org>
-> 	linux-snps-arc@lists.infradead.org
->
-> For sh:
->
-> 	Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> 	Cc: Rich Felker <dalias@libc.org>
-> 	Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> 	Cc: <linux-sh@vger.kernel.org>
->
-> For csky:
->
-> 	Cc: Guo Ren <guoren@kernel.org>
-> 	Cc: <linux-csky@vger.kernel.org>
-> 	Cc: <linux-kernel@vger.kernel.org>
->
-> For xtensa:
->
-> 	Cc: Chris Zankel <chris@zankel.net>
-> 	Cc: Max Filippov <jcmvbkbc@gmail.com>
->
-> They might be willing to help.  ;-)
->
-> 							Thanx, Paul
->
->>>> Bradley Morgan (5):
->>>>    lib: Add two-byte cmpxchg emulation function
->>>>    ARC: Emulate two-byte cmpxchg
->>>>    sh: Emulate two-byte cmpxchg
->>>>    csky: Emulate two-byte cmpxchg
->>>>    xtensa: Emulate two-byte cmpxchg
->> --- Thanks!
->> "I'm not a very positive person" - Linus torvalds
+ amcast_joinpart/test ................. ok
+ backlog_wait_time_actual_reset/test .. ok
+ bpf/test ............................. ok
+ coredump/test ........................ ok
+ exec_execve/test ..................... ok
+ exec_name/test ....................... ok
+ fanotify/test ........................ ok
+ field_compare/test ................... ok
+ file_create/test ..................... ok
+ file_delete/test ..................... ok
+ file_permission/test ................. ok
+ file_rename/test ..................... ok
+ filter_device/test ................... ok
+ filter_exclude/test .................. ok
+ filter_exit/test ..................... ok
+ filter_inode/test .................... ok
+ filter_saddr_fam/test ................ ok
+ filter_sessionid/test ................ ok
+ io_uring/test ........................ ok
+ login_tty/test ....................... ok
+ lost_reset/test ...................... ok
+ netfilter_pkt/test ................... ok
+ signal/test .......................... ok
+ syscalls_file/test ................... ok
+ syscall_module/test .................. ok
+ syscall_socketcall/test .............. ok
+ time_change/test ..................... ok
+ user_msg/test ........................ ok
+ All tests successful.
+ Result: PASS
+
+Changes in v3:
+- Make the series bisectable, as requested by Will Deacon. Rather
+  than changing __audit_syscall_entry()'s signature in place (which
+  broke the build between the core patch and the per-arch conversions),
+  patch 1 now adds audit_syscall_entry_regs()/__audit_syscall_entry_regs()
+  alongside the existing helpers. The per-arch patches switch to the new
+  helpers, and the final patch removes the legacy helpers and renames
+  the new ones back to audit_syscall_entry().
+- Drop the alpha conversion patch. Per Magnus Lindholm, alpha is
+  being moved onto the generic entry framework, which removes its
+  private syscall_trace_enter() and routes syscall auditing through
+  syscall_enter_audit(); no alpha-specific change is needed once that
+  series lands. This series should therefore be applied on top of it.
+- Add "parisc: mask compat syscall arguments in syscall_get_arguments()"
+  (new patch 8). Moving argument retrieval into syscall_get_arguments()
+  would otherwise drop the low-32-bit masking parisc previously did
+  inline in its compat audit path, exposing the upper 32 bits of the
+  argument registers to audit (and seccomp) for 32-bit tasks. Mask in
+  the helper instead, before the parisc conversion, so the series stays
+  correct and bisectable.
+
+Changes in v2:
+- Rework the core change per Will Deacon's suggestion: instead of
+  plumbing all six arguments through every architecture's syscall
+  entry path, __audit_syscall_entry() now takes a struct pt_regs *
+  and retrieves the arguments itself via syscall_get_arguments().
+- Per-arch patches now simply pass regs instead of the individual
+  argument registers.
+- Fetch the arguments directly into context->argv, dropping the
+  temporary array.
+
+Ricardo Robaina (14):
+  audit: log all six syscall arguments in the SYSCALL record
+  arm: pass pt_regs to audit_syscall_entry()
+  arm64: pass pt_regs to audit_syscall_entry()
+  csky: pass pt_regs to audit_syscall_entry()
+  microblaze: pass pt_regs to audit_syscall_entry()
+  mips: pass pt_regs to audit_syscall_entry()
+  openrisc: pass pt_regs to audit_syscall_entry()
+  parisc: mask compat syscall arguments in syscall_get_arguments()
+  parisc: pass pt_regs to audit_syscall_entry()
+  sh: pass pt_regs to audit_syscall_entry()
+  sparc64: pass pt_regs to audit_syscall_entry()
+  um: pass pt_regs to audit_syscall_entry()
+  xtensa: pass pt_regs to audit_syscall_entry()
+  audit: rename audit_syscall_entry_regs() to audit_syscall_entry()
+
+ arch/arm/kernel/ptrace.c          |  3 +--
+ arch/arm64/kernel/ptrace.c        |  3 +--
+ arch/csky/kernel/ptrace.c         |  2 +-
+ arch/microblaze/kernel/ptrace.c   |  2 +-
+ arch/mips/kernel/ptrace.c         |  4 +---
+ arch/openrisc/kernel/ptrace.c     |  3 +--
+ arch/parisc/include/asm/syscall.h | 18 ++++++++++++------
+ arch/parisc/kernel/ptrace.c       |  9 ++-------
+ arch/sh/kernel/ptrace_32.c        |  3 +--
+ arch/sparc/kernel/ptrace_64.c     |  4 +---
+ arch/um/kernel/ptrace.c           |  6 +-----
+ arch/xtensa/kernel/ptrace.c       |  4 +---
+ include/linux/audit.h             | 13 ++++---------
+ include/uapi/linux/audit.h        |  2 ++
+ kernel/audit.h                    |  2 +-
+ kernel/auditfilter.c              |  2 ++
+ kernel/auditsc.c                  | 19 ++++++++-----------
+ kernel/entry/syscall-common.c     |  4 +---
+ 18 files changed, 42 insertions(+), 61 deletions(-)
+
+-- 
+2.55.0
 
