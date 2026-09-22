@@ -1,47 +1,47 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D81134A204F
-	for <linux-sh@vger.kernel.org>; Tue, 22 Sep 2026 19:23:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76A854A204F
+	for <linux-sh@vger.kernel.org>; Tue, 22 Sep 2026 19:24:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790105036; cv=none; b=uHoAMN4DetnWc1xHgVuf0lujPdiRTvWn0wtpPwf5KecejZx3rtZNEJ1wae0CSiteO32A7pAKKvgFZE3hXkOxzem5GTed0YKbEn1GKsRmr4fHQ/15/OpZmxvf+nNfPwI+HL7enURDXYs5hzBPZQ1sSrBUDoBCOJv7piEHxlKvpCk=
+	t=1790105053; cv=none; b=ZUKnK4hkOMkyBJHHVfzWRPcPLemgQbo1Y3kE5McN9GKbRN9LIQJX0RXFqWaMPpx41tXhqMh5Tl5S2J9UDzt6Ojz+UG5lDXaYqYDigEolQuy2kxzwu7ekwpDdAMjzQIWFHgPu/yBstfzvRzKq9vx+4adnI3d04Vx/f7prbOX2gqk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790105036; c=relaxed/simple;
-	bh=AlEwOJCqXj75nlY4mRvsGPrbuus/qC7ZFbxnPlHbnpk=;
+	s=arc-20240116; t=1790105053; c=relaxed/simple;
+	bh=1YIRcw6TVMcmgO62i3P5UTqUzmBXzR6bwpjqAvgmaHo=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:content-type; b=Q0Hcs+R3gTunPO0EA1wHDVRlosxNw2wQ0pdZh2P1sQYcqtTRgtjV9lbM7rFBa8P37fTmY7rNjZyT9qGezC/ZEQWYTRnnSwXxMUUNMlwjPIwVs+KQDN6a0KKbZq3hRPwN1SzpAHWP5O/igVWDT+UOInnrriQZIyNiNb/U/fsV5qA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=Oke1sE6e; arc=none smtp.client-ip=170.10.129.124
+	 MIME-Version:content-type; b=SrpjBwv03CNkN8Bd/JKAezBr3FN6v+hnI6u5GS81/926XbRWfmy4jbnqhuQETohDezBu5ntA9KX5hpJ1K1VdcD0L4iGSGx9VStEpAiXjYdgL3G2rl9Kj9iY3djrlCgTrmR7Xt3Qdfck2iHd8HAfgC8OGlWzvZmuegQQSHLCG67k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=dKXOSQAO; arc=none smtp.client-ip=170.10.133.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Oke1sE6e"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="dKXOSQAO"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1790105033;
+	s=mimecast20190719; t=1790105050;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=4g6Pqq5n7M/gwYtRIbDe68QQcgDz6vnWXZj4Z/2+yek=;
-	b=Oke1sE6ec9def9YKwYukEZ4dv8e7UmVvOkX4d/a/t3i34gr9aV/67dVLxPGTdcSFWbf247
-	/d4lM+yz7DPuJONV1kF0UarLlAjOCntkTNVbji89Fj4T3crZMIWgqg6XwS4gE/EPmH8K5A
-	OaQGIz3zhKHjobeaaDeMe9VEXvR2EZA=
-Received: from mx-prod-mc-03.mail-002.prod.us-west-2.aws.redhat.com
+	bh=BCkLKZy59p7aSSwyfXTPaoOl48Jr0ljTw2NZSx5GJk8=;
+	b=dKXOSQAOAD63cpNmSpS6i1p7Pm6kopH0dig3xJ4FtYD4N3yWAWpXIg+jTUwuEW9RFGzcv/
+	tZVpP1OVpzkdApiNkACNTMLSLX7gDFGYrE2WPevVOopBbnabSt+3X0ADcrVfRnPxQLU0ER
+	e82/CB7U8ZmDv1XG2gJrObi3tnN23I0=
+Received: from mx-prod-mc-01.mail-002.prod.us-west-2.aws.redhat.com
  (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
  relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-345-WgDPjhSqNVm4ukglLylNhQ-1; Tue,
- 22 Sep 2026 15:23:50 -0400
-X-MC-Unique: WgDPjhSqNVm4ukglLylNhQ-1
-X-Mimecast-MFC-AGG-ID: WgDPjhSqNVm4ukglLylNhQ_1790105026
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-442-IW0o-oMYNpOyqGDeiDJV9Q-1; Tue,
+ 22 Sep 2026 15:24:06 -0400
+X-MC-Unique: IW0o-oMYNpOyqGDeiDJV9Q-1
+X-Mimecast-MFC-AGG-ID: IW0o-oMYNpOyqGDeiDJV9Q_1790105041
 Received: from mx-prod-int-01.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-01.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.4])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mx-prod-mc-03.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id E3BAE1955E87;
-	Tue, 22 Sep 2026 19:23:45 +0000 (UTC)
+	by mx-prod-mc-01.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 1BC1E1956050;
+	Tue, 22 Sep 2026 19:24:01 +0000 (UTC)
 Received: from wsxc.redhat.corp (headnet04.pony-001.prod.iad2.dc.redhat.com [10.2.32.116])
-	by mx-prod-int-01.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTP id E03C63000223;
-	Tue, 22 Sep 2026 19:23:26 +0000 (UTC)
+	by mx-prod-int-01.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTP id CA19B30001B9;
+	Tue, 22 Sep 2026 19:23:47 +0000 (UTC)
 From: Ricardo Robaina <rrobaina@redhat.com>
 To: audit@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
@@ -87,9 +87,9 @@ Cc: paul@paul-moore.com,
 	peterz@infradead.org,
 	luto@kernel.org,
 	Ricardo Robaina <rrobaina@redhat.com>
-Subject: [PATCH v3 08/14] parisc: mask compat syscall arguments in syscall_get_arguments()
-Date: Tue, 22 Sep 2026 16:20:00 -0300
-Message-ID: <65f32a82d590b11984723fa6f26ff96175679f9a.1790088067.git.rrobaina@redhat.com>
+Subject: [PATCH v3 09/14] parisc: pass pt_regs to audit_syscall_entry()
+Date: Tue, 22 Sep 2026 16:20:01 -0300
+Message-ID: <385724169e030185dc9e0deefb52457ba5581090.1790088067.git.rrobaina@redhat.com>
 In-Reply-To: <cover.1790088067.git.rrobaina@redhat.com>
 References: <cover.1790088067.git.rrobaina@redhat.com>
 Precedence: bulk
@@ -99,54 +99,46 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-Scanned-By: MIMEDefang 3.4.1 on 10.30.177.4
-X-Mimecast-MFC-PROC-ID: 3UVk-ggXPKTkFBAWWYyEonjRR7w63DvTaZA9oPtaU9I_1790105026
+X-Mimecast-MFC-PROC-ID: O_DWYs-zKKQXI4d2OCDBAQnXsA73iNxIzuyZxv9A4qU_1790105041
 X-Mimecast-Originator: redhat.com
 Content-Transfer-Encoding: 8bit
 content-type: text/plain; charset="US-ASCII"; x-default=true
 
-A 32-bit compat task may leave garbage in the upper 32 bits of the
-argument registers. Mask it off in syscall_get_arguments() so that
-in-kernel consumers such as seccomp and audit observe the same values
-the syscall actually used.
+audit_syscall_entry() now takes a pointer to pt_regs and extracts
+the syscall arguments itself via syscall_get_arguments(). Drop the
+individual argument registers from the call and pass regs instead.
 
-This previously happened for audit in the parisc do_syscall_trace_enter()
-compat path; do it in the helper so all callers benefit and to prepare
-for passing pt_regs to audit_syscall_entry().
+Per-argument compat masking is now handled in syscall_get_arguments()
+(see the preceding patch), so it is dropped here; the syscall number
+still needs masking for compat tasks and is left in place.
 
 Signed-off-by: Ricardo Robaina <rrobaina@redhat.com>
 ---
- arch/parisc/include/asm/syscall.h | 18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+ arch/parisc/kernel/ptrace.c | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/arch/parisc/include/asm/syscall.h b/arch/parisc/include/asm/syscall.h
-index c11222798ab2..9d10fada3b48 100644
---- a/arch/parisc/include/asm/syscall.h
-+++ b/arch/parisc/include/asm/syscall.h
-@@ -28,12 +28,18 @@ static inline void syscall_get_arguments(struct task_struct *tsk,
- 					 struct pt_regs *regs,
- 					 unsigned long *args)
- {
--	args[5] = regs->gr[21];
--	args[4] = regs->gr[22];
--	args[3] = regs->gr[23];
--	args[2] = regs->gr[24];
--	args[1] = regs->gr[25];
--	args[0] = regs->gr[26];
-+	unsigned long mask = -1UL;
-+
-+	/* Mask off garbage in the upper 32 bits for compat tasks. */
-+	if (__is_compat_task(tsk))
-+		mask = 0xffffffff;
-+
-+	args[5] = regs->gr[21] & mask;
-+	args[4] = regs->gr[22] & mask;
-+	args[3] = regs->gr[23] & mask;
-+	args[2] = regs->gr[24] & mask;
-+	args[1] = regs->gr[25] & mask;
-+	args[0] = regs->gr[26] & mask;
- }
+diff --git a/arch/parisc/kernel/ptrace.c b/arch/parisc/kernel/ptrace.c
+index 1d9e210702e1..4e62d6bd6466 100644
+--- a/arch/parisc/kernel/ptrace.c
++++ b/arch/parisc/kernel/ptrace.c
+@@ -359,15 +359,10 @@ long do_syscall_trace_enter(struct pt_regs *regs)
  
- static inline void syscall_set_arguments(struct task_struct *tsk,
+ #ifdef CONFIG_64BIT
+ 	if (!is_compat_task())
+-		audit_syscall_entry(regs->gr[20], regs->gr[26], regs->gr[25],
+-				    regs->gr[24], regs->gr[23]);
++		audit_syscall_entry_regs(regs->gr[20], regs);
+ 	else
+ #endif
+-		audit_syscall_entry(regs->gr[20] & 0xffffffff,
+-			regs->gr[26] & 0xffffffff,
+-			regs->gr[25] & 0xffffffff,
+-			regs->gr[24] & 0xffffffff,
+-			regs->gr[23] & 0xffffffff);
++		audit_syscall_entry_regs(regs->gr[20] & 0xffffffff, regs);
+ 
+ 	/*
+ 	 * Sign extend the syscall number to 64bit since it may have been
 -- 
 2.55.0
 
