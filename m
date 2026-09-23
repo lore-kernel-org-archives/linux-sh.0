@@ -1,86 +1,56 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CDFAD481A82;
-	Wed, 23 Sep 2026 13:43:41 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31A1970836;
+	Wed, 23 Sep 2026 17:00:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790171022; cv=none; b=tuuggu2TYkDkJpjtI9ea/370KK1LckH8LynCBjjV9j9EA2PsD2tkiHVf41R6wD9dCYCnovpiHz0CTzEEbGeyAm20IBRroo8XRgF2Vp3IOTRswPCJaogxEAEWkF58RIj5o2ug6BMal3E1IU6iE/ELuO3sEYvi1pSChY8fKy3gTho=
+	t=1790182839; cv=none; b=MobyNvYwRQLQVs3d2jmwfOmqfXkA3Dn7IWRNivNQHCCT8pZNN6DBo3CDeTxTt3AoUpSR9UEXwC/rlLEBFKqFVfrCyZKye7XRCyOUCv2YL/2TNIc3laLCOB11h/GUhSGb7AzGfm0L0c3FlOg9T4zw45qnk3hFXWE2gOcdMbrS9V8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790171022; c=relaxed/simple;
-	bh=263Kz0c63eAZU3G8zs+kKv0GGoxPDsYu96TYT+oIxWM=;
+	s=arc-20240116; t=1790182839; c=relaxed/simple;
+	bh=upvQ28kj+Zot6l2sr0FocrdOCH6thCSzV9pOZTXEDnM=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=KCw0YP2UM7z2/OA9I1D9FlfS8c/xu1u6+QsRebnhUFYULCwuB+Sv+qIaYaab3zKJnvsVjmfmILYttMM3DnbPQNFTGvB6kJqqgt7A86l/50uj0hJUYHOyG3qaYs8BHrzQPNeA718pwXRvTJGkzDEX1sbTJmhU8qTixWYO8BzOYBI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=odmxHHcp; arc=none smtp.client-ip=100.103.45.18
+	 Content-Type:Content-Disposition:In-Reply-To; b=TkrIZySZvYbJMr5RQoQOBChsG6vjclteCnht7DMiYPX4iXqr0ETnQuSGOaWD8nmQPW9HVxNS0isPeI22FqkGMBvVsIJYqIZnhhc/8pW3kHUi9W7k9+M1EeOieip1Jeu+pKVMGziJuJH0H59r+TpXSCItdVESgkhm6cfp0YjzsXw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=O3SWeuyx; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="odmxHHcp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 73A5C1F000FF;
-	Wed, 23 Sep 2026 13:43:19 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="O3SWeuyx"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 03A7C1F000FF;
+	Wed, 23 Sep 2026 17:00:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790171021;
-	bh=6xDgTcRD17pMZUKjE+n6zU9uG96i5536rlsM5iR5TPE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=odmxHHcphfJU/2dNQHFnLCZHx7qUsOTN2unPx/tuy1nXDSyLZmeYwR7/Rjr7jfT77
-	 QnuCynM47lsKoqJC1y97i+U1JvZkZUSXp9zkXwbycdpb9XJ+pApXutz7lCcNFAJ3vm
-	 vBWH4cHO+xn5wlHRsn6xzSZJ9/9k5KZaXvlcM22x8ZHXT/+6kz62RqW65s76Lppcuz
-	 F5EUgyH8Kf2PVj50ygyL2QutGkc1XBv8xpCS/e6hY65wLgFvWhIpVu4lKscZxay6Tm
-	 z5HHhYChWlwV8Hq1DsRMOKqUEfxwlsCQ4YbcBWu/p5tcGD9PmvWztotX9Xy/LdT1Kq
-	 9Ab6m9tid+4dA==
-Date: Wed, 23 Sep 2026 14:43:16 +0100
-From: "Lorenzo Stoakes (ARM)" <ljs@kernel.org>
-To: "David Hildenbrand (Arm)" <david@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Zi Yan <ziy@nvidia.com>, 
-	Baolin Wang <baolin.wang@linux.alibaba.com>, "Liam R. Howlett" <liam@infradead.org>, 
-	Nico Pache <nico.pache@linux.dev>, Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>, 
-	Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>, 
-	Usama Arif <usama.arif@linux.dev>, Kiryl Shutsemau <kas@kernel.org>, Guo Ren <guoren@kernel.org>, 
-	Brian Cain <bcain@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, 
-	Dinh Nguyen <dinguyen@kernel.org>, Simon Schuster <schuster.simon@siemens-energy.com>, 
-	Jonas Bonn <jonas@southpole.se>, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, 
-	Stafford Horne <shorne@gmail.com>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Paul Walmsley <pjw@kernel.org>, 
-	Palmer Dabbelt <palmer@dabbelt.com>, Albert Ou <aou@eecs.berkeley.edu>, 
-	Alexandre Ghiti <alex@ghiti.fr>, Russell King <linux@armlinux.org.uk>, 
-	Vineet Gupta <vgupta@kernel.org>, Michal Simek <monstr@monstr.eu>, Chris Zankel <chris@zankel.net>, 
-	Max Filippov <jcmvbkbc@gmail.com>, Will Deacon <will@kernel.org>, 
-	"Aneesh Kumar K.V" <aneesh.kumar@kernel.org>, Nick Piggin <npiggin@gmail.com>, 
-	Peter Zijlstra <peterz@infradead.org>, "David S. Miller" <davem@davemloft.net>, 
-	Andreas Larsson <andreas@gaisler.com>, Richard Henderson <richard.henderson@linaro.org>, 
-	Matt Turner <mattst88@gmail.com>, Magnus Lindholm <linmag7@gmail.com>, 
-	Catalin Marinas <catalin.marinas@arm.com>, Mark Rutland <mark.rutland@arm.com>, 
-	Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, 
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>, "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, 
-	Helge Deller <deller@gmx.de>, Madhavan Srinivasan <maddy@linux.ibm.com>, 
-	Michael Ellerman <mpe@ellerman.id.au>, "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>, 
-	Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, 
-	Alexander Gordeev <agordeev@linux.ibm.com>, Christian Borntraeger <borntraeger@linux.ibm.com>, 
-	Sven Schnelle <svens@linux.ibm.com>, Richard Weinberger <richard@nod.at>, 
-	Anton Ivanov <anton.ivanov@cambridgegreys.com>, Johannes Berg <johannes@sipsolutions.net>, 
-	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>, 
-	Arnd Bergmann <arnd@arndb.de>, Vlastimil Babka <vbabka@kernel.org>, 
-	Mike Rapoport <rppt@kernel.org>, Suren Baghdasaryan <surenb@google.com>, 
-	Michal Hocko <mhocko@suse.com>, Jason Gunthorpe <jgg@ziepe.ca>, 
-	John Hubbard <jhubbard@nvidia.com>, Peter Xu <peterx@redhat.com>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Shakeel Butt <shakeel.butt@linux.dev>, 
-	Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>, linux-mm@kvack.org, 
-	linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, 
-	linux-m68k@lists.linux-m68k.org, linux-openrisc@vger.kernel.org, linux-sh@vger.kernel.org, 
-	linux-riscv@lists.infradead.org, linux-arm-kernel@lists.infradead.org, 
-	linux-snps-arc@lists.infradead.org, linux-arch@vger.kernel.org, sparclinux@vger.kernel.org, 
-	linux-alpha@vger.kernel.org, loongarch@lists.linux.dev, linux-mips@vger.kernel.org, 
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, 
-	linux-um@lists.infradead.org, Hugh Dickins <hughd@google.com>, Qi Zheng <qi.zheng@linux.dev>, 
-	linux-doc@vger.kernel.org
-Subject: Re: [PATCH v4 11/12] mm: make userland page table freeing RCU-safe
-Message-ID: <arPXb084Xbty9O4_@gremlin>
-References: <20260922-rcu-pagetable-freeing-v4-0-fe1ad1f1e303@kernel.org>
- <20260922-rcu-pagetable-freeing-v4-11-fe1ad1f1e303@kernel.org>
- <72d1548a-a4ee-4832-b2ab-4bc82f1933f8@kernel.org>
- <arOWZCeV8FrkAvhK@gremlin>
- <802d3999-95fe-4a09-89b4-d01b60f8e963@kernel.org>
- <arO7lSy71meks_sW@gremlin>
- <c62bbd96-d949-4c57-a3c9-ebec14744f35@kernel.org>
+	s=k20260515; t=1790182834;
+	bh=oYrY96BkmNrksWcvVD7C1QohSxV2WmGeTWj6WJeQNwk=;
+	h=Date:From:To:Cc:Subject:Reply-To:References:In-Reply-To;
+	b=O3SWeuyxeCA33WKiVgWynxkaK6WXM/9PzNvKGGJvHYgMtZ7fzf5wNbGABcm2PyPj0
+	 ulo+tAaMqePdNeRO4+Z12Obay4r+X761lYIAXX7LBrFpH1jyxy/IcTr3YvwTboZroO
+	 tHqehtSNX4OCsUOvOroNHB5MqUtLlAWLWuyWJ/jPw7b+0IN20cMVOt8NDPbZXBh0uj
+	 6TQhIAVJGZD1sl840y39G+sYKSRYOGPkxAYleHfPbZOxM9hfcg3XAzKEEUnh3MCz7U
+	 WBGGn5AXMVNwklMPoO+X82EHE3INiTFAxKTO0GDKUZXxF9WmRvptntaEd3aJ7hfXe1
+	 HTGdL2PEWqJxA==
+Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
+	id AFC4ACE1598; Wed, 23 Sep 2026 10:00:33 -0700 (PDT)
+Date: Wed, 23 Sep 2026 10:00:33 -0700
+From: "Paul E. McKenney" <paulmck@kernel.org>
+To: David Laight <david.laight.linux@gmail.com>
+Cc: Bradley Morgan <brads@mainlining.org>, frederic@kernel.org,
+	neeraj.upadhyay@kernel.org, boqun@kernel.org, joelagnelf@nvidia.com,
+	rcu@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org,
+	Vineet Gupta <vgupta@kernel.org>,
+	linux-snps-arc@lists.infradead.org,
+	Russell King <linux@armlinux.org.uk>,
+	linux-arm-kernel@lists.infradead.org, Guo Ren <guoren@kernel.org>,
+	linux-csky@vger.kernel.org,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org, Chris Zankel <chris@zankel.net>,
+	Max Filippov <jcmvbkbc@gmail.com>, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/6] lib: Add two-byte cmpxchg emulation function
+Message-ID: <93f2bb33-c5ec-4836-8b1b-d0ee131be5b7@paulmck-laptop>
+Reply-To: paulmck@kernel.org
+References: <20260911192540.20983-1-brads@mainlining.org>
+ <20260911192540.20983-2-brads@mainlining.org>
+ <20260923114313.75494970@pumpkin>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -89,41 +59,59 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <c62bbd96-d949-4c57-a3c9-ebec14744f35@kernel.org>
+In-Reply-To: <20260923114313.75494970@pumpkin>
 
-On Wed, Sep 23, 2026 at 03:38:53PM +0200, David Hildenbrand (Arm) wrote:
-> On 9/23/26 13:48, Lorenzo Stoakes (ARM) wrote:
-> > On Wed, Sep 23, 2026 at 11:13:36AM +0200, David Hildenbrand (Arm) wrote:
-> >> On 9/23/26 11:06, Lorenzo Stoakes (ARM) wrote:
-> >>>
-> >>> It is the final piece that makes that the case, so I think it's OK to allow
-> >>> oneself a nice subject line? No? :)
-> >>
-> >> Just took me longer to figure out if I am missing something important.
-> >>
-> >> E.g.,
-> >>
-> >> 	"mm: remove unused RCU-unsafe user page table freeing"
-> >>
-> >> would have been clearer to me. Anyhow, just stumbled over it, I don't care too much.
-> >
-> > Compromise on:
-> >
-> > mm: now userland pgtable freeing is safe, remove unused bits
-> >
-> > ?
->
-> Maybe something along those lines, yes
->
-> 	mm: userland pgtable freeing is RCU-safe now, remove leftover bits
+On Wed, Sep 23, 2026 at 11:43:13AM +0100, David Laight wrote:
+> On Fri, 11 Sep 2026 19:25:34 +0000
+> Bradley Morgan <brads@mainlining.org> wrote:
+> 
+> > cmpxchg_emu_u8() emulates one-byte cmpxchg() in terms of four-byte
+> > cmpxchg() for the architectures lacking native one-byte atomics.
+> > The same architectures also lack native two-byte cmpxchg(), where
+> > such an operation is not supported and either fails to compile via
+> > BUILD_BUG() or fails to link, because the bad pointer sentinels
+> > these architectures declare are never defined.
+> > 
+> > Add cmpxchg_emu_u16(), the two-byte sibling. It reads the enclosing
+> > word with READ_ONCE(), splices the two target bytes through a union
+> > and loops on cmpxchg() of the full word until the compare succeeds.
+> > Like cmpxchg_emu_u8() it is fully ordered.
+> > 
+> > The Kconfig symbol gating this file is renamed from
+> > ARCH_NEED_CMPXCHG_1_EMU to ARCH_NEED_CMPXCHG_1_2_EMU, as it now
+> > selects both the one-byte and the two-byte emulation.
+> > 
+> > Suggested-by: Paul E. McKenney <paulmck@kernel.org>
+> > Signed-off-by: Bradley Morgan <brads@mainlining.org>
+> > ---
+> >  arch/Kconfig                |  2 +-
+> >  arch/arc/Kconfig            |  2 +-
+> >  arch/arm/Kconfig            |  2 +-
+> >  arch/csky/Kconfig           |  2 +-
+> >  arch/sh/Kconfig             |  2 +-
+> >  arch/xtensa/Kconfig         |  2 +-
+> >  include/linux/cmpxchg-emu.h |  1 +
+> >  lib/Makefile                |  2 +-
+> >  lib/cmpxchg-emu.c           | 35 ++++++++++++++++++++++++++++++++---
+> >  9 files changed, 40 insertions(+), 10 deletions(-)
+> > 
+> > diff --git a/arch/Kconfig b/arch/Kconfig
+> > index 3bb2e568f5b1..d56064797e09 100644
+> > --- a/arch/Kconfig
+> > +++ b/arch/Kconfig
+> > @@ -1817,7 +1817,7 @@ config CC_HAS_SANE_FUNCTION_ALIGNMENT
+> >  	# strict alignment always, even with -falign-functions.
+> >  	def_bool CC_HAS_MIN_FUNCTION_ALIGNMENT || CC_IS_CLANG
+> >  
+> > -config ARCH_NEED_CMPXCHG_1_EMU
+> > +config ARCH_NEED_CMPXCHG_1_2_EMU
+> 
+> Is it actually worth the churn of changing the name?
+> Maybe just a comment that say it adds both 1 and 2 byte emulation?
 
-Ack OK.
+The churn is only a few lines of code, and the potential confusion from
+the name would be forever.  I agree that if we were stuck with the old
+name, the comment would help, but why not just rip the bandage off and
+be done with it?  ;-)
 
->
-> --
-> Cheers,
->
-> David
-
---
-Cheers, Lorenzo
+							Thanx, Paul
