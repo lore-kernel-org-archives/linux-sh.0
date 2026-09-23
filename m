@@ -1,33 +1,33 @@
-Received: from mta1.migadu.com (out-253.mta1.migadu.com [95.215.58.253])
+Received: from mta0.migadu.com (out-149.mta0.migadu.com [91.218.175.149])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BAD5323D2A1
-	for <linux-sh@vger.kernel.org>; Wed, 23 Sep 2026 04:39:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.253
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5451944213A
+	for <linux-sh@vger.kernel.org>; Wed, 23 Sep 2026 06:16:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.149
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790138381; cv=none; b=LTsPWIQiokZKkaSM0cFnDD5GrriP/pfSc1OjQIACg9iCD777rLqKsMeSXcqc8OySWPmTtpDXfzUTgqb7lagALsCDeuJ3cbcGtfSA8UnvEvFTMP0Ggc53ZCGDKPglsKl1F+OAEDp9Id094FC0ixLGl91tQptYDmsLvlP9G6Nnp0E=
+	t=1790144168; cv=none; b=p7kk1fP1vKFitP4VwoAUNxQDVorffGuCdoD8mMeslX/WExYgErt/3r/H+0PMfqeMqZXq50VqQtGgGcXBk4wmJtKZN/HoGXHM1d/OMfJmbRCgc1po20RbtYCynhBCnlSbUDjLJrJ0+3OFKXLQfKio5u6QuUqDal2ayDq99/iixvE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790138381; c=relaxed/simple;
-	bh=iSNouMXA3RwlruRYR9UspqX4v90LzLOpRZaDkTpRMn8=;
+	s=arc-20240116; t=1790144168; c=relaxed/simple;
+	bh=iNN52+OjGBWKHuNTOEPyALCLpNm9HUlYo8ccDdYusP4=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=tAZxX6ebApidwbKhVh6OguZt140LBSp6L3qTCirpxcD+E7vAYWerUfgbvyFaFjvX9R42FrxPOewNMgjapU7Lks+j+ZMXcWzcd0n+GEW4tfy3c5saiaWQbMsEQZU5A7GDbEVjtgy4MTaSINfwwkIXNTPL1sdoWEoEDiQbribKTXA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=R9I0X+KW; arc=none smtp.client-ip=95.215.58.253
+	 MIME-Version:Content-Type; b=qLT/DKDWgl8qxphClAfXAbK31MsDXwYSKNMG6e98FKfSCeKqr7FG3t4smDLKtvmL17R5fFerbxHV8ShLB5O9uhLMJw6RHEKm29hR5QXDW7DFt383s9zvOT0CCDV7wInByrclYmo2pYKuRUswdHd0qqlF/+4j/LQesrUtZgkY4Ew=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=gag9wr/2; arc=none smtp.client-ip=91.218.175.149
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="R9I0X+KW"
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="gag9wr/2"
 X-Envelope-To: linux-sh@vger.kernel.org
-DKIM-Signature: a=rsa-sha256; bh=iSNouMXA3RwlruRYR9UspqX4v90LzLOpRZaDkTpRMn8=;
+DKIM-Signature: a=rsa-sha256; bh=iNN52+OjGBWKHuNTOEPyALCLpNm9HUlYo8ccDdYusP4=;
  c=simple/simple; d=linux.dev;
  h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
- t=1790138376; v=1; x=1790743176;
- b=R9I0X+KWGBE/vaDU7Ovh8r1ZnCbE8G0KoTlLMRHkS4uir8Qc8Jlg/FHj/UKQQ9vDiLa0R3/6
- CYB/ENGaBD8cL7inF0yRGc4Zo+Qg1i+33czD3MrJq68DVns18LKlpJWzyG0YmSYZyz0CpnqQ0/g
- AbdpL0U++ODsZ+08yeuu093s=
+ t=1790144164; v=1; x=1790748964;
+ b=gag9wr/2m9nlYMg94wqKX0sL+xHtX2PQLyIL0XDY/IEf6zvjcqM4ToozQDjaYNC0SbsW7uX0
+ h9u+YxvHsPkhrZniHNejScthRlTvUpSuJw+p86CP75SstPEgn2FWeIj1kXX89now5P/OA7ZLzps
+ fk4oVuIAdp5yGiKT1mU1fOEY=
 X-Envelope-To: linux-sh@vger.kernel.org
-Received: by smtp.migadu.com with ESMTPS id 8a4b30de2f7f9df3;
-	Wed, 23 Sep 2026 04:39:35 +0000
-X-Mizu-Trace-ID: 8a4b30de2f7f9df3
+Received: by smtp.migadu.com with ESMTPS id 4b4ce70d101944f5;
+	Wed, 23 Sep 2026 06:16:01 +0000
+X-Mizu-Trace-ID: 4b4ce70d101944f5
 X-Migadu-Flow: FLOW_OUT
 From: Lance Yang <lance.yang@linux.dev>
 To: ljs@kernel.org
@@ -129,12 +129,12 @@ Cc: akpm@linux-foundation.org,
 	hughd@google.com,
 	qi.zheng@linux.dev,
 	linux-doc@vger.kernel.org
-Subject: Re: [PATCH v4 02/12] mm: enable MMU_GATHER_RCU_TABLE_FREE for most 2-level architectures
-Date: Wed, 23 Sep 2026 12:39:26 +0800
-Message-ID: <20260923043926.76397-1-lance.yang@linux.dev>
+Subject: Re: [PATCH v4 03/12] mm: enable MMU_GATHER_RCU_TABLE_FREE for MMU riscv
+Date: Wed, 23 Sep 2026 14:15:51 +0800
+Message-ID: <20260923061551.84398-1-lance.yang@linux.dev>
 X-Mailer: git-send-email 2.49.0
-In-Reply-To: <20260922-rcu-pagetable-freeing-v4-2-fe1ad1f1e303@kernel.org>
-References: <20260922-rcu-pagetable-freeing-v4-2-fe1ad1f1e303@kernel.org>
+In-Reply-To: <20260922-rcu-pagetable-freeing-v4-3-fe1ad1f1e303@kernel.org>
+References: <20260922-rcu-pagetable-freeing-v4-3-fe1ad1f1e303@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -145,22 +145,27 @@ Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 
-On Tue, Sep 22, 2026 at 04:35:33PM +0100, Lorenzo Stoakes (ARM) wrote:
->Commit e3ecf7c7d082 ("mm: pgtable: convert some architectures to use
->tlb_remove_ptdesc()") updated a number of architectures from using
->pagetable_dtor() + tlb_remove_page_ptdesc() to using tlb_remove_ptdesc() in
->__pte_free_tlb().
+On Tue, Sep 22, 2026 at 04:35:34PM +0100, Lorenzo Stoakes (ARM) wrote:
+>Currently riscv gates MMU_GATHER_RCU_TABLE_FREE on CONFIG_SMP and
+>CONFIG_MMU.
 >
->This is meaningful as tlb_remove_ptdesc() allows for RCU page table
->freeing if CONFIG_MMU_GATHER_RCU_TABLE_FREE is specified.
+>Commit 69be3fb111e7 ("riscv: enable MMU_GATHER_RCU_TABLE_FREE for SMP &&
+>MMU") enabled CONFIG_MMU_GATHER_RCU_TABLE_FREE for CONFIG_SMP, CONFIG_MMU
+>riscv builds.
 >
->The csky, hexagon, nios2, openrisc, sh (except X2) and m68k-sun3
->architectures all have 2 levels of page tables, so the only page tables
->ever freed by mmu_gather are PTEs, so this update suffices to ensure that
->every page table freed by the mmu_gather mechanism is freed under RCU.
+>This is expressly for the safety of GUP-fast walkers (CONFIG_HAVE_GUP_FAST
+>is enabled if CONFIG_MMU is enabled).
 >
->Therefore, update all of these architectures to select
->CONFIG_MMU_GATHER_RCU_TABLE_FREE.
+>Naturally a single core system does not encounter issues with software page
+>table walkers being correctly synchronised across cores, as there is only a
+>single core.
+>
+>However, CONFIG_PREEMPT_RCU is still available on a riscv UP system, so for
+>a future RCU-only page table walker, this guarantee is required to prevent
+>concurrent page table teardown.
+>
+>All page table freeing is already done via tlb_remove_ptdesc() so the
+>conditions of CONFIG_MMU_GATHER_RCU_TABLE_FREE are already met.
 >
 >This forms part of an overall effort to switch every architecture to this
 >mode.
@@ -169,6 +174,7 @@ On Tue, Sep 22, 2026 at 04:35:33PM +0100, Lorenzo Stoakes (ARM) wrote:
 >Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
 >---
 
-Nothing jumped out at me,
+Yeah, for RISC-V, page-table freeing already goes through
+tlb_remove_ptdesc() :) Tested on QEMU, no issues seen :)
 
-Reviewed-by: Lance Yang <lance.yang@linux.dev>
+Tested-by: Lance Yang <lance.yang@linux.dev>
