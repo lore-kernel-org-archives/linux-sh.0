@@ -1,160 +1,128 @@
-Received: from mail-wr2-f24.google.com (mail-wr2-f24.google.com [74.125.225.88])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C11C03939B0
-	for <linux-sh@vger.kernel.org>; Sat, 26 Sep 2026 18:39:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.88
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 05685367B90;
+	Sat, 26 Sep 2026 18:43:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790447984; cv=none; b=CVcIHP2Tu0QqHS1fPfADXTd/nnR827dIJyZxZ4yB6DTMFefHQfnobJDpE3tcQNqKWIYTGn+5eWATIdMNyS9+gAiC+ktxD+SoJB5/UcCgKS7cg8ZQ42vGHhIyVZ9Wp2mQrh0lBz1X16LAxvIbMKZnQYhLLzmDj/doH1M8lu+osvg=
+	t=1790448240; cv=none; b=WSUexuMTg/kj38l6W8YoZBnYcCbSrMxJEpc+nWHrunW2/xHs+63is9bcy/umc1wuJdfTp4jQvnx5aC4kRPKywe3SIW7OFDZZugj5uSV3A4bQ//2UHfu9eWjxihgsoLATlfSS0VVXOItCZQHbU4yV+JNialF8uP3ANk54B2Z+Ft0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790447984; c=relaxed/simple;
-	bh=LcwF7zVNiLm08Sb/WHKFhLpdvT9/kw7C54o+FBoO4v0=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=G6sxZMfHQUwjEBb6umyTwKRjHF5P/UpaiqdL0REZaUHBXW0HelNO2KEO9gbEI/BdPiwJ+c/VFtmMKEiOea+7LW1X2wtc5kNQC6s2GPBdkSMwbpbIx8c/uYBP2/lDK+pYltQTIhxq5t2jmtNXf2p6gXzrXrzVRWTPn2dgsCSTfU4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=C7anAAdo; arc=none smtp.client-ip=74.125.225.88
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1790448240; c=relaxed/simple;
+	bh=QIURmYUXBk4CGBkNo+YfBoc/rv9JGk/MEDxiCObHAY4=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=iTGrcv6UvS8n7I8mrmws7Q9Xkic7ZBzjUxIKFnCdSUZx15Pl0ANAIM3lZsNdZ0jlvgLzR2a+1R30xz2XByZRdVqF9NDXeVOgiq76NdSasiIzCvud/i/iF+M4QGe7Xj2cP9uy86qEOXHcWwF5Y6JxXyym3aDurqg8Zhm2WRxTuws=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=DMpb17R7; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="C7anAAdo"
-Received: by mail-wr2-f24.google.com with SMTP id ffacd0b85a97d-482f63546c3so1481517f8f.1
-        for <linux-sh@vger.kernel.org>; Sat, 26 Sep 2026 11:39:40 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1790447978; x=1791052778; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=l6Ei7iaMC8FezBDOc40UN+3dnzVcKepmpa+3tte5LhY=;
-        b=C7anAAdomIEvauBcMjxaAm8afE31r68OW2InWTkjAoiSBvDDIeHJulWPS1Xyoi+NUH
-         hKVD4CgDUYmtasmPm9jVzLYhnTGebmfSkv6L6CnYO+AtFyiTejnr/WzretdZU56SHMRE
-         apeL0ZW9d77wvvvbk18rzM8kNwgXrY3srvcXQwwoxKIAjgk+CGBQVXhlYpHAyTKNOy86
-         gD4g9EkOo3CppCTdouXpYFLNOTr1kyIXL9Bm5TJP7Pnk5yeQs2nNeV/+TUw4nifkaa95
-         j39mWW1MJKmF3m9sx9ej/rGmHOxuSeMPxqLUv1hsP+PmprK0TN37biIqfDg/O01xIKBn
-         guzw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790447978; x=1791052778;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=l6Ei7iaMC8FezBDOc40UN+3dnzVcKepmpa+3tte5LhY=;
-        b=jcl9d3hbfNFfb6/2YeCdROUdBiuqMteEHfRZHB6dl7ewVv6XNNBExH+2bdn1wdeuFL
-         x8qgD0Vm+wXAco6+M3Xb4n4So63bDjo1d01lQ0UAtJNIbV3wbO1moF+gYSLLhyVk/veg
-         Z7z2oKhyriwfPx6ghgqWOdEbmktiaOrONHykdvL65EcyntgI6O9ymNhq0hGgd6X0Vi7m
-         VcsA1nHkTPUwC6JYS5xzHmm/gsdz0NoUkwJIaOc4yuLQoTtfrWiyxHXokFxAIw40lZ0r
-         l1CulVOORBUAGaguHdJ6sKiwLTnAKJYtxXl/tC7OXrpl3Mhdkx6SPY9X9HSWYkuYFBEZ
-         U11g==
-X-Gm-Message-State: AFq9FYILRwnGnKUC7mpVXmQeLG4+cxGYEn2BfNtI9PPZl3D4MWQrxjGZ
-	PVsFz3czYJ4meCfw6KAP6XXKDmwsgiy+Uu10PkFr6H4VSEIXx3zTYJIT
-X-Gm-Gg: AYBFou0NF2K177kvlLWVLF5QL1D1Oe+q/zBQtJdYNy4nBxpuexBhOFnBJKEHS68CKYt
-	4SrQ/SLgNRZZ4QbvKWaENQ+N8WaXq0TnazyMXuZIMMgt7VHxVGZN9iIfu5/qdTr83u0MVP70vEn
-	fvDIT4fwT1A0G0A3cS4HtQmNV9ZSWiHxl3Yr4yeLov5faq8cJqv3zKjGB6cAdjGNKNJbQkOR4cR
-	dEtnhamIhLUgnfNWK9qRi0KuNaWG40906snOEVkTCSdofXTSbvAw2/hsRRRXN8xokkVXKHP7N5P
-	y+bBmEnpmnOWmFFNgNwltfBe8YY8W4hz4A80Rxv8UNAUi2Nq+hN1TinLGFfDwI94DQ2MsZI5dVB
-	Dg3bDTNtPc0bDRS+bpnAU9TvKUQN+8KXSkt9hW6l4n5cuHS/hw0oOkfxXiez9G4PCRKukA2TvVo
-	hmOWhzB5N+LRFA7RTz3ho5QwIr+tKL4NPsXMZyX/ctb+8M9t44kBidqMSEhJm3bM8SfJupZ00CS
-	vf21sheMKPaNYcnsRBDdjtdYrLavpb5pM9702FjohIHx5Tw4zvGulHRVGYG95w3joJRhJhjK+fP
-	QLcZ7TU67J5/Sp0Ny/kUNHuqD/6lMfWIyiLrof70wKqbJ7kb7g/fV+4VaC+XXOA/MELCJLr9lXS
-	6SVo=
-X-Received: by 2002:a05:6000:420d:b0:487:14b6:b1be with SMTP id ffacd0b85a97d-4887172e3ffmr17724486f8f.25.1790447977972;
-        Sat, 26 Sep 2026 11:39:37 -0700 (PDT)
-Received: from localhost.localdomain (dynamic-2a02-3100-b162-c701-4960-a998-3de8-2fce.310.pool.telefonica.de. [2a02:3100:b162:c701:4960:a998:3de8:2fce])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4887a648895sm15430376f8f.28.2026.09.26.11.39.36
-        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
-        Sat, 26 Sep 2026 11:39:36 -0700 (PDT)
-From: Karl Mehltretter <kmehltretter@gmail.com>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org,
-	Muchun Song <muchun.song@linux.dev>,
-	Oscar Salvador <osalvador@suse.de>,
-	David Hildenbrand <david@kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	linux-mm@kvack.org,
-	linux-kernel@vger.kernel.org,
-	Karl Mehltretter <kmehltretter@gmail.com>
-Subject: [PATCH 2/2] sh: mm: align hugetlb mappings to the huge page size
-Date: Sat, 26 Sep 2026 20:39:04 +0200
-Message-Id: <20260926183904.76186-3-kmehltretter@gmail.com>
-X-Mailer: git-send-email 2.39.5 (Apple Git-154)
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="DMpb17R7"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=ZRqdnQVYOWo/r4+FEgARvCAFTE8PSP6/Q+C1nHisg48=; t=1790448237;
+	x=1791053037; b=DMpb17R7ahwBf2TPJAWOlB41YYPtIrB2D222YhWIfQgWVVnZ5cg5zJZKAnsXo
+	cV2j+q5x3X6zxckT9EXUoU6I3xOXzgISe4Rmd1MDZKJ7echI32Hkjs7jGooPbnHbC8Q4e+F3qTI7B
+	78Lr9VRriiOBx2SS6kk/Qe4Af2VGlcWPvztju/HybRuTVrF40Dv9GXCEkchkAwgcyjNrQWxDVHynK
+	m6aDmuoUH5dDSs9rvlEo5zJx25FDM/qN7OHatJ2FVsZDIBNTfbXBLkLmJuWV+capb9npOXC0K3/+C
+	+3UzaB0algKrjBsNJjRd/PkdhhvtsAiZ1bV+TqlzKlP5owofYA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.100)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1xAXNC-00000000zck-2x3m; Sat, 26 Sep 2026 20:43:46 +0200
+Received: from dynamic-002-245-050-003.2.245.pool.telefonica.de ([2.245.50.3] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.100)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1xAXNC-000000022yM-1ytU; Sat, 26 Sep 2026 20:43:46 +0200
+Message-ID: <9b75aa51e19f9c0f5c97ac02cfc0948ab5bbf279.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/2] sh: mm: fix hugetlb on SH-4
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, Muchun Song <muchun.song@linux.dev>, Oscar
+ Salvador <osalvador@suse.de>, David Hildenbrand <david@kernel.org>, Andrew
+ Morton	 <akpm@linux-foundation.org>, linux-mm@kvack.org,
+ linux-kernel@vger.kernel.org
+Date: Sat, 26 Sep 2026 20:43:45 +0200
 In-Reply-To: <20260926183904.76186-1-kmehltretter@gmail.com>
 References: <20260926183904.76186-1-kmehltretter@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-mmap(MAP_HUGETLB) on SH4 can return an address which is not aligned to
-the huge page size. In a QEMU r2d guest with 64 KiB huge pages, a
-two-page mapping placed after a single 4 KiB mapping lands at
-0x29558000, and process exit then hits the alignment check in
-__unmap_hugepage_range():
+Hi Karl,
 
-  kernel BUG at mm/hugetlb.c:5215!
-  Kernel BUG: 003e [#1]
-  PC is at __unmap_hugepage_range+0x3a4/0x424
-  PR is at __zap_vma_range+0xa28/0xa80
+On Sat, 2026-09-26 at 20:39 +0200, Karl Mehltretter wrote:
+> Muchun Song noted in the review of the Arm hugetlb alignment fix [1]
+> that SuperH has the same arch_get_unmapped_area() gap. Reproducing it
+> in QEMU turned up a second, older bug that corrupts memory once the
+> mappings are aligned.
+>=20
+> Patch 1 fixes the page size in hugetlb PTEs. pte_mkhuge() ORs the huge
+> size into the base page size bits, so 64 KiB huge pages over 4 KiB
+> pages are loaded into the TLB as 1 MiB pages. User writes then land in
+> unrelated kernel memory. This dates back to the start of git history.
+>=20
+> Patch 2 aligns hugetlb mappings to the huge page size. Without it
+> mmap(MAP_HUGETLB) can return an address that is not aligned to the huge
+> page size, and process exit hits the BUG_ON() in
+> __unmap_hugepage_range(). This is a 6.13
+> regression.
+>=20
+> Patch 1 goes first because patch 2 alone makes the corruption reachable
+> through a plain mmap(). Both are marked for stable.
+>=20
+> Tested on QEMU r2d (SH7751R, rts7751r2dplus_defconfig plus HUGETLBFS
+> with 64 KiB huge pages, gcc 15.2) on top of fddfc3ec3179. A test init
+> maps two huge pages with the default and legacy layouts and with
+> MAP_FIXED, writes and reads back every 4 KiB, mprotect()s the mapping
+> read-only and back, and checks a COW write in a forked child:
+>=20
+>   kernel          MAP_FIXED       default/legacy mmap
+>   base            memory corrupt  misaligned, BUG at mm/hugetlb.c:5215
+>   patch 1         pass            misaligned, BUG
+>   patches 1+2     pass            pass
+>=20
+> SH-X2 (X2TLB) is only build tested (r7785rp_defconfig with 64 KiB huge
+> pages).
+>=20
+> QEMU's SH-4 TLB emulation flushes only the first 4 KiB of a 64 KiB or
+> 1 MiB entry when the entry is dropped [2]. Keep that in mind when
+> testing hugetlb on QEMU.
+>=20
+> [1] https://lore.kernel.org/r/5AB6FE85-4CB9-41EF-A700-BC5E071F29F5@linux.=
+dev
+> [2] https://gitlab.com/qemu-project/qemu/-/issues/4598
+>=20
+> Karl Mehltretter (2):
+>   sh: mm: replace the page size bits in pte_mkhuge()
+>   sh: mm: align hugetlb mappings to the huge page size
+>=20
+>  arch/sh/include/asm/pgtable_32.h |  7 +++++--
+>  arch/sh/mm/mmap.c                | 11 +++++++++--
+>  2 files changed, 14 insertions(+), 4 deletions(-)
 
-Commit 7bd3f1e1a9ae ("mm: make hugetlb mappings go through
-mm_get_unmapped_area_vmflags") made hugetlb mappings use the
-architecture's arch_get_unmapped_area(). The generic implementations
-handle hugetlb alignment, but the SH implementations only account for
-the cache-colouring constraint in shm_align_mask, so the mapping ends
-up aligned to at most the D-cache alias size.
+Thanks for the patch! This should definitely be tested on real hardware
+and I think it's a good reason to test this on my SH7785LCR which wouldn't
+boot on anything newer than 6.5.0.
 
-Set the alignment mask from the file's hstate for hugetlb mappings in
-both SH implementations, as LoongArch did in commit 3109d5ff484b
-("LoongArch: Set hugetlb mmap base address aligned with pmd size").
-Huge-page alignment also satisfies the colouring constraint. SH only
-uses the bottom-up layout today, but the top-down variant gets the same
-change so the two stay in sync.
+Adrian
 
-Fixes: 7bd3f1e1a9ae ("mm: make hugetlb mappings go through mm_get_unmapped_area_vmflags")
-Cc: stable@vger.kernel.org
-Assisted-by: LLM
-Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
----
- arch/sh/mm/mmap.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
-index c442734d9b0c..4df807e0df36 100644
---- a/arch/sh/mm/mmap.c
-+++ b/arch/sh/mm/mmap.c
-@@ -7,6 +7,7 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
-+#include <linux/hugetlb.h>
- #include <linux/io.h>
- #include <linux/mm.h>
- #include <linux/sched/mm.h>
-@@ -92,7 +93,10 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
- 	info.length = len;
- 	info.low_limit = TASK_UNMAPPED_BASE;
- 	info.high_limit = TASK_SIZE;
--	info.align_mask = do_colour_align ? (PAGE_MASK & shm_align_mask) : 0;
-+	if (filp && is_file_hugepages(filp))
-+		info.align_mask = huge_page_mask_align(filp);
-+	else
-+		info.align_mask = do_colour_align ? (PAGE_MASK & shm_align_mask) : 0;
- 	info.align_offset = pgoff << PAGE_SHIFT;
- 	return vm_unmapped_area(&info);
- }
-@@ -142,7 +146,10 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- 	info.length = len;
- 	info.low_limit = PAGE_SIZE;
- 	info.high_limit = mm->mmap_base;
--	info.align_mask = do_colour_align ? (PAGE_MASK & shm_align_mask) : 0;
-+	if (filp && is_file_hugepages(filp))
-+		info.align_mask = huge_page_mask_align(filp);
-+	else
-+		info.align_mask = do_colour_align ? (PAGE_MASK & shm_align_mask) : 0;
- 	info.align_offset = pgoff << PAGE_SHIFT;
- 	addr = vm_unmapped_area(&info);
- 
--- 
-2.39.5 (Apple Git-154)
-
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
