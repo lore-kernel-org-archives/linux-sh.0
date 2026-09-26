@@ -1,63 +1,65 @@
-Received: from mail-wr2-f12.google.com (mail-wr2-f12.google.com [74.125.225.76])
+Received: from mail-wm2-f13.google.com (mail-wm2-f13.google.com [74.125.225.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BFD42E2663
-	for <linux-sh@vger.kernel.org>; Sat, 26 Sep 2026 18:39:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.76
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 731A838911B
+	for <linux-sh@vger.kernel.org>; Sat, 26 Sep 2026 18:39:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790447970; cv=none; b=CLBXzz3FCESOAjdcyEkhGR2WL9BBoeXLPc8RyP1KRp0PhHpqNmrL5FjXrJZGb0mfC3CZUIhfb/5aa6zpOa9ysriEbibLcOeAaSpbOeVUk/uZO8TaOkvGcdBH4HD3qRe07KoCcxofbrZknkptzLGsXVwksGEfuIfxfA31u4avubo=
+	t=1790447980; cv=none; b=ocZMXX/wSkiZHx2KAYTp6qfgtg6PSstmo3wFwDtkW2PA8bX8EZGwVkhRJiZ9xzV/xxFFb2QrIr4jhIi+FvFnk5abmGZ0DVt2c99NW3pzegvib7IrHrgUEe5BYq30zeBttuIfOKzrEwaSi2GHa1yiC1GJEKNZQ6qS53Tx3GmqyYo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790447970; c=relaxed/simple;
-	bh=l0Xyu0t7fZH3pbxaEjct938LlOec4HZEkRRf1F/wvxw=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=ntA/cUAclGbRGy7Q6Qmw7x+DuZKXlPLAx0jQVOQzr6sxeOUb/sJaKkqmwMOJRZn/lnPOCvIh9Ct5e/X0oh3czN3ccHhqFUGnsx3OaySjwfT5QMMGKAD89Cw9Q+Yd4sT3ZUj/l4zFDnBdI6yMrjdeJHR8mXHgTeBMy5146RBA54E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Gb/iWfI5; arc=none smtp.client-ip=74.125.225.76
+	s=arc-20240116; t=1790447980; c=relaxed/simple;
+	bh=dvUR2BCbzH+bWShLv0ZI6EXBUDM3jl05qL5uLrNxRy0=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=QGZK7Lm042Xs9P78gqZQf4NjE26eMB5siAS4cdPK1sK0jGVJ6LU/l/nGxKT2ud4qH+3zMnAC6HuE+WFW6Otwz7CMBr0pCeqVwXW1ZqB3DK6dM5WYNODlp5DxmGfcOCyIKbNXa1uwJq2hxlAv9Ds0Nn4473Pofets/p8gJr3TdP8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Il/F5YOX; arc=none smtp.client-ip=74.125.225.141
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Gb/iWfI5"
-Received: by mail-wr2-f12.google.com with SMTP id ffacd0b85a97d-485984ebf5cso1423263f8f.0
-        for <linux-sh@vger.kernel.org>; Sat, 26 Sep 2026 11:39:28 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Il/F5YOX"
+Received: by mail-wm2-f13.google.com with SMTP id 5b1f17b1804b1-49d1fb0cf5eso16739695e9.3
+        for <linux-sh@vger.kernel.org>; Sat, 26 Sep 2026 11:39:36 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1790447966; x=1791052766; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=7jles6kOLK/nYoY3nT9JUOZhy6Cidsz25VDFnXK9X6A=;
-        b=Gb/iWfI5hD9UuZhUAYxBCYyq2Uhn0RTNpohBv12zAC3jbk/4EyxP98LNeWIQxeNusm
-         3fENxun9BeoGfHbpFXCWPntI/YaOH0RE3u/hWhPQi6TPP8NQpqk/lutHeQPInqnFK1oZ
-         /yvkxly71nyCvLr/3muqfH2+lXIN7aN2S/+XTFaYL2kb+0SHEcOMr0uYpiQJBtbCTKgU
-         rx+jmOXYwo4n7NiKlTDPjJAXJRjIq1mOWW9nn/z9g7EWxYkfJwOAdenUpz7O8cjl/MSO
-         wtJ82rDK9ECA6MvYPeWVEIB2lWQ6EJ65gFlO44UoNeXJtl0xGFkOztlq7qokJm9XmxrB
-         YBsA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790447966; x=1791052766;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1790447975; x=1791052775; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=7jles6kOLK/nYoY3nT9JUOZhy6Cidsz25VDFnXK9X6A=;
-        b=FGdmwgyVfigZeeE68DbkDK75trrrtWM99Naosob3rdQ9Fw723VQImwYR3b6QEONl9U
-         p9L3ku2WpDriZ1zikMA1iAAFQxZz/OukJG+azD99oCkRZgFbWg53d3DnH6FijCoEzF3L
-         xI2WnZkz8ZD2+pKzybCDpXdneQ4r5LG8LOc5Yyok2dwAhLrcATkllpzUmjjvUoPGr439
-         RwAeii+WDTeiF3XU2I9Zyad7bWQzxX71jMYKVrBXescmnEgx+ngJhHQ0ROTeu642zb4W
-         ouDElxOoJqBXTy1fheE7WauTuNNuPiiSB4nsGjmfJYk8YbXGOeLAAcdvi9Yl7vtqmk4d
-         i0jA==
-X-Gm-Message-State: AFq9FYIWJJrd8cd1aK/JRV6QGfQzs621dxNSs/dkj3u44UB7S1g3fnev
-	8/qBKbwNeZuEHbpYzPTZRO6txF5HT0KA2R3OvQLdTOYJlFLjyJ2RpM0g
-X-Gm-Gg: AYBFou1d11nWdsBgyycOlzF9/GK6x3av6cXw6cBXVrT3kcG+kZdOFa1Ai28LBriH0Tc
-	f43Cf1J/VuFLkY+EN3XIkG32NXcbOJYEc3zA8bgKKMAIvA0snOklfU4IqH/g0SWOoJ8DmZ4edOr
-	5ckTZoHxRN0PSXS5GYcjhOndiFQMvbfRPVoUwnfH0SpT9NUolc8T0vZUZsvzimEwqw/qEuO3YIr
-	DSt5wSuEjAwyKF7MrCxH5suHCHf5znGZ1B6+XLYRrp1QN4k8bmniHk65p744Ms4M2emLViINwz6
-	eJGkEO7N+AthcSlVglO04A3kyL7OLjb9W2juaVoUX8+h/MW0uyKx0hHH5ish4g9d9clziMzCweH
-	bYZTg3vRJw0+WjRw6L+OR2G4QUH46O24CBqDfIVI0dNegg0MkauqSuw4UYpGkDLoAArCN6417yP
-	mm1K1k46Ko3NsYsYQaKsHxBz94YTRqj/bxVAptrGiwbzPqZeMzvIJPIQdBxotgrEnFTVTYKhU/z
-	AcZafdSECuKK2/sh7DT8nFV3rC5c1I8c6Seh643MU1GIaCcjua+G+bOjaEAmRaALxYwIGtv810X
-	5xTOD6AoXCiSP8G39g9BXJpsVxgEBnooOMNk6BybxJr6hjm3KmY4k0/YCY4onRlWdrKeuwiSEB9
-	J2Q==
-X-Received: by 2002:a05:6000:4707:b0:488:5fcd:c1e with SMTP id ffacd0b85a97d-48872a72594mr14913212f8f.18.1790447966239;
-        Sat, 26 Sep 2026 11:39:26 -0700 (PDT)
+        bh=h0enCh2MRlgPpYIWKl5Sr13FnH5bGjxfJsgRmd5nwro=;
+        b=Il/F5YOX0voRLP8xg/qYvZIjwkCNu12OgH2YbsSJ7DR72qng/usISqluFxE+YEtwNn
+         sb6PbaBqb/DR7q5Da5cyh250cDzWHFs4Nh9MYL8BsnznlpLe9qDVlRpP/a+0gqmie1CJ
+         rLvVfGkuSyPceDYDGBBdq2cFG/no2Y9Zy7RsgFht5982+zyCMul8fFoCYbyqfqG7dPij
+         O5k5H1DZdCoIYQvGurnwK1Sqn15qlfsgTQVPUJ6S1+o6m70LtDjW7UZYV5rXp1uCxvKT
+         nGENoj91VDqLoYC3x8yynanSZFujFf6VVEeeMQK5vapjiUwNNp5/iTwPNkQGmESmX1EC
+         gfHQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790447975; x=1791052775;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=h0enCh2MRlgPpYIWKl5Sr13FnH5bGjxfJsgRmd5nwro=;
+        b=ICUhxc29CdNbmYxch6qJaKGtMch16IEeXmZ7TSNiou6wTEuDXJU1ym+iFAX9+wMWg7
+         CUGg4iq9y2zJzyMiPi++T03kCHbYqGiGEHhIBDTH2oNgVpeWxuyuXDE/NmQp43uaLbt/
+         Q/5XrWQ6GvK1pkONhNQGL5Hrkd8l/Zg1ckl7fIlsT3OHMZ5VxbdjgVFNnkO1OiH2p0Kk
+         6yO9g1p6TjT7Q9Jga0TB5YY9VuiMLR1xo9Xp+Nln97Bb4TMSEIBTnHievYaKkbRlMrIK
+         BZQbboy1s5Bbbm/XwNy81ZXRMRPL2uosH8ie1kee0b0ryXuH9Xny4bWa7sE2EOKM9ggg
+         lrWw==
+X-Gm-Message-State: AFuF++k/H2oeIMJ9XFGWERbFlh3o+1jbzj4u1mX8t7k+G8oy2d/WGcCm
+	Sht0kP7d4c++BXMyJPZrF4+ce5pfAvi68yAc+nchn6sZ+snPwjd+oB+k
+X-Gm-Gg: AYBFou0oOdQhR3VtYsZevmtWhw9VwTfSw/HqdSyqI7UWmJiwNhGFlsNc/xzGfnhEAjG
+	8Fu+Hs4jVpfiJWOznK2uDSN/xur9Jmh/9RdOMALVQwXj1+2zFynPfn/9VLLBu81axEeKr3xdkso
+	iQFbSmgDFBRxJt4/SVhe/rTiB8iX84Fh8l8TMMpUmuy06Xgs58joxj+JVFwqFSZ8dIyXw2I8h1u
+	fM3TtzgznL25Gqca7WBUUdQaOD4jgArvgjkaCEBt/HtJxuKZVhdN7gmtVAIvv8Vsfav/ofgC9MV
+	+mviI5Zj9bqd01Um1lUgwL0DDAEgaTLsF8gKceu7Tq4xcSE2+EN6wSAPqy3ctYDkIYPaQ/fFh9g
+	c/yzrTDqr2ujIMu41wmftkQxormVXRJ2covFynTlKfjKC9IWTYlbC8qK0YleqCJbu0f7N9L9VBT
+	+y/RGlK9UHrDgUk4HNtjw1tyGdQovzsW0ccp1hsm+/eOWMWMp2uAxHlQxPqxZaK44AiOlpwPGed
+	V8RlsACx40q5KO/poTzrYojCAk8xMBlAapzFQc0fW9aJ6q/vOIEcjPfaAxLBCAEjkMcen6nqUaV
+	wJ+zKiyTln7D1Fm+ORxCvphATTYgwsT9YEHyq/Lsgo9AVFfvsBM/lm538B2xqE4oeMivt34/XVU
+	apsz/wikt6daK
+X-Received: by 2002:a05:600c:4754:b0:49d:1e09:694a with SMTP id 5b1f17b1804b1-49fe66d2ce2mr162026765e9.11.1790447974930;
+        Sat, 26 Sep 2026 11:39:34 -0700 (PDT)
 Received: from localhost.localdomain (dynamic-2a02-3100-b162-c701-4960-a998-3de8-2fce.310.pool.telefonica.de. [2a02:3100:b162:c701:4960:a998:3de8:2fce])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4887a648895sm15430376f8f.28.2026.09.26.11.39.24
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4887a648895sm15430376f8f.28.2026.09.26.11.39.32
         (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
-        Sat, 26 Sep 2026 11:39:25 -0700 (PDT)
+        Sat, 26 Sep 2026 11:39:33 -0700 (PDT)
 From: Karl Mehltretter <kmehltretter@gmail.com>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
@@ -70,10 +72,12 @@ Cc: linux-sh@vger.kernel.org,
 	linux-mm@kvack.org,
 	linux-kernel@vger.kernel.org,
 	Karl Mehltretter <kmehltretter@gmail.com>
-Subject: [PATCH 0/2] sh: mm: fix hugetlb on SH-4
-Date: Sat, 26 Sep 2026 20:39:02 +0200
-Message-Id: <20260926183904.76186-1-kmehltretter@gmail.com>
+Subject: [PATCH 1/2] sh: mm: replace the page size bits in pte_mkhuge()
+Date: Sat, 26 Sep 2026 20:39:03 +0200
+Message-Id: <20260926183904.76186-2-kmehltretter@gmail.com>
 X-Mailer: git-send-email 2.39.5 (Apple Git-154)
+In-Reply-To: <20260926183904.76186-1-kmehltretter@gmail.com>
+References: <20260926183904.76186-1-kmehltretter@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -82,54 +86,84 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Muchun Song noted in the review of the Arm hugetlb alignment fix [1]
-that SuperH has the same arch_get_unmapped_area() gap. Reproducing it
-in QEMU turned up a second, older bug that corrupts memory once the
-mappings are aligned.
+pte_mkhuge() ORs _PAGE_SZHUGE into a PTE that already carries the base
+page size from _PAGE_FLAGS_HARD, which every PAGE_* protection
+includes. The PTEL size field is an encoding, not a set of flags: on
+SH-4 with 4 KiB pages and 64 KiB huge pages, _PAGE_SZ0 | _PAGE_SZ1
+selects a 1 MiB page. Every hugetlb mapping is therefore loaded into
+the UTLB as a 1 MiB page whose physical base is the huge page's address
+rounded down to 1 MiB, so user accesses land in unrelated kernel
+memory.
 
-Patch 1 fixes the page size in hugetlb PTEs. pte_mkhuge() ORs the huge
-size into the base page size bits, so 64 KiB huge pages over 4 KiB
-pages are loaded into the TLB as 1 MiB pages. User writes then land in
-unrelated kernel memory. This dates back to the start of git history.
+In a QEMU r2d guest, after touching a MAP_HUGETLB mapping at
+0x30000000, QEMU's "info tlb" shows
 
-Patch 2 aligns hugetlb mappings to the huge page size. Without it
-mmap(MAP_HUGETLB) can return an address that is not aligned to the huge
-page size, and process exit hits the BUG_ON() in
-__unmap_hugepage_range(). This is a 6.13
-regression.
+  vpn=c0000 ppn=32e00 sz=3 size=1048576
 
-Patch 1 goes first because patch 2 alone makes the corruption reachable
-through a plain mmap(). Both are marked for stable.
+and writing the two huge pages overwrites kernel data, for example
+page tables ("bad pgd 5a5a5a5a" on munmap) or a struct file:
 
-Tested on QEMU r2d (SH7751R, rts7751r2dplus_defconfig plus HUGETLBFS
-with 64 KiB huge pages, gcc 15.2) on top of fddfc3ec3179. A test init
-maps two huge pages with the default and legacy layouts and with
-MAP_FIXED, writes and reads back every 4 KiB, mprotect()s the mapping
-read-only and back, and checks a COW write in a forked child:
+  Fault in unaligned fixup: 0000 [#1]
+  PC is at file_tty_write.isra.0+0x24/0x220
+  R1  : 5a5a5a5a
 
-  kernel          MAP_FIXED       default/legacy mmap
-  base            memory corrupt  misaligned, BUG at mm/hugetlb.c:5215
-  patch 1         pass            misaligned, BUG
-  patches 1+2     pass            pass
+The SH-X2 extended size field has the same problem: a 4 KiB base page
+(ESZ0) combined with 64 KiB huge pages (ESZ2) encodes 256 KiB. Only the
+configurations whose huge size encoding happens to contain the base
+encoding, such as 1 MiB over 4 KiB on SH-4, have worked.
 
-SH-X2 (X2TLB) is only build tested (r7785rp_defconfig with 64 KiB huge
-pages).
+Clear the size field before setting the huge page size. All hugetlb
+PTE constructors, including huge_pte_modify() on mprotect() and the
+fork/COW paths, go through arch_make_huge_pte() and so pte_mkhuge().
+With this change the same entry is loaded as
 
-QEMU's SH-4 TLB emulation flushes only the first 4 KiB of a 64 KiB or
-1 MiB entry when the entry is dropped [2]. Keep that in mind when
-testing hugetlb on QEMU.
+  vpn=c0000 ppn=32e00 sz=2 size=65536
 
-[1] https://lore.kernel.org/r/5AB6FE85-4CB9-41EF-A700-BC5E071F29F5@linux.dev
-[2] https://gitlab.com/qemu-project/qemu/-/issues/4598
+and the mappings read back correctly after mprotect() and fork()/COW.
 
-Karl Mehltretter (2):
-  sh: mm: replace the page size bits in pte_mkhuge()
-  sh: mm: align hugetlb mappings to the huge page size
+Fixes: 1da177e4c3f4 ("Linux-2.6.12-rc2")
+Cc: stable@vger.kernel.org
+Assisted-by: LLM
+Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
+---
+ arch/sh/include/asm/pgtable_32.h | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
- arch/sh/include/asm/pgtable_32.h |  7 +++++--
- arch/sh/mm/mmap.c                | 11 +++++++++--
- 2 files changed, 14 insertions(+), 4 deletions(-)
-
+diff --git a/arch/sh/include/asm/pgtable_32.h b/arch/sh/include/asm/pgtable_32.h
+index 5f51af18997b..1e6821a23eac 100644
+--- a/arch/sh/include/asm/pgtable_32.h
++++ b/arch/sh/include/asm/pgtable_32.h
+@@ -145,6 +145,8 @@ static inline unsigned long copy_ptea_attributes(unsigned long x)
+ # elif defined(CONFIG_HUGETLB_PAGE_SIZE_64MB)
+ #  define _PAGE_SZHUGE	(_PAGE_EXT_ESZ2 | _PAGE_EXT_ESZ3)
+ # endif
++# define _PAGE_SZHUGE_MASK	(_PAGE_EXT_ESZ0 | _PAGE_EXT_ESZ1 | \
++				 _PAGE_EXT_ESZ2 | _PAGE_EXT_ESZ3)
+ # define _PAGE_WIRED	(_PAGE_EXT(_PAGE_EXT_WIRED))
+ #else
+ # if defined(CONFIG_HUGETLB_PAGE_SIZE_64K)
+@@ -152,6 +154,7 @@ static inline unsigned long copy_ptea_attributes(unsigned long x)
+ # elif defined(CONFIG_HUGETLB_PAGE_SIZE_1MB)
+ #  define _PAGE_SZHUGE	(_PAGE_SZ0 | _PAGE_SZ1)
+ # endif
++# define _PAGE_SZHUGE_MASK	(_PAGE_SZ_MASK)
+ # define _PAGE_WIRED	(0)
+ #endif
+ 
+@@ -359,11 +362,11 @@ static inline pte_t pte_##fn(pte_t pte) { pte.pte_##h op; return pte; }
+  */
+ PTE_BIT_FUNC(high, wrprotect, &= ~(_PAGE_EXT_USER_WRITE | _PAGE_EXT_KERN_WRITE));
+ PTE_BIT_FUNC(high, mkwrite_novma, |= _PAGE_EXT_USER_WRITE | _PAGE_EXT_KERN_WRITE);
+-PTE_BIT_FUNC(high, mkhuge, |= _PAGE_SZHUGE);
++PTE_BIT_FUNC(high, mkhuge, = (pte.pte_high & ~_PAGE_SZHUGE_MASK) | _PAGE_SZHUGE);
+ #else
+ PTE_BIT_FUNC(low, wrprotect, &= ~_PAGE_RW);
+ PTE_BIT_FUNC(low, mkwrite_novma, |= _PAGE_RW);
+-PTE_BIT_FUNC(low, mkhuge, |= _PAGE_SZHUGE);
++PTE_BIT_FUNC(low, mkhuge, = (pte.pte_low & ~_PAGE_SZHUGE_MASK) | _PAGE_SZHUGE);
+ #endif
+ 
+ PTE_BIT_FUNC(low, mkclean, &= ~_PAGE_DIRTY);
 
 base-commit: fddfc3ec31799a932bb92f1b8a84cb3d1f963be9
 -- 
