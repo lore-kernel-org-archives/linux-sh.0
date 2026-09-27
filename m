@@ -1,105 +1,160 @@
-Received: from mail-wr2-f35.google.com (mail-wr2-f35.google.com [74.125.225.99])
+Received: from mail-wm2-f13.google.com (mail-wm2-f13.google.com [74.125.225.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D7B5B242D88
-	for <linux-sh@vger.kernel.org>; Sun, 27 Sep 2026 18:35:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.99
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 170704349B7
+	for <linux-sh@vger.kernel.org>; Sun, 27 Sep 2026 19:14:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790534122; cv=none; b=u3JNg/hmnpkpk6E0Jq1FdR4XfG8FH9eEaJYWyW76m6e0Q1rTp+IT/vVcQC+LdLU2TD8EPjw0YBjgFgZDVt9QVHXip5v2QnBXU+q3WY/TUxWJ8PXpkCOJYnH90Il0Tr5GAthHwMLzFcJ6ueOvhH9LmGU30a0Y2LvTvEtezxFiAGo=
+	t=1790536453; cv=none; b=bIVBbg+KUUW4I+etTqpX4B+/juyiUYxofxnXTrlS5KL/YD2u+CayF8yekEvNfHFG4m5lwjIwITsQo99Ydpp9p3Ht72YZUx8ycW92lkOY/JkMJ44P2OyIbddmvKFmvhmVlihVkcgkB85hEFViWSdUfv/J9qRmTzS+LhuzCrdSwKY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790534122; c=relaxed/simple;
-	bh=EXX7jqvZYLnEQMm8FZbzal6MRrKj4Q6wzO3n8gCmvYE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=p6OlYhT1dHuxw0lyXTjhzUYT88xiVuviLRL+oyNvpqIXWJkoJUOKnWa23VKIZpzL2qoo+EXY0hhRuG/r3mQmhiJ7Rbpcwljh5Lo0wBKGaGs8FJYzWW2U566Q3VVVCYQJkg1kSBEeuP8/LoxVJqoE6SeEotXwggU4FkT7Wc5LhfM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Jaf/9ODd; arc=none smtp.client-ip=74.125.225.99
+	s=arc-20240116; t=1790536453; c=relaxed/simple;
+	bh=huH3z/otBMatTKw01bpo1hxPY4/B+otQqB638hIXXmc=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=FCDlpRbMNPJswBk21vMyxrZjpN4qJh2cf9B2i8uKEsSOiZN9oO2FKBE07okHfl+0kVNK2R5cW9VGVpN/3BVjmKlvwnuFC7mwe29+WYx2PFbHL8eFZIG3FJxYK0yZi5HOs2RLJlSogwn/x0sXco5mNz71hR0uDiQ5U6iDrJSxdRs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=IkiSJKVe; arc=none smtp.client-ip=74.125.225.141
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Jaf/9ODd"
-Received: by mail-wr2-f35.google.com with SMTP id ffacd0b85a97d-4887f690df6so1556179f8f.1
-        for <linux-sh@vger.kernel.org>; Sun, 27 Sep 2026 11:35:20 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="IkiSJKVe"
+Received: by mail-wm2-f13.google.com with SMTP id 5b1f17b1804b1-49e71cdb22bso17012445e9.2
+        for <linux-sh@vger.kernel.org>; Sun, 27 Sep 2026 12:14:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1790534119; x=1791138919; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=d3btJEsbUCZDnVE9CRXhr6o73+2IGPLa/zULNpIdkJ4=;
-        b=Jaf/9ODd+5ToflEFjmTC7DjCtFGBQXtdJlQKT5EIoQXbZvZMbij7Mrl4emaIuhJfLM
-         CeJqNoiH2nQY2LOnsqg8mt83NK/vZBLeP6Jyav3809orvMkfURhphdIvJyJviSHdAj14
-         jKeuG9uEOrvStAe9J7rdV4ystmNUvw+OHWefw9m3dbDwM0N17KT3xnagNjFCBvv4KZAu
-         Ep8l7HcDc3KcxPdXGitSHJGlKXtZ5NdH/7akZ3xa1lOllw2PMynr3HB12T3Db+dbI8oX
-         QUQ1PKNpbQSF5cJ1BUB12rz8kmhz/BaQ6g8ZnAe3opclAuLbzJDncI2U5wWr69BdzHdM
-         FkDg==
+        d=gmail.com; s=20251104; t=1790536450; x=1791141250; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=R7ZbDsxBKqvOhL656Ve4BDXMNH+w5ltqPH0IQmusM7k=;
+        b=IkiSJKVeBeYalHfrN47S6XZ+T+o/eOKzTn0OaG6Id53uMwdCxUTy08hXFjQDuxI5DG
+         BGEHURKx8EEJ2iHPoWfStwmpMwfDv493hio7ANur/y+9XNW/1cN4D6W8kWsTUsYb3kC9
+         vOx7DxFqktGLRwT7nmnfgQL7Uw0Uae80k2FotkRXf9x7gFbFepwHAIALZI+VES7tbBO6
+         zPRYYhwvpNgYvzYD7pdr1wJczMOaxRGybLtvRriDskE+BmPWQX8uDNlQoeI9G+2Dxya5
+         UXMygERcc4YROEj0s6nrvB4585wLat0EjLhRPahzkHw4NxY/D3znhEzkOvRKKM241hxH
+         K1Xw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790534119; x=1791138919;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=d3btJEsbUCZDnVE9CRXhr6o73+2IGPLa/zULNpIdkJ4=;
-        b=Y47G2hLLoG+SU1Te6QCcdpSRvvLmgfSgN7r2U7OgdmxP1WcYx64qa6g+idMvCLG2xp
-         lWYSJu/W1PZj4wCAZ/6yO/E48qoruWv9nS2isdeLjcIee38DnJTnlMNOJQTzMK2AhEc/
-         hQSvXjCNpKKuM4jcyr494tWNFKyV3t4BcXkDAw6zs3ZLaatNfqq0Yzm9cLYZhbvoPmec
-         jAtAGaZ+jYF1kzbeBo3xtvhlHsX+omLjspLkvwqdYK8V/GaocgzDsLCePdwM8gtZg67O
-         h7VYoLcdTa3Z5mcjsfXRO+1W90OA8bbjR/1UlOLULYG3jkTRB4cjcaqxMa4GfX4fzD86
-         pTZA==
-X-Forwarded-Encrypted: i=1; AKwUvBwpPiqswHTgMhQHqYSahw3HxG6TsXfgf8OtmevNmy2oNA5jaRjSNLT2cX6HhDuAdXsIh16IPJPwsQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYKvqlQdLS7IS9q4aWItfn61AhSJGgcOuAK581fVpdBJN+hBChmG
-	9HYS9WZ5vPf/3TtcFUwp0kTlTsBoB4wAu4K59fdJou35Fv1PWET7mBuH
-X-Gm-Gg: AYBFou2LiWrdGINrkotlcz4iXXYu5mx9+GyeDcKK52TtX9pcZBnU+cC00uCZpM3VaaP
-	3qbMYITjXiQhwk7FAkztUomcfI8Q8gi0FzXQMa81f/tzaZtoTifNKWnni2PZjDpo4atzfK4YIXw
-	raGp5i5mK85ArMxHToeOl/o6LtjWuzY4x76W7nGSNkm9oZUbwhgh6fGKA4Dexi+/+VrcUe5a7oA
-	gZBQnJKEgFUJLxL13Yh0BgGddW0sdHvGgRTyCneo+dgjD0WszGF6Mj9eWhJFl1pxqSAqImEqXsw
-	w9uQhnqPI8YNkNv3olG4pr7mGsTARPZGp+z2l0bMX/v4YOflQhAkJnH06EuuUN1FGMAe5EZJUt0
-	Amrql8QTRk+Q5RkPRTVjI62fOMYky+RlL9J/RkE2rHGURHF/oeagsa7jDwMfJt0ktUFCe8P1K8B
-	o5fpILUwpjDmiwt3TaEnEQi0uaGicXJSTDg0fQpQfCfZEXOS7ptQ/z2CWznwtKw3cEaifzLPkRn
-	MToshD2U2DzrMjHD9VsHgggl4XVbzxYAd8U58Cq2wX1zEFBntDssyeGB8bjYdWZV3KM+q6S2T4a
-	/iDeKuwPBS0tqCMowPk2XTas47mnwjw1fArOQ6vctFhnwl/JrWOAqDC5cwl4R5Ddan9s7QsxHpa
-	ilDA=
-X-Received: by 2002:a05:6000:490b:b0:487:27f6:a4ce with SMTP id ffacd0b85a97d-488828c8ad6mr10111964f8f.30.1790534118745;
-        Sun, 27 Sep 2026 11:35:18 -0700 (PDT)
-Received: from unknown748F3CBA5068 (dynamic-2a02-3100-b2e6-5301-2072-0420-f831-ed4e.310.pool.telefonica.de. [2a02:3100:b2e6:5301:2072:420:f831:ed4e])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-489bd7b1df0sm1001928f8f.31.2026.09.27.11.35.17
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 27 Sep 2026 11:35:18 -0700 (PDT)
-Date: Sun, 27 Sep 2026 20:35:16 +0200
+        d=1e100.net; s=20260707; t=1790536450; x=1791141250;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=R7ZbDsxBKqvOhL656Ve4BDXMNH+w5ltqPH0IQmusM7k=;
+        b=DbwifrdvkS0mXnV4WUrFikA2JyHMiWENQMHhX99hLtm/ZUSbyrsWYXDvF77yFZYm5r
+         geAyUljNKbL4qERi65twzBOwxUOjw6nDKyWdCxBQJgDwnhxQj7ImFQcp4hAcWa1+WOlh
+         piapQG0slv5B/08Ufzas2v3K30FnVcKeQdKGX2edYvqCYOSeMeywBK6riPoVP4L1SnQl
+         kGMoRPn25ikh5wcVR8hGe4vVANdVSB4keeQ0+NZIOkk2UoJQKq4rZdcCalWj1Fv2pXuk
+         Ypi28z08245s5uPjA1i4xns2EpvlD1pPlAsF/vV4BgxWsNu1ZPZsblbnpO+inYCLuMPp
+         ZhdA==
+X-Forwarded-Encrypted: i=1; AKwUvBxMm47kdR+5c8BA2lutrf2Vuh9uEYmSU7eQ3Z8+TinnriziUe+0611ffeuWx/xVCNU+MMzvX0ygwA==@vger.kernel.org
+X-Gm-Message-State: AFuF++mJH+9rmecNUYbY4PGxqGRSXyV9JUxp6icnbivYyhwtirFURGT1
+	9TY5efJVIN1ZUBl+mCB2ryrhfo7cs7/xl+fvnLxKSl56gvKUN+mOEbgM
+X-Gm-Gg: AYBFou1Ot+wj0Mvu3eomcR21UbNzUbYF7conms2XkMPv8/4wKmadfcerb6M/cfmdEFs
+	W7a9OAJfhWc9N1kgHvOt3+KE2wDBkrS7W6RcjusnOpoJXzseRPwM1KRCZkCajmy/y5bQ3UKh0YJ
+	hVaeK8f/B8krOp/t0k2oGZ8d2aOI3mv3gpHYulNea/LwCEE1g4WZ2OhoZxmGYpF59qRnBnoEakk
+	ZuomaIh0ZXRVbNTxFoUn1Z6qV32/MkjywkAKYf+tfWUVqjZRRdkxZrl31CUodaJ3/O6w5DY4D2f
+	66ZL7ls2xGXyqTczkYJvv83aQUgA1LLJioCqMTJbLQEP+Q/WWM8N1d+oMQ3MwRq4lnS7hdDfpEw
+	m/K6LM6MwXIKe9SJCd6AquGK8eUSROBsv9uF88izsfgAOGY4s5aZJDm0nqcgiJQ2nbrnYTBq39I
+	517XDD7wOuXPV4pZaNIOYkFcDfCoEXX9IhcN9zw6hMZxTJkO5A/7Ac5ps8Hq33hj0SiLDFplA0c
+	oDs/CqiS9SqYwBvJZxuUDJ1mQjA+wm7klicJCswQtMA0UkNdTv5mJJNRmNtbHHlmA75vyS6UjwG
+	SheXDARPc67eHIMgmCeNefJWHwpwRjFKov7dvOZ8/ksnBxd0nHfG9MbGbsCalBaevMdIaYykopc
+	4RRdODg==
+X-Received: by 2002:a05:600c:3150:b0:49f:fd2d:23d1 with SMTP id 5b1f17b1804b1-49ffd2d2627mr69934935e9.27.1790536450093;
+        Sun, 27 Sep 2026 12:14:10 -0700 (PDT)
+Received: from localhost.localdomain (dynamic-2a02-3100-b2e6-5301-2072-0420-f831-ed4e.310.pool.telefonica.de. [2a02:3100:b2e6:5301:2072:420:f831:ed4e])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a001904513sm113458955e9.10.2026.09.27.12.14.08
+        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
+        Sun, 27 Sep 2026 12:14:09 -0700 (PDT)
 From: Karl Mehltretter <kmehltretter@gmail.com>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Muchun Song <muchun.song@linux.dev>, 
-	Oscar Salvador <osalvador@suse.de>, David Hildenbrand <david@kernel.org>, 
-	Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 0/2] sh: mm: fix hugetlb on SH-4
-Message-ID: <arlhcX870kV0DBO2@gmail.com>
-References: <20260926183904.76186-1-kmehltretter@gmail.com>
- <9b75aa51e19f9c0f5c97ac02cfc0948ab5bbf279.camel@physik.fu-berlin.de>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Karl Mehltretter <kmehltretter@gmail.com>,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH] sh: intc: sort the prio and sense lists after filling them
+Date: Sun, 27 Sep 2026 21:13:59 +0200
+Message-Id: <20260927191359.6144-1-kmehltretter@gmail.com>
+X-Mailer: git-send-email 2.39.5 (Apple Git-154)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <9b75aa51e19f9c0f5c97ac02cfc0948ab5bbf279.camel@physik.fu-berlin.de>
+Content-Transfer-Encoding: 8bit
 
-On Sat, Sep 26, 2026 at 08:43:45PM +0100, John Paul Adrian Glaubitz wrote:
-> Thanks for the patch! This should definitely be tested on real hardware
-> and I think it's a good reason to test this on my SH7785LCR which wouldn't
-> boot on anything newer than 6.5.0.
-> 
+register_intc_controller() sorts d->prio and d->sense right after
+allocating them, with hw->nr_prio_regs and hw->nr_sense_regs as the
+element count. The lists hold hw->nr_vectors entries and are only
+filled later, by intc_register_irq().
 
-Hi Adrian,
+On SH7785, sh7785-irq0123 and sh7785-irq4567 have four vectors but the
+SoC's eleven priority registers, so sort() swaps 88 bytes in a 32 byte
+kmalloc object at boot. slub_debug=FZPU reports "Right Redzone
+overwritten" in kmalloc-32, and v6.5 and v6.6 panic in
+__kmem_cache_alloc_node() while registering sh7785-irq0123.
 
-Testing with real hardware is very cool! Maybe I will get some SH
-hardware myself one day. For now you've motivated me to do a QEMU SuperH
-fork with more features, with a lot of help from my LLM agent:
+Found with a custom QEMU model of the SH7785LCR. On it, v6.4
+sh7785lcr_defconfig boots with SLAB, the defconfig default before v6.5,
+and hangs before the console is up when built with SLUB.
 
-https://github.com/kmehltretter82/qemu-superh
+Sort the lists once all vectors are registered, with the number of
+entries that were added.
 
-I will send some bug fix patches based on it soon, hopefully also fixing
-your 6.5 problem. I believe it is an old heap overflow in the SH intc
-code that only started to crash when sh7785lcr_defconfig switched from
-SLAB to SLUB in 6.5.
+Fixes: b59f9f9775e6 ("sh: intc: optimize intc IRQ lookup")
+Cc: stable@vger.kernel.org
+Assisted-by: LLM
+Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
+---
 
-Karl
+Notes:
+    Testing, all in QEMU on a custom SH7785LCR model, not on hardware:
+    - v6.5 and v6.6 sh7785lcr_defconfig hang before the console is up
+      (gcc 8 and gcc 14). With slub_debug=FZPU they boot and validating
+      kmalloc-32 reports "Right Redzone overwritten" after the object
+      holding the entries of sh7785-irq4567. With this patch they boot
+      and the report is gone.
+    - v6.4 sh7785lcr_defconfig (SLAB) boots. The same v6.4 built with SLUB
+      hangs, reports the overflow with slub_debug=FZPU, and boots with
+      this patch.
+    - Current mainline boots with or without the patch, but reports the
+      overflow with slub_debug=FZPU unless patched.
+    Testing on real hardware is welcome.
+
+ drivers/sh/intc/core.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index aa68fe190865d..ffbe60234eefc 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -275,9 +275,6 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 			k += save_reg(d, k, hw->prio_regs[i].set_reg, smp);
+ 			k += save_reg(d, k, hw->prio_regs[i].clr_reg, smp);
+ 		}
+-
+-		sort(d->prio, hw->nr_prio_regs, sizeof(*d->prio),
+-		     intc_handle_int_cmp, NULL);
+ 	}
+ 
+ 	if (hw->sense_regs) {
+@@ -287,9 +284,6 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 
+ 		for (i = 0; i < hw->nr_sense_regs; i++)
+ 			k += save_reg(d, k, hw->sense_regs[i].reg, 0);
+-
+-		sort(d->sense, hw->nr_sense_regs, sizeof(*d->sense),
+-		     intc_handle_int_cmp, NULL);
+ 	}
+ 
+ 	if (hw->subgroups)
+@@ -357,6 +351,11 @@ int __init register_intc_controller(struct intc_desc *desc)
+ 		}
+ 	}
+ 
++	sort(d->prio, d->nr_prio, sizeof(*d->prio),
++	     intc_handle_int_cmp, NULL);
++	sort(d->sense, d->nr_sense, sizeof(*d->sense),
++	     intc_handle_int_cmp, NULL);
++
+ 	intc_subgroup_init(desc, d);
+ 
+ 	/* enable bits matching force_enable after registering irqs */
+-- 
+2.53.0
+
