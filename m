@@ -1,190 +1,129 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej2-f43.google.com (mail-ej2-f43.google.com [74.125.228.171])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9DC4F4E36F6;
-	Mon, 28 Sep 2026 15:02:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B79DC26158B
+	for <linux-sh@vger.kernel.org>; Mon, 28 Sep 2026 16:04:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.171
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790607725; cv=none; b=FAWL5bxm0hxv52JskyY4V/QwSXRT2mHPeLQ8/Qtc2qeMrE+XS4KV96wo4sXG0NZopjymC/k9Hx5fP2vC06sIDAWeJ64zF4UzWGRtk42XtqAah/Mmx+DQPv3zrQDQAPImvoYzsupqHm6yagyebm7keMc4WzCtk2U6BCl/XllOt5k=
+	t=1790611452; cv=none; b=JjftQZyExCisejF8xjI4xnup9p1W4ioYCgDZ+c+ygpCH43RXfA5tOk1N2jEZE9Gs8DbdgnQynn5x5p1SRpq1hITUZ9md372w9Lm9vDxDEONYnaYD3hs5h4JUD6dyHCBzj7GilHez9ujN+OT9wR2F/8nbNe0DycvZTGR6Dpv/rqg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790607725; c=relaxed/simple;
-	bh=3Sp+De0eWOBBxrSjv1LaZhSd0QuqC+DGO3CY6tjd/LU=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=t6r6x+xsI3k6QcrmKxAKDkfUAuyt9DaSKcZm6XyXavtyDIxx+ck4zjfSgOd9d48yc6QsqoxD9QEm5I1l434UeDfcfUboyT5uGJ7rTlELhg/JV1cT5RLBnWIaJ6keFPjjjv8F/CqoDe3iTRhDR+765nrJBXfa2jt8q7Q5cnfO1Y4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=jen8dR3Y; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="jen8dR3Y"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=TTAsZ/FG+6xRXis/eVJHzTHZpMK2QDzcT3PxJfAUZ6o=; t=1790607720;
-	x=1791212520; b=jen8dR3Y6USTyW3eTIKIu+E3e4WkVZmRp0eMA6jAfllNFCGqbNhyZ8uvR6p1Y
-	FgOm3ek5242b3tOJVEskc7IiEir0+1wAUzK+EtrFKaUc7drH8u/8QMJ0zS1W+l5aP9QhniyOT/tYg
-	iZlHSSjpwpjneTDM+cCdTSRcNtGIAamco9o+xXD+L242NeAP/zQ72XSgFml9RysKypCC7YLqKigOe
-	YSRGwrV3nBJC0sZtOQuH3hWlkKPDyOYGaCceUb6bFdj2PF8ZZZjR/w9QAhludLi9agypNc5Fhqapf
-	b69JYOnvb6acq/dFZc09SIHz4J+XxnCwCOqvmuif7BO3wY86/g==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xBCrZ-00000000ccf-2YoS; Mon, 28 Sep 2026 17:01:53 +0200
-Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xBCrZ-00000002RLR-1axb; Mon, 28 Sep 2026 17:01:53 +0200
-Message-ID: <d4f35d5001924ef9ff4b28ac412a9d4b6048d789.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: intc: sort the prio and sense lists after filling
- them
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato
-	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date: Mon, 28 Sep 2026 17:01:52 +0200
-In-Reply-To: <20260927191359.6144-1-kmehltretter@gmail.com>
-References: <20260927191359.6144-1-kmehltretter@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	s=arc-20240116; t=1790611452; c=relaxed/simple;
+	bh=+OUWtMoUK/80tt3PXrNgtl9ROxd0swRJbu8F45E/dw4=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=YTwyIUH6uy50jjtAdDFUMfkMKRMn0rtKMw3F4YzxZCffiD3AwEe3g2njRhO5zQm49Fs4WBixTc+Oi/SiPTbFTBZjMuhCiuFOqQAuZxwPqWnvYvWcRpCOcYxajkqJd9Td0ULc1YgUxJEp35ujGGVlRBifBsV8pEo5OHQpuS5qeAQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=74.125.228.171
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-ej2-f43.google.com with SMTP id a640c23a62f3a-c2af876539fso334001866b.2
+        for <linux-sh@vger.kernel.org>; Mon, 28 Sep 2026 09:04:09 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790611448; x=1791216248;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=hBvDF6H9cPXn+plsHym6ckje44L2FB2HOjwEBmwuAlk=;
+        b=XudhwDvnRZMNjlNWjFHcZjWbjNvgxz/0B+3kRVJv2lQLGkn+7Zj6Nwx6z767wuRqWm
+         aUu1/T5+rsrjNuPEg5RTPzlK0OFEmLEeWXA4CKLmREln4aQYZZ+l1VBgybaK6lskZVcM
+         EKFHhrz1jGu/u+TTWuXpTMwVtr4yAOiio+KWtJMJi3BXFhUF6pEP2n+QnEvsuobnBNi9
+         dgiS+cc0I8xBFXCHOHCsdE9+Xx7CxGIxPZUQMLnZkPsu8fP3lrrq2xA45qIyQo4XCTvg
+         /yUz0aHW970FCIqNW+PpGKNKGISV3aPYVgX4kyuw4JXeZnhJonRxFU2jlJTC3P/DMRp8
+         lMsA==
+X-Forwarded-Encrypted: i=1; AKwUvBx76iQusn+sQT813+l82O+G54uom7u0JZ9pXi2FtuEH0mqR8yIW8JT+jd3WLEtFb7E8nJH2HhRfmg==@vger.kernel.org
+X-Gm-Message-State: AFuF++lCJ9zjM4fD+qcYZv/Fd0lQfwBLhcHL5bpctIzUGZNntFcilHxx
+	TEbPTea3esk3IamLzCSKaLEz/HtBHoe/t3Hf521ELjgTAefHXy4LE2/CXX+MUmyNDv4=
+X-Gm-Gg: AYBFou1ZojNhxXCIFWpO5LX2wRbyLvSLgF2ZOzM+7YquyVKrAaZ7OAGs90IL9dXAJjI
+	DROU1kiLJqLVA5i1w80a6wfuCQL0umSRbrXsQ1UsmH6cDksFam2fTPtS/NWk/UGAWRDvPuUCANv
+	QFwVQmMK8lf9SGQBQrJDrgtOoj2ramRsA/2PaaUhGGjzCMI+gaG7FkJuAHbIwZK2MToTKhNQ7/o
+	MsGOnCA4/NtARMmm6O9p6B3fxMrro5spdBB7qX3MlGnoMUmSUKMfoMDaVXgIKjFzZWpNWNMwbRC
+	crOaQpSZDa1XALYJQQz7NYR9HeaDwMSNB0K4/IoWcB25pxXpqs3uu9yD6FO6co855dmE+FFGJcF
+	VFWyQ0Hr7Yx7CWtrYx2/KnYcrecLO3MR61t4CgSHciN9+W91+md9RFO2MLDjLJC3WaR+swzBbXM
+	I9H++dkdPRGt6T1ho63pzk3FHb7RclKWCuDDCjpBf0fSkhgVCh/KlzkuPqPTLB+dQH/XakblyXT
+	YsXpkD4n4VYoC8hS7xPFI9wnfc75zPwiXPm
+X-Received: by 2002:a17:907:6c10:b0:c2d:bcf7:37f9 with SMTP id a640c23a62f3a-c2dbcf74374mr450445466b.26.1790611447489;
+        Mon, 28 Sep 2026 09:04:07 -0700 (PDT)
+Received: from mail-ed2-f12.google.com (mail-ed2-f12.google.com. [74.125.228.76])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-c2db959aa33sm324839766b.61.2026.09.28.09.04.06
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 28 Sep 2026 09:04:07 -0700 (PDT)
+Received: by mail-ed2-f12.google.com with SMTP id 4fb4d7f45d1cf-6a99cd5115bso5369594a12.3
+        for <linux-sh@vger.kernel.org>; Mon, 28 Sep 2026 09:04:06 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AKwUvBxkP7SV452JsFdRZwtOfyJ6CYJB+DFOvKVyooXM5wES2Hexg47DP49t4cVySmwGYu8I0v521cSmpA==@vger.kernel.org
+X-Received: by 2002:a05:6402:3209:b0:6aa:129a:1f70 with SMTP id
+ 4fb4d7f45d1cf-6aae8f768ffmr7805248a12.43.1790611446738; Mon, 28 Sep 2026
+ 09:04:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+References: <20260927191359.6144-1-kmehltretter@gmail.com> <d4f35d5001924ef9ff4b28ac412a9d4b6048d789.camel@physik.fu-berlin.de>
+In-Reply-To: <d4f35d5001924ef9ff4b28ac412a9d4b6048d789.camel@physik.fu-berlin.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 28 Sep 2026 18:03:52 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdVRznzGdRwZOHa3=cxhoDNBh1kJqGUoBHqowgj_nzKCRg@mail.gmail.com>
+X-Gm-Features: AclHuK-d8jrRoBM8kbq6kTOBOZdCkT4ExdxlaV1GF77pQxLzcRpmuQKgygoql24
+Message-ID: <CAMuHMdVRznzGdRwZOHa3=cxhoDNBh1kJqGUoBHqowgj_nzKCRg@mail.gmail.com>
+Subject: Re: [PATCH] sh: intc: sort the prio and sense lists after filling them
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Hi Karl,
+Hi Adrian,
 
-On Sun, 2026-09-27 at 21:13 +0200, Karl Mehltretter wrote:
-> register_intc_controller() sorts d->prio and d->sense right after
-> allocating them, with hw->nr_prio_regs and hw->nr_sense_regs as the
-> element count. The lists hold hw->nr_vectors entries and are only
-> filled later, by intc_register_irq().
->=20
-> On SH7785, sh7785-irq0123 and sh7785-irq4567 have four vectors but the
-> SoC's eleven priority registers, so sort() swaps 88 bytes in a 32 byte
-> kmalloc object at boot. slub_debug=3DFZPU reports "Right Redzone
-> overwritten" in kmalloc-32, and v6.5 and v6.6 panic in
-> __kmem_cache_alloc_node() while registering sh7785-irq0123.
->=20
-> Found with a custom QEMU model of the SH7785LCR. On it, v6.4
-> sh7785lcr_defconfig boots with SLAB, the defconfig default before v6.5,
-> and hangs before the console is up when built with SLUB.
->=20
-> Sort the lists once all vectors are registered, with the number of
-> entries that were added.
->=20
-> Fixes: b59f9f9775e6 ("sh: intc: optimize intc IRQ lookup")
-> Cc: stable@vger.kernel.org
-> Assisted-by: LLM
-> Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
-> ---
->=20
-> Notes:
->     Testing, all in QEMU on a custom SH7785LCR model, not on hardware:
->     - v6.5 and v6.6 sh7785lcr_defconfig hang before the console is up
->       (gcc 8 and gcc 14). With slub_debug=3DFZPU they boot and validating
->       kmalloc-32 reports "Right Redzone overwritten" after the object
->       holding the entries of sh7785-irq4567. With this patch they boot
->       and the report is gone.
->     - v6.4 sh7785lcr_defconfig (SLAB) boots. The same v6.4 built with SLU=
-B
->       hangs, reports the overflow with slub_debug=3DFZPU, and boots with
->       this patch.
->     - Current mainline boots with or without the patch, but reports the
->       overflow with slub_debug=3DFZPU unless patched.
->     Testing on real hardware is welcome.
->=20
->  drivers/sh/intc/core.c | 11 +++++------
->  1 file changed, 5 insertions(+), 6 deletions(-)
->=20
-> diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
-> index aa68fe190865d..ffbe60234eefc 100644
-> --- a/drivers/sh/intc/core.c
-> +++ b/drivers/sh/intc/core.c
-> @@ -275,9 +275,6 @@ int __init register_intc_controller(struct intc_desc =
-*desc)
->  			k +=3D save_reg(d, k, hw->prio_regs[i].set_reg, smp);
->  			k +=3D save_reg(d, k, hw->prio_regs[i].clr_reg, smp);
->  		}
-> -
-> -		sort(d->prio, hw->nr_prio_regs, sizeof(*d->prio),
-> -		     intc_handle_int_cmp, NULL);
->  	}
-> =20
->  	if (hw->sense_regs) {
-> @@ -287,9 +284,6 @@ int __init register_intc_controller(struct intc_desc =
-*desc)
-> =20
->  		for (i =3D 0; i < hw->nr_sense_regs; i++)
->  			k +=3D save_reg(d, k, hw->sense_regs[i].reg, 0);
-> -
-> -		sort(d->sense, hw->nr_sense_regs, sizeof(*d->sense),
-> -		     intc_handle_int_cmp, NULL);
->  	}
-> =20
->  	if (hw->subgroups)
-> @@ -357,6 +351,11 @@ int __init register_intc_controller(struct intc_desc=
- *desc)
->  		}
->  	}
-> =20
-> +	sort(d->prio, d->nr_prio, sizeof(*d->prio),
-> +	     intc_handle_int_cmp, NULL);
-> +	sort(d->sense, d->nr_sense, sizeof(*d->sense),
-> +	     intc_handle_int_cmp, NULL);
-> +
->  	intc_subgroup_init(desc, d);
-> =20
->  	/* enable bits matching force_enable after registering irqs */
+On Mon, 28 Sept 2026 at 17:10, John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> => usb reset; fatload usb 0:1 0x89000000 uImage-7.3.0.gz ; pmb ; bootm
+> (Re)start USB...
+> USB0:   scanning bus 0 for devices... 2 USB Device(s) found
+>        scanning usb for storage devices... 1 Storage Device(s) found
+> reading uImage-7.3.0.gz
+> 3649306 bytes read in 2074 ms (1.7 MiB/s)
+> ## Booting kernel from Legacy Image at 89000000 ...
+>    Image Name:   Linux-7.3.0-rc5-00001-g8cd915e93
+>    Image Type:   SuperH Linux Kernel Image (gzip compressed)
+>    Data Size:    3649242 Bytes = 3.5 MiB
+>    Load Address: 8c010000
+>    Entry Point:  8c011000
+>    Verifying Checksum ... OK
+>    Uncompressing Kernel Image ... OK
+>
+> I also never understood why the load address I used at the u-boot prompt
+> differed from the one that the uImage build process showed at the end of
+> the kernel build:
+>
+>   GZIP    arch/sh/boot/vmlinux.bin.gz
+>   UIMAGE  arch/sh/boot/uImage.gz
+> Image Name:   Linux-7.3.0-rc5-00002-g02d53450e
+> Created:      Mon Sep 28 14:56:15 2026
+> Image Type:   SuperH Linux Kernel Image (gzip compressed)
+> Data Size:    3649249 Bytes = 3563.72 KiB = 3.48 MiB
+> Load Address: 8c010000
+> Entry Point:  8c011000
+>   Image arch/sh/boot/uImage is ready
+>
+> Any idea?
 
-I tried this patch and the kernel still gets stuck for me after loading it
-with u-boot, the problem that I have been seeing since 6.5.0 and haven't
-been able to resolve.
+0x89000000 is the address where you load the uImage.
+0x8c010000 is the address where the unpacked kernel image will be
+stored.
 
-=3D> usb reset; fatload usb 0:1 0x89000000 uImage-7.3.0.gz ; pmb ; bootm
-(Re)start USB...
-USB0:   scanning bus 0 for devices... 2 USB Device(s) found
-       scanning usb for storage devices... 1 Storage Device(s) found
-reading uImage-7.3.0.gz
-3649306 bytes read in 2074 ms (1.7 MiB/s)
-## Booting kernel from Legacy Image at 89000000 ...
-   Image Name:   Linux-7.3.0-rc5-00001-g8cd915e93
-   Image Type:   SuperH Linux Kernel Image (gzip compressed)
-   Data Size:    3649242 Bytes =3D 3.5 MiB
-   Load Address: 8c010000
-   Entry Point:  8c011000
-   Verifying Checksum ... OK
-   Uncompressing Kernel Image ... OK
+The latter comes from your kernel config:
 
-I also never understood why the load address I used at the u-boot prompt
-differed from the one that the uImage build process showed at the end of
-the kernel build:
+    arch/sh/boot/Makefile:UIMAGE_LOADADDR = $(KERNEL_LOAD)
+    arch/sh/boot/Makefile:UIMAGE_ENTRYADDR = $(KERNEL_ENTRY)
 
-  GZIP    arch/sh/boot/vmlinux.bin.gz
-  UIMAGE  arch/sh/boot/uImage.gz
-Image Name:   Linux-7.3.0-rc5-00002-g02d53450e
-Created:      Mon Sep 28 14:56:15 2026
-Image Type:   SuperH Linux Kernel Image (gzip compressed)
-Data Size:    3649249 Bytes =3D 3563.72 KiB =3D 3.48 MiB
-Load Address: 8c010000
-Entry Point:  8c011000
-  Image arch/sh/boot/uImage is ready
+It's similar on ARM platforms that (still) use uImage.
 
-Any idea?
+Gr{oetje,eeting}s,
 
-Adrian
+                        Geert
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
