@@ -1,129 +1,127 @@
-Received: from mail-ej2-f43.google.com (mail-ej2-f43.google.com [74.125.228.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B79DC26158B
-	for <linux-sh@vger.kernel.org>; Mon, 28 Sep 2026 16:04:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 86FFC4F4044;
+	Mon, 28 Sep 2026 16:46:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790611452; cv=none; b=JjftQZyExCisejF8xjI4xnup9p1W4ioYCgDZ+c+ygpCH43RXfA5tOk1N2jEZE9Gs8DbdgnQynn5x5p1SRpq1hITUZ9md372w9Lm9vDxDEONYnaYD3hs5h4JUD6dyHCBzj7GilHez9ujN+OT9wR2F/8nbNe0DycvZTGR6Dpv/rqg=
+	t=1790613988; cv=none; b=aoeWb8KAJ2R487ucMSqtbUhgu1jUMQLTfYoGeMaYffMdF9qCEIc9bejZ+swZqBfvFO4g5fwT3xz/UUGGgjPXwv7B8zL766SyjX3owQ6l38ZqaUN2LBcJ0VLMzjICecm36bdEKsli9s9DGA07x7TihN+JRSGLMTASGJl1NSXhJVM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790611452; c=relaxed/simple;
-	bh=+OUWtMoUK/80tt3PXrNgtl9ROxd0swRJbu8F45E/dw4=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=YTwyIUH6uy50jjtAdDFUMfkMKRMn0rtKMw3F4YzxZCffiD3AwEe3g2njRhO5zQm49Fs4WBixTc+Oi/SiPTbFTBZjMuhCiuFOqQAuZxwPqWnvYvWcRpCOcYxajkqJd9Td0ULc1YgUxJEp35ujGGVlRBifBsV8pEo5OHQpuS5qeAQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=74.125.228.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-ej2-f43.google.com with SMTP id a640c23a62f3a-c2af876539fso334001866b.2
-        for <linux-sh@vger.kernel.org>; Mon, 28 Sep 2026 09:04:09 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790611448; x=1791216248;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=hBvDF6H9cPXn+plsHym6ckje44L2FB2HOjwEBmwuAlk=;
-        b=XudhwDvnRZMNjlNWjFHcZjWbjNvgxz/0B+3kRVJv2lQLGkn+7Zj6Nwx6z767wuRqWm
-         aUu1/T5+rsrjNuPEg5RTPzlK0OFEmLEeWXA4CKLmREln4aQYZZ+l1VBgybaK6lskZVcM
-         EKFHhrz1jGu/u+TTWuXpTMwVtr4yAOiio+KWtJMJi3BXFhUF6pEP2n+QnEvsuobnBNi9
-         dgiS+cc0I8xBFXCHOHCsdE9+Xx7CxGIxPZUQMLnZkPsu8fP3lrrq2xA45qIyQo4XCTvg
-         /yUz0aHW970FCIqNW+PpGKNKGISV3aPYVgX4kyuw4JXeZnhJonRxFU2jlJTC3P/DMRp8
-         lMsA==
-X-Forwarded-Encrypted: i=1; AKwUvBx76iQusn+sQT813+l82O+G54uom7u0JZ9pXi2FtuEH0mqR8yIW8JT+jd3WLEtFb7E8nJH2HhRfmg==@vger.kernel.org
-X-Gm-Message-State: AFuF++lCJ9zjM4fD+qcYZv/Fd0lQfwBLhcHL5bpctIzUGZNntFcilHxx
-	TEbPTea3esk3IamLzCSKaLEz/HtBHoe/t3Hf521ELjgTAefHXy4LE2/CXX+MUmyNDv4=
-X-Gm-Gg: AYBFou1ZojNhxXCIFWpO5LX2wRbyLvSLgF2ZOzM+7YquyVKrAaZ7OAGs90IL9dXAJjI
-	DROU1kiLJqLVA5i1w80a6wfuCQL0umSRbrXsQ1UsmH6cDksFam2fTPtS/NWk/UGAWRDvPuUCANv
-	QFwVQmMK8lf9SGQBQrJDrgtOoj2ramRsA/2PaaUhGGjzCMI+gaG7FkJuAHbIwZK2MToTKhNQ7/o
-	MsGOnCA4/NtARMmm6O9p6B3fxMrro5spdBB7qX3MlGnoMUmSUKMfoMDaVXgIKjFzZWpNWNMwbRC
-	crOaQpSZDa1XALYJQQz7NYR9HeaDwMSNB0K4/IoWcB25pxXpqs3uu9yD6FO6co855dmE+FFGJcF
-	VFWyQ0Hr7Yx7CWtrYx2/KnYcrecLO3MR61t4CgSHciN9+W91+md9RFO2MLDjLJC3WaR+swzBbXM
-	I9H++dkdPRGt6T1ho63pzk3FHb7RclKWCuDDCjpBf0fSkhgVCh/KlzkuPqPTLB+dQH/XakblyXT
-	YsXpkD4n4VYoC8hS7xPFI9wnfc75zPwiXPm
-X-Received: by 2002:a17:907:6c10:b0:c2d:bcf7:37f9 with SMTP id a640c23a62f3a-c2dbcf74374mr450445466b.26.1790611447489;
-        Mon, 28 Sep 2026 09:04:07 -0700 (PDT)
-Received: from mail-ed2-f12.google.com (mail-ed2-f12.google.com. [74.125.228.76])
-        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-c2db959aa33sm324839766b.61.2026.09.28.09.04.06
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 28 Sep 2026 09:04:07 -0700 (PDT)
-Received: by mail-ed2-f12.google.com with SMTP id 4fb4d7f45d1cf-6a99cd5115bso5369594a12.3
-        for <linux-sh@vger.kernel.org>; Mon, 28 Sep 2026 09:04:06 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AKwUvBxkP7SV452JsFdRZwtOfyJ6CYJB+DFOvKVyooXM5wES2Hexg47DP49t4cVySmwGYu8I0v521cSmpA==@vger.kernel.org
-X-Received: by 2002:a05:6402:3209:b0:6aa:129a:1f70 with SMTP id
- 4fb4d7f45d1cf-6aae8f768ffmr7805248a12.43.1790611446738; Mon, 28 Sep 2026
- 09:04:06 -0700 (PDT)
+	s=arc-20240116; t=1790613988; c=relaxed/simple;
+	bh=xGrRDC37H4jqxaP+sX2g21n59nW0beEUJrLHWltb5cE=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=DJVhKqngjrENuic3sajhnL5OWIsF+Nvq7c48SKX52zZzDDylSlLuaAC8iIMyL9gJSrVYE6Hvj8/hRL6uGwqnNVuZOxLA4f6yqu2xcNVC8bh1gE5MgoY8XsnDP1x+tYlGDls9bufbLUJUaqDbjWMaFxaa50Y2ZU46yDz5JFksVuc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=n+kiG9JM; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="n+kiG9JM"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=q9dv3KRVf0uWu2H4JGQnVmNTZK4DR17si1YGG97OTxg=; t=1790613984;
+	x=1791218784; b=n+kiG9JMUBIuF5N4M3Tf2TnKkh57v3pidDV9qIxRtRVrxXmCyZNA6TUr71JHq
+	5wWiuW+Od8ct7aiaDlDPSH3GD3siA5xrVO6I4wToC7lQgHf3yMEn4ZeQ9S/+rNaka4bRgBAvMb7vZ
+	X66LUfnPWtLs7VmWuBKROEZemVb4ApnFv9eOJ/+T2KlvBvHKAeIXPegAbNhwlMTVqvIiB4emc87z0
+	Gey96aHURI7VFgj8tizAC6GFNVmxWr+fPrTbBD43uT80PmOXQ6bNOz/3dTGqRDJx9n6ZjK5oudREX
+	DLZLkALIFa1lbblvSL6XeVJUCBE8GSHgdPb2j+rDjOFMfd6fRw==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.100)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1xBEUf-0000000152G-2As2; Mon, 28 Sep 2026 18:46:21 +0200
+Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.100)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1xBEUf-00000002tKi-1G4a; Mon, 28 Sep 2026 18:46:21 +0200
+Message-ID: <ed4f818f00df446df53a9168054bee1a9a993409.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: intc: sort the prio and sense lists after filling
+ them
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Mon, 28 Sep 2026 18:46:20 +0200
+In-Reply-To: <CAMuHMdVRznzGdRwZOHa3=cxhoDNBh1kJqGUoBHqowgj_nzKCRg@mail.gmail.com>
+References: <20260927191359.6144-1-kmehltretter@gmail.com>
+	 <d4f35d5001924ef9ff4b28ac412a9d4b6048d789.camel@physik.fu-berlin.de>
+	 <CAMuHMdVRznzGdRwZOHa3=cxhoDNBh1kJqGUoBHqowgj_nzKCRg@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260927191359.6144-1-kmehltretter@gmail.com> <d4f35d5001924ef9ff4b28ac412a9d4b6048d789.camel@physik.fu-berlin.de>
-In-Reply-To: <d4f35d5001924ef9ff4b28ac412a9d4b6048d789.camel@physik.fu-berlin.de>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 28 Sep 2026 18:03:52 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVRznzGdRwZOHa3=cxhoDNBh1kJqGUoBHqowgj_nzKCRg@mail.gmail.com>
-X-Gm-Features: AclHuK-d8jrRoBM8kbq6kTOBOZdCkT4ExdxlaV1GF77pQxLzcRpmuQKgygoql24
-Message-ID: <CAMuHMdVRznzGdRwZOHa3=cxhoDNBh1kJqGUoBHqowgj_nzKCRg@mail.gmail.com>
-Subject: Re: [PATCH] sh: intc: sort the prio and sense lists after filling them
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Hi Adrian,
+Hi Geert,
 
-On Mon, 28 Sept 2026 at 17:10, John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> => usb reset; fatload usb 0:1 0x89000000 uImage-7.3.0.gz ; pmb ; bootm
-> (Re)start USB...
-> USB0:   scanning bus 0 for devices... 2 USB Device(s) found
->        scanning usb for storage devices... 1 Storage Device(s) found
-> reading uImage-7.3.0.gz
-> 3649306 bytes read in 2074 ms (1.7 MiB/s)
-> ## Booting kernel from Legacy Image at 89000000 ...
->    Image Name:   Linux-7.3.0-rc5-00001-g8cd915e93
->    Image Type:   SuperH Linux Kernel Image (gzip compressed)
->    Data Size:    3649242 Bytes = 3.5 MiB
->    Load Address: 8c010000
->    Entry Point:  8c011000
->    Verifying Checksum ... OK
->    Uncompressing Kernel Image ... OK
->
-> I also never understood why the load address I used at the u-boot prompt
-> differed from the one that the uImage build process showed at the end of
-> the kernel build:
->
->   GZIP    arch/sh/boot/vmlinux.bin.gz
->   UIMAGE  arch/sh/boot/uImage.gz
-> Image Name:   Linux-7.3.0-rc5-00002-g02d53450e
-> Created:      Mon Sep 28 14:56:15 2026
-> Image Type:   SuperH Linux Kernel Image (gzip compressed)
-> Data Size:    3649249 Bytes = 3563.72 KiB = 3.48 MiB
-> Load Address: 8c010000
-> Entry Point:  8c011000
->   Image arch/sh/boot/uImage is ready
->
-> Any idea?
+On Mon, 2026-09-28 at 18:03 +0200, Geert Uytterhoeven wrote:
+> On Mon, 28 Sept 2026 at 17:10, John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+> > =3D> usb reset; fatload usb 0:1 0x89000000 uImage-7.3.0.gz ; pmb ; boot=
+m
+> > (Re)start USB...
+> > USB0:   scanning bus 0 for devices... 2 USB Device(s) found
+> >        scanning usb for storage devices... 1 Storage Device(s) found
+> > reading uImage-7.3.0.gz
+> > 3649306 bytes read in 2074 ms (1.7 MiB/s)
+> > ## Booting kernel from Legacy Image at 89000000 ...
+> >    Image Name:   Linux-7.3.0-rc5-00001-g8cd915e93
+> >    Image Type:   SuperH Linux Kernel Image (gzip compressed)
+> >    Data Size:    3649242 Bytes =3D 3.5 MiB
+> >    Load Address: 8c010000
+> >    Entry Point:  8c011000
+> >    Verifying Checksum ... OK
+> >    Uncompressing Kernel Image ... OK
+> >=20
+> > I also never understood why the load address I used at the u-boot promp=
+t
+> > differed from the one that the uImage build process showed at the end o=
+f
+> > the kernel build:
+> >=20
+> >   GZIP    arch/sh/boot/vmlinux.bin.gz
+> >   UIMAGE  arch/sh/boot/uImage.gz
+> > Image Name:   Linux-7.3.0-rc5-00002-g02d53450e
+> > Created:      Mon Sep 28 14:56:15 2026
+> > Image Type:   SuperH Linux Kernel Image (gzip compressed)
+> > Data Size:    3649249 Bytes =3D 3563.72 KiB =3D 3.48 MiB
+> > Load Address: 8c010000
+> > Entry Point:  8c011000
+> >   Image arch/sh/boot/uImage is ready
+> >=20
+> > Any idea?
+>=20
+> 0x89000000 is the address where you load the uImage.
+> 0x8c010000 is the address where the unpacked kernel image will be
+> stored.
+>=20
+> The latter comes from your kernel config:
+>=20
+>     arch/sh/boot/Makefile:UIMAGE_LOADADDR =3D $(KERNEL_LOAD)
+>     arch/sh/boot/Makefile:UIMAGE_ENTRYADDR =3D $(KERNEL_ENTRY)
+>=20
+> It's similar on ARM platforms that (still) use uImage.
 
-0x89000000 is the address where you load the uImage.
-0x8c010000 is the address where the unpacked kernel image will be
-stored.
+The thing is that it stopped working after 6.5.0 and I never figured
+out why. I did test all kinds of changes and it just never worked
+again while pre 6.5.0 kernels work just fine.
 
-The latter comes from your kernel config:
+Adrian
 
-    arch/sh/boot/Makefile:UIMAGE_LOADADDR = $(KERNEL_LOAD)
-    arch/sh/boot/Makefile:UIMAGE_ENTRYADDR = $(KERNEL_ENTRY)
-
-It's similar on ARM platforms that (still) use uImage.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
