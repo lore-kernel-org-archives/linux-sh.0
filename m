@@ -1,109 +1,111 @@
-Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.16])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj2-f12.google.com (mail-pj2-f12.google.com [74.125.227.140])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A0503B83F9;
-	Wed, 30 Sep 2026 08:37:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.16
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 823A9488DAE
+	for <linux-sh@vger.kernel.org>; Thu,  1 Oct 2026 06:57:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790757437; cv=none; b=QSXt6kYevLXZJBDLX4AgCtNLLTvc3VJYAEyoQF5UwYJ6saGjFgO4XXAx6gJk4isbuqUctXhZ8Zah1VZJb9rrIqGUWYE/qjJEPOfNSMHUgbT7mMFkGqLy3LWIssSrfDw369k2lSJaPXywszGPrTiFZUyk5rh3ZYSHF6ZSrQPD5pk=
+	t=1790837874; cv=none; b=L5pKhYB8WTcZEdaxxLg7xtV54SZ9o51JnhMmBornP5sS/3i2fLmpJvqathjwwjXuCXyheWn174cnvZN/3WVZ1K3mAqIrdN9kjuwtXxYOi54LXASjw7uMwa06130Sd5QQiuLoys7nab1m4VrsGsChl7too4VIBR+3KGNKdkFnCAA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790757437; c=relaxed/simple;
-	bh=D36bru2Y09Tqy8UqJ7Z7t2+mwKz/02jpY1pHkvwm0tY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=OrjnwHI8+VLtgR4/fRhzxbV8j0FVeE0FR/MobWUfgufI5tQmSGq9xm1P7lR62tyIWfzaj7SN47ZhEcQIGR7CvSUX+Hxs51ZLAU2EgmiRUjLyuvpv6/2B2lqj3RUrRfY30u+1YSEcv5SC5ZDMVTod6kkypjAQVrEMcUN34TmoMP8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com; spf=pass smtp.mailfrom=linux.intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=ll5Oe3s+; arc=none smtp.client-ip=192.198.163.16
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.intel.com
+	s=arc-20240116; t=1790837874; c=relaxed/simple;
+	bh=oyGxfknbD70hR315BZAc8UNTJemd7B5UNz5z1PytFcM=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=aoRYNnVcuhb6TVegi+rh/zHbSr0i3UJns246MOfw99UK0JS6scKbdCVCmweHg7pbAElwO4gRb6rDPNKKPpV8jRtw7aS9qmlRCxGi39p01mi5VGWrCUm4fwd3Auasa/oRei4b4F4nVAygBwL1wFolh6e257YzDkBH0Cd9TBLInZs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=SJTibrmi; arc=none smtp.client-ip=74.125.227.140
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="ll5Oe3s+"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1790757436; x=1822293436;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=D36bru2Y09Tqy8UqJ7Z7t2+mwKz/02jpY1pHkvwm0tY=;
-  b=ll5Oe3s+Vs3+HhNgVrvQ0gYjwn/lzY9YVceoKgLb3uzio3RGtzpdrrjl
-   M1w2xZgQAmIFyrtWWCAYjIJEpJi/3Odrvji0SGNCrCqavwy4AaTpwnP+a
-   PPY6bGvgsqGqeL9/GX9DJoLJPbU8qJrsAY5ENVXTkKmfTWT4SCrfwT3Hb
-   GJRPxt+jUs+LSsW0YHcqItv64y0fMhsmiGreQS8uoDxgigMw+tslJxOLc
-   MjwnWF26BLiAuEPCdgDl2qRUtWjjuQj7kg09ejKOko0p1OKNY2iBVSV7m
-   OdZfodW3Zq/LLuqwDWG9QH2xMNa4Gy0PldPimab+sPlvI182+Ex7Nw4FK
-   A==;
-X-CSE-ConnectionGUID: MhEOUsg+RZKrOWRrXbHXmA==
-X-CSE-MsgGUID: LSIJjc0zTHSMgvdR5bCXQA==
-X-IronPort-AV: E=McAfee;i="6800,10657,11920"; a="79056300"
-X-IronPort-AV: E=Sophos;i="6.27,132,1787036400"; 
-   d="scan'208";a="79056300"
-Received: from orviesa009.jf.intel.com ([10.64.159.149])
-  by fmvoesa110.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Sep 2026 01:37:15 -0700
-X-CSE-ConnectionGUID: 7OH+ofCXR8Svb2TdGvNEcQ==
-X-CSE-MsgGUID: +csRZVPqQ8a858Yv8CI8JQ==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.27,132,1787036400"; 
-   d="scan'208";a="275664721"
-Received: from spandruv-desk1.amr.corp.intel.com (HELO localhost) ([10.245.245.137])
-  by orviesa009-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Sep 2026 01:37:12 -0700
-Date: Wed, 30 Sep 2026 11:37:10 +0300
-From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To: Arnd Bergmann <arnd@kernel.org>
-Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	Linus Walleij <linusw@kernel.org>,
-	Bartosz Golaszewski <brgl@kernel.org>, linux-sh@vger.kernel.org,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SJTibrmi"
+Received: by mail-pj2-f12.google.com with SMTP id 98e67ed59e1d1-398b3b189e0so3461220a91.2
+        for <linux-sh@vger.kernel.org>; Wed, 30 Sep 2026 23:57:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1790837873; x=1791442673; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=cbv3x0usvUQFlT6gSLII0S/r79J2R+NYTfNWLq1Zy6k=;
+        b=SJTibrmiCoS3k9t8Dy1JPkRuCAQLq2L7rXf3FTzQQv1Wro7Vdc+bm2D8c6s/c64fGF
+         Z4kiNTwS5ag64vIqXolEil7NAVpbniZRrnDMyzNcnC73wmHziiphKtuy3AJu53cwMUFz
+         m6WQqZ1OWJPFtVtijBODow1avTk9OYBjpsptJpX5gxXJmhIMNSQW5C06eADlLzPXXQk6
+         sD71ENbWAAZuQtSJZM/CLP6pc3Ky1RrqQKdCembB+QfitGIscmgXw9ljQzcwkTFRecT7
+         uDkVuDFIR9uQOlDPXdr2awRFeWmOGVWpz/DyIk4WosO6g5aHOhk4/O/JKQG3cnAPg+tG
+         P1hA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790837873; x=1791442673;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=cbv3x0usvUQFlT6gSLII0S/r79J2R+NYTfNWLq1Zy6k=;
+        b=unpP0F1QjqUmqhimw2i2tbyvkyCEC9+w6r/PDICffpw7vDN5HBSMLGpEfANWLSjMmN
+         yrISyN9gC31hhRTNzGMvEhgvruPx4q+RB20Tdm9uwtHvVQcScXlcWhySWM46vzdbmhkH
+         5mB3WkbGmDCd6VSsX/tcy6e+X4Owhs9CQ5t+dFNpKewFps/bS9DkNpiDgIGJrCUaTPeK
+         8GL5IL2fBeYoJIrpBHH+ChVJYU/Qsfjahj0XM3qOLA051eoSIhgQMFpYSe2DKtHTXDws
+         nBQqVEvYIgC9zQJJ6FZewGVXgk3Mf9TnDunXRSdJs8oJH7WEUcMIMnEk1S255qfqCDz0
+         dX3A==
+X-Gm-Message-State: AFq9FYK+xeQHfWNzb9Qo8noOs5IYj7/FpUXjCxujTNFo/LYceYEb+8Q/
+	oTuOMkMQJSvwcZdMpXHFXJWFeGtwye/IFbtnmQa8R7Ovpf6qyLVm7qZnF2qKY08W
+X-Gm-Gg: AYBFou12CRCXpmz6QjuRy1GegdrsDwQJ2mnGKGqUwt/09WUkVcAKWe2g55Swz3dn3ZG
+	aUAhK3e5yvaasBmisVvKiHsUrsen0zUDnAOqdPKCZ6bsy7SNLUu2Ld8qc/3BzPhltlBzXThbHv2
+	9ed37Iztzxd/xvouDaAtvUpYmb7bX/aeyYwLu3tbwUOUX5+I2s4xuTTmNjLpkPZ5B8MfmmdIQ8v
+	y2bKeP5P7lmnpEgAcOxvniZd7C7ASqGCSbGXnIQV0UuPoCKvoaEX0NG2dPA7trqUeZ0p4XqjhD1
+	UA8yyHpSqH1By4j0u6NqHcmEiULBPH97RWWiXLEgWceYiR0NJ7ZqsJd5xyBn38OdiyF6ea0YMiO
+	nyL8qdnD+iAqZvb+ETAcujLjd3Obx7VDIvYRqwb2z1H0JHSrHH4Xz+uxTIsWlHHzkr13sVTvKTR
+	VB7EWESvJmVOl+YzPIst30BGCvW5630a4b2jNFJwj1NTjsd5iwrNLI8K7idqZX+UB3jY+zyRl0B
+	JnrXcc4CrR/oaM64IfdS5I5r9Xu8+1VEhHi1y1AeyzzGtwU
+X-Received: by 2002:a17:90b:3b52:b0:3a4:e31b:9312 with SMTP id 98e67ed59e1d1-3a4fe5a7b0dmr908773a91.25.1790837872858;
+        Wed, 30 Sep 2026 23:57:52 -0700 (PDT)
+Received: from localhost.localdomain (d173-183-236-7.abhsia.telus.net. [173.183.236.7])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a4f44d0a30sm2873138a91.16.2026.09.30.23.57.52
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 30 Sep 2026 23:57:52 -0700 (PDT)
+From: cacioandpepe <artem122novak@gmail.com>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de
+Cc: linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
-	"open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
-	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-Subject: Re: [PATCH v3 0/5] sh: mach-rsk: rsk7203: switch to using static
- device property, drop legacy gpio API
-Message-ID: <arzKNhmoL6yiGrzH@ashevche-desk.local>
-References: <20260929-rsk7203-properties-v3-0-02f84aeb8e47@gmail.com>
- <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com>
+	cacioandpepe <artem122novak@gmail.com>
+Subject: [PATCH 1/2] sh: guard SH4 no-FPU compiler fallback
+Date: Thu,  1 Oct 2026 00:57:35 -0600
+Message-ID: <20261001065736.753215-2-artem122novak@gmail.com>
+X-Mailer: git-send-email 2.55.0
+In-Reply-To: <20261001065736.753215-1-artem122novak@gmail.com>
+References: <20261001065736.753215-1-artem122novak@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - c/o Alberga Business Park, 6
- krs, Bertel Jungin Aukio 5, 02600 Espoo
+Content-Transfer-Encoding: 8bit
 
-On Wed, Sep 30, 2026 at 09:23:21AM +0200, Arnd Bergmann wrote:
-> On Wed, Sep 30, 2026, at 06:57, Dmitry Torokhov wrote:
-> > This series of patches converts rsk7203 to use static device properties
-> > for its devices, including gpio-keys and gpio-leds, and removing
-> > dependency on legacy gpio API (in favor of gpiod API).
-> 
-> The patches look good to me. I have build-tested this with the snippet
-> below and my series from
-> https://lore.kernel.org/all/20260907090956.2825703-2-arnd@kernel.org/
-> to check that no use of the legacy interfaces remain.
-> You can probably fold my one-liner into your last patch.
-> 
-> There is a trivial conflict between your series and my patch 2/2
-> "gpiolib: remove linux/gpio.h", but if yours gets merged, I can
-> resend mine without that line.
-> 
-> > To configure pin functions the board is switched to use gpio-hogs, as
-> > doing full conversion to pinmux is too challenging without access to
-> > hardware.
-> 
-> I would guess even with access to hardware testing is going to be
-> challenging, I noticed that the defconfig kernel does not fit on the
-> 4MB flash any more (even without rootfs), and the USB support was
-> never added for rsk7203, only for 7264/7269.
+The SH4 compiler flag selection falls back to -m4-nofpu when
+-mno-implicit-fp is unavailable without checking whether the compiler
+supports -m4-nofpu itself.
 
-...which induces a practical question, shouldn't we just drop the whole thing
-for good?
+This breaks SH4A-only toolchains which support -m4a and -m4a-nofpu
+but do not provide the plain SH4 -m4-nofpu option.
 
+Use a nested cc-option so the fallback is emitted only when supported.
+
+Signed-off-by: cacioandpepe <artem122novak@gmail.com>
+---
+ arch/sh/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 7b420424b6d7..238c701ab14b 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -36,7 +36,7 @@ cflags-$(CONFIG_CPU_SH2A)		+= $(call cc-option,-m2a,) \
+ 					   $(call cc-option,-m4-nofpu,)
+ cflags-$(CONFIG_CPU_SH3)		:= $(call cc-option,-m3,)
+ cflags-$(CONFIG_CPU_SH4)		:= $(call cc-option,-m4,) \
+-	$(call cc-option,-mno-implicit-fp,-m4-nofpu)
++	$(call cc-option,-mno-implicit-fp,$(call cc-option,-m4-nofpu,))
+ cflags-$(CONFIG_CPU_SH4A)		+= $(call cc-option,-m4a,) \
+ 					   $(call cc-option,-m4a-nofpu,)
+ cflags-$(CONFIG_CPU_SH4AL_DSP)		+= $(call cc-option,-m4al,)
 -- 
-With Best Regards,
-Andy Shevchenko
-
+2.55.0
 
