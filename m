@@ -1,160 +1,196 @@
-Received: from mail-pz2-f43.google.com (mail-pz2-f43.google.com [74.125.228.43])
+Received: from mail-pj2-f13.google.com (mail-pj2-f13.google.com [74.125.227.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 23B535328BD
-	for <linux-sh@vger.kernel.org>; Thu,  1 Oct 2026 21:06:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.228.43
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790888770; cv=pass; b=pmDxEyY0xBJa9knyYuBLRRcYfr81qfr4V/Lg8t5EIo0FXDOgSWMWZZwDuO7HjDPCsWsWGASNKBTZa2NX6Cdw6TX7W2bkEbP50iEuo9R5E6wXz9FiiZclIGEalnkJ7/rDP8uSNHw53IfUYpE4vqwLMg2JCvgYNjXuaVMs0+NmLvI=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790888770; c=relaxed/simple;
-	bh=xN21QYy0yGgz2sHT1nXnC/21nVEwjhkQB04Hg4E+rW8=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=gS1vU7pgRkPlQNV8/g8Hmv+5eixlw8nyt6qDEmTV5ldFfn0yYKOT05YGnCzKE9IzeUMTjuHDMo4yDTMPztYzHtdX/eIl663LxKVW2F9vw+xxtqZEyFZNjBEtMt842/uyeW3n4J9t/yZURdnlfZ0LMj4i8HHq83Za9SQnbaNucW4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=paul-moore.com; spf=pass smtp.mailfrom=paul-moore.com; dkim=pass (2048-bit key) header.d=paul-moore.com header.i=@paul-moore.com header.b=CAwV36pr; arc=pass smtp.client-ip=74.125.228.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=paul-moore.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=paul-moore.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 89CD0282F14
+	for <linux-sh@vger.kernel.org>; Fri,  2 Oct 2026 00:51:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.141
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1790902275; cv=none; b=JM2/XI+9E7OKdfO043L0pDBtAGtWihGESp5+HOSQKSMA2okKxMe5gDXe+HZUcj/AXMFz17VpUvGDE66x1YiPznstFgScIts55qulNepkWRMD/AmkJeQW+HIitWgTkAV53fOY6Aev0Q9LjekylKI7f7a9T6YzTTrPgmQRRT+k4yY=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1790902275; c=relaxed/simple;
+	bh=8Dmb/mLuWXLyyFW0llcc/hS/zATbTYC9yx7tgMnoKB4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=NP8eWiBgKboxRbief68kfexLDjpldy3+TZpKEJVp3WK+ipdPFxpQPwR8c6vpA92vcVoxAnqxCmE3H8qaWLwppOb/PVmnS/u4L/4XLDuDnlXt51w9N+LhBslyEA49bU0+PbUWllf+IsgvhbrE8te1YflyfpcNK/sr5sttWdE+Kv4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=NbP5GCru; arc=none smtp.client-ip=74.125.227.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=paul-moore.com header.i=@paul-moore.com header.b="CAwV36pr"
-Received: by mail-pz2-f43.google.com with SMTP id d2e1a72fcca58-8633a38df87so3047623b3a.2
-        for <linux-sh@vger.kernel.org>; Thu, 01 Oct 2026 14:06:07 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1790888767; cv=none;
-        d=google.com; s=arc-20260327;
-        b=nZc6+OoZofJ6kArp38ja1bugBpxDWVEbMW1TnCiyWfnyaB3hsv9Zz/q+6HSjF6PAp9
-         Mpad3Cq+LpYWVjROb16Vi3CxKbHF+1x2aS8KJD18Y7V4Wxcy3AD3kz3uypJdUnqd2OOt
-         tnaWCzzAT72Rx+PK+6o81o4aU8/Uh6jHLQQrVA3cvlkSDZVWLcQ82nzpu6V7AgbMWvqg
-         C5qlVDWDnn5fBaZignr7sc//dL5WtCDYc5i82I5lL9cf/jBGPCQwRojIQSx9UkkNh9hZ
-         R6nxQ9SOXSep5hKfDoSYFFWLetYV46sey7Gr7YwvieCGyzbczbr3lmTcuT6gL5G3USkO
-         7eAA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=zQjpYhlPNUCc8b2PKOBh4ENa5gh7HULkWsy4SYnLXSM=;
-        fh=zp4IBwcdEhLhaY0Ova4+7TiLFLqIeparHsFkWssrrwM=;
-        b=J9jMJc4YH7lY622AfimfJHiYY+GGqA7gdHtKdrKXhobK6ePzLm0tkxDq2x68wDUv6v
-         9UoRL6yRNDxe/jxOvKAe4mMib8DkVajAcdae+uUaoPI+KxPzkzaTeMyFcgStPHGiD0EI
-         zj3hb7A3X0j+05hRaM1ZYqsUqWuX7u31VfUQFPaGRN0x7ppOdmQeckQOnQIWEeVCCvTn
-         H5PtDVWiLGUSlXZUPS2ro0tBcA9/53iTTiSXBICK2OP7lRrtFcmZuKcfBLfEoVZfmbd+
-         0RYzjKJVMPFDJH4p8khdUj+dPqNREtIcjy+eEaKqxipWrSllJ4Jo86HZB4Y1b7y0vxCp
-         6eXw==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NbP5GCru"
+Received: by mail-pj2-f13.google.com with SMTP id d9443c01a7336-2dd88a115ebso41558195ad.2
+        for <linux-sh@vger.kernel.org>; Thu, 01 Oct 2026 17:51:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=paul-moore.com; s=google; t=1790888767; x=1791493567; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=zQjpYhlPNUCc8b2PKOBh4ENa5gh7HULkWsy4SYnLXSM=;
-        b=CAwV36prXHOZw2NRE+aSACbPdDsBf2SHqbBYA6oNTHRxcIGcOyC/CJqkRH7LJRevOZ
-         ClcJMU2t93f7XmqqwruK0c5ZXJiXQfI/+n+w9nHyb4EcEh0EZTu11pUBC9xzrVuOqKBT
-         YsV75j7RrnJU55Z+JqH44vXWfdCbI4I+NCB8980IdTgu7vzPMxHvgU+uCw/+FxPpgY0h
-         63X1M3w+g/hILuWVI8qWSFmlSwv2NKZwGdJ2DwWfYsxtFTA/lG+C3YADiA4myoIGj7HP
-         Z1Ev8yhuTUNqN+BrgGDh8F6GLVD0gbmqkkcnf9FOFy5sLyuxAa1XjcNkIrhbHMfk8YG5
-         z0BA==
+        d=gmail.com; s=20251104; t=1790902274; x=1791507074; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=oX/x1rko7bkYDh6myuQsKqrjTrNd8ZRwr/c3ViywoeE=;
+        b=NbP5GCru04jOZ17vVfF09BaLOp1q1KQRfvLj40gNVAinBu3qHTW1mFJEtwvGg5R1TF
+         3vk/nT55Z23+yCB+tWUC3YeRLvRGHIIwJrGb6l/6CEqEehWCbPAf+ZCNKs8cozMcHf3D
+         o//PP8U6Hm7EJJEHxsudhccEPCTyDdHX+r/BRXUM/04s6aItVQ9TpJtE0VZMclCCfZ/s
+         QRWsrD1gbkpMGjeuRGiqQVHMTbGTD6cXJOFVZt3zLbSRWVX3VI+u+fEZFVAUCxfjDDOW
+         BD8W3D9et3UU0BSGxx32nOvKZJgEoKc1CTlnmAZD8klliUAXIpTqhVwz0X8dir2VoN3R
+         KSvA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790888767; x=1791493567;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=zQjpYhlPNUCc8b2PKOBh4ENa5gh7HULkWsy4SYnLXSM=;
-        b=JHG/ceLaMEo1ZLhbN3SrDDDARkrrZsmVNsb+K6aSymvf1qwaMW5LoaurjA69jjDILn
-         I/koWekQpyaJdOQ29yqu8FsyoTHuaCBymaYfjE3aPG7qI7Fa/BDQlVGda1MSHTriZn10
-         R/ookSeND0xuwE5ACoHvEy8FnCJdOKFgsgaGaw/c0Fl5IIJluoR7m1x7OzJ7iafo98Ox
-         /MVQTDB4jhU0adRqcvCF/+E81cUQPj1mtaIPJ9ud09fWmTcDqUtXBmXHAO5r+TV2LbAy
-         a7qV0bQzERmvP0l8qTODgYV/DzFB1rZZQwQeTT4yhwnngAyCRU/r5LL+8sUCq3sgoEBs
-         HrFA==
-X-Forwarded-Encrypted: i=1; AKwUvByJPLKkXn3ZrJ3jKpDRokoTTMsnqGlUQ4SMjXpiSscTsQMmWdlAGZGnovgE7wOwGYdQbmDl83OXdQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++m5NWB3XG47oSB4Z2CVPDSw7Gdo5eq7xpFxLBEKLqJE6pb0zFIQ
-	9HWFOFOfBEIIBOrdtlAYsSoEo531ylm38I2WWEl2mjFza4uB80DkBm0jSEsO1Fkc+Bo31EfjqnH
-	CFuB7YGApMqLdRgsoTUCW+HwKmVP0tllg1wJcxoaGZreFDoQLLyRkYA==
-X-Gm-Gg: AYBFou2hJaizPqYk8OsBQKjrgZJLbbJDZmv23Cpe9n9CPuZmQ0oJeE318kVFoRs3SzI
-	XZuMZOeUu6gt/BOR3X6gEPDP+LQNwHwFlsmy9lU4n4ysPqbGv7mSx7ZCa9RKw7gRMaCR77f71Et
-	BnTBoxe4BAW6cQbI1pKcKdgekb+lAoXOoUUwNvRtqWnXeqYm+O1h0h3HdyT44fXy6Cxff01dprY
-	cfP7IIMl1TtfuvzU8TZEFiWz8hBMM4tttVnH96EvBIVEpwuUluNB1nZhcZ6fDre+Bkse1SMjHr+
-	SRPtp1YTghjLlG4oPmoFu8fo/X2qEFVZLFcmSFJ+ObmNvqZOOxyZtamGNcXxkQaTgvq5kntcitl
-	ew9VXycq870b3
-X-Received: by 2002:a05:6a00:1254:b0:881:5dcb:400e with SMTP id
- d2e1a72fcca58-88af6d24f34mr727169b3a.56.1790888767004; Thu, 01 Oct 2026
- 14:06:07 -0700 (PDT)
+        d=1e100.net; s=20260707; t=1790902274; x=1791507074;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=oX/x1rko7bkYDh6myuQsKqrjTrNd8ZRwr/c3ViywoeE=;
+        b=Ti5llDTMOqIvoJ7512TNh1lgbhzdZAp2XOUJV/zGbHmNDjL2BqhoEe1WVf0OcvWIur
+         41Sy24/N1AinBPlLeOgfMDYQjGlnAMr63Hcal8b9F2xElyi1qRHD5K2CNX6UQyA7LGnH
+         5Y2h0EBS/0BCsiKgqHSmVZ4N47pc80TFRfDIwhLjHzif/mBnJ2oA0+K26xyQQo9EzTnL
+         1EG9ZBlqZlHx/oRmHnVuxrLir970ZssWju2qTOihHkPp4lggmRumaqdc0fky3SzqrpUh
+         D41ZRlfFpxndAsEWHxKUz7bgZCtpsG6GCsFxKq8MpBD9w2KtbZzMR/jm4EG5SBZOl0eA
+         C19w==
+X-Gm-Message-State: AFq9FYLFgu7rK9yc7o56OItmS2h+RbuLLZUdzADFpIK+xUw1PfkE+j3n
+	QZIDD8x2kR+GRIJ9I+EeIiASs9p6suKus2/r4ITsCLYYrZGsu92c3ssFftj0diAY
+X-Gm-Gg: AYBFou3aqnIlJ7eS0dby0C7XC2vAPdIm42Y9UH4IyrtIqqqnZoa9fezOHdDz/ycUHVo
+	tW3ci/+KNynTaFNyOikeaQ4eT1pcS06/GBOaYE3IpWj4TrQFobKvWOzU9FjmSRNpYBW3lSZ6VUa
+	uXlX0OiE97Wfzo8Eq/Vg9mc1FUUEStr7IZgpS7FyTZod3WYqJtMFpmJwfeHKuK3FSxJnIPHakDJ
+	COXMpSVlCJYiLE2qjA3M9lW2Nd8YVnG9jcxpSKVW44RwFZ7LSqYBwg0itIlhj84tlxu36NM/oiE
+	McEhwIBlIBVsN1HZBn7rRKp/wOnFGvWtJnZZkeWyugIMuHc9gV0JnnsovXFh7N2EzQlvD+UpxcJ
+	/g2xfdYje2wh7J2TqOdq2lkMfcsnB3FDkB7gMD/Ac+XKicg11kpsbRFo8/x3kOIAAvlAGE0GDE5
+	aC1A5prauoc0e97Cdmi7Y2l6QaAiH3Tg4QJUkDEEumDD+0bzjfHG/J/Rew3/ZPogaae5Ax4BbGS
+	Oj7bOs4HNWRQ+NWzmLjv2/V5KJcUY/Qer9NZNxdClmai9H3
+X-Received: by 2002:a17:90b:2e4b:b0:3a4:b076:f0e7 with SMTP id 98e67ed59e1d1-3a6ce59f8eemr1022412a91.6.1790902273529;
+        Thu, 01 Oct 2026 17:51:13 -0700 (PDT)
+Received: from localhost.localdomain (d173-183-236-7.abhsia.telus.net. [173.183.236.7])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a6dd4bd483sm361966a91.4.2026.10.01.17.51.12
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 01 Oct 2026 17:51:12 -0700 (PDT)
+From: Artem Novak <artem122novak@gmail.com>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Artem Novak <artem122novak@gmail.com>
+Subject: [PATCH] sh: add SH7305 interrupt controller support
+Date: Thu,  1 Oct 2026 18:50:38 -0600
+Message-ID: <20261002005038.32239-1-artem122novak@gmail.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1790088067.git.rrobaina@redhat.com>
-In-Reply-To: <cover.1790088067.git.rrobaina@redhat.com>
-From: Paul Moore <paul@paul-moore.com>
-Date: Thu, 1 Oct 2026 17:05:54 -0400
-X-Gm-Features: AclHuK923qNeclwyxHc-N96rTW9f--kU_8IWc_3FVDcJfFTXqnWMr4asd_Mjppw
-Message-ID: <CAHC9VhQ=FFYVNmQdiMsqg+5KDDrSC3SZS+H2=r_GkhfwQox8tg@mail.gmail.com>
-Subject: Re: [PATCH v3 00/14] audit: log all six syscall arguments in the
- SYSCALL record
-To: Ricardo Robaina <rrobaina@redhat.com>
-Cc: audit@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-	linux-csky@vger.kernel.org, linux-mips@vger.kernel.org, 
-	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
-	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
-	linux-um@lists.infradead.org, bpf@vger.kernel.org, eparis@redhat.com, 
-	sgrubb@redhat.com, oleg@redhat.com, richard.henderson@linaro.org, 
-	mattst88@gmail.com, linmag7@gmail.com, linux@armlinux.org.uk, 
-	catalin.marinas@arm.com, will@kernel.org, guoren@kernel.org, monstr@monstr.eu, 
-	tsbogend@alpha.franken.de, jonas@southpole.se, 
-	stefan.kristiansson@saunalahti.fi, shorne@gmail.com, 
-	James.Bottomley@hansenpartnership.com, deller@gmx.de, 
-	ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
-	davem@davemloft.net, andreas@gaisler.com, richard@nod.at, 
-	anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net, chris@zankel.net, 
-	jcmvbkbc@gmail.com, tglx@kernel.org, peterz@infradead.org, luto@kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Tue, Sep 22, 2026 at 3:21=E2=80=AFPM Ricardo Robaina <rrobaina@redhat.co=
-m> wrote:
->
-> The SYSCALL record currently logs only four of the six syscall
-> arguments (a0-a3), silently discarding the remaining two. This
-> leads to the need for auxiliary records when audit-relevant
-> data lands in the 5th or 6th argument of a syscall.
->
-> This series extends the SYSCALL record to log all six arguments,
-> by adding arguments a4 and a5 inline within the existing record.
+Add interrupt controller support for the Renesas SH7305.
 
-Thanks Ricardo, this looks great!
+Describe the TMU interrupt vectors, interrupt mask registers and
+interrupt register used by the SH7305, and register the controller
+through the existing SuperH INTC framework.
 
-There are a few things in some of the individual patches which I reply
-to in a minute, but there are a couple of "global" things that I
-wanted to mention:
+Signed-off-by: Artem Novak <artem122novak@gmail.com>
+---
+ arch/sh/kernel/cpu/sh4a/Makefile      |  1 +
+ arch/sh/kernel/cpu/sh4a/intc-sh7305.c | 85 +++++++++++++++++++++++++++
+ 2 files changed, 86 insertions(+)
+ create mode 100644 arch/sh/kernel/cpu/sh4a/intc-sh7305.c
 
-* As pointed out by Sashiko, when you were converting all of the
-arches, it looks like you missed alpha.  I took a quick look and it
-appears that it should be a pretty straightforward conversion like
-most of the others.
+diff --git a/arch/sh/kernel/cpu/sh4a/Makefile b/arch/sh/kernel/cpu/sh4a/Makefile
+index baf73a8fc2a0..1e6cc301056a 100644
+--- a/arch/sh/kernel/cpu/sh4a/Makefile
++++ b/arch/sh/kernel/cpu/sh4a/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_CPU_SUBTYPE_SH7770)	+= setup-sh7770.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7780)	+= setup-sh7780.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7785)	+= setup-sh7785.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7786)	+= setup-sh7786.o intc-shx3.o
++obj-$(CONFIG_CPU_SUBTYPE_SH7305)	+= intc-sh7305.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7343)	+= setup-sh7343.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7722)	+= setup-sh7722.o serial-sh7722.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7723)	+= setup-sh7723.o
+diff --git a/arch/sh/kernel/cpu/sh4a/intc-sh7305.c b/arch/sh/kernel/cpu/sh4a/intc-sh7305.c
+new file mode 100644
+index 000000000000..3b26d7ef0577
+--- /dev/null
++++ b/arch/sh/kernel/cpu/sh4a/intc-sh7305.c
+@@ -0,0 +1,85 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Renesas SH7305 interrupt controller support
++ *
++ * Copyright (C) 2026 Artem Novak
++ */
++
++#include <linux/init.h>
++#include <linux/sh_intc.h>
++
++enum {
++	UNUSED = 0,
++	ENABLED,
++	DISABLED,
++
++	TMU0_TUNI0,
++	TMU0_TUNI1,
++	TMU0_TUNI2,
++};
++
++/*
++ * SH7305 TMU interrupt event codes.
++ */
++static struct intc_vect vectors[] __initdata = {
++	INTC_VECT(TMU0_TUNI0, 0x400),
++	INTC_VECT(TMU0_TUNI1, 0x420),
++	INTC_VECT(TMU0_TUNI2, 0x440),
++};
++
++/*
++ * SH7305 IMR4 / IMCR4
++ *
++ * TMU0 channels occupy bits corresponding to TUNI0..2.
++ */
++static struct intc_mask_reg mask_registers[] __initdata = {
++	{
++		0xa4080090, 0xa40800d0, 8,
++		{
++			0,
++			TMU0_TUNI2,
++			TMU0_TUNI1,
++			TMU0_TUNI0,
++			0,
++			0,
++			0,
++			0,
++		}
++	},
++};
++
++/*
++ * SH7305 IPRA
++ *
++ * Four 4-bit interrupt priority fields:
++ *
++ *   bits 15..12  TMU0 channel 0
++ *   bits 11..8   TMU0 channel 1
++ *   bits  7..4   TMU0 channel 2
++ *   bits  3..0   unused here
++ */
++static struct intc_prio_reg prio_registers[] __initdata = {
++	{
++		0xa4080000, 0, 16, 4,
++		{
++			TMU0_TUNI0,
++			TMU0_TUNI1,
++			TMU0_TUNI2,
++			0,
++		}
++	},
++};
++
++static struct intc_desc intc_desc __initdata = {
++	.name		= "sh7305",
++	.force_enable	= ENABLED,
++	.force_disable	= DISABLED,
++
++	.hw = INTC_HW_DESC(vectors, NULL, mask_registers,
++			     prio_registers, NULL, NULL),
++};
++
++void __init plat_irq_setup(void)
++{
++	register_intc_controller(&intc_desc);
++}
+-- 
+2.55.0
 
-* We need to get ACKs from all the various arch maintainers.  Aside
-from the parisc changes all of your arch specific patches are trivial
-(and cleaner than the existing code IMO) so I don't expect anyone to
-complain, but getting ACKs will likely take some time.  Even the
-parisc patches aren't that bad, and arguably they fix a problem for
-seccomp so that should make asking for ACKs easier :)
-
-Since I expect chasing down all the various maintainers for ACKs will
-take a little while, and I'd like to start getting this patchset some
-basic testing, I'm going to merge it into dev-staging now.  While the
-dev-staging branch doesn't feed into linux-next (this isn't likely to
-land in the next merge window) it is one of the branches that gets
-tested automatically and included in my kernel-secnext RPM builds.
-This also means you won't need to worry about keeping this patchset
-up-to-date with rebasing, as I rebase dev-staging as needed (it
-intentionally isn't a stable branch).  Going forward, if there are any
-minor changes to this patchset, e.g. a few line change in one of two
-patches, please just send a fixup patchset based against
-audit/dev-staging and I'll squash it into the relevant patch in the
-series.  However, in the unlikely event that a major rewrite is
-needed, just send a new patchset ... but I'll be very surprised if
-that happens here :)
-
---=20
-paul-moore.com
