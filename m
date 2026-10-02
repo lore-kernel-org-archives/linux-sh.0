@@ -1,59 +1,61 @@
-Received: from mail-pj2-f43.google.com (mail-pj2-f43.google.com [74.125.227.171])
+Received: from mail-pj2-f12.google.com (mail-pj2-f12.google.com [74.125.227.140])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2733B3537E5
-	for <linux-sh@vger.kernel.org>; Fri,  2 Oct 2026 04:08:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5BF5D3546F3
+	for <linux-sh@vger.kernel.org>; Fri,  2 Oct 2026 04:08:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790914132; cv=none; b=umuugL9oY/ChinbF8a9oFHUe/JRFMSJF3p0xAAeIeRczG+4FegM9kjt/1WryMIjLMKTNiVTcX62CDkLSU7rWgwICmX84kWeZk7/8YLrMoEqCVTY2aZ28laek2J3E8Wq3REmm6dNuGNsQf6nm6fA9CMjMidvSJSxrzOxAbhnm86U=
+	t=1790914134; cv=none; b=FZHHRaW8jJT07wN5O5goPQzwnw6ch58m6c3NMG3tneteLeUZ9GEjwhih0MCrrTFdK9DTrejSsKjhHc65nOInxJeMcKR2WL7rxnQGdhZZptfVj+AdFiCF/AzUgfGOCN755Us+y+wW3KYYhbt3zQFmdvkASokuenpo3HOJp8x1AJw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790914132; c=relaxed/simple;
-	bh=7XRI4vbBHvoU0c00q1fKY0+7WXPupjkAVjxqudbQDSA=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pBFDoq8MeDGkfBe9n4uRqa/lmgWigOJBCyfqxDwUs6EQg+nRCeyvpdT4IpYewJSdu8z5nehTGYpCFviwKESWf8RUh8MjW5boWX95DGhN2EdVkJO9Hd3s+CDDL7V2mnkbzA0wuniOBnoPYB0qlFccWGZq1/R/osMCp2VJZF37x6Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MnUFcrsJ; arc=none smtp.client-ip=74.125.227.171
+	s=arc-20240116; t=1790914134; c=relaxed/simple;
+	bh=qgQ8o9DjvH6ieIOzSmEYyyIFGQLoskqnrUq7Jp/a0BQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=iNne0149f9DVnhb04zgT8brkxFK81WEDmojxOEOneS2BB+uWpriENLcIht/6NC61M8c6C7EoPISLN2oFtpVF6WBjV2I9mfR5Btsw5NIwu53W4TSi4FjGQz8ul65sPOukZvmuQZoQ7RRjRjo3yRfGfWFZvbhGAb36CJFCuxL7iYk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=E8vO6E8s; arc=none smtp.client-ip=74.125.227.140
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MnUFcrsJ"
-Received: by mail-pj2-f43.google.com with SMTP id 98e67ed59e1d1-398beb616f5so3265328a91.1
-        for <linux-sh@vger.kernel.org>; Thu, 01 Oct 2026 21:08:51 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="E8vO6E8s"
+Received: by mail-pj2-f12.google.com with SMTP id 98e67ed59e1d1-39dacf053eeso3786538a91.2
+        for <linux-sh@vger.kernel.org>; Thu, 01 Oct 2026 21:08:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1790914130; x=1791518930; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=v6O/z/8/5Yc9n97DG94yFXZDvw4y/3pPf2qeqOHuqdA=;
-        b=MnUFcrsJtdWQVFnaJWb+zK58yPZ0DkTHAGdDfct9luuyV01dATgBC4GntKsv2BduGA
-         LD5ChDx/7or6Q89Jx+G7UUJvjEXBmwPlbgDpd/QVpVkBZg0PjcqmO8kZhgdaxgtBoURc
-         ubm8dWdIDTKOkQ+74wdCJTJt5cGE7XeWdVQj6HJUvjhLy5k4PMWa7eVc9gVuTiAbhgn6
-         HeUshb5uCzqybRXz++LL92uei92P1L7KsPmO/s4BFCiBCKlym3N9HZA5q7UlHhjA4Z6w
-         mK2pPYopoOOR4LntbuwIBY+posM5mdA7jzKW14PdOCFwhJbHcAfCJQjxrI56wwrdsQqd
-         EYEA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790914130; x=1791518930;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1790914132; x=1791518932; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=v6O/z/8/5Yc9n97DG94yFXZDvw4y/3pPf2qeqOHuqdA=;
-        b=MMVt8Vfmy+V+eUjoMEunX6siu1TxdPDKn3j8ZkFYz7uNTsXPtAMIe6lolkFDnwzA+I
-         +EM9U0uhl0BGS4/+rYCfUkrQZu6VuVFEpBG5jzDQdFVSx/kSMz1f8Ct90a5BdFaI89Kf
-         5M696A+e9ITxoY7D4EKn9w5OSByH6omUWjP7XzyUdPAAKBWvscLyFqr2e6+1H6J8zm2u
-         jmjGGQnSV8VXwKinpwFuYw/CqfGYK/7yRPv1DE694rDUlHyMeZ7CcdeJrwlsbshb3/TD
-         ASCN9ziSNEOtoimSRYSE/sBkYfOJ9+5QrB5gjLWxNURMpora+uZithrITDmIkjr78Hox
-         kyOA==
-X-Gm-Message-State: AFq9FYLhQKTgjStsQxZMx/iw+OQg94roHcA4bIfaUPDho0fBfmaBXme9
-	O3A6rWHaItXDPZSm1l1EZQS/OhQ2BlEt3IzA4aWMn833ZtspHd63O3W9
-X-Gm-Gg: AYBFou34eAW0c6zZE4qk9UDcfWvuiZuSmhQXP8YOitB5ToZpw15KcFFAid/Mm4BmQu/
-	xF/ElOS9AEylkmdSDQ4xXpVebr6nVICv/5ixn8iuIxVic5tNeDZhWC8tzUlx1MQenG4XCXmuRQp
-	cqI8Xk3LTvUjEHBvm6fHlTmPLLWGi2//nkKxkN08QpXBLNU9VPY6UTHGQH797JyOmdHXXJdCCYj
-	fIZD4kCw9zwBQ2QIwAoCPxR4rmqhOXQ5e9sR2pG6DOgtDgOKeoj/dniRvPVtg33dyTdq2igO8US
-	Uj21TG5Opl2+vHF98dJBtRvjqbaCYBbQY47f+lgWdZea6DlWbK6uJpsityLGk0lgaqEHY89sdNV
-	duENniUS+psU0ULjNPmlgGqlfRO+kPwyc9+EOow3SXpVnuS0casIwoQ6bzQEF0LLc/gi6WHisi+
-	P6B/KPwsjR7L1oDLWgAACk9ulq3qVhWcZr8GXTmmA1M9hDkMjnb1e6r4qzn4+byZB6AzlwtOoka
-	ohKhRLydVJcTaWcxPjTcDWaQLRkMgkCNBnmBBWlxtJa44Uc
-X-Received: by 2002:a17:90b:134c:b0:3a0:eec6:b065 with SMTP id 98e67ed59e1d1-3a6ce97cf78mr843635a91.13.1790914130355;
-        Thu, 01 Oct 2026 21:08:50 -0700 (PDT)
+        bh=wr3tkUjUJP2wlDJBZdeQAQPJN9CHKV3kl5+7OASdaKM=;
+        b=E8vO6E8s4e11RUmevWzNzQAqSGa3esTOD8Ial//gutNvxx8anAsBEpv82VPLNe/pXk
+         Zxa4BsRW8Dl0zQ4DRKNyZLXtfFm3Ytqxw/egsawl4fzcE1MBoVnY2cpclcNWYXmEewff
+         s0Vd72nc34H0ZSl7KUmpWuHbLcPkzUD9WCqOcEvqujQFgdX4ZIXXFqRdlk+pCISW7D+j
+         2VixliFsTFXBfVSiqUzkGBPrLFWbfWHMICcA+wQT0sZVLj8c4nbMIz/ToFd9G3m04mWC
+         oYFJhp2Dg2J3XVeYClFuBOKtqpSqffq4oeYSDFIEmkel9SIqh97mg8gu3RFEDCMauXjy
+         YJfQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790914132; x=1791518932;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=wr3tkUjUJP2wlDJBZdeQAQPJN9CHKV3kl5+7OASdaKM=;
+        b=oPS8HaLOPsJCmFpoTbEoUZNjxgssuD3UAozIqxEim2n64hmpEmgZ6+Ckl3081GxWhX
+         HzC2WYIZscHZYlzS72XKPCiYr7Y0nfieOdjUkL/13ebNfZ6LLM7UVxAfNro1VwcSm6Qr
+         P/rUTzWEfGNDNvh23tC2aYpEf3CeQJy2bwSsWh41xZQsQnmPc/DDyGXPXgJWLdjHx83D
+         89MJw63xIcDjFhF9gXRTBehprFZq8sEXqo3dWCzHKZI9Inx7IEiwd7+pW+zGrHcrcHoV
+         o2+nhhpSgjzNU9Ww1yC/v+MQTwAQy33CpJUh6rtPWpE2aFkkheblvtoyRRfUW8aP3jcA
+         0ZbQ==
+X-Gm-Message-State: AFq9FYLJH1AQarcorMVLYBC043TgASMIioNl7TtUqDuxUl4RE6YrO/xo
+	2PCH7oghbJOMLhJDZiMri55mkrjY5/qUWL+Jnw4hJWWqTXmOtZowuHP/
+X-Gm-Gg: AYBFou2dnV8bFAbxs5e/dCN5joJpTBq5T3NIzIF2b3PTVRP9r/znEi27Qx9fmL+Td3Y
+	h612ltW5xePzHxxG5wUYlMjA0ZljLp7tZamfDyZ6YO9eq0erv2BONk41/sDNLqHE/Vq40MIXlI3
+	DzfuQY/MR9TKB0mb8HVWPbv/btheQm43Szt0JA+d7ncDKTvG2z1csVmdjlGvg9B0WDbYpzJ+Z+A
+	e8pWbM248tC+CC/c/H91lb+OfBe7ypvwbfPNWI13QeRjE7NTooH+2HCyNSJdJHb8+9Zv7pLSRDK
+	6YXw7s7I42W+O0LeH8aMVRDo0uEK9ntmLVTgMjZGnQ/mPV6MY5nlBCECeRIMAP+nhsVG+un/A/f
+	gSNwHJ6LPeb+Ar//5kOZN/LTLeRbtm4PPzXFlOXE23iPmzwByPSIlxpPMb1Kxt5uRROP4gJD1pA
+	/NjJyY2BJvALEqN2PVL1itpRUoP1+PpAS2BFVtJMP6P0Ds89e82A7L9gvGWkdfJvO9Rcvwuu4XI
+	dPa0D5MH1uOVKgQRTu65mhgKUIG10MZiuTJlPmkgp8/o7lay4WAx45Wgnw=
+X-Received: by 2002:a17:90b:3cc3:b0:3a4:c673:7636 with SMTP id 98e67ed59e1d1-3a6ce77cc67mr1445077a91.26.1790914131522;
+        Thu, 01 Oct 2026 21:08:51 -0700 (PDT)
 Received: from localhost.localdomain (d173-183-236-7.abhsia.telus.net. [173.183.236.7])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a6ccc92646sm2119079a91.1.2026.10.01.21.08.49
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a6ccc92646sm2119079a91.1.2026.10.01.21.08.50
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
         Thu, 01 Oct 2026 21:08:50 -0700 (PDT)
 From: Artem Novak <artem122novak@gmail.com>
@@ -61,10 +63,12 @@ To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc: linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	cacioandpepe <artem122novak@gmail.com>
-Subject: [PATCH RESEND 0/2] sh: add initial SH7305 CPU support
-Date: Thu,  1 Oct 2026 22:07:58 -0600
-Message-ID: <20261002040800.131862-1-artem122novak@gmail.com>
+Subject: [PATCH RESEND 1/2] sh: guard SH4 no-FPU compiler fallback
+Date: Thu,  1 Oct 2026 22:07:59 -0600
+Message-ID: <20261002040800.131862-2-artem122novak@gmail.com>
 X-Mailer: git-send-email 2.55.0
+In-Reply-To: <20261002040800.131862-1-artem122novak@gmail.com>
+References: <20261002040800.131862-1-artem122novak@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -75,35 +79,33 @@ Content-Transfer-Encoding: 8bit
 
 From: cacioandpepe <artem122novak@gmail.com>
 
-Add initial SuperH support for the Renesas SH7305 processor.
+The SH4 compiler flag selection falls back to -m4-nofpu when
+-mno-implicit-fp is unavailable without checking whether the compiler
+supports -m4-nofpu itself.
 
-The first patch fixes SH4 compiler flag fallback handling for toolchains
-which support SH4A targets but do not provide the plain -m4-nofpu
-option.
+This breaks SH4A-only toolchains which support -m4a and -m4a-nofpu
+but do not provide the plain SH4 -m4-nofpu option.
 
-The second patch adds the SH7305 CPU subtype, processor name and CPU
-probe.
+Use a nested cc-option so the fallback is emitted only when supported.
 
-This is the first small architecture level part of ongoing SH7305
-enablement. Platform specific clock, interrupt controller, timer and
-board support are intentionally left for separate patches.
+Signed-off-by: cacioandpepe <artem122novak@gmail.com>
+---
+ arch/sh/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-The SH7305 support has been compile tested with GCC 14.3.0 targeting
-big endian SH4A.
-
-cacioandpepe (2):
-  sh: guard SH4 no-FPU compiler fallback
-  sh: add SH7305 CPU subtype support
-
- arch/sh/Kconfig                 | 9 +++++++++
- arch/sh/Makefile                | 2 +-
- arch/sh/include/asm/processor.h | 2 +-
- arch/sh/kernel/cpu/proc.c       | 3 ++-
- arch/sh/kernel/cpu/sh4/probe.c  | 3 +++
- 5 files changed, 16 insertions(+), 3 deletions(-)
-
-
-base-commit: 551c722f40809618230001baccf219193e22fc5a
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 7b420424b6d7..238c701ab14b 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -36,7 +36,7 @@ cflags-$(CONFIG_CPU_SH2A)		+= $(call cc-option,-m2a,) \
+ 					   $(call cc-option,-m4-nofpu,)
+ cflags-$(CONFIG_CPU_SH3)		:= $(call cc-option,-m3,)
+ cflags-$(CONFIG_CPU_SH4)		:= $(call cc-option,-m4,) \
+-	$(call cc-option,-mno-implicit-fp,-m4-nofpu)
++	$(call cc-option,-mno-implicit-fp,$(call cc-option,-m4-nofpu,))
+ cflags-$(CONFIG_CPU_SH4A)		+= $(call cc-option,-m4a,) \
+ 					   $(call cc-option,-m4a-nofpu,)
+ cflags-$(CONFIG_CPU_SH4AL_DSP)		+= $(call cc-option,-m4al,)
 -- 
 2.55.0
 
