@@ -1,583 +1,138 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.19])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm2-f13.google.com (mail-wm2-f13.google.com [74.125.225.141])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D519926ED40;
-	Fri,  2 Oct 2026 11:46:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.19
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C82D51A3166
+	for <linux-sh@vger.kernel.org>; Fri,  2 Oct 2026 21:32:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790941603; cv=none; b=LAeoK0MazoZGsxrWwxVd6hlf0ST6yafaqoVYnylcui2Fgc7ESj3Tr8vqHMO1mYmrHh0uMr6bNxeZ0dkIRvJ+CVx7LzoOHNLZ8rs5KrYFxFr2ce+v3GrUOHnSr0XUsppEnAIn0jy6vnoGkuhzG63W9t8XU0n2O/DAzz4CbOiQgAk=
+	t=1790976762; cv=none; b=TERNJESVdl/rwQj6FkY6mtNgWCuxQk+0+KqGb8eeI4chK/1NnqC1auZJ3v1EbxkU0JZL05hEuacqaPDSVKdfkzyFf07n9ePSkc6CYNnALSkP75LbBSdligZ0t7CfRCSmtl7D46ZzYZZd54GAUz37HmuWHPsDzTKm7C3pp9srtlI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790941603; c=relaxed/simple;
-	bh=mWoRIntWaGO76TOBS5XHUSkSv1qY1n9P/rXRzsVfJNo=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=XVcdvoOfstRrw3VFtjKt9HtbUpyQBtm2u/fef3L+CdWnYhv5XrxJV7p++VMEggIxGnDbs8XG0vXSPzNr/hlSl5dUM48/FuOmsiPKundBwmnAyKY27nW38MPcUMJgaV0IbKPLkM1/I4the3BH4fKyap9j4dMURHv1zgbPwf+tO0Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=VcTp0oeV; arc=none smtp.client-ip=198.175.65.19
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	s=arc-20240116; t=1790976762; c=relaxed/simple;
+	bh=x/M1kcpxvSKi4krGnkQAPZbV9dIa2IiLAsV2NlsNxjw=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=jtNumoQvxl5fzHK5mKTShGFtWch6uir6HMb/Y/DxJlmjj04CRvHiFQJ9aQ1kTUDTehSx5WMZ9mdzJE/xNASyEG/WPvmGBlTEngri4Lh7S0d+N1ksaN3twkgHPyrgyKIn+bCJAx4Zw7Mm4jYLqDxL1gsY5dvrlFuP2K8BxPWS3QE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=n0dvm9IX; arc=none smtp.client-ip=74.125.225.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="VcTp0oeV"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1790941601; x=1822477601;
-  h=from:to:cc:subject:in-reply-to:references:date:
-   message-id:mime-version:content-transfer-encoding;
-  bh=mWoRIntWaGO76TOBS5XHUSkSv1qY1n9P/rXRzsVfJNo=;
-  b=VcTp0oeVCOLX/iZk/wSzlafEguaQXjueLuXGoQFChIgqscyjMiDL0m/8
-   aj3dAFnUkRueEHRUViPzM9fLQ6qIbJzZgPOr2n7CP9u+KoVbW/4490h1T
-   UdHAthXhWkAIYgoRv08lbRhINIBYyCcymXSOMV6jAOFcL7Gkfobkwivkn
-   HutO+mIE3lfUlkogx7iDUHleFg0/PqyjTuaLUKbjOLOc6Mhi6xCjeRBp4
-   EV+mthdSoqdQmrVmWF/QajYciruYPsjXJJsrman85neQK0HvhEAuS+tbr
-   pwbmMwQDCZwR24qFIgQEC2DyF/Yenj3nPnzBvilIf3ddJ24MPZiqLQexe
-   w==;
-X-CSE-ConnectionGUID: lWFTf+fVTL+kAWM7lNZHGw==
-X-CSE-MsgGUID: bJXH261ER2u0fpATMnNbgA==
-X-IronPort-AV: E=McAfee;i="6800,10657,11922"; a="90660491"
-X-IronPort-AV: E=Sophos;i="6.27,136,1787036400"; 
-   d="scan'208";a="90660491"
-Received: from orviesa005.jf.intel.com ([10.64.159.145])
-  by orvoesa111.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Oct 2026 04:46:39 -0700
-X-CSE-ConnectionGUID: QMfvUu4kR32GValX2JFXAA==
-X-CSE-MsgGUID: KT12av6fSySLPozcZziDoA==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.27,136,1787036400"; 
-   d="scan'208";a="279970531"
-Received: from slindbla-desk.ger.corp.intel.com (HELO localhost) ([10.245.244.196])
-  by orviesa005-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Oct 2026 04:46:28 -0700
-From: Jani Nikula <jani.nikula@linux.intel.com>
-To: Ilpo =?utf-8?Q?J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>, Maciej
- Grochowski
- <Maciej.Grochowski@sony.com>, Nikolas Joshua Britton <nbritton@exabit.io>,
- Geramy Loveless <gloveless@jqluv.com>, Eric Auger <eauger@redhat.com>,
- Alexey Fomenko <alexey.fomenko@intel.com>, Bjorn Helgaas
- <bhelgaas@google.com>, linux-pci@vger.kernel.org, Lorenzo Pieralisi
- <lorenzo.pieralisi@arm.com>, Rob Herring <robh@kernel.org>, Krzysztof
- =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>, Richard Henderson
- <richard.henderson@linaro.org>, Matt Turner <mattst88@gmail.com>, Magnus
- Lindholm <linmag7@gmail.com>, Russell King <linux@armlinux.org.uk>, Geert
- Uytterhoeven <geert@linux-m68k.org>, Thomas Bogendoerfer
- <tsbogend@alpha.franken.de>, "James E.J. Bottomley"
- <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>,
- Madhavan Srinivasan <maddy@linux.ibm.com>, Michael Ellerman
- <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, "Christophe
- Leroy (CS GROUP)" <chleroy@kernel.org>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, John Paul
- Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Thomas Gleixner
- <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov
- <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
- "H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>, Max
- Filippov <jcmvbkbc@gmail.com>, David Airlie <airlied@redhat.com>, Joonas
- Lahtinen <joonas.lahtinen@linux.intel.com>, Rodrigo Vivi
- <rodrigo.vivi@intel.com>, Tvrtko Ursulin <tursulin@ursulin.net>, Simona
- Vetter <simona@ffwll.ch>, Ilpo =?utf-8?Q?J=C3=A4rvinen?=
- <ilpo.jarvinen@linux.intel.com>,
- linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
- dri-devel@lists.freedesktop.org, intel-gfx@lists.freedesktop.org
-Cc: Bradley Morgan <brads@mainlining.org>, Sashiko <sashiko-bot@kernel.org>
-Subject: Re: [PATCH v2 3/7] PCI: Honor alignment overrides
-In-Reply-To: <20261002113319.6652-4-ilpo.jarvinen@linux.intel.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - c/o Alberga Business Park,
- 6 krs Bertel Jungin Aukio 5, 02600 Espoo, Finland
-References: <20261002113319.6652-1-ilpo.jarvinen@linux.intel.com>
- <20261002113319.6652-4-ilpo.jarvinen@linux.intel.com>
-Date: Fri, 02 Oct 2026 14:46:25 +0300
-Message-ID: <9e51b97829056a26ae1fd72f665ead94c018d004@intel.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="n0dvm9IX"
+Received: by mail-wm2-f13.google.com with SMTP id 5b1f17b1804b1-4a1681949b8so1076215e9.1
+        for <linux-sh@vger.kernel.org>; Fri, 02 Oct 2026 14:32:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1790976759; x=1791581559; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=fRbVgDYdNJlvmRSpYo0bQrmNNcQh1akysnltqtNjmKU=;
+        b=n0dvm9IXxRkHyw2nrayYWRhRnTRGel8oMBmH5wRCXBdq8opmgXOF3dEBkLmT6TOrdL
+         D80zPuTF9h2mW5x36GlIl0efMdbMvOpE8upjGEnXGFb1n/+j7GyWS7Oe46t6dCBjQBu9
+         EhTM53Az+R4LMTWgjfLUH4HT7t7XVNHZ0rMvTeUWFlZ7XjxI0XPffZB59PkUlvVe5ehK
+         DCYH+3lqVnjskdl6kX+rmf2wjERrYE0XanzJiI38kpDL1UA96Klzsj/3XVpUhX+0EOof
+         BaTMaGAFFFDgIVaL0j7j3mVQf2k0KEqzgDuW3OVrsdrk08oPbSk53h47D7aGigcdS5dn
+         YRRQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790976759; x=1791581559;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=fRbVgDYdNJlvmRSpYo0bQrmNNcQh1akysnltqtNjmKU=;
+        b=2OR/TaRnuSteF5SJZUAmsq0yKFOc3vZOna+aZfKTYH2TxGycc7gU6D7RfXNxBc7NJA
+         MfTYYGK0mRdkyUBOvMWJVF9a8kJRWh0xw12lFastBA/nK9Mr+isFfnr0Ewx3dgh7fnEZ
+         IUNADATCVf9I58bkpoGlGIGP+vh98R5Nqp2y2lJPa+/KP6V3d+4u66iyi3ON7unpCryX
+         bSY3h5CTCiZ1r7RKtoE0is0MKpX7SmBSWqJQSVlEXqPfztwaL9e7HeOHCApLGzPRIyQM
+         AjZdDg9EzPBueiGQe6qtvoaShfMyfHpckpQK9Q/xch4tATTofoxUbvScP5JpKcw+WEXv
+         R+sQ==
+X-Forwarded-Encrypted: i=1; AKwUvBzWH4Tfxz3pebKpO4oJM63SA3PCFT1co5KN3k0PaXm42UtnNT2BjAIG0XoB8j+BNZ0TOzKVO0Ztxw==@vger.kernel.org
+X-Gm-Message-State: AFuF++l7ZSPLAH/tB4CIx2XtobWmhw47MQKu09wO0HfyomMjmzZDxSRd
+	pj/PSLMe+g2KkOMFXNov3Lf96XkoW5ps6+HUw1KQNhrHrDNKS6I6ZW9M
+X-Gm-Gg: AYBFou2x5xnYV5Mslrj/wFX5/OpDfQGSMC3RoA1mwc1gxtCsPYXpELogytZUXHHEDa7
+	5++QR46oMzoLMvqbMlzqte8Rw2/KAyJUKxYCaUx+qlIq7sWzOtxnyl0Y5KO/Wb7apSlRWAyjiTN
+	yOISRW1ON8riYqJBxtQTb9WQlrZqKf7gdyn9JW96Hr3/0TebJxlisj/Yv7f/nn+buZL3sb5qsh0
+	8NFIj4cYB0rvFBK0EUvqQ+wX3tmWnmahNBA0W6249vRChlD6Yjp068auf+uovQF7JoU12+dS7pp
+	ixkxS+IHH0w52ACLCenk6ncOaNHjw7HojDEoaWIuFPal9ylpTZ6Fw2l8taquujRXJ0v2lvqjRWU
+	Y+YJoFg9/pwR3rYo7qb3Ic6lbXX2ykQijUOE2qVlbDeLalih4+Pk79jqW4sE4RigmhV9uXMUuwE
+	p8AwCwnEGO5SO7FNKAQxmPDY2nU+3GaVHRmyiERduSWTfJKoMNn6hloPOIDEjWeyT+ZCe0iQ8kn
+	v+TSUHgGuLH/IFE529Q1VituGXoyU1AHVBNh68XyeZPsuop9DRSdpcKmsvs1zIT13hCTx5YIvrK
+	/YZOOSF9Nd82Uyo5PbUFfiNHrmsfHeA3kZmyxhLMOLUMOkNHLOMHKcUX6R+/Tjd5QWYRF21UsYy
+	Xzg==
+X-Received: by 2002:a05:600c:310d:b0:49f:c18a:61c8 with SMTP id 5b1f17b1804b1-4a027598d30mr79255705e9.29.1790976758917;
+        Fri, 02 Oct 2026 14:32:38 -0700 (PDT)
+Received: from localhost.localdomain (dynamic-2a02-3100-af35-1901-81da-eee8-c2d0-ee3b.310.pool.telefonica.de. [2a02:3100:af35:1901:81da:eee8:c2d0:ee3b])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a03ff56136sm41162795e9.3.2026.10.02.14.32.36
+        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
+        Fri, 02 Oct 2026 14:32:37 -0700 (PDT)
+From: Karl Mehltretter <kmehltretter@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Karl Mehltretter <kmehltretter@gmail.com>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-usb@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH] usb: r8a66597-hcd: fix buffer overflow on odd-length FIFO reads
+Date: Fri,  2 Oct 2026 23:32:25 +0200
+Message-Id: <20261002213225.27834-1-kmehltretter@gmail.com>
+X-Mailer: git-send-email 2.39.5 (Apple Git-154)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Fri, 02 Oct 2026, Ilpo J=C3=A4rvinen <ilpo.jarvinen@linux.intel.com> wro=
-te:
-> pci=3Dresource_alignment argument can override the default alignment for
-> the resource. The remainder code introduced in the commit 9036bd0efcb6
-> ("PCI: Align head space better") can move remainder space (non-aligning
-> part of the size) before the aligning left edge which results in
-> violating the requested alignment.
->
-> Introduce struct pci_resreq_data to hold device and user-given alignment
-> to be able to honor it in pci_align_resource(). When user-given alignment
-> is found, any remainder movement is skipped.
->
-> Fixes: 9036bd0efcb6 ("PCI: Align head space better")
-> Reported-by: Sashiko <sashiko-bot@kernel.org>
-> Link: https://lore.kernel.org/linux-pci/20260923133202.07DF61F000FF@smtp.=
-kernel.org/
-> Signed-off-by: Ilpo J=C3=A4rvinen <ilpo.jarvinen@linux.intel.com>
+For an external R8A66597 (pdata->on_chip is false), the driver accesses
+the FIFO 16 bits at a time. It rounds an odd byte count up to the next
+word and passes that word count to ioread16_rep(), which stores both bytes
+of every word in the caller's buffer. The final word therefore writes one
+byte beyond an odd-length read, past the end of the buffer when the read
+fills it.
 
-So I don't have the time to figure out what's going on here, but
-assuming you get proper review, the i915 part is
+This is visible while enumerating a USB device on an SH7785LCR. The USB
+core allocates nine bytes for the configuration descriptor header, and
+the controller driver stores ten bytes in it. SLUB reports the first
+redzone byte changing from 0xcc to 0x09 in usb_get_configuration().
+Odd-sized HID report descriptors trigger the same overwrite.
 
-Acked-by: Jani Nikula <jani.nikula@intel.com>
+Section 2.8.5 of the R8A66597 datasheet requires software to discard the
+excess byte after a 16-bit FIFO read when DTLN is odd. Read the trailing
+byte through a temporary word and copy only that byte.
 
-for merging via whichever tree makes sense.
+Fixes: 5d3043586db4 ("USB: r8a66597-hcd: host controller driver for R8A66597")
+Cc: stable@vger.kernel.org
+Reported-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Link: https://lore.kernel.org/all/3bd32eaf159db61ed1d423e1d52a869b3689c682.camel@physik.fu-berlin.de/
+Assisted-by: LLM
+Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
+---
 
-> ---
->  arch/alpha/kernel/pci.c          |  3 ++-
->  arch/arm/kernel/bios32.c         |  5 +++--
->  arch/m68k/kernel/pcibios.c       |  4 ++--
->  arch/mips/pci/pci-generic.c      |  5 +++--
->  arch/mips/pci/pci-legacy.c       |  5 +++--
->  arch/parisc/kernel/pci.c         |  5 +++--
->  arch/powerpc/kernel/pci-common.c |  5 +++--
->  arch/sh/drivers/pci/pci.c        |  5 +++--
->  arch/x86/pci/i386.c              |  5 +++--
->  arch/xtensa/kernel/pci.c         |  5 +++--
->  drivers/char/agp/intel-gtt.c     |  5 ++++-
->  drivers/gpu/drm/i915/i915_gmch.c |  5 +++--
->  drivers/pci/pci.c                |  5 +++--
->  drivers/pci/setup-res.c          | 19 +++++++++++++------
->  include/linux/pci.h              | 26 ++++++++++++++++++++++++--
->  15 files changed, 75 insertions(+), 32 deletions(-)
->
-> diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
-> index 11df411b1d18..c5d725a9781f 100644
-> --- a/arch/alpha/kernel/pci.c
-> +++ b/arch/alpha/kernel/pci.c
-> @@ -128,7 +128,8 @@ pcibios_align_resource(void *data, const struct resou=
-rce *res,
->  		       const struct resource *empty_res,
->  		       resource_size_t size, resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	struct pci_controller *hose =3D dev->sysdata;
->  	unsigned long alignto;
->  	resource_size_t start =3D res->start;
-> diff --git a/arch/arm/kernel/bios32.c b/arch/arm/kernel/bios32.c
-> index ac0e890510da..3e61826f07fb 100644
-> --- a/arch/arm/kernel/bios32.c
-> +++ b/arch/arm/kernel/bios32.c
-> @@ -564,7 +564,8 @@ resource_size_t pcibios_align_resource(void *data, co=
-nst struct resource *res,
->  				       resource_size_t size,
->  				       resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	resource_size_t start =3D res->start;
->  	struct pci_host_bridge *host_bridge;
->=20=20
-> @@ -578,7 +579,7 @@ resource_size_t pcibios_align_resource(void *data, co=
-nst struct resource *res,
->  				start, size, align);
->=20=20
->  	if (res->flags & IORESOURCE_MEM)
-> -		return pci_align_resource(dev, res, empty_res, size, align);
-> +		return pci_align_resource(rr, res, empty_res, size, align);
->=20=20
->  	return start;
->  }
-> diff --git a/arch/m68k/kernel/pcibios.c b/arch/m68k/kernel/pcibios.c
-> index 7a9e60df79c5..3024408412bc 100644
-> --- a/arch/m68k/kernel/pcibios.c
-> +++ b/arch/m68k/kernel/pcibios.c
-> @@ -31,14 +31,14 @@ resource_size_t pcibios_align_resource(void *data, co=
-nst struct resource *res,
->  				       resource_size_t size,
->  				       resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
->  	resource_size_t start =3D res->start;
->=20=20
->  	if ((res->flags & IORESOURCE_IO) && (start & 0x300))
->  		start =3D (start + 0x3ff) & ~0x3ff;
->=20=20
->  	if (res->flags & IORESOURCE_MEM)
-> -		return pci_align_resource(dev, res, empty_res, size, align);
-> +		return pci_align_resource(rr, res, empty_res, size, align);
->=20=20
->  	return start;
->  }
-> diff --git a/arch/mips/pci/pci-generic.c b/arch/mips/pci/pci-generic.c
-> index c2e23d0c1d77..7f3ecb91b85b 100644
-> --- a/arch/mips/pci/pci-generic.c
-> +++ b/arch/mips/pci/pci-generic.c
-> @@ -25,7 +25,8 @@ resource_size_t pcibios_align_resource(void *data, cons=
-t struct resource *res,
->  				       const struct resource *empty_res,
->  				       resource_size_t size, resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	resource_size_t start =3D res->start;
->  	struct pci_host_bridge *host_bridge;
->=20=20
-> @@ -39,7 +40,7 @@ resource_size_t pcibios_align_resource(void *data, cons=
-t struct resource *res,
->  				start, size, align);
->=20=20
->  	if (res->flags & IORESOURCE_MEM)
-> -		return pci_align_resource(dev, res, empty_res, size, align);
-> +		return pci_align_resource(rr, res, empty_res, size, align);
->=20=20
->  	return start;
->  }
-> diff --git a/arch/mips/pci/pci-legacy.c b/arch/mips/pci/pci-legacy.c
-> index dae6dafdd6e0..82d4b01db64e 100644
-> --- a/arch/mips/pci/pci-legacy.c
-> +++ b/arch/mips/pci/pci-legacy.c
-> @@ -55,7 +55,8 @@ pcibios_align_resource(void *data, const struct resourc=
-e *res,
->  		       const struct resource *empty_res,
->  		       resource_size_t size, resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	struct pci_controller *hose =3D dev->sysdata;
->  	resource_size_t start =3D res->start;
->=20=20
-> @@ -70,7 +71,7 @@ pcibios_align_resource(void *data, const struct resourc=
-e *res,
->  		if (start & 0x300)
->  			start =3D (start + 0x3ff) & ~0x3ff;
->  	} else if (res->flags & IORESOURCE_MEM) {
-> -		start =3D pci_align_resource(dev, res, empty_res, size, align);
-> +		start =3D pci_align_resource(rr, res, empty_res, size, align);
->=20=20
->  		/* Make sure we start at our min on all hoses */
->  		if (start < PCIBIOS_MIN_MEM + hose->mem_resource->start)
-> diff --git a/arch/parisc/kernel/pci.c b/arch/parisc/kernel/pci.c
-> index 518f532ccddc..d582be996051 100644
-> --- a/arch/parisc/kernel/pci.c
-> +++ b/arch/parisc/kernel/pci.c
-> @@ -193,7 +193,8 @@ resource_size_t pcibios_align_resource(void *data, co=
-nst struct resource *res,
->  				       resource_size_t size,
->  				       resource_size_t alignment)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	resource_size_t align, start =3D res->start;
->=20=20
->  	pci_dbg(dev, "%pR: pcibios_align_resource(%lx, 0x%llx, 0x%llx), parent =
-%pR\n",
-> @@ -205,7 +206,7 @@ resource_size_t pcibios_align_resource(void *data, co=
-nst struct resource *res,
->  	if (align > alignment)
->  		start =3D ALIGN(start, align);
->  	else
-> -		start =3D pci_align_resource(dev, res, empty_res, size, alignment);
-> +		start =3D pci_align_resource(rr, res, empty_res, size, alignment);
->=20=20
->  	return start;
->  }
-> diff --git a/arch/powerpc/kernel/pci-common.c b/arch/powerpc/kernel/pci-c=
-ommon.c
-> index 4fc52c21fe5d..23594759cfe2 100644
-> --- a/arch/powerpc/kernel/pci-common.c
-> +++ b/arch/powerpc/kernel/pci-common.c
-> @@ -1131,7 +1131,8 @@ resource_size_t pcibios_align_resource(void *data, =
-const struct resource *res,
->  				       resource_size_t size,
->  				       resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	resource_size_t start =3D res->start;
->=20=20
->  	if (res->flags & IORESOURCE_IO) {
-> @@ -1140,7 +1141,7 @@ resource_size_t pcibios_align_resource(void *data, =
-const struct resource *res,
->  		if (start & 0x300)
->  			start =3D (start + 0x3ff) & ~0x3ff;
->  	} else if (res->flags & IORESOURCE_MEM) {
-> -		start =3D pci_align_resource(dev, res, empty_res, size, align);
-> +		start =3D pci_align_resource(rr, res, empty_res, size, align);
->  	}
->=20=20
->  	return start;
-> diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-> index 878a27a1acfb..279f2770ff4b 100644
-> --- a/arch/sh/drivers/pci/pci.c
-> +++ b/arch/sh/drivers/pci/pci.c
-> @@ -172,7 +172,8 @@ resource_size_t pcibios_align_resource(void *data, co=
-nst struct resource *res,
->  				       resource_size_t size,
->  				       resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	struct pci_channel *hose =3D dev->sysdata;
->  	resource_size_t start =3D res->start;
->=20=20
-> @@ -186,7 +187,7 @@ resource_size_t pcibios_align_resource(void *data, co=
-nst struct resource *res,
->  		if (start & 0x300)
->  			start =3D (start + 0x3ff) & ~0x3ff;
->  	} else if (res->flags & IORESOURCE_MEM) {
-> -		start =3D pci_align_resource(dev, res, empty_res, size, align);
-> +		start =3D pci_align_resource(rr, res, empty_res, size, align);
->  	}
->=20=20
->  	return start;
-> diff --git a/arch/x86/pci/i386.c b/arch/x86/pci/i386.c
-> index e2de26b82940..4178ae4380c2 100644
-> --- a/arch/x86/pci/i386.c
-> +++ b/arch/x86/pci/i386.c
-> @@ -156,7 +156,8 @@ pcibios_align_resource(void *data, const struct resou=
-rce *res,
->  		       const struct resource *empty_res,
->  		       resource_size_t size, resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	resource_size_t start =3D res->start;
->=20=20
->  	if (res->flags & IORESOURCE_IO) {
-> @@ -165,7 +166,7 @@ pcibios_align_resource(void *data, const struct resou=
-rce *res,
->  		if (start & 0x300)
->  			start =3D (start + 0x3ff) & ~0x3ff;
->  	} else if (res->flags & IORESOURCE_MEM) {
-> -		start =3D pci_align_resource(dev, res, empty_res, size, align);
-> +		start =3D pci_align_resource(rr, res, empty_res, size, align);
->=20=20
->  		/* The low 1MB range is reserved for ISA cards */
->  		if (start < BIOS_END)
-> diff --git a/arch/xtensa/kernel/pci.c b/arch/xtensa/kernel/pci.c
-> index 305031551136..4e8ad4a3c9fe 100644
-> --- a/arch/xtensa/kernel/pci.c
-> +++ b/arch/xtensa/kernel/pci.c
-> @@ -42,7 +42,8 @@ pcibios_align_resource(void *data, const struct resourc=
-e *res,
->  		       const struct resource *empty_res,
->  		       resource_size_t size, resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
-> +	struct pci_dev *dev =3D rr->dev;
->  	resource_size_t start =3D res->start;
->=20=20
->  	if (res->flags & IORESOURCE_IO) {
-> @@ -55,7 +56,7 @@ pcibios_align_resource(void *data, const struct resourc=
-e *res,
->  		if (start & 0x300)
->  			start =3D (start + 0x3ff) & ~0x3ff;
->  	} else if (res->flags & IORESOURCE_MEM) {
-> -		start =3D pci_align_resource(dev, res, empty_res, size, align);
-> +		start =3D pci_align_resource(rr, res, empty_res, size, align);
->  	}
->=20=20
->  	return start;
-> diff --git a/drivers/char/agp/intel-gtt.c b/drivers/char/agp/intel-gtt.c
-> index bcc26785175d..2214347906a6 100644
-> --- a/drivers/char/agp/intel-gtt.c
-> +++ b/drivers/char/agp/intel-gtt.c
-> @@ -1038,10 +1038,13 @@ static struct agp_memory *intel_fake_agp_alloc_by=
-_type(size_t pg_count,
->=20=20
->  static int intel_alloc_chipset_flush_resource(void)
->  {
-> +	struct pci_resreq_data rr;
->  	int ret;
-> +
-> +	pci_init_pci_resreq_data(&rr, intel_private.bridge_dev);
->  	ret =3D pci_bus_alloc_resource(intel_private.bridge_dev->bus, &intel_pr=
-ivate.ifp_resource, PAGE_SIZE,
->  				     PAGE_SIZE, PCIBIOS_MIN_MEM, 0,
-> -				     pcibios_align_resource, intel_private.bridge_dev);
-> +				     pcibios_align_resource, &rr);
->=20=20
->  	return ret;
->  }
-> diff --git a/drivers/gpu/drm/i915/i915_gmch.c b/drivers/gpu/drm/i915/i915=
-_gmch.c
-> index b0ef6ef577a3..d35097bebc0f 100644
-> --- a/drivers/gpu/drm/i915/i915_gmch.c
-> +++ b/drivers/gpu/drm/i915/i915_gmch.c
-> @@ -38,6 +38,7 @@ static int mchbar_reg(struct drm_i915_private *i915)
->  static int
->  intel_alloc_mchbar_resource(struct drm_i915_private *i915)
->  {
-> +	struct pci_resreq_data rr;
->  	u32 temp_lo, temp_hi =3D 0;
->  	u64 mchbar_addr;
->  	int ret;
-> @@ -55,12 +56,12 @@ intel_alloc_mchbar_resource(struct drm_i915_private *=
-i915)
->  	/* Get some space for it */
->  	i915->gmch.mch_res.name =3D "i915 MCHBAR";
->  	i915->gmch.mch_res.flags =3D IORESOURCE_MEM;
-> +	pci_init_pci_resreq_data(&rr, i915->gmch.pdev);
->  	ret =3D pci_bus_alloc_resource(i915->gmch.pdev->bus,
->  				     &i915->gmch.mch_res,
->  				     MCHBAR_SIZE, MCHBAR_SIZE,
->  				     PCIBIOS_MIN_MEM,
-> -				     0, pcibios_align_resource,
-> -				     i915->gmch.pdev);
-> +				     0, pcibios_align_resource, &rr);
->  	if (ret) {
->  		drm_dbg(&i915->drm, "failed bus alloc: %d\n", ret);
->  		i915->gmch.mch_res.start =3D 0;
-> diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
-> index b2879a6be5f8..1b7a4469c6ca 100644
-> --- a/drivers/pci/pci.c
-> +++ b/drivers/pci/pci.c
-> @@ -6444,8 +6444,8 @@ static DEFINE_SPINLOCK(resource_alignment_lock);
->   * RETURNS: Resource alignment if it is specified.
->   *          Zero if it is not specified.
->   */
-> -static resource_size_t pci_specified_resource_alignment(struct pci_dev *=
-dev,
-> -							bool *resize)
-> +resource_size_t pci_specified_resource_alignment(struct pci_dev *dev,
-> +						 bool *resize)
->  {
->  	int align_order, count;
->  	resource_size_t align =3D pcibios_default_alignment();
-> @@ -6497,6 +6497,7 @@ static resource_size_t pci_specified_resource_align=
-ment(struct pci_dev *dev,
->  	spin_unlock(&resource_alignment_lock);
->  	return align;
->  }
-> +EXPORT_SYMBOL_GPL(pci_specified_resource_alignment);
->=20=20
->  static void pci_request_resource_alignment(struct pci_dev *dev, int bar,
->  					   resource_size_t align, bool resize)
-> diff --git a/drivers/pci/setup-res.c b/drivers/pci/setup-res.c
-> index 376f09630a4a..441a62807719 100644
-> --- a/drivers/pci/setup-res.c
-> +++ b/drivers/pci/setup-res.c
-> @@ -265,17 +265,21 @@ resource_size_t pci_resource_alignment(const struct=
- pci_dev *dev,
->   * before res->start if there's enough free space there. This enables
->   * tighter packing for resources.
->   */
-> -resource_size_t pci_align_resource(struct pci_dev *dev,
-> +resource_size_t pci_align_resource(struct pci_resreq_data *rr,
->  				   const struct resource *res,
->  				   const struct resource *empty_res,
->  				   resource_size_t size,
->  				   resource_size_t align)
->  {
-> +	struct pci_dev *dev =3D rr->dev;
->  	resource_size_t remainder, start_addr;
->=20=20
->  	if (!(res->flags & IORESOURCE_MEM))
->  		return res->start;
->=20=20
-> +	if (rr->user_align)
-> +		return res->start;
-> +
->  	if (IS_ALIGNED(size, align))
->  		return res->start;
->=20=20
-> @@ -306,18 +310,21 @@ resource_size_t __weak pcibios_align_resource(void =
-*data,
->  					      resource_size_t size,
->  					      resource_size_t align)
->  {
-> -	struct pci_dev *dev =3D data;
-> +	struct pci_resreq_data *rr =3D data;
->=20=20
-> -	return pci_align_resource(dev, res, empty_res, size, align);
-> +	return pci_align_resource(rr, res, empty_res, size, align);
->  }
->=20=20
->  static int __pci_assign_resource(struct pci_bus *bus, struct pci_dev *de=
-v,
->  		int resno, resource_size_t size, resource_size_t align)
->  {
->  	struct resource *res =3D pci_resource_n(dev, resno);
-> +	struct pci_resreq_data rr;
->  	resource_size_t min;
->  	int ret;
->=20=20
-> +	pci_init_pci_resreq_data(&rr, dev);
-> +
->  	min =3D (res->flags & IORESOURCE_IO) ? PCIBIOS_MIN_IO : PCIBIOS_MIN_MEM;
->=20=20
->  	/*
-> @@ -329,7 +336,7 @@ static int __pci_assign_resource(struct pci_bus *bus,=
- struct pci_dev *dev,
->  	 */
->  	ret =3D pci_bus_alloc_resource(bus, res, size, align, min,
->  				     IORESOURCE_PREFETCH | IORESOURCE_MEM_64,
-> -				     pcibios_align_resource, dev);
-> +				     pcibios_align_resource, &rr);
->  	if (ret =3D=3D 0)
->  		return 0;
->=20=20
-> @@ -341,7 +348,7 @@ static int __pci_assign_resource(struct pci_bus *bus,=
- struct pci_dev *dev,
->  	     (IORESOURCE_PREFETCH | IORESOURCE_MEM_64)) {
->  		ret =3D pci_bus_alloc_resource(bus, res, size, align, min,
->  					     IORESOURCE_PREFETCH,
-> -					     pcibios_align_resource, dev);
-> +					     pcibios_align_resource, &rr);
->  		if (ret =3D=3D 0)
->  			return 0;
->  	}
-> @@ -354,7 +361,7 @@ static int __pci_assign_resource(struct pci_bus *bus,=
- struct pci_dev *dev,
->  	 */
->  	if (res->flags & (IORESOURCE_PREFETCH | IORESOURCE_MEM_64))
->  		ret =3D pci_bus_alloc_resource(bus, res, size, align, min, 0,
-> -					     pcibios_align_resource, dev);
-> +					     pcibios_align_resource, &rr);
->=20=20
->  	return ret;
->  }
-> diff --git a/include/linux/pci.h b/include/linux/pci.h
-> index d31a8d107b1e..fe0233f0d9e6 100644
-> --- a/include/linux/pci.h
-> +++ b/include/linux/pci.h
-> @@ -1217,12 +1217,34 @@ int __must_check pcibios_enable_device(struct pci=
-_dev *, int mask);
->  /* Architecture-specific versions may override this (weak) */
->  char *pcibios_setup(char *str);
->=20=20
-> -/* Used only when drivers/pci/setup.c is used */
-> +/* Resource assignment request handling */
-> +/**
-> + * struct pci_resreq_data - Data passed to pcibios_align_resource()
-> + * @dev: PCI device
-> + * @user_align: User provided alignment override (pci=3Dresource_alignme=
-nt param)
-> + */
-> +struct pci_resreq_data {
-> +	struct pci_dev *dev;
-> +	resource_size_t user_align;
-> +};
-> +
-> +resource_size_t pci_specified_resource_alignment(struct pci_dev *dev,
-> +						 bool *resize);
-> +static inline void pci_init_pci_resreq_data(struct pci_resreq_data *rr,
-> +					    struct pci_dev *dev)
-> +{
-> +	bool user_aligned;
-> +
-> +	memset(rr, 0, sizeof(*rr));
-> +	rr->dev =3D dev;
-> +	rr->user_align =3D pci_specified_resource_alignment(dev, &user_aligned);
-> +}
-> +
->  resource_size_t pcibios_align_resource(void *data, const struct resource=
- *res,
->  				       const struct resource *empty_res,
->  				       resource_size_t size,
->  				       resource_size_t align);
-> -resource_size_t pci_align_resource(struct pci_dev *dev,
-> +resource_size_t pci_align_resource(struct pci_resreq_data *rr,
->  				   const struct resource *res,
->  				   const struct resource *empty_res,
->  				   resource_size_t size,
+Reproduced with 32-bit and 29-bit SH7785LCR kernels against a local
+R8A66597 QEMU model. Before this patch, slub_debug=FZPU reports overflows
+for the 9-byte configuration header and the 63-byte HID report descriptor.
+An A/B test of this patch with the 32-bit kernel enumerates the keyboard
+and removes both reports.
+Testing the fix on real hardware is welcome.
 
---=20
-Jani Nikula, Intel
+ drivers/usb/host/r8a66597.h | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/host/r8a66597.h b/drivers/usb/host/r8a66597.h
+--- a/drivers/usb/host/r8a66597.h
++++ b/drivers/usb/host/r8a66597.h
+@@ -178,8 +178,15 @@ static inline void r8a66597_read_fifo(struct r8a66597 *r8a66597,
+ 			       len & 0x03);
+ 		}
+ 	} else {
+-		len = (len + 1) / 2;
+-		ioread16_rep(fifoaddr, buf, len);
++		count = len / 2;
++		ioread16_rep(fifoaddr, buf, count);
++
++		if (len & 0x00000001) {
++			u16 tmp;
++
++			ioread16_rep(fifoaddr, &tmp, 1);
++			memcpy((unsigned char *)buf + count * 2, &tmp, 1);
++		}
+ 	}
+ }
+ 
+-- 
+2.53.0
