@@ -1,116 +1,108 @@
-Received: from mail-wm2-f12.google.com (mail-wm2-f12.google.com [74.125.225.140])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ACBCB361DA7
-	for <linux-sh@vger.kernel.org>; Fri,  2 Oct 2026 21:58:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.140
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF996242D65;
+	Sat,  3 Oct 2026 06:53:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790978300; cv=none; b=Y9W6z0aHmmIHJMDXgbI3Z1OJRmDLGY/1FjfpigU6wfeEXq2NS4yO7o/EX5dxscvtiFkuTvBWENwH2H7I/tYJNxjc0l8DOJH1Od7BkWenoxeZbfidNHkJsMgrncimUF52EkDg/i7BIVCbW5HkVseIt2VSREV9McxJLGDJPvKgqh0=
+	t=1791010412; cv=none; b=J4VObAnwgIV5XTha1PUKiagR582msm4ym4JOyXnNOSs0pJhIrpiKMm+g4hsCqokBXQ8GBNmik7X/wFdG0TORNHoMTcblmpYo13jM2mhY39RxszQsTmwN4cMueNeFysSwHgHctkKX6kdVpWyzN93WkYQLQG5D2+/BOAZ092O7zFk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790978300; c=relaxed/simple;
-	bh=IrlpGamxvY47LrJzjSi4FPT/Dc5GHOnfyc0578uNYcg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=exvCL0Ferw5CzA7M54G9mgadCSbkAYxjlWqc8froXObJV7cA7LOo945CbV6zbiXiULLrbw/eQBSKd+VFkurTY/hoaDkIZreeE2u9bNWv0f3em23D0IpvKlLpcXDLteAn4dn+7kVEKmmnUdMHNinL6w25EYztolZsguCdUwf4UJQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=PtZHYnmM; arc=none smtp.client-ip=74.125.225.140
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1791010412; c=relaxed/simple;
+	bh=bXha1EY6nXZ/AZjy7rx+mVa/APqVcRw/2VuVAvUIhYw=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=fXMWHtLv1/TZkdqkIirKjBNZnlISOeXNQQHhgEWy5aLTYnONEn+y4WtCTUMB70gtUaFFPQ3JZGBGbN8E2+9JlS9OFgwQg422pr01HOf9qipzF/upRDdhD0mQiGtqOJDvhf0fAyuKRX2PadCxWIzLX2X5rvCZn8eOoy+P8m60DKs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=dPuGswNJ; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PtZHYnmM"
-Received: by mail-wm2-f12.google.com with SMTP id 5b1f17b1804b1-49b912d37b6so1929205e9.0
-        for <linux-sh@vger.kernel.org>; Fri, 02 Oct 2026 14:58:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1790978297; x=1791583097; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=GMnh9nYpaVJY0QctaXPIQ7WvaFNDN6p1P1QAh2BjACU=;
-        b=PtZHYnmM6WZ1pQLz2rUO1gjTGyCycjkk84vv6MQozPEAIzVDfdWJEm/4WcRtPox9xi
-         iTay/Bt59jI4qCTpqomgOYxphZACOdyDr8Igj/2W4iYQuixoT5HAX9uxJOaBiuYzwRkO
-         clkKdMKRwyAiPo9RZ15w6FMo5QSOn04SdcicF/RpIwNUOQ4iDOPRBAZyKWKZtfMyylHD
-         3NqcPLaGn0bvBuLiJJ6Tea9dWoD4QsgPrj1stl3QDv195oeNDjowjWEgoCg+EDlOCLur
-         1nwfAH/Gzv2u9pO27K4D/yr1qT80UsaPuN3A5tTNFzEx8yYwT5AnH7bRXJkvDy+oNhoo
-         QAYA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790978297; x=1791583097;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=GMnh9nYpaVJY0QctaXPIQ7WvaFNDN6p1P1QAh2BjACU=;
-        b=D4ZyKcWUTCEXVHQ1sGKVzhgvI+Mu7UjURT1ErVju8plN5m3rQMth8/QDe7vZ2XC8h3
-         ao2dCyHdyV2lwsSrrB+cEvKaK/PBwlVyyr+GBURysStKqksPTdCtDrXxfZMo+KFT1jSl
-         rjPYptbITeZH1czK9Ufi4BYF9c+Lvw7y1NGCRXFzgAt06XBC7fcT6kEAzGil9eLSe2DS
-         PIg92sBUQSW7clyZxo4J+F2JoICth3cmiGeNg2SjtPRL8TD3/eUsHxzYeOoHW8xb7ZlD
-         VXZqlYW/pYh15pAII5GZnlcCyxruBgbxXXv1oOpnMSC53tSXZwNh73Q8/NXyBDoE8lex
-         KlVg==
-X-Forwarded-Encrypted: i=1; AKwUvBwJD8MxSeCSe/KVMf5rzAlEK9IsN2pJUz0N5sBwVCEsUGnbh7FCiBOGsx16EQU+CBE1l9Z7ltCTOg==@vger.kernel.org
-X-Gm-Message-State: AFuF++lk0Y5yOlZTLq9x9b9+i5mIp4ABJjPDHjodvhZ1byZ/8b6EWaC0
-	ZA23jOBdWSe4MUcNoab8n/UY0OYusXlv1jwcWHeCDXDX50qK4Pu9vXCMPMPN0Ga4
-X-Gm-Gg: AYBFou2Wa9LINYBcqNDbHLDmAJ7A9TUiEwRuSLz+ja2jr/XqBK24C4V+LEUu+5cN1Bo
-	5Ealont0fNnCpjLfZmF3HaHt7DWcWifhCCX+BVhZav+IhKrWAGtDEtDWIxCIWHlA3g6/OWmvt5M
-	VMT95OrAbhBnSkF3DyJRk1bC6bsK7raAX+SeeEVngy2/xTrzcRPT9U+l8/24BPU0ph2b1xGO+3q
-	VKHdY9TFogfdZmCwrabkmdBFj2UX0Kmc9hoFOkkpxP9apoP+V/vFhKIGQLn8T9HsdXIJ48nrqya
-	5sT0wh3Q2PEiYVUo/xNniqhMKLx//LR8DWe1vuBlYwH2/0lCb4ZqyHw5vvySxEoqFnooTzY2AIs
-	grHI0uyE3usMnADmv5Lxq5I0bmJ82AaO17P9WId/ImgVdjg+YUhPXtB1JSl7e52quB6bvZgxnNK
-	PJuuENZVw/yeiJxlPX66RUbrAS1DHaoCIIv9TT2Us8O/nQ8sxEZ/eW8B+Q+UbIDezEAez4gD9z7
-	m6Gws3/lkgj2jMBLCwKfwJazcSyWZ3XNHgx8rW4wrQ1OWSv8RgW4TzDPUwap3Ed+sHsnL5KAbV7
-	rxMh8XA2UsxIGPl0YemZW/RwRzUPldRhbPnB9qIxNLmmqeUdzL5LH21P5LD0MWwYyq++yLLGgkz
-	2GKJU7C6MM+E=
-X-Received: by 2002:a05:600c:138b:b0:49f:ce78:3562 with SMTP id 5b1f17b1804b1-4a02759b46fmr71998765e9.19.1790978296761;
-        Fri, 02 Oct 2026 14:58:16 -0700 (PDT)
-Received: from MacBook-Pro-von-Karl (dynamic-2a02-3100-af35-1901-81da-eee8-c2d0-ee3b.310.pool.telefonica.de. [2a02:3100:af35:1901:81da:eee8:c2d0:ee3b])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a0280c6597sm120987985e9.9.2026.10.02.14.58.15
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 02 Oct 2026 14:58:15 -0700 (PDT)
-Date: Fri, 2 Oct 2026 23:58:14 +0200
-From: Karl Mehltretter <kmehltretter@gmail.com>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="dPuGswNJ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=o7vN1OvZy3wNyqGmBfQfsd9NUHv/OmOZdpb3tKj+Fms=; t=1791010408;
+	x=1791615208; b=dPuGswNJ7JsDbSwSz11o9rgorqIe1u0ZKm0NKsiIyNMw4AwIVsVxvHNzRJOM/
+	ALXUB/t5PhPiTiC34llOyxf0o6W0DNe7eIZrHMPFVf5oY7k44FCAjs2bH1t6GuyADfgHncR5IagkJ
+	m6vkwZRu0B0CdGLc2kAOX8vUxMbGCOuvyFCvqynQ4WF5aTBwCaifsg7LYmws2+4RWgzeHDM61fcFc
+	w+akAGQV5hLMWV51t5Jplxd4W31ixgRiij752lfR3KU/YRibyjE8CIKyVBr6VS4WYUjvuxMnKPqgj
+	FRqZo3iy+jjp6C3j2GAKOc5SXf92S4egnmf+nZocPX9/A4PIJg==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.100)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1xCtcV-00000002hYR-1eb2; Sat, 03 Oct 2026 08:53:19 +0200
+Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.100)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1xCtcV-00000001y8h-0ifD; Sat, 03 Oct 2026 08:53:19 +0200
+Message-ID: <f1e0019607971c4719f96f32af2b948a071501e7.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] sh: intc: sort the prio and sense lists after filling
  them
-Message-ID: <asAk-lpM0rBnQTT3@gmail.com>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Karl Mehltretter <kmehltretter@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
+ <dalias@libc.org>, 	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Sat, 03 Oct 2026 08:53:18 +0200
+In-Reply-To: <asAk-lpM0rBnQTT3@gmail.com>
 References: <20260927191359.6144-1-kmehltretter@gmail.com>
- <3bd32eaf159db61ed1d423e1d52a869b3689c682.camel@physik.fu-berlin.de>
+	 <3bd32eaf159db61ed1d423e1d52a869b3689c682.camel@physik.fu-berlin.de>
+	 <asAk-lpM0rBnQTT3@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <3bd32eaf159db61ed1d423e1d52a869b3689c682.camel@physik.fu-berlin.de>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Fri, Oct 02, 2026 at 06:57:19AM +0100, John Paul Adrian Glaubitz wrote:
-> I just booted the kernel with slub_debug=FZPU on my SH-7785LCR EVB and
-> I'm getting the following "kmalloc Redzone overwritten" warning in both
-> cases.
-> 
+Hi,
 
-Hi Adrian,
+On Fri, 2026-10-02 at 23:58 +0200, Karl Mehltretter wrote:
+> thanks for testing. A cold reboot is not needed. The reported object was
+> allocated by usb_get_configuration(), so this warning is unrelated to the
+> INTC patch.
 
-thanks for testing. A cold reboot is not needed. The reported object was
-allocated by usb_get_configuration(), so this warning is unrelated to the
-INTC patch.
+OK, so how do I reproduce the INTC issue?
 
-I sent a fix for the USB R8A66597 bug and copied you:
+> I sent a fix for the USB R8A66597 bug and copied you:
+>=20
+> https://lore.kernel.org/r/20261002213225.27834-1-kmehltretter@gmail.com/
 
-https://lore.kernel.org/r/20261002213225.27834-1-kmehltretter@gmail.com/
+Let me check.
 
-> Are you sure your patch actually fixes this problem?
-> 
-> Or do I maybe need a cold reboot?
+> > Are you sure your patch actually fixes this problem?
+> >=20
+> > Or do I maybe need a cold reboot?
+>=20
+> A cold reboot is not needed.
+>=20
+> The INTC allocation remains live after boot, so SLUB does not necessarily
+> check its redzone automatically. To check it explicitly after boot, run:
+>=20
+>   echo 1 > /sys/kernel/slab/kmalloc-32/validate
 
-A cold reboot is not needed.
+So, running the validation should trigger the INTC issue on an unpatched ke=
+rnel?
 
-The INTC allocation remains live after boot, so SLUB does not necessarily
-check its redzone automatically. To check it explicitly after boot, run:
+> Could you please test once with only the USB patch and once with both
+> patches, using slub_debug=3DFZPU and running that command after each boot=
+?
 
-  echo 1 > /sys/kernel/slab/kmalloc-32/validate
+I'll test the USB patch first and see if that fixes the issue when booting
+with slub_debug=3DFZPU. Then test the INTC issue with the command above.
 
-Could you please test once with only the USB patch and once with both
-patches, using slub_debug=FZPU and running that command after each boot?
+Adrian
 
-Thanks,
-Karl
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
