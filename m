@@ -1,126 +1,117 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EEC8A48095D;
-	Sun,  4 Oct 2026 20:34:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5AE1B2931FB
+	for <linux-sh@vger.kernel.org>; Mon,  5 Oct 2026 04:25:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791146104; cv=none; b=My4JEAMvw8ttSTrPLSQLfFpIYD+a5RUIY1BpG/rcsSS8EtRvKNkR9fZ2MfRZRD47jwEBvJecIa+9LLRz6AzeFv3niDkyEvevZD8pv/+ouRq2bhe6/GVtyuWhSGEqfmbI54r+IzUJUnZ6LG1qSnp31bAE6IAuzrxWhFBJ28Zhsdo=
+	t=1791174351; cv=none; b=gHLUTcuFrt5esDfWb9zhwnr9mNq/y4KNr848rbGB/qXL+bM0mxlO0T5nr3HJ8ENj61rLXR9l1kGaS2r7CwQn2w7AHB+W7fMNVtMypEdput2Xt2cxYOzCcLnCFqZFBvY4Sh9iYWedjxqMR00lfcscN0J53Nqjdx/b/hXYTfvcCqo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791146104; c=relaxed/simple;
-	bh=eTjCzurdJlcEL9u/ERcD70Taio0Ybjoa3Kh3I/eyU7o=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=anvP2dnbx+KSs3GYYjrw7MkmJJ3m5V8GxMtKLxbpqMYdZvpLalBBukzaLj56fNJJbYZyLbrWmM3JMuStTVHxq9Q4qzSUxKPdA5E3QrWbThdSG4fqz3kGUFOXD5dKbzk63lLzadY1sJW/iHJhpgFganRHZljIlYonRVKAD6TDibI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=N4CzBz7Y; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1791174351; c=relaxed/simple;
+	bh=fPZioazYkPzjSMjHIymVpmo3SG9e0aMYWmg3rnmT1X4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=mH7fkGjOPFoCgCF+JZj7X+gHn79CbKpSR872jELod1d3E9sr7s1wJPIS2gXxnMBiA7mx4O1K7omvEdcYQ/6XnkqlL1Qf6NGBF3Fq7FNqcnBY1XnfpDtFCZO7e0PQL15ZvWAJnkSUGm1QDV+ppZmiGeF2dg3sOu+2HfiEKvY6MX8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=TfGSFTxp; arc=none smtp.client-ip=209.85.128.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="N4CzBz7Y"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=nIruSnPtZ3jJHwA7r0U5oZva6oH29kymYAEv3KsW6mI=; t=1791146100;
-	x=1791750900; b=N4CzBz7Y0w/5Oc7/NTQ2YT6evIoqpu0tKwRR0oW4y6K830PhpHpuuZMptqYWg
-	BI0FL9qpDS/6MeRrA/cV7FB0/fSKKXujM22J6AGrK5cth6/LzqSMntkr4gn5kZNA9+GUZC3YmW4mZ
-	C5q0z13pblUZLLOYDwZVlrHMD70PdWmknb99HgWgReuOGC/3HN5akyIHQzN47og+nI691x+bsr6tU
-	w8B+m67MdUa499vWr3LKMTXLetAnGzTydzE/dVS5F7z0J6IaqDkDKRKzd9wnvwuU6TqwqBvaxM1PF
-	nXN4KntwxUIy/0JGUrWbxg27rA+MIbontudOb58/hJy55DlKhw==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xDSv3-00000000RC5-42bU; Sun, 04 Oct 2026 22:34:49 +0200
-Received: from dynamic-092-224-138-137.92.224.pool.telefonica.de ([92.224.138.137] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xDSv3-00000003QVl-2h7L; Sun, 04 Oct 2026 22:34:49 +0200
-Message-ID: <8acb30b9b9fbbd8d5c5754251eb3f1c166e6d41a.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: sh7785lcr: register the PCA9564 as I2C bus 0
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato
-	 <yoshinori.sato@nifty.com>, Rich Felker <dalias@libc.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Sun, 04 Oct 2026 22:34:48 +0200
-In-Reply-To: <20261004184644.90750-1-kmehltretter@gmail.com>
-References: <20261004184644.90750-1-kmehltretter@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TfGSFTxp"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4a1728d8dfcso3218485e9.1
+        for <linux-sh@vger.kernel.org>; Sun, 04 Oct 2026 21:25:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1791174348; x=1791779148; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=961ay0gWzbSVe8vqtS0Eg+hS7Wb99URak0c/SwD/AlI=;
+        b=TfGSFTxpjxuFoUCBe1JXlOMkq5/qSH1UgON8qN8GHPWG0CY6UOHOGzYWo0B+w6BYvp
+         olxZ9GQFhFvsfd8v6WgAjUhGDaeTcmPv1jCV4+FhS7QPUk8mkUFopdgtBDJmlUSxdvGJ
+         jylhTYPSv0KzZY3r7NWZYIX3EgVvUALEvkkweRvtrl97yvskyT2yTr4PVSv58amIXqPa
+         0H+qAMJG51O/MFy+JyGs94fb8YEpN7lWu/Am2K1HQFepvDUtOSdC9xir4FejVO1CTcv7
+         5pSjwh/1eleBsJkgB8Wsa/KpsFniOOTd9ujyWtsGoNh4es8wY+brHF1PyE53+Z0ATP8e
+         6+jA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791174348; x=1791779148;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=961ay0gWzbSVe8vqtS0Eg+hS7Wb99URak0c/SwD/AlI=;
+        b=NN6kLN3V+SJI0oHelOiwZwMxXjQzgKu3sSQaJix78bPpzUSmX9mkwbbyl0yLC0+Dn0
+         ZFmGqnejP+PnYv2EOwyLvMeYgvsJ6E7BxAZdosaKmauv7SdakHuDCAv/m50rjBA4l9LK
+         Eup5A6CvCko8LnCIqcayuBPjC4q/9BEtkWT6HG9QJr3WijkeaSd6qXx9AXX18nicTn/b
+         SFwXOsJdawAuzGBDTi+1k2C8EsyQvl4z1IqqhwRf1HRh/7D/Y3/mYp0Zp59WWWxzyF0A
+         FTf1cxD7U3fT9ikZCJrodFK2gESIaZwZlxfOu50R8/OwHUIVsi1GBIOSJUKwmr6tV1pH
+         +7TQ==
+X-Forwarded-Encrypted: i=1; AKwUvBy2TpvpZ1dP30lyASasrtRItzqHnlbfkNH2JWmxEDD8TzpxHMY6xFBIQdFO4bipw7jNhvcQeXsLtw==@vger.kernel.org
+X-Gm-Message-State: AFuF++lDoxti23WjjE8NjVHJizO0nH5SrdueJLLC6JyKivbq8JRYQyXW
+	XHxDjeH1rnuEHTizHQdetL4x1IMoQy/ACp8wDMWR2Gp4pjVmqxlu8OyH
+X-Gm-Gg: AYBFou0bNoEa7BDxQWnBGPFcQvnLp/mcZP/LzPD3Zb46GMCAci2kM0t05ObzoUm2Pok
+	FWrnDKdKNUOrbeHnM2Zji1lz5m85S7f3dhuhWsOXhXHbNnAwajV7NOHOBibQFOleQMn3UyZzoSj
+	dNT5IPe8o1IhNKDV9B8PEKiln2DNjEzKJ5gYVH9XE16HmxychLDcM1GrvKQVkIlWZ8M6P6fjJWI
+	uq/E12ASeRIsfpx52GNQloQgukGDzhdtwffiHM83wa5lK6NvZScqq6XNUVKZdB9cy5V7BJTLOTI
+	ld4/zRPeZvgxbCagxJa2BsF9z/EVBucscGojK0M3VgQydpFwW41oQTxg32pVszrtCmHrrBv9ADd
+	b/uMtBjFScEJJ2bGSdTsRbLtTjcJzJrMtFcB4OCkOkbFOrXV493lOoQZf84IBUiHhWvu2ucm8wD
+	Zi15HzBAy1WwE2Dv6RCpHOpSAbePisIP2Ip+uU6Y3IMAUUHT8J7DkV2MzdX7ZvsENEXxIGvIzIZ
+	3Slaace/PCHbtFmmrrmlMyNT1zaCwzoqXEOnb7xQcc31N0vFZQ2zVW0poO9uv86G8yAj5qkcSex
+	ZfP+r9srA/iypAVFO1zptVgpsXQVMgq9/CwZ9N0xTntIVvQvIXN+cI5mrmUMM5vWAQ==
+X-Received: by 2002:a05:600c:b90:b0:4a1:62b8:9aa1 with SMTP id 5b1f17b1804b1-4a1680b5402mr109857695e9.2.1791174348517;
+        Sun, 04 Oct 2026 21:25:48 -0700 (PDT)
+Received: from MBP-von-Karl (dynamic-2a02-3100-b305-2001-39fa-3d24-821a-4eae.310.pool.telefonica.de. [2a02:3100:b305:2001:39fa:3d24:821a:4eae])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48c6227fa65sm869179f8f.16.2026.10.04.21.25.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 04 Oct 2026 21:25:47 -0700 (PDT)
+Date: Mon, 5 Oct 2026 06:25:46 +0200
+From: Karl Mehltretter <kmehltretter@gmail.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] usb: r8a66597-hcd: fix buffer overflow on odd-length
+ FIFO reads
+Message-ID: <asMl-yIKQoAbpwzA@gmail.com>
+References: <20261002213225.27834-1-kmehltretter@gmail.com>
+ <CAMuHMdWEYkBra+3G_+-TfT23BAWPxG5o2KHqGRuHcdp8x0Vskg@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdWEYkBra+3G_+-TfT23BAWPxG5o2KHqGRuHcdp8x0Vskg@mail.gmail.com>
 
-Hi Karl,
+Hi Geert,
 
-On Sun, 2026-10-04 at 20:46 +0200, Karl Mehltretter wrote:
-> Before commit 44454baa7ca7 ("i2c: Dynamically assign adapter id if it
-> wasn't explictly specified"), a negative ID was replaced by zero, and
-> I2C bus zero was instantiated. Since that commit, a negative ID is passed
-> verbatim, instantiating an I2C bus with a dynamic number. As SH boards
-> still use i2c_register_board_info(0, ...) to register I2C devices, they
-> rely on the I2C bus being bus zero.
->=20
-> The SH7785LCR is the only SH board whose I2C adapter has a negative ID.
-> Its PCA9564 becomes i2c-1, causing registration of the R2025S/D RTC to
-> fail, and hwclock finds no /dev/rtc0.
->=20
-> Set the platform device ID to 0, so that the adapter is registered as
-> bus zero again.
->=20
-> Fixes: 44454baa7ca7 ("i2c: Dynamically assign adapter id if it wasn't exp=
-lictly specified")
-> Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Assisted-by: LLM
-> Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
-> ---
->=20
-> v2:
-> - Rewrite the commit message based on Geert's suggested wording.
-> - Add the tags from Adrian and Geert.
-> - No code change.
->=20
-> v1: https://lore.kernel.org/r/20261003082833.21511-1-kmehltretter@gmail.c=
-om/
->=20
->  arch/sh/boards/board-sh7785lcr.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh77=
-85lcr.c
-> index 25c4968f0d8b..b93423df582f 100644
-> --- a/arch/sh/boards/board-sh7785lcr.c
-> +++ b/arch/sh/boards/board-sh7785lcr.c
-> @@ -256,7 +256,7 @@ static struct i2c_pca9564_pf_platform_data i2c_platfo=
-rm_data =3D {
-> =20
->  static struct platform_device i2c_device =3D {
->  	.name		=3D "i2c-pca-platform",
-> -	.id		=3D -1,
-> +	.id		=3D 0,
->  	.dev		=3D {
->  		.platform_data	=3D &i2c_platform_data,
->  	},
+On Sat, Oct 03, 2026 at 02:42:48PM +0100, Geert Uytterhoeven wrote:
+> > +               count = len / 2;
+> > +               ioread16_rep(fifoaddr, buf, count);
+> 
+> Or just:
+> 
+>     ioread16_rep(fifoaddr, buf, len / 2);
+> 
+> > +
+> > +               if (len & 0x00000001) {
+> 
+> "len & 1"?
+> 
 
-Thanks a lot! I'll merge it in the upcoming week together with some
-more pending patches. This patch will then be part of v7.4.
+Thanks for suggesting that! I will use len / 2 and len & 1, and a
+plain byte store instead of the memcpy().
 
-Adrian
+> 
+> Seriously: a *_rep() function for a single iteration?
+> 
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+I'd like to keep this one. ioread16_rep() does not byte swap.
+ioread16() goes through readw(), which swaps on big endian on most
+architectures.
+
+The words before the last one are read with ioread16_rep(), so reading
+the last word the same way puts its first FIFO byte first in memory on
+every architecture.
+
+Thanks,
+Karl
