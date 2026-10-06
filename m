@@ -1,162 +1,139 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f48.google.com (mail-wr1-f48.google.com [209.85.221.48])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A15F2BE034;
-	Tue,  6 Oct 2026 08:52:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 183CB3ACA5A
+	for <linux-sh@vger.kernel.org>; Tue,  6 Oct 2026 10:41:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791276771; cv=none; b=jIFCOV7xApcotT9gMDwQigsV5Kuj1XcnsI9YsdZ73Fs0X1EEEDtJLcRL09VVMmTv2ioaq/1Ve6NzuckEfHUSyjWZG/cpjM7o8KuwqFFZIr87AzhCYi8NZ5CvUWl7dRW1iVRDzD8I91UWNi8LmbIQ8hJtfn01hxIYApGuFxlF7hk=
+	t=1791283300; cv=none; b=OxLrH2IdLz3nm4pWGkYi+sqiasP2y8OCOXUuCR/+ysWc2dtrm/PGPIZ7zFLlA4SoGEtY8CZfImvaFUdAXMVY2oMVCIECO+1qLTVcRAalvY+zGe3beP9PuRaXzosGVRP3OLlAfXZAL5/0Nk2WAWnGTgO5zO5MpU+UVYd12d3uJoE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791276771; c=relaxed/simple;
-	bh=lgRqwSifgcv/QFIrzGhn5J6mJPzCLE3UAx1akAM+wCk=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=nqPtH77xOIJhz1qrRqvO0byxz+xxqKBFfUQj1gaPnRaphERZ9drv8S69Mh/x7CWr+YfCXgcEeoKGkbk1Gi+dVMIOXN3zh2AE0sdg1eHfW+l4IOPK3Lpfjw8RGv2a5Xm1I4GTfqXA4xq6mLYmZhBWU96iXtOSfr8riWNGBh2xwHY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=gRhJwFey; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1791283300; c=relaxed/simple;
+	bh=zGfqUCx6jXAzT6zCCJ7NiL3kT8DKVER0oBryCp4Dxcs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=js893XaMW/vYBJiYR/HmhVQYOKjWUBcIoCJ/1dMakWVpvKStHWIwLw5xh4DPCQe9+m4fdtWkZj3FFc67L1MRMatqACier535FnfZbRamRmcqqVe6XNIa9HCn8ceUEzhdlqWkLlBPKB0EWwvsFuOa+t16mKbrSFXqIou5jdeNBSA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=RiGJzJG5; arc=none smtp.client-ip=209.85.221.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="gRhJwFey"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=9i8glAIn1hdAyAgLaJEf0Eg8BNyEXzM+3RkK/Z2F9Wc=; t=1791276769;
-	x=1791881569; b=gRhJwFeyiMhiWNlWp27cZr4zu0kmmB4ca97OI2RTm2BM6dmdDkOK/7tKfa/+3
-	RcS30TQcQcGAITulfYMbihbj1J8+JVyTDv/kmnHjL4e/dO6Cc8Be/IxyCd7N6LcwaZ94otQrGEnNK
-	SKd0VB8BirIdxBfFJ6+hUbKlhf9mqe+GSPfKQ9UzORObiXoPIcIQJ0E4rK4dk8pXQv0iwKmIIaZdh
-	kLeOhl1dWUSqrVMBkvSM1uXhpAm/KtpmeutVrz3bDWWvF+I65PIVLTyQQnkyuwtJuS2u0VlR5kJlL
-	tCyTK469x8wQ9w8dFTrlK2gPWJY9xY8t0P75uu1+YvtYDaNECA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xE0uk-00000001L6Z-3Jei; Tue, 06 Oct 2026 10:52:46 +0200
-Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xE0uk-00000003hg6-2OhZ; Tue, 06 Oct 2026 10:52:46 +0200
-Message-ID: <44df76d122650e6a95d1fd2e95bc6c66d4001d4b.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v3] sh: maple: fix empty port handling
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Florian Fuchs <fuchsfl@gmail.com>, linux-sh@vger.kernel.org, Rich Felker
-	 <dalias@libc.org>, Artur Rojek <contact@artur-rojek.eu>
-Cc: linux-kernel@vger.kernel.org, Adrian McMenamin
- <adrianmcmenamin@gmail.com>
-Date: Tue, 06 Oct 2026 10:52:45 +0200
-In-Reply-To: <20260515181115.3244161-1-fuchsfl@gmail.com>
-References: <20260515181115.3244161-1-fuchsfl@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="RiGJzJG5"
+Received: by mail-wr1-f48.google.com with SMTP id ffacd0b85a97d-487049569b6so391127f8f.1
+        for <linux-sh@vger.kernel.org>; Tue, 06 Oct 2026 03:41:38 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1791283297; x=1791888097; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=u9EgTKWvY83NOreoEpihq3C4uu+WwUDt2rznQTC8D2g=;
+        b=RiGJzJG5n0Z9tkkWW7q5OVVdQFwdMvdu+B6c2pZTXH1iwDGUgdO3b8B7KhDcaUbklp
+         SKsBPoiSn58rLdkGnYH/02aMimAfPT67yOsv99OZ52ZMpIbcfVAIAQtF77EN+vj2Tasi
+         BiFj7fneJnlFUfnyNB9scjz1o/ACOrXOZTsCW/ONz47k6KL79ocllOEDynh2hFF7KYD0
+         YLmhJYYDwVbtaNesv6EhF9Ofxbho94LWWIhpYt8jidhWhxZiHQyX+RAlllHPA9i2HlKC
+         A6n6WkvufLuhIZsHCNFP9MrrKfDY215t2WPG/smIebLumLZuQlT4xxBAf5h2FK7/Mf+D
+         Lu7A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791283297; x=1791888097;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=u9EgTKWvY83NOreoEpihq3C4uu+WwUDt2rznQTC8D2g=;
+        b=cKKQUbDPnkXVypd94T+nUgye8KxYCuNo5SDQRdR0U+lm20OMlnPNCpkHV+fiATKc1R
+         fdo/So7QTVnlqS2DbdKiFj6ZCoHkVbbOXMl0fUWCw5p6ng6B0CljrC2Ln2iiHMY29w7G
+         1WmepA72opI3MK+JxwOAKVVcX/1+s/7YQQaoThrXm7xf+vTFHueFjKyRHbuLCLkTnRFQ
+         CaPMvMPIGCyrhQHxVL6NpIugMjz8INPlT62C+Tk5ZZFJmNFkTB0EZ+2R75fxhDaylp47
+         Iz8EgLd/F/Q/qsdbK5Gc1O+DrRCANcQ/tA2yAK2qQW5zN+qnUYCy3R/a6m+dESJvgTEf
+         T4kQ==
+X-Forwarded-Encrypted: i=1; AKwUvBxhZbDHauv3acfPEWo99/TKvnzyLbs7Md+OeuEJ063p+EHTzaKTIZZQHwcigDrunBSL3FhqlvvMJg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYL9xJD19ZYQX4simJbfcKQYXjN2nMPb6D52o8cC1c06yLV2VUmu
+	Ub+rdn+ejLXdt0M4NY8+yuwwF4J7qPWHgDCIfApUuOApX2J0i1L/rWwavdOUIgI=
+X-Gm-Gg: AYBFou3DmjJdw9SE3EeXmY38NNudvmGj2O7uJa7JKFAXAf5NNqbL8DXJ3mofJKnxkce
+	a730c5mnwTfQZ5s9pdq/DYr1I1GsIDGUMYQ1N3Nqv3w1aTDkJLmt63YMKPLnQnU1UMBEJVboq3m
+	BFszn8CMbWojh8Nz0Eurg4NWdmGDsPvoATwEc+NwJo01usOP4VwXWdlh/ZtpJ0zbRuBU5SEY0eZ
+	XgGBeJESDlGUBZSTHpu9VwAnnwK+oVTvAPI6n/UhvujExxyk8BWj6weLSOXyzxfWR2vSHJ53MVg
+	dDkbN/r0AIsuax77ij4rKGURQuyKaHEURHNFjVMJwfv8CwoQ1R0XDnQ+8REZdMT0b2KQW5jWeIT
+	qmXAebLWo09XLbT27b+hfe1qpo2nKgLBEqm5vgocnNjBtyU5kqQ/XqvDxZRNejGaE5o4hyHidCi
+	V9+WAgaoWceh8E5eLKbOgnrvL4yIeHWqGkkw4kSX29OCrB27Iw3QmZ8kP+gBBAaxYzHeHjn7BdI
+	YLa5WUe2/S+Rl7qggkvuhS68YbyUDrxGsSoU78K+zcSgH+vIg==
+X-Received: by 2002:a05:6000:2dc7:b0:48c:41c2:46d6 with SMTP id ffacd0b85a97d-48c6d1c1c1amr2258645f8f.35.1791283296969;
+        Tue, 06 Oct 2026 03:41:36 -0700 (PDT)
+Received: from lithos ([2a02:810d:4a94:b300:d1f6:bf6:35f2:f07c])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48c622704a5sm22046834f8f.15.2026.10.06.03.41.36
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 06 Oct 2026 03:41:36 -0700 (PDT)
+Date: Tue, 6 Oct 2026 12:41:31 +0200
+From: Florian Fuchs <fuchsfl@gmail.com>
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Miquel Raynal <miquel.raynal@bootlin.com>,
+	Richard Weinberger <richard@nod.at>,
+	Vignesh Raghavendra <vigneshr@ti.com>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Adrian McMenamin <adrianmcmenamin@gmail.com>,
+	linux-kernel@vger.kernel.org, Dmitry Torokhov <dtor@mail.ru>,
+	linux-input@vger.kernel.org, linux-mtd@lists.infradead.org,
+	linux-sh@vger.kernel.org
+Subject: Re: [PATCH 02/26] Input: maple_keyb - fix key press detection
+Message-ID: <asTQW0F2nqp2Kj86@lithos>
+References: <20260703-b4-maple-cleanup-v1-0-41e424964da5@gmail.com>
+ <20260703-b4-maple-cleanup-v1-2-41e424964da5@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260703-b4-maple-cleanup-v1-2-41e424964da5@gmail.com>
 
-Hi Florian,
-
-On Fri, 2026-05-15 at 20:11 +0200, Florian Fuchs wrote:
-> Fix empty Maple port handling so the bus works with fewer than four
-> populated ports and devices can be hot-plugged at runtime.
-
-The description doesn't really add much information to what the title
-says. It would be more helpful if the description briefly described
-the actual bug and how it was fixed.
-
-Adrian
-
-> Cast the response code to s8 so 0xff is handled as MAPLE_RESPONSE_NONE,
-> continue scanning after empty ports, and process devinfo replies for
-> empty unit-0 ports.
->=20
-> Tested-by: Artur Rojek <contact@artur-rojek.eu>
-> Acked-by: Artur Rojek <contact@artur-rojek.eu>
-> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
+On 03 Jul 22:57, Dmitry Torokhov wrote:
+> The key press detection logic was using ptr instead of !ptr (where ptr is
+> the result of memchr searching for the new key in the old keys).
+> 
+> If ptr is not NULL, it means the key was already pressed in the previous
+> report, so it is not a new press. If ptr is NULL, it means the key was
+> not pressed before, so it is a new press.
+> 
+> Using ptr instead of !ptr caused new presses to be ignored in the first
+> poll cycle (only reported in the second cycle if still held, because
+> then it was in 'old'), and caused redundant press events to be sent
+> on every subsequent poll while the key was held.
+> 
+> Fix this by using !ptr for press detection, matching the release
+> detection logic.
+> 
+> Fixes: b11d2127c489 ("Input: add support for SEGA Dreamcast keyboard")
+> Assisted-by: Antigravity:gemini-3.5-flash
+> Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
 > ---
-> v2->v3: No functional change. Condense commit message and add Tested-by,
->         Acked-by tags.=20
-> v1->v2: Don't break hot-plugging of new devices to empty ports.
->         Explicitly cast the response code to s8 to use the existing
->         logic, that relies on signed chars. In the case of 0xff (all 1s,
->         DCs TIMEOUT response) that was interpreted as 255 unknown respons=
-e
->         code, which blocked the maple bus, as busy was never reset. Add
->         condition to maple_response_devinfo() to process the devinfo
->         for currently empty ports.
->=20
-> v2: https://lore.kernel.org/all/20260426212714.2286437-1-fuchsfl@gmail.co=
-m/
-> v1: https://lore.kernel.org/all/20251112190444.3631533-1-fuchsfl@gmail.co=
-m/
->=20
->  drivers/sh/maple/maple.c | 14 ++++++--------
->  1 file changed, 6 insertions(+), 8 deletions(-)
->=20
-> diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-> index 5585f220e495..8e7bb42aef07 100644
-> --- a/drivers/sh/maple/maple.c
-> +++ b/drivers/sh/maple/maple.c
-> @@ -445,7 +445,7 @@ static int setup_maple_commands(struct device *device=
-, void *ignored)
->  /* VBLANK bottom half - implemented via workqueue */
->  static void maple_vblank_handler(struct work_struct *work)
->  {
-> -	int x, locking;
-> +	int x;
->  	struct maple_device *mdev;
-> =20
->  	if (!maple_dma_done())
-> @@ -474,13 +474,10 @@ static void maple_vblank_handler(struct work_struct=
- *work)
->  				if (!mdev)
->  					break;
->  				atomic_set(&mdev->busy, 1);
-> -				locking =3D maple_add_packet(mdev, 0,
-> +				maple_add_packet(mdev, 0,
->  					MAPLE_COMMAND_DEVINFO, 0, NULL);
-> -				if (!locking)
-> -					break;
-> -				}
->  			}
-> -
-> +		}
->  		maple_pnp_time =3D jiffies + MAPLE_PNP_INTERVAL;
->  	}
-> =20
-> @@ -578,7 +575,8 @@ static void maple_response_devinfo(struct maple_devic=
-e *mdev,
->  				   char *recvbuf)
->  {
->  	char submask;
-> -	if (!started || (scanning =3D=3D 2) || !fullscan) {
-> +	if (!started || (scanning =3D=3D 2) || !fullscan ||
-> +	    ((mdev->unit =3D=3D 0) && empty[mdev->port])) {
->  		if ((mdev->unit =3D=3D 0) && (checked[mdev->port] =3D=3D false)) {
->  			checked[mdev->port] =3D true;
->  			maple_attach_driver(mdev);
-> @@ -644,7 +642,7 @@ static void maple_dma_handler(struct work_struct *wor=
-k)
->  			recvbuf =3D mq->recvbuf->buf;
->  			__flush_invalidate_region(sh_cacheop_vaddr(recvbuf),
->  					0x400);
-> -			code =3D recvbuf[0];
-> +			code =3D (s8)recvbuf[0];
->  			kfree(mq->sendbuf);
->  			list_del_init(&mq->list);
->  			switch (code) {
->=20
-> base-commit: 6de23f81a5e08be8fbf5e8d7e9febc72a5b5f27f
+>  drivers/input/keyboard/maple_keyb.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/input/keyboard/maple_keyb.c b/drivers/input/keyboard/maple_keyb.c
+> index 3d5538dd4f23..623d7951405b 100644
+> --- a/drivers/input/keyboard/maple_keyb.c
+> +++ b/drivers/input/keyboard/maple_keyb.c
+> @@ -107,7 +107,7 @@ static void dc_scan_kbd(struct dc_kbd *kbd)
+>  		}
+>  		ptr = memchr(kbd->old + 2, kbd->new[i], 6);
+>  		code = kbd->new[i];
+> -		if (code > 3 && ptr) {
+> +		if (code > 3 && !ptr) {
+>  			keycode = kbd->keycode[code];
+>  			if (keycode) {
+>  				input_event(dev, EV_MSC, MSC_SCAN, code);
+> 
+> -- 
+> 2.55.0.rc0.799.gd6f94ed593-goog
+> 
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Hi Dmitry,
+do you want to pick this patch as well? It improves key press detection,
+so would be nice.
+
+Tested-By: Florian Fuchs <fuchsfl@gmail.com>
+
+
+Regards
+Florian
