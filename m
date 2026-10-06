@@ -1,55 +1,54 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F127846A;
-	Tue,  6 Oct 2026 05:37:59 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A08BF2367B8;
+	Tue,  6 Oct 2026 05:38:40 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791265083; cv=none; b=RTE8l85yMMnhiYqkxrAozx74glweLwYgnNLS/KAZaqi+8HGbqwM8hUP4JlNQP0+pmM1d2fhMsvazjaZ6pcZDxsVNP1EF8vpHs+LXA0p+mmQcmJ8I/9bz84gKFM0pK2R8WDI9VPy6/+OLW6FT0nkco2JLk1m2Mz+gpxfWeGzNHBU=
+	t=1791265123; cv=none; b=WTyRaFLJOPL0fs9oNoVHlVLsWuYNxAR74MU9jjjBFdogxs1fIjopZEVjD9R1Bhf/gNIe14RlVJs69yaCbGnfPoNKb3F0+CKsi5WTxWaz5tWVZMoTU448nb3nYOwPard+vhU/XW0HtDfBbfrq9Lx0MLLvL79I84Br0T8pLEZ/RyI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791265083; c=relaxed/simple;
-	bh=+MOv5ZYTpvFsY5i6wFZNGH9NFdBjw87OftyV9NzoGp8=;
+	s=arc-20240116; t=1791265123; c=relaxed/simple;
+	bh=d5p5nYYzp9s2zUicZrZ4QerTKE+wYWUicQnOWFwaVqg=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=EddAUoQFVIA4P5SixDUrs98GyXWaBD5B0g/HV8N4mJCW2VsnDs8Yx84vVd097Z2SUPUuBHhNcOodlxU7OW2OnvifkIQQpdeaUnSd6CeM9d3kzvS1dLTstMH0bRmjFQfUZUE9J1lA5dXGQL4Nu2C4p9AMhl3/kltr4uYr3IV3GPw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=QFYoNkqO; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=SiGm5NwQp81aH0mDQ1p2z37aRP9v6v7dHTfiLnQEkFzu4rPVP6yJSp/jXTb673pUmMGWG5OJ5BTfaYwVlM093/WacYUOB/2ZAGe74Cc6c+BgLWEhRxpv3h5yHc8Cmg1V/c88PSENjpN3tGY7qfKNzYvZR8h/m14sATI4cWZp3x4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=FxlY9PtB; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="QFYoNkqO"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="FxlY9PtB"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
 	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
 	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=ZeRvCWdOALhThX7RYQYhG2q3cPcisSgqImLUPhtr7+Q=; t=1791265080;
-	x=1791869880; b=QFYoNkqOuWRgZy2jYCoHbDjJh5Eq9cGMaN0/O751nxPCfnaQ1EqI0EzvNZ5cr
-	xQokGNP/8pPuLqJqUIhiveGQRkGez04qDBdqKTAOH4BHyLCIbWnZMIkCOt5Yy28iUfhFJXarNT5A4
-	pDa3SvBwnZsYhlp8P32gWqqxaQhRQ2RN7xc8bGJt5i+3GlyFF4g45gUaVZVa7HntKOzexSCju/BZD
-	MTtfpzyCDNoa7yNQNsvAzS3lI9BzlMWcKaylKpApFAfu8ps9Y31NidB9g+w+hYB2ahSlXzivbE6Gx
-	z/EVrFUDHjp/gtRX43X2fJgiiafTQxF+2wexIO39yyuEg970Pg==;
+	References; bh=vSzaOjcWYT0JmIfRI9nKaWn14Ci4flbLqG7QCnYzMx4=; t=1791265120;
+	x=1791869920; b=FxlY9PtBbB1qRPW1bJGZM3rGUGxJWwbtQb17n+qgf+PU5nfsDW5AhsVonbJ4p
+	9W/P6VpZw1wPxMA7CVyxE/Fj3dyv95Wx69d9SqOSb+RNzn92t/X04mGBYTDk2oLEPvxPJAjYvSGC+
+	VPryN4v7QIhuRq1UHnIZt3QhAeh6s2g73bTXrku5IwAN4kRMEM98H9lh8ldkhxqaLTAWceYT0i/4M
+	7YSCLM+tYhs7kIym/xhSGPXkJdTkTkZ9Of5dGrZloKTXM+ArmXtf1avFAk78/eILBP3yMQrfHUSfV
+	rh1PwqIceeOWXueivM9ZELX+HNfNnZhNn270ZT1v7JBk3K4shw==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.100)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xDxs5-000000005KV-2RkZ; Tue, 06 Oct 2026 07:37:49 +0200
+          id 1xDxss-000000005U9-2zKX; Tue, 06 Oct 2026 07:38:38 +0200
 Received: from p5dc55206.dip0.t-ipconnect.de ([93.197.82.6] helo=[192.168.178.61])
           by inpost2.zedat.fu-berlin.de (Exim 4.100)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xDxs5-00000002uZx-1Vwt; Tue, 06 Oct 2026 07:37:49 +0200
-Message-ID: <945178af46fcbf9f7d57d7303dc6cf1f58ed4593.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: defconfig: enable the current M66592 UDC symbol
+          id 1xDxss-00000002upe-26nb; Tue, 06 Oct 2026 07:38:38 +0200
+Message-ID: <addfdf7bdf5c01706c2859b8f73fa666b00d7032.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: uaccess: Require offsettable operands for 64-bit
+ user access
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Pengpeng Hou <pengpeng@iscas.ac.cn>, Yoshinori Sato
-	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
- linux-sh@vger.kernel.org, 	linux-usb@vger.kernel.org,
- linux-kernel@vger.kernel.org
-Date: Tue, 06 Oct 2026 07:37:48 +0200
-In-Reply-To: <20260814075531.15446-1-pengpeng@iscas.ac.cn>
-References: <20260814075531.15446-1-pengpeng@iscas.ac.cn>
+To: Florian Fuchs <fuchsfl@gmail.com>, Rich Felker <dalias@libc.org>, 
+	linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Date: Tue, 06 Oct 2026 07:38:37 +0200
+In-Reply-To: <20260716165329.3418962-1-fuchsfl@gmail.com>
+References: <20260716165329.3418962-1-fuchsfl@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.60.2 
@@ -62,73 +61,74 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-On Fri, 2026-08-14 at 15:55 +0800, Pengpeng Hou wrote:
-> The M66592 UDC provider is built under CONFIG_USB_M66592. Several
-> SuperH defconfigs still enable the removed CONFIG_USB_GADGET_M66592
-> symbol.
+On Thu, 2026-07-16 at 18:53 +0200, Florian Fuchs wrote:
+> The 64-bit __get_user_u64()/__put_user_u64() paths address the memory
+> operand as %T2 (base+4). This base+4 requires an offsettable address,
+> but "m" also allows the indexed mode @(R0,Rn) (e.g. for a variable-
+> indexed array element), which has no displacement field for the +4.
+> Depending on optimization this build fails with "invalid 'asm'" or an
+> ICE in GCC's change_address_1.
 >=20
-> Replace the stale entries with the current provider symbol.
+> Require an offsettable memory operand, allowing GCC to reload an
+> unsuitable indexed address into an appropriate form.
 >=20
-> Assisted-by: Codex:gpt-5
-> Signed-off-by: Pengpeng Hou <pengpeng@iscas.ac.cn>
+> Fixes: 2d2b308a8b7d ("sh: Implement __get_user_u64() required for 64-bit =
+get_user()")
+> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
 > ---
-> Changes since v1: https://lore.kernel.org/all/20260624081843.7864-1-pengp=
-eng@iscas.ac.cn/
-> - no source-code changes
-> - rebase all three affected SuperH defconfigs
-> - add the USB maintainers and list omitted from the first submission
-> - add the coding-assistant disclosure
+> The patch was verified on the J2 core on the Mimas v2 board. And booted
+> on the Dreamcast SH4. checkpatch doesn't like the missing whitespaces
+> around : I preferred not to touch the other unrelated lines, so I kept
+> the local style.
 >=20
-> The Kconfig/provider mapping was reviewed statically; no SuperH kernel
-> build was performed.
+> The original GCC ICE, without this patch can be seen here:
+> https://lore.kernel.org/linux-sh/ef22a5de-d945-4080-9f4a-f5a1ab9de1dc@lan=
+dley.net/
 >=20
->  arch/sh/configs/migor_defconfig   | 2 +-
->  arch/sh/configs/sdk7786_defconfig | 2 +-
->  arch/sh/configs/shx3_defconfig    | 2 +-
->  3 files changed, 3 insertions(+), 3 deletions(-)
+>  arch/sh/include/asm/uaccess_32.h | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
 >=20
-> diff --git a/arch/sh/configs/migor_defconfig b/arch/sh/configs/migor_defc=
-onfig
-> index 1d9d543eef4c..bde70f3bf857 100644
-> --- a/arch/sh/configs/migor_defconfig
-> +++ b/arch/sh/configs/migor_defconfig
-> @@ -72,7 +72,7 @@ CONFIG_LOGO=3Dy
->  # CONFIG_LOGO_LINUX_VGA16 is not set
->  # CONFIG_LOGO_LINUX_CLUT224 is not set
->  CONFIG_USB_GADGET=3Dy
-> -CONFIG_USB_GADGET_M66592=3Dy
-> +CONFIG_USB_M66592=3Dy
->  CONFIG_USB_G_SERIAL=3Dm
->  CONFIG_RTC_CLASS=3Dy
->  CONFIG_RTC_DRV_RS5C372=3Dy
-> diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_=
-defconfig
-> index d6fa3a422e24..d40be415dcb9 100644
-> --- a/arch/sh/configs/sdk7786_defconfig
-> +++ b/arch/sh/configs/sdk7786_defconfig
-> @@ -147,7 +147,7 @@ CONFIG_USB_MON=3Dy
->  CONFIG_USB_OHCI_HCD=3Dy
->  CONFIG_USB_STORAGE=3Dy
->  CONFIG_USB_GADGET=3Dy
-> -CONFIG_USB_GADGET_M66592=3Dy
-> +CONFIG_USB_M66592=3Dy
->  CONFIG_RTC_CLASS=3Dy
->  CONFIG_RTC_DRV_MAX6900=3Dy
->  CONFIG_RTC_DRV_SH=3Dy
-> diff --git a/arch/sh/configs/shx3_defconfig b/arch/sh/configs/shx3_defcon=
-fig
-> index 0cb69a0b92cb..d7496ea9a9fc 100644
-> --- a/arch/sh/configs/shx3_defconfig
-> +++ b/arch/sh/configs/shx3_defconfig
-> @@ -79,7 +79,7 @@ CONFIG_USB=3Dy
->  CONFIG_USB_MON=3Dy
->  CONFIG_USB_R8A66597_HCD=3Dm
->  CONFIG_USB_GADGET=3Dy
-> -CONFIG_USB_GADGET_M66592=3Dy
-> +CONFIG_USB_M66592=3Dy
->  CONFIG_RTC_CLASS=3Dy
->  CONFIG_RTC_DRV_SH=3Dy
->  CONFIG_UIO=3Dm
+> diff --git a/arch/sh/include/asm/uaccess_32.h b/arch/sh/include/asm/uacce=
+ss_32.h
+> index 5d7ddc092afd..cef40414bfb1 100644
+> --- a/arch/sh/include/asm/uaccess_32.h
+> +++ b/arch/sh/include/asm/uaccess_32.h
+> @@ -92,7 +92,7 @@ __asm__ __volatile__( \
+>  	".long	1b + 2, 3b\n\t" \
+>  	".previous" \
+>  	:"=3D&r" (err), "=3D&r" (x) \
+> -	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
+> +	:"o" (__m(addr)), "i" (-EFAULT), "0" (err)); })
+>  #else
+>  #define __get_user_u64(x, addr, err) \
+>  ({ \
+> @@ -116,7 +116,7 @@ __asm__ __volatile__( \
+>  	".long	1b + 2, 3b\n\t" \
+>  	".previous" \
+>  	:"=3D&r" (err), "=3D&r" (x) \
+> -	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
+> +	:"o" (__m(addr)), "i" (-EFAULT), "0" (err)); })
+>  #endif
+> =20
+>  #define __put_user_size(x,ptr,size,retval)		\
+> @@ -196,7 +196,7 @@ __asm__ __volatile__( \
+>  	".long	1b, 3b\n\t" \
+>  	".previous" \
+>  	: "=3Dr" (retval) \
+> -	: "r" (val), "m" (__m(addr)), "i" (-EFAULT), "0" (retval) \
+> +	: "r" (val), "o" (__m(addr)), "i" (-EFAULT), "0" (retval) \
+>          : "memory"); })
+>  #else
+>  #define __put_user_u64(val,addr,retval) \
+> @@ -218,7 +218,7 @@ __asm__ __volatile__( \
+>  	".long	1b, 3b\n\t" \
+>  	".previous" \
+>  	: "=3Dr" (retval) \
+> -	: "r" (val), "m" (__m(addr)), "i" (-EFAULT), "0" (retval) \
+> +	: "r" (val), "o" (__m(addr)), "i" (-EFAULT), "0" (retval) \
+>          : "memory"); })
+>  #endif
+> =20
 
 Merged into for-next for v7.4.
 
