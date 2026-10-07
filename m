@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 282D33E51F7;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C7BA40F742;
 	Wed,  7 Oct 2026 20:36:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791405399; cv=none; b=dArDLAltqIduhO2X6Mw6x7U+HteENHXcwXTDfIiJOd/t1O675iRqTVTKRwtiByOB6jyIUDSHlA6w1UBSnCiUuzNvi0K0NmOzehxs5aP/BgfAcswmswQJO5mZbTmYDY839Mo1vq/EGSC4ore3rGnKiSUiqZimlkm7PjeWG0iebpk=
+	t=1791405400; cv=none; b=UUEKcYmL9kXdEGQmETXoKjfyv833WokCt9o4mUp8g9lL2SzdM7UdNSd5N/TSGg095mKzQgkn2ghf5fFpanguy22dB7ZiIgdLgUg1JDIXc/edM0C2MAUCT3MTgMj99QJaLtyDDvE4wkbyLjg2K9vMxlhSfjNtKZx2lEFUJacitqw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791405399; c=relaxed/simple;
-	bh=cwaW2J6XmZk5kb74aor1umDC6A1Ee8i5SR5y94ujwz4=;
+	s=arc-20240116; t=1791405400; c=relaxed/simple;
+	bh=4aJa0emWd9XRsanYKO7gRR9edGUDD+fSig1VlzWwPwQ=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=Ntzt7O0ICa7uuv7sT0T7Nu+5PSwC0LLD1eW4sg1byE3GqeY/PVeIwgnhrQRBYoS2jl0+12Uj1nGXga/wTubrocVkR9zz5J4NqAW7YwuDXA6wQJHfD0UtkLyy7JWaLYqb1Mds4SGq7OB8e6kEzeBaq7QRLKZsrMTNdGhX+yRQGPE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jXbODRQa; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=AcWwx/aUS0Msi3tFUL4OLkyVY16puOIxO6cymmCzO4N1C+mUrfoyGqmxJZSfIsfxcGqk7SgK2bIR7WdBK6xZ00S1pfjM2XOtdnuuRd6MXGdX2LUeq6e1ylmk1KZam6DrRQD3GOKiWWOcjTErWlhqiNOBu/lnk9TlApSBI4e0O/M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=AFM84YxP; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jXbODRQa"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C64551F0089E;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="AFM84YxP"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D1FF21F0089D;
 	Wed,  7 Oct 2026 20:36:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
 	s=k20260515; t=1791405397;
-	bh=GTffbaoiVvRePJUrsdmv7S1xtr+0/6F7pccxHu/PeBM=;
+	bh=DwR+Icn/O6BJifyfJAm+hF0AIuvvzHeAbd8YOtPmg7M=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=jXbODRQamIQ0FFBocApZWXP2HYnebX+irIL0ajT4d94EIw5gkO2dIUYcewqp3ztag
-	 +8Zgsr1nANqc3jnS+tFqisNgxHfvYv1/5o2upFlixZp50zBXuMVSe3IBCfxNb4abXO
-	 lJMBFC7qx5GRVKVgKs+i99f58+h21twgsLa8/wubOImK0eYRGiy3IbSwWz19BdefZE
-	 yMYbjul8pVUwkPM49WcE+nfSjS9SKaWJKcNULb58D2d07SzyYceJcsHzslgubYSwy0
-	 dIC+Au7bA6nau7WWp5AL66AhbXj+QwB6eiqnOzsH1zRUgOXETFHeziSLNcG0RIfONT
-	 8ZIlo355idolA==
+	b=AFM84YxParxFhIM0Vhs0eYo5leJXbo2bOLnf3+VzDyrL9vKLgo6E33T26dtUOYo8r
+	 BKsMuN0kvFUQhQoI4vWsKew6s78p7tqO8nbr+eBqouVP6WrGZ6avmaMj45+29cPTKr
+	 p5olhih/3WuJ0FV608FexLlqJ5LXN+rXERKB94gIi+9x1wd3wer4pQKUgBE0VavPsa
+	 xRRIBibtzjfp9hoiV9OKlX3QQWTgp498lZVZfDLDc7Uo2ns3z/dwIxqzzTZ21jdYb4
+	 /o6tmgcdeuFdHQt/6RuRlFOyTBdIbeUFkMMjckY+/TEx222A4/i8/3wPGrDG9AhsUS
+	 KTCBICobo8ECA==
 Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
-	id 69A03CE1DC2; Wed,  7 Oct 2026 13:36:37 -0700 (PDT)
+	id 6C516CE26CA; Wed,  7 Oct 2026 13:36:37 -0700 (PDT)
 From: "Paul E. McKenney" <paulmck@kernel.org>
 To: linux-kernel@vger.kernel.org
 Cc: Bradley Morgan <brads@mainlining.org>,
@@ -46,9 +46,9 @@ Cc: Bradley Morgan <brads@mainlining.org>,
 	linux-sh@vger.kernel.org,
 	kernel-team@meta.com,
 	"Paul E . McKenney" <paulmck@kernel.org>
-Subject: [PATCH 4/5] csky: Emulate two-byte cmpxchg
-Date: Wed,  7 Oct 2026 13:36:35 -0700
-Message-Id: <20261007203636.1982188-4-paulmck@kernel.org>
+Subject: [PATCH 5/5] xtensa: Emulate two-byte cmpxchg
+Date: Wed,  7 Oct 2026 13:36:36 -0700
+Message-Id: <20261007203636.1982188-5-paulmck@kernel.org>
 X-Mailer: git-send-email 2.40.1
 In-Reply-To: <7f398d4a-7fae-4382-9cc4-8627e8aa912b@paulmck-laptop>
 References: <7f398d4a-7fae-4382-9cc4-8627e8aa912b@paulmck-laptop>
@@ -62,54 +62,33 @@ Content-Transfer-Encoding: 8bit
 
 From: Bradley Morgan <brads@mainlining.org>
 
-C-SKY has no two-byte atomic compare and swap, so the __cmpxchg()
-macros let case 2 fall through to BUILD_BUG() via default, and a
-two-byte cmpxchg() fails the build.
+Xtensa has no two-byte atomic compare and swap, so the __cmpxchg()
+switch lets case 2 fall through to __cmpxchg_called_with_bad_pointer(),
+which is declared but never defined, so a two-byte cmpxchg() fails
+at link time.
 
-Route case 2 through the new cmpxchg_emu_u16(), which narrows the
-old and new values itself, so all three orderings, relaxed, acquire
-and full, keep the (uintptr_t) casts the case 1 path already uses.
+Route case 2 through the new cmpxchg_emu_u16(), which takes the
+old and new values as unsigned long and narrows them itself, so
+the call needs no extra casts.
 
 Signed-off-by: Bradley Morgan <brads@mainlining.org>
 Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
 ---
- arch/csky/include/asm/cmpxchg.h | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/xtensa/include/asm/cmpxchg.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/csky/include/asm/cmpxchg.h b/arch/csky/include/asm/cmpxchg.h
-index db6dda47184e4..6f3ca79e54acf 100644
---- a/arch/csky/include/asm/cmpxchg.h
-+++ b/arch/csky/include/asm/cmpxchg.h
-@@ -64,6 +64,9 @@
- 	switch (size) {						\
- 	case 1:							\
- 		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)__ptr, (uintptr_t)__old, (uintptr_t)__new); \
-+		break;							\
-+	case 2:							\
-+		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u16((volatile u16 *)__ptr, (unsigned long)__old, (unsigned long)__new); \
- 		break;						\
- 	case 4:							\
- 		asm volatile (					\
-@@ -97,6 +100,9 @@
- 	switch (size) {						\
- 	case 1:							\
- 		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)__ptr, (uintptr_t)__old, (uintptr_t)__new); \
-+		break;							\
-+	case 2:							\
-+		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u16((volatile u16 *)__ptr, (unsigned long)__old, (unsigned long)__new); \
- 		break;						\
- 	case 4:							\
- 		asm volatile (					\
-@@ -131,6 +137,9 @@
- 	switch (size) {						\
- 	case 1:							\
- 		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)__ptr, (uintptr_t)__old, (uintptr_t)__new); \
-+		break;							\
-+	case 2:							\
-+		__ret = (__typeof__(*(ptr)))cmpxchg_emu_u16((volatile u16 *)__ptr, (unsigned long)__old, (unsigned long)__new); \
- 		break;						\
- 	case 4:							\
- 		asm volatile (					\
+diff --git a/arch/xtensa/include/asm/cmpxchg.h b/arch/xtensa/include/asm/cmpxchg.h
+index b6db4838b175a..8dea8e357fc0f 100644
+--- a/arch/xtensa/include/asm/cmpxchg.h
++++ b/arch/xtensa/include/asm/cmpxchg.h
+@@ -76,6 +76,7 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
+ {
+ 	switch (size) {
+ 	case 1:  return cmpxchg_emu_u8(ptr, old, new);
++	case 2:  return cmpxchg_emu_u16(ptr, old, new);
+ 	case 4:  return __cmpxchg_u32(ptr, old, new);
+ 	default: __cmpxchg_called_with_bad_pointer();
+ 		 return old;
 -- 
 2.40.1
 
