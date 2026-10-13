@@ -1,124 +1,171 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-dy1-f199.google.com (mail-dy1-f199.google.com [74.125.82.199])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EEF5851DB04;
-	Tue, 13 Oct 2026 17:25:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1EED355D864
+	for <linux-sh@vger.kernel.org>; Tue, 13 Oct 2026 22:40:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.199
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791912323; cv=none; b=N22GxZjcUySHKVYnVAtfmYRuZc3OgstLQjaz8sfEadzo/wPR0nfnsLhbAUI6BTdw2SFEBYjfWXJ76fvqfGzTl7yxeOAtWoIdznZ0lo8NrGU0vtBOHf13Ppo+fcuQPz0m0yshdWaqSnA2yAGtqBgkw1fatbxFjuovXaXd/hDYpbU=
+	t=1791931217; cv=none; b=Zyv3ltG2yj/8EUBm7J9Gr+LruCardlGw5VhIay1rpJ2llUTAjFNd43grXGsQLMuIOIZgQcuh5dAP4XkAnxc1HP1mAyuvLRK9OdR5kmXxhxmQREMYyLBobU9InNaAyxzzCHioq7drxjjCIe19hY1426vsxC0NvJcBw5dfT7jeRuk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791912323; c=relaxed/simple;
-	bh=SnX5zrdwCvBeWn0h8qP+neLTuwMRqnICPGFtHdv9et4=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=qVdh36tIDj6hvaRf0/ykMJc1dQpUiq49CuBz7yInu6izOCZoZMHgbmjlfN/wQeqBeX+9NmxHejOz5N89pDecioX1eCq+Ba5Cji5K8UsQIqX1Brv5wW1ImJL9iUUJyDWwKTHyL1JL/7QRbsQPJKr6DTcvXKbCSNYtaJs7p6oTgxc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=AAXeOyg1; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1791931217; c=relaxed/simple;
+	bh=4WrpaiXx1GRQVpjm8b7gmWUkva2m2HTUpEY5WAi28rA=;
+	h=Date:Mime-Version:Message-ID:Subject:From:To:Cc:Content-Type; b=YEDl5xNtc2gwc04K+fV5EvnyL9n7DJHnkcFVWHl2oAFNYsLUmX0y0lajvmSVlJWJGIUod2JkXWND+RqrtEgTAoP/8rDs6nPBW1Bxq0p8JuvmOLZJ/40GwISH+CESbcfqbsWSpy6y6WoYP1cwhnps80TSpXqjuVWPo9yunVve6uo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--irogers.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=Bn7hz90c; arc=none smtp.client-ip=74.125.82.199
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--irogers.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="AAXeOyg1"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=akkOVpdsqrpm+L9u5j/grPKDcy1oC8Dgmqfbm0sZuBc=; t=1791912321;
-	x=1792517121; b=AAXeOyg1PRXwEs5GnQx35+gHi5q39PfziuqiS9DoUFkzjLlEIb4wcEtj8sOlr
-	/07Pvjf3ioHnYatdlQHrk8XFWE9BDPqPG+8TtqR69bbbfofBjZBRKLQTJMVxhNSWIhdAIMmn5ZBDh
-	ISmc75793bUVWs/+q1m3sjxqCs9x0zbNF9MqCbAT1yJe9AKkElVW5PA6Y9Crp8SbsAKDXNvrJqjO/
-	+HcBQWRRNoCeDky7lqwQjXGZTNz8WJ506y58j+BQlaXjNugjmwr9I/U90nMCFiS99/+VQ0BJvOPc3
-	4jbvwBUNiLXrP+GWnUkSYoV/17UTK9Z5noJvz2TMr1m/p9SWRA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xGgFa-00000000umb-03De; Tue, 13 Oct 2026 19:25:18 +0200
-Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xGgFZ-00000000Kw4-3EE9; Tue, 13 Oct 2026 19:25:17 +0200
-Message-ID: <6163133fc58a067860627efc768819d242e583d1.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: sh7785lcr: register the PCA9564 as I2C bus 0
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato
-	 <yoshinori.sato@nifty.com>, Rich Felker <dalias@libc.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 13 Oct 2026 19:25:17 +0200
-In-Reply-To: <20261004184644.90750-1-kmehltretter@gmail.com>
-References: <20261004184644.90750-1-kmehltretter@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="Bn7hz90c"
+Received: by mail-dy1-f199.google.com with SMTP id 5a478bee46e88-33c35f5ca6cso7840271eec.1
+        for <linux-sh@vger.kernel.org>; Tue, 13 Oct 2026 15:40:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20251104; t=1791931213; x=1792536013; darn=vger.kernel.org;
+        h=content-type:cc:to:from:subject:message-id:mime-version:date:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=6CWZGGdh7JOQ6UqV1gxmMbPkjK0LPv1nbOU26QpmZ10=;
+        b=Bn7hz90c5SJwfQmP2+AW3dGAkw3UtweF3iEJs/fRS4ftpX9ZUfay81B5NwyLYLDRu0
+         JjNCwwMOY0bD6FwU7BsgiuLRwurYP8wW9es3IJGv8W7CiB4fefjuPLFLPJCVKKi7I6RI
+         oV6uPm/zxlsOkbWwFy17l83iB7KSy6ghSZjl7g4d+WDxw47jSVJgwBFEE2gZJh3cGYCh
+         AJc/NlWZK3dIlCPz7w6Mhk08iXNFzMsqxUm42YSyD70MPigXT5E+D88R2wBPNCYmOgB9
+         sx+IjU/fnz6dU6nMTKMNh1pR9SUPORMsjJrcOn4zw5C6K9GMMYn0RxKiDx0CTtsij7Gc
+         ISow==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791931213; x=1792536013;
+        h=content-type:cc:to:from:subject:message-id:mime-version:date
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=6CWZGGdh7JOQ6UqV1gxmMbPkjK0LPv1nbOU26QpmZ10=;
+        b=VCCUydt7TmlyuJ38Er+WAQP/CSLIjrnGW+QhPQqj1Ot0ovXVTPxUip/BKF6wM1vBCY
+         AP2h3LMYjbUHvEoxq63ZKGvDRTCbmdudOxTjLLzixdZc2jXtUuRppxeNzU0kowypVKMO
+         n6Y+rabAdIqKrT/jA/MA3o5wVJouqTMNk6b/t8i9Im/AT+G7hqSyuCNUJj4k2KbUb6Q0
+         ZKfEt1MXp4k1FVTmztFFNpgnqjlk2Q3zSORirPO5aPJNEqvb1KB2d6pppOh7qklcgQrj
+         0/3Af40Izb5Xfnkpja40FWNGsMLz+Xeo8VpR+d1KYLafQs0CY3T+tYD3foYwIK+G+mXB
+         sSOg==
+X-Forwarded-Encrypted: i=1; AKwUvBzEeno1yi3la+ZGqV5QTVhKeX9aKamQoiA+yJz8gUHA1myjqdaZVEsPRVXYnwVTvA+u2HboKTxXzA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYLVi2bOfudtmRhbg6txRcO0uXJ1pwOwb4WCu0j0GemjV3HH1Blm
+	nX6L7FssnEsJcQvHplljvJCwctpFxTqiXgcL29CGGeU/pPvLDrtQM1ny0uIRDhYXNNXP3mLaIZJ
+	EqZzEK2dfLA==
+X-Received: from dlak14.prod.google.com ([2002:a05:701b:290e:b0:14e:f9ab:6f83])
+ (user=irogers job=prod-delivery.src-stubby-dispatcher) by 2002:a05:701b:2309:b0:153:7a27:b89
+ with SMTP id a92af1059eb24-16a5ed4008cmr22709999c88.21.1791931212336; Tue, 13
+ Oct 2026 15:40:12 -0700 (PDT)
+Date: Tue, 13 Oct 2026 15:39:35 -0700
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.56.0.385.gd3acb90ef8-goog
+Message-ID: <20261013223946.1836757-1-irogers@google.com>
+Subject: [PATCH 00/11] kobject: Require explicit initialization of struct kobj_type::release
+From: Ian Rogers <irogers@google.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J . Wysocki" <rafael@kernel.org>, 
+	Danilo Krummrich <dakr@kernel.org>, Miguel Ojeda <ojeda@kernel.org>, Kees Cook <kees@kernel.org>, 
+	Nathan Chancellor <nathan@kernel.org>
+Cc: Nick Desaulniers <ndesaulniers@google.com>, Bill Wendling <morbo@google.com>, 
+	Justin Stitt <justinstitt@google.com>, Jonathan Corbet <corbet@lwn.net>, 
+	Madhavan Srinivasan <maddy@linux.ibm.com>, Michael Ellerman <mpe@ellerman.id.au>, 
+	Nicholas Piggin <npiggin@gmail.com>, Christophe Leroy <chleroy@kernel.org>, Nayna Jain <nayna@linux.ibm.com>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Viresh Kumar <viresh.kumar@linaro.org>, 
+	David Teigland <teigland@redhat.com>, Alexander Aring <aahringo@redhat.com>, 
+	Juergen Gross <jgross@suse.com>, Stefano Stabellini <sstabellini@kernel.org>, 
+	Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>, Heiko Carstens <hca@linux.ibm.com>, 
+	Vasily Gorbik <gor@linux.ibm.com>, Alexander Gordeev <agordeev@linux.ibm.com>, 
+	Christian Borntraeger <borntraeger@linux.ibm.com>, Sven Schnelle <svens@linux.ibm.com>, 
+	Richard Weinberger <richard@nod.at>, Zhihao Cheng <chengzhihao1@huawei.com>, 
+	Felix Kuehling <Felix.Kuehling@amd.com>, Alex Deucher <alexander.deucher@amd.com>, 
+	"=?UTF-8?q?Christian=20K=C3=B6nig?=" <christian.koenig@amd.com>, driver-core@lists.linux.dev, 
+	llvm@lists.linux.dev, linux-hardening@vger.kernel.org, 
+	linux-doc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, 
+	linux-acpi@vger.kernel.org, gfs2@lists.linux.dev, 
+	xen-devel@lists.xenproject.org, linux-s390@vger.kernel.org, 
+	linux-mtd@lists.infradead.org, amd-gfx@lists.freedesktop.org, 
+	dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org, 
+	Ian Rogers <irogers@google.com>
+Content-Type: text/plain; charset="UTF-8"
 
-On Sun, 2026-10-04 at 20:46 +0200, Karl Mehltretter wrote:
-> Before commit 44454baa7ca7 ("i2c: Dynamically assign adapter id if it
-> wasn't explictly specified"), a negative ID was replaced by zero, and
-> I2C bus zero was instantiated. Since that commit, a negative ID is passed
-> verbatim, instantiating an I2C bus with a dynamic number. As SH boards
-> still use i2c_register_board_info(0, ...) to register I2C devices, they
-> rely on the I2C bus being bus zero.
->=20
-> The SH7785LCR is the only SH board whose I2C adapter has a negative ID.
-> Its PCA9564 becomes i2c-1, causing registration of the R2025S/D RTC to
-> fail, and hwclock finds no /dev/rtc0.
->=20
-> Set the platform device ID to 0, so that the adapter is registered as
-> bus zero again.
->=20
-> Fixes: 44454baa7ca7 ("i2c: Dynamically assign adapter id if it wasn't exp=
-lictly specified")
-> Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Assisted-by: LLM
-> Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
-> ---
->=20
-> v2:
-> - Rewrite the commit message based on Geert's suggested wording.
-> - Add the tags from Adrian and Geert.
-> - No code change.
->=20
-> v1: https://lore.kernel.org/r/20261003082833.21511-1-kmehltretter@gmail.c=
-om/
->=20
->  arch/sh/boards/board-sh7785lcr.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/arch/sh/boards/board-sh7785lcr.c b/arch/sh/boards/board-sh77=
-85lcr.c
-> index 25c4968f0d8b..b93423df582f 100644
-> --- a/arch/sh/boards/board-sh7785lcr.c
-> +++ b/arch/sh/boards/board-sh7785lcr.c
-> @@ -256,7 +256,7 @@ static struct i2c_pca9564_pf_platform_data i2c_platfo=
-rm_data =3D {
-> =20
->  static struct platform_device i2c_device =3D {
->  	.name		=3D "i2c-pca-platform",
-> -	.id		=3D -1,
-> +	.id		=3D 0,
->  	.dev		=3D {
->  		.platform_data	=3D &i2c_platform_data,
->  	},
+Clang supports the 'require_explicit_initialization' attribute on struct
+fields to enforce that the field is explicitly initialized when an
+aggregate object is constructed, emitting -Wuninitialized-explicit-init
+(enabled by default) if the field is omitted.
 
-Merged into for-next for v7.4.
+Following discussion at the Linux Plumbers Conference [1], this series
+introduces __require_explicit_initialization in
+include/linux/compiler_attributes.h and applies it to
+struct kobj_type::release.
 
-Thanks,
-Adrian
+As Documentation/core-api/kobject.rst notes:
+  "One important point cannot be overstated: every kobject must have a
+  release() method, and the kobject must persist (in a consistent state)
+  until that method is called. If these constraints are not met, the code
+  is flawed."
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Annotating struct kobj_type::release caught 30 struct kobj_type
+definitions across the tree that omitted .release:
+- Patches 2-10 fix 10 struct kobj_type definitions where dynamically
+  allocated kobjects, ksets, or enclosing structures were either leaked on
+  kobject_put() or freed prematurely before kobject release (risking a
+  use-after-free when CONFIG_DEBUG_KOBJECT_RELEASE=y).
+- Patch 11 annotates struct kobj_type::release with
+  __require_explicit_initialization and explicitly sets .release = NULL
+  (with explanatory comments) on the remaining legacy struct kobj_type
+  definitions whose kobjects are static, per-CPU, or embedded in devm- or
+  parent-managed structures.
+
+[1] https://lpc.events/event/20/contributions/2392/
+
+Ian Rogers (11):
+  Compiler Attributes: Add __require_explicit_initialization macro
+  powerpc/secvar: Add missing kobject release callback to secvar_ktype
+  sh: sq: Add missing kobject release callback to ktype_percpu_entry
+  cpufreq: Initialize kobj_type release callback in ondemand and
+    conservative governors
+  ACPI: CPPC: Free cpc_desc in kobject release callback
+  dlm: Free dlm_ls in kobject release callback
+  xen/sys-hypervisor: Add release callback to hyp_sysfs_kobj_type
+  s390/sclp_mem: Allocate struct sclp_mem dynamically and add kobject
+    release
+  ubifs: sysfs: Use kset_create_and_add() for ubifs_kset
+  drm/amdkfd: Free queue in procfs_queue_type kobject release callback
+  kobject: Require explicit initialization of struct kobj_type::release
+
+ Documentation/conf.py                         |  1 +
+ arch/arm64/kernel/cpuinfo.c                   |  2 +
+ arch/powerpc/kernel/secvar-sysfs.c            |  6 ++
+ arch/sh/kernel/cpu/sh4/sq.c                   |  6 ++
+ drivers/acpi/cppc_acpi.c                      | 39 +++++-----
+ drivers/acpi/sysfs.c                          |  2 +
+ drivers/cpufreq/cpufreq_conservative.c        |  5 +-
+ drivers/cpufreq/cpufreq_governor.c            |  3 +-
+ drivers/cpufreq/cpufreq_governor.h            |  1 +
+ drivers/cpufreq/cpufreq_ondemand.c            |  5 +-
+ drivers/dma/ioat/sysfs.c                      |  2 +
+ drivers/gpu/drm/amd/amdgpu/amdgpu_xcp.c       |  4 +
+ drivers/gpu/drm/amd/amdkfd/kfd_process.c      | 10 ++-
+ drivers/gpu/drm/amd/amdkfd/kfd_queue.c        |  5 +-
+ drivers/infiniband/hw/hfi1/sysfs.c            |  2 +
+ drivers/infiniband/hw/usnic/usnic_ib_sysfs.c  |  2 +
+ drivers/parisc/pdc_stable.c                   |  2 +
+ drivers/power/supply/ab8500_fg.c              |  2 +
+ drivers/s390/char/sclp_mem.c                  | 73 +++++++++----------
+ drivers/soc/hisilicon/kunpeng_hccs.c          |  6 ++
+ .../fbdev/omap2/omapfb/dss/display-sysfs.c    |  2 +
+ .../fbdev/omap2/omapfb/dss/manager-sysfs.c    |  2 +
+ .../fbdev/omap2/omapfb/dss/overlay-sysfs.c    |  2 +
+ drivers/xen/sys-hypervisor.c                  |  6 ++
+ fs/dlm/lockspace.c                            | 19 +++--
+ fs/erofs/sysfs.c                              |  4 +
+ fs/f2fs/sysfs.c                               |  6 ++
+ fs/ocfs2/cluster/masklog.c                    |  2 +
+ fs/ubifs/sysfs.c                              | 24 ++----
+ include/linux/compiler_attributes.h           | 11 +++
+ include/linux/kobject.h                       |  2 +-
+ scripts/checkpatch.pl                         |  1 +
+ tools/lib/python/kdoc/xforms_lists.py         |  1 +
+ 33 files changed, 170 insertions(+), 90 deletions(-)
+
+-- 
+2.56.0.385.gd3acb90ef8-goog
+
