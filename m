@@ -1,63 +1,67 @@
-Received: from mail-dy1-f199.google.com (mail-dy1-f199.google.com [74.125.82.199])
+Received: from mail-dy1-f200.google.com (mail-dy1-f200.google.com [74.125.82.200])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1EED355D864
-	for <linux-sh@vger.kernel.org>; Tue, 13 Oct 2026 22:40:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.199
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4DFEB563FA3
+	for <linux-sh@vger.kernel.org>; Tue, 13 Oct 2026 22:40:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.200
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791931217; cv=none; b=Zyv3ltG2yj/8EUBm7J9Gr+LruCardlGw5VhIay1rpJ2llUTAjFNd43grXGsQLMuIOIZgQcuh5dAP4XkAnxc1HP1mAyuvLRK9OdR5kmXxhxmQREMYyLBobU9InNaAyxzzCHioq7drxjjCIe19hY1426vsxC0NvJcBw5dfT7jeRuk=
+	t=1791931222; cv=none; b=Aw+Ddx8CLwMwltv8OsF7FLUCDhhf0wgexkvdwwmPwSRdr4tuHvR12ks9P2itQgDNKxzQrRqvK7vy+K34DPLLJ17Pez1bQoGMKr//pFbTxSYPYUTGhhCpRVSIH/tykjvmKZgll1BeBbgfgrkD4//skF/6dvM+2K6BVWCvfuF1hfk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791931217; c=relaxed/simple;
-	bh=4WrpaiXx1GRQVpjm8b7gmWUkva2m2HTUpEY5WAi28rA=;
-	h=Date:Mime-Version:Message-ID:Subject:From:To:Cc:Content-Type; b=YEDl5xNtc2gwc04K+fV5EvnyL9n7DJHnkcFVWHl2oAFNYsLUmX0y0lajvmSVlJWJGIUod2JkXWND+RqrtEgTAoP/8rDs6nPBW1Bxq0p8JuvmOLZJ/40GwISH+CESbcfqbsWSpy6y6WoYP1cwhnps80TSpXqjuVWPo9yunVve6uo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--irogers.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=Bn7hz90c; arc=none smtp.client-ip=74.125.82.199
+	s=arc-20240116; t=1791931222; c=relaxed/simple;
+	bh=1NEN+Scbgml9ozAbt8aLROD/kvCT+P1eXcLOXmgikX8=;
+	h=Date:In-Reply-To:Mime-Version:References:Message-ID:Subject:From:
+	 To:Cc:Content-Type; b=BSM4cqLWM+/b4VE/JRggB0Lyroawsedz2VjjrTLGdmubbpbM0ICk5b9pMhWijcM2xqlJ/giTnGZ33IL6gPK88AIeixWvxtbTi5CiY/9iyrEDL/H9wLZrbOG7scd6/nguJZCCdv+qB895mEd3/x6TXi3D7ssJy5Y2k07jr7UUTVY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=flex--irogers.bounces.google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=rMRv0cn1; arc=none smtp.client-ip=74.125.82.200
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--irogers.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="Bn7hz90c"
-Received: by mail-dy1-f199.google.com with SMTP id 5a478bee46e88-33c35f5ca6cso7840271eec.1
-        for <linux-sh@vger.kernel.org>; Tue, 13 Oct 2026 15:40:13 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="rMRv0cn1"
+Received: by mail-dy1-f200.google.com with SMTP id 5a478bee46e88-3552883bd19so4648248eec.1
+        for <linux-sh@vger.kernel.org>; Tue, 13 Oct 2026 15:40:18 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20251104; t=1791931213; x=1792536013; darn=vger.kernel.org;
-        h=content-type:cc:to:from:subject:message-id:mime-version:date:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=6CWZGGdh7JOQ6UqV1gxmMbPkjK0LPv1nbOU26QpmZ10=;
-        b=Bn7hz90c5SJwfQmP2+AW3dGAkw3UtweF3iEJs/fRS4ftpX9ZUfay81B5NwyLYLDRu0
-         JjNCwwMOY0bD6FwU7BsgiuLRwurYP8wW9es3IJGv8W7CiB4fefjuPLFLPJCVKKi7I6RI
-         oV6uPm/zxlsOkbWwFy17l83iB7KSy6ghSZjl7g4d+WDxw47jSVJgwBFEE2gZJh3cGYCh
-         AJc/NlWZK3dIlCPz7w6Mhk08iXNFzMsqxUm42YSyD70MPigXT5E+D88R2wBPNCYmOgB9
-         sx+IjU/fnz6dU6nMTKMNh1pR9SUPORMsjJrcOn4zw5C6K9GMMYn0RxKiDx0CTtsij7Gc
-         ISow==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791931213; x=1792536013;
-        h=content-type:cc:to:from:subject:message-id:mime-version:date
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=google.com; s=20251104; t=1791931217; x=1792536017; darn=vger.kernel.org;
+        h=content-type:cc:to:from:subject:message-id:references:mime-version
+         :in-reply-to:date:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=6CWZGGdh7JOQ6UqV1gxmMbPkjK0LPv1nbOU26QpmZ10=;
-        b=VCCUydt7TmlyuJ38Er+WAQP/CSLIjrnGW+QhPQqj1Ot0ovXVTPxUip/BKF6wM1vBCY
-         AP2h3LMYjbUHvEoxq63ZKGvDRTCbmdudOxTjLLzixdZc2jXtUuRppxeNzU0kowypVKMO
-         n6Y+rabAdIqKrT/jA/MA3o5wVJouqTMNk6b/t8i9Im/AT+G7hqSyuCNUJj4k2KbUb6Q0
-         ZKfEt1MXp4k1FVTmztFFNpgnqjlk2Q3zSORirPO5aPJNEqvb1KB2d6pppOh7qklcgQrj
-         0/3Af40Izb5Xfnkpja40FWNGsMLz+Xeo8VpR+d1KYLafQs0CY3T+tYD3foYwIK+G+mXB
-         sSOg==
-X-Forwarded-Encrypted: i=1; AKwUvBzEeno1yi3la+ZGqV5QTVhKeX9aKamQoiA+yJz8gUHA1myjqdaZVEsPRVXYnwVTvA+u2HboKTxXzA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLVi2bOfudtmRhbg6txRcO0uXJ1pwOwb4WCu0j0GemjV3HH1Blm
-	nX6L7FssnEsJcQvHplljvJCwctpFxTqiXgcL29CGGeU/pPvLDrtQM1ny0uIRDhYXNNXP3mLaIZJ
-	EqZzEK2dfLA==
-X-Received: from dlak14.prod.google.com ([2002:a05:701b:290e:b0:14e:f9ab:6f83])
- (user=irogers job=prod-delivery.src-stubby-dispatcher) by 2002:a05:701b:2309:b0:153:7a27:b89
- with SMTP id a92af1059eb24-16a5ed4008cmr22709999c88.21.1791931212336; Tue, 13
- Oct 2026 15:40:12 -0700 (PDT)
-Date: Tue, 13 Oct 2026 15:39:35 -0700
+        bh=qdtOvNbLAOJ9idJnmqNXkxs2lXj3bNW1pL8KRmE6mUU=;
+        b=rMRv0cn1iboal/NCyKFVfGQlY2CB4zpJkE3Q6GXERzasnVOhwYHZjocpCeAScK/ryM
+         klYVx8RxBSej+z57Xb//+NHUehJzd0LLo/bkFNXg7NccbeHai6emABX2ZUQW7hnche+b
+         II5GvikvluJOWgik87WY+Jdi3Zl2xxKVcu3IwuMQQT/bBL7iWUbY93uIrUBYtJZNFk57
+         d0vHDgA5Geh56jCzHr5AWmI946Ofhgw8pb13KTPhdMTGqyBxKHzkDmXOmXF382v+p+U/
+         VTJjrqrfkXn7ZFZu/x/3zVxxyjBgtupkSOOUf/3QhJoIyxwJh82zucJt8czuCBE0ONbY
+         jQcw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791931217; x=1792536017;
+        h=content-type:cc:to:from:subject:message-id:references:mime-version
+         :in-reply-to:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=qdtOvNbLAOJ9idJnmqNXkxs2lXj3bNW1pL8KRmE6mUU=;
+        b=2iwAqaM/66MQvXAldTs65c65wNqYh8BaG+N3xdkBq4XRXjccKlBbxUmE7LGzruPq+z
+         KfTwJUbcYzF5Oz/ZSfVvVzoq5inULyqKH9jRBU7rRVWk3Mth4nt4uhuxu3ItCzrWWtkQ
+         AzZ+7KIaKBnOHMmZKmtEwUDmNlBN2fNlsDvMTiLXTgY+So9NkzMgCs3ZPVrgnENEVSxk
+         KuM0vMxl6MQqKOcoyXKNoHq9/ju8+kKXgNESSGNFFSTHCNA/9DYOF9gt9nxFpG+H9MSx
+         ldKcRJzBH44fnUsKnLYQS8kX/WHJHqmlef3eRZwJc27rJu8VEypVfeE6LPv0T06Oj/NL
+         Lwbg==
+X-Forwarded-Encrypted: i=1; AKwUvBxWNajOtodPqTyYLC0pieulTHMQMcRzrwo5fXkom8bwxUctU9eKB/xPueRSgYnb8HTXq+Sfyv6bbA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYKtgl914qMy/cfK+AinOSZ+HFEXMPD+YOkten6aho9PdzPPFhfW
+	cFBrEUTx/jOq1DFW593JzwYA6NpvhueZEQN/tlKgOFftQozVFMk2Oe3I6pSZn1FsiGmP+UZHoMa
+	7FSlBxRGkWg==
+X-Received: from dycrm16.prod.google.com ([2002:a05:693c:2a10:b0:358:f250:485f])
+ (user=irogers job=prod-delivery.src-stubby-dispatcher) by 2002:a05:693c:4141:20b0:35c:8d1f:5634
+ with SMTP id 5a478bee46e88-35c8d1f58e8mr4713972eec.12.1791931216820; Tue, 13
+ Oct 2026 15:40:16 -0700 (PDT)
+Date: Tue, 13 Oct 2026 15:39:37 -0700
+In-Reply-To: <20261013223946.1836757-1-irogers@google.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
+References: <20261013223946.1836757-1-irogers@google.com>
 X-Mailer: git-send-email 2.56.0.385.gd3acb90ef8-goog
-Message-ID: <20261013223946.1836757-1-irogers@google.com>
-Subject: [PATCH 00/11] kobject: Require explicit initialization of struct kobj_type::release
+Message-ID: <20261013223946.1836757-3-irogers@google.com>
+Subject: [PATCH 02/11] powerpc/secvar: Add missing kobject release callback to secvar_ktype
 From: Ian Rogers <irogers@google.com>
 To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "Rafael J . Wysocki" <rafael@kernel.org>, 
 	Danilo Krummrich <dakr@kernel.org>, Miguel Ojeda <ojeda@kernel.org>, Kees Cook <kees@kernel.org>, 
@@ -86,86 +90,40 @@ Cc: Nick Desaulniers <ndesaulniers@google.com>, Bill Wendling <morbo@google.com>
 	Ian Rogers <irogers@google.com>
 Content-Type: text/plain; charset="UTF-8"
 
-Clang supports the 'require_explicit_initialization' attribute on struct
-fields to enforce that the field is explicitly initialized when an
-aggregate object is constructed, emitting -Wuninitialized-explicit-init
-(enabled by default) if the field is omitted.
+In add_var(), a struct kobject is dynamically allocated with
+kzalloc_obj() and initialized with secvar_ktype. If kobject_add() or
+sysfs_create_file() fails, kobject_put(kobj) is called to clean up.
+However, secvar_ktype does not define a .release callback, which results
+in a memory leak of kobj (and a pr_debug warning in kobject_cleanup()
+when CONFIG_DEBUG_KOBJECT_RELEASE is enabled).
 
-Following discussion at the Linux Plumbers Conference [1], this series
-introduces __require_explicit_initialization in
-include/linux/compiler_attributes.h and applies it to
-struct kobj_type::release.
+Provide a secvar_release() callback that calls kfree(kobj).
 
-As Documentation/core-api/kobject.rst notes:
-  "One important point cannot be overstated: every kobject must have a
-  release() method, and the kobject must persist (in a consistent state)
-  until that method is called. If these constraints are not met, the code
-  is flawed."
+Fixes: bd5d9c743d38 ("powerpc: expose secure variables to userspace via sysfs")
+Assisted-by: Antigravity:gemini-3.1-pro
+Signed-off-by: Ian Rogers <irogers@google.com>
+---
+ arch/powerpc/kernel/secvar-sysfs.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-Annotating struct kobj_type::release caught 30 struct kobj_type
-definitions across the tree that omitted .release:
-- Patches 2-10 fix 10 struct kobj_type definitions where dynamically
-  allocated kobjects, ksets, or enclosing structures were either leaked on
-  kobject_put() or freed prematurely before kobject release (risking a
-  use-after-free when CONFIG_DEBUG_KOBJECT_RELEASE=y).
-- Patch 11 annotates struct kobj_type::release with
-  __require_explicit_initialization and explicitly sets .release = NULL
-  (with explanatory comments) on the remaining legacy struct kobj_type
-  definitions whose kobjects are static, per-CPU, or embedded in devm- or
-  parent-managed structures.
-
-[1] https://lpc.events/event/20/contributions/2392/
-
-Ian Rogers (11):
-  Compiler Attributes: Add __require_explicit_initialization macro
-  powerpc/secvar: Add missing kobject release callback to secvar_ktype
-  sh: sq: Add missing kobject release callback to ktype_percpu_entry
-  cpufreq: Initialize kobj_type release callback in ondemand and
-    conservative governors
-  ACPI: CPPC: Free cpc_desc in kobject release callback
-  dlm: Free dlm_ls in kobject release callback
-  xen/sys-hypervisor: Add release callback to hyp_sysfs_kobj_type
-  s390/sclp_mem: Allocate struct sclp_mem dynamically and add kobject
-    release
-  ubifs: sysfs: Use kset_create_and_add() for ubifs_kset
-  drm/amdkfd: Free queue in procfs_queue_type kobject release callback
-  kobject: Require explicit initialization of struct kobj_type::release
-
- Documentation/conf.py                         |  1 +
- arch/arm64/kernel/cpuinfo.c                   |  2 +
- arch/powerpc/kernel/secvar-sysfs.c            |  6 ++
- arch/sh/kernel/cpu/sh4/sq.c                   |  6 ++
- drivers/acpi/cppc_acpi.c                      | 39 +++++-----
- drivers/acpi/sysfs.c                          |  2 +
- drivers/cpufreq/cpufreq_conservative.c        |  5 +-
- drivers/cpufreq/cpufreq_governor.c            |  3 +-
- drivers/cpufreq/cpufreq_governor.h            |  1 +
- drivers/cpufreq/cpufreq_ondemand.c            |  5 +-
- drivers/dma/ioat/sysfs.c                      |  2 +
- drivers/gpu/drm/amd/amdgpu/amdgpu_xcp.c       |  4 +
- drivers/gpu/drm/amd/amdkfd/kfd_process.c      | 10 ++-
- drivers/gpu/drm/amd/amdkfd/kfd_queue.c        |  5 +-
- drivers/infiniband/hw/hfi1/sysfs.c            |  2 +
- drivers/infiniband/hw/usnic/usnic_ib_sysfs.c  |  2 +
- drivers/parisc/pdc_stable.c                   |  2 +
- drivers/power/supply/ab8500_fg.c              |  2 +
- drivers/s390/char/sclp_mem.c                  | 73 +++++++++----------
- drivers/soc/hisilicon/kunpeng_hccs.c          |  6 ++
- .../fbdev/omap2/omapfb/dss/display-sysfs.c    |  2 +
- .../fbdev/omap2/omapfb/dss/manager-sysfs.c    |  2 +
- .../fbdev/omap2/omapfb/dss/overlay-sysfs.c    |  2 +
- drivers/xen/sys-hypervisor.c                  |  6 ++
- fs/dlm/lockspace.c                            | 19 +++--
- fs/erofs/sysfs.c                              |  4 +
- fs/f2fs/sysfs.c                               |  6 ++
- fs/ocfs2/cluster/masklog.c                    |  2 +
- fs/ubifs/sysfs.c                              | 24 ++----
- include/linux/compiler_attributes.h           | 11 +++
- include/linux/kobject.h                       |  2 +-
- scripts/checkpatch.pl                         |  1 +
- tools/lib/python/kdoc/xforms_lists.py         |  1 +
- 33 files changed, 170 insertions(+), 90 deletions(-)
-
+diff --git a/arch/powerpc/kernel/secvar-sysfs.c b/arch/powerpc/kernel/secvar-sysfs.c
+index 395399bbab2c..f3f6ac25ea78 100644
+--- a/arch/powerpc/kernel/secvar-sysfs.c
++++ b/arch/powerpc/kernel/secvar-sysfs.c
+@@ -126,7 +126,13 @@ static const struct attribute_group secvar_attr_group = {
+ };
+ __ATTRIBUTE_GROUPS(secvar_attr);
+ 
++static void secvar_release(struct kobject *kobj)
++{
++	kfree(kobj);
++}
++
+ static const struct kobj_type secvar_ktype = {
++	.release	= secvar_release,
+ 	.sysfs_ops	= &kobj_sysfs_ops,
+ 	.default_groups = secvar_attr_groups,
+ };
 -- 
 2.56.0.385.gd3acb90ef8-goog
 
