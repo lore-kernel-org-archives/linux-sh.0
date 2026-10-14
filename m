@@ -1,119 +1,145 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-vk1-f172.google.com (mail-vk1-f172.google.com [209.85.221.172])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF11A37A848;
-	Wed, 14 Oct 2026 05:36:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9804B44C502
+	for <linux-sh@vger.kernel.org>; Wed, 14 Oct 2026 07:03:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791956208; cv=none; b=T0g+xhR1620L0qTVmvVrHHnMOw4E+X+2DRoP/efLIiiM49N+znalhNtdzvNcyFuBVW50q3iXkIjDPFemB61BLIo5EgtIOAAIry40iMuhuGLV7lq26UKzRo3DkCQn1n8QeBm3XpGO+MpuNlvf4zPqLIq76adRNb3AJNICrHYVpco=
+	t=1791961435; cv=none; b=BDYz98jUXIw3adXaXEQjxWzIW01auLAEG0t5jcCL45O3ztR4GAYaixMKSTqV5sy0NpyFabGNodnPW48YDZvjW6hs0XZ1DyN6c5dRRKW8DdxZOeEtBhvRILfA0Xce9z77Gx+aGBaC3n1jjn8I9sTNfJ3SLv00hDrV6qjAtmVKhm4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791956208; c=relaxed/simple;
-	bh=npUhiSYNmoDuuRpY+IxiD302CfzbjfJ7Hroh5NPmrW8=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=A63sb8j5prUYlUUe/+JdM5iNI4Vb1hH5PC6e/wmuGJZ2DFSjErxTYQ1CU+069aV9u3i0eW29tWBkJd4D0hOEo5tcWY5eEzJHVt8zIjd+QAyvfVlKa0tC14B7icUq1rnmNT4NsQ2GWum0sZuPmJAj/840fmvSJlrMrmQgweBQuD0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b=Qh2L+lns; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="Qh2L+lns"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B60E01F000FF;
-	Wed, 14 Oct 2026 05:36:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linuxfoundation.org;
-	s=korg; t=1791956207;
-	bh=20IeJwlfbHOwAOqBybbPglj4DioVDbfCTggyOUmG6AM=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=Qh2L+lns+TC45tZ3ta2Bf3sHpQuD7ArGYrxTnkjJVsISJDd215cAUFX7buojC10XX
-	 PxZbUFGpn526urHl9iW1zA+jq+Q49VIAoWCaSVIjSYQA+Pdp0aIxZO/l3JMBTZ5a0o
-	 W38eNJtQMa+oY0XJ4+Fg38TXLC108OEL5jmzsnVI=
-Date: Wed, 14 Oct 2026 07:36:41 +0200
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: Ian Rogers <irogers@google.com>
-Cc: "Rafael J . Wysocki" <rafael@kernel.org>,
-	Danilo Krummrich <dakr@kernel.org>, Miguel Ojeda <ojeda@kernel.org>,
-	Kees Cook <kees@kernel.org>, Nathan Chancellor <nathan@kernel.org>,
-	Nick Desaulniers <ndesaulniers@google.com>,
-	Bill Wendling <morbo@google.com>,
-	Justin Stitt <justinstitt@google.com>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	Christophe Leroy <chleroy@kernel.org>,
-	Nayna Jain <nayna@linux.ibm.com>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Viresh Kumar <viresh.kumar@linaro.org>,
-	David Teigland <teigland@redhat.com>,
-	Alexander Aring <aahringo@redhat.com>,
-	Juergen Gross <jgross@suse.com>,
-	Stefano Stabellini <sstabellini@kernel.org>,
-	Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	Richard Weinberger <richard@nod.at>,
-	Zhihao Cheng <chengzhihao1@huawei.com>,
-	Felix Kuehling <Felix.Kuehling@amd.com>,
-	Alex Deucher <alexander.deucher@amd.com>,
-	Christian =?iso-8859-1?Q?K=F6nig?= <christian.koenig@amd.com>,
-	driver-core@lists.linux.dev, llvm@lists.linux.dev,
-	linux-hardening@vger.kernel.org, linux-doc@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-	linux-pm@vger.kernel.org, linux-acpi@vger.kernel.org,
-	gfs2@lists.linux.dev, xen-devel@lists.xenproject.org,
-	linux-s390@vger.kernel.org, linux-mtd@lists.infradead.org,
-	amd-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 00/11] kobject: Require explicit initialization of struct
- kobj_type::release
-Message-ID: <2026101425-why-boring-4f2d@gregkh>
-References: <20261013223946.1836757-1-irogers@google.com>
+	s=arc-20240116; t=1791961435; c=relaxed/simple;
+	bh=TTFre1wVPc8VoMEWdWl7FNETUfe1CwRLfZ7pj2U9bSc=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=k5Q2knV+lsnf9oZmqSifnZrv9VVVhHk+3uNTG82YP8BvAtzUwciuTNbUrhQLPkDkb1O1CohhInk1smSRpJqAvevPlcHbIhWhDaSTp8E+/rn0BuL+Fj1VY5OmtkKX0228niRIYuKmwftr2jRjK+WKh78CTyuH+6EkURLiv0PY95k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.221.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-vk1-f172.google.com with SMTP id 71dfb90a1353d-5e23be41cf8so1741369e0c.2
+        for <linux-sh@vger.kernel.org>; Wed, 14 Oct 2026 00:03:53 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791961432; x=1792566232;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=Bk0WxILScU6Y6u+duQiyaZKyaSUANhQ4Ts1Mqg6Tw0M=;
+        b=Ked3lHE64OTETCMTXAVKW3bfmBREVvyIvwNK/4IZB6LcWsFodWpwm53Y9eezxAZfno
+         tUbed8Ynmz4zY0PO9MH06QEXkHqSiIJY1wMTDvpgzhCufWevL4yjOPFVktcL7z/QmfEz
+         VyZHxP3x2dtfg5PRuoFAxN6QRgQ+xrb9OvaAuqnoTkJ/VVfUTJRTqNm6+9qan2JVp2gJ
+         Tb6r8buyqVZsagCyze3KnnpP4ZVtz7hcCdUJTO3BpVpy+XkjLyC0LSQC77tMxrjjmZ0h
+         iOfCIIgL6kttoTTE3FlBdwPWzkv81qSHNYOt3xIUJ3MdQ+uPv+B/UwVOiPBW/EiugXE1
+         oeGA==
+X-Forwarded-Encrypted: i=1; AKwUvByce+a31bXWgvOhHTc+7TLsjmmeu1Gm20jFepIBF2mU7Lrd/5HHuXy2U+FQtcdDQIWbToL5JadaKA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYJoTVP66OBTgVvj49bFhg3bY+HoJK+ZM6w+Ux7gYiqrYIZCnrM5
+	ag2UOaL/LECdgUQcoERQPXsopuOuGbQlr84Z8T/fZ3dxp7a02pOehSMp9Y2xEJh9cPU=
+X-Gm-Gg: AYBFou0BJypWltHgMNibWpy5EwKhPnSZHLfVg7wEcgawjE1f2HOOBf3GK8cRo4qeWm+
+	UkkPw7wkLAazAbu0nB/hSL0Ut8gp8wJzq7TTmLuEMIcYnw9XgDkkSVtidFZrM/+eTCrwnCFTYp2
+	TG4QkuAXifGNId0JGy5PzPi6ohLUDJ5+FVCHYZc2OhbCDvHoyI6y7jeFk7VIwRHlgvbr8tfYKsl
+	aj1FVR2rfxH2oI1hJ/OgKfPH2RNyxJivBPbLrVlrSHlNsrNVf+Kqo9Z8/EDWozErdAIlEl64rgw
+	5KoN0EVhIykS43mY3dnmkWumkS2nuKgNmVs+zd7S4fG1nxyk8JMyGrY/zUzpwzPCNkjKW8hFSHD
+	lvaWB07NqQ+rOFjC6VgrkK+R/+W9kdt7B8CFxvm0mxWD9xgJbjAVKecQyMjI6LKjWkZzv7ippa2
+	mqJIWHf2nJWzNIQzXaNcbV4O69YEQ/6BnUy5gG5B0MUFHGetq1SCOc3PhtoNbBSIDkNaO6bXGEw
+	6gLLiKJ11dChKlUpWvNRfKTMgDpw83ke2E+e+Es1MK5bP4=
+X-Received: by 2002:a05:6122:8006:b0:5e9:6d96:a910 with SMTP id 71dfb90a1353d-5e96da64d4emr336251e0c.3.1791961432562;
+        Wed, 14 Oct 2026 00:03:52 -0700 (PDT)
+Received: from mail-ua1-f45.google.com (mail-ua1-f45.google.com. [209.85.222.45])
+        by smtp.gmail.com with ESMTPSA id 71dfb90a1353d-5e91cb93832sm10987344e0c.12.2026.10.14.00.03.51
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 14 Oct 2026 00:03:51 -0700 (PDT)
+Received: by mail-ua1-f45.google.com with SMTP id a1e0cc1a2514c-98a8c72a04cso1321332241.3
+        for <linux-sh@vger.kernel.org>; Wed, 14 Oct 2026 00:03:51 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AKwUvByGYd72+xsRWn2eGcKmddtJPAF7PHzNR2JfdT+DJfGrCISSdZxYGYU3yQoB7nGuWexyWoa2v3XczQ==@vger.kernel.org
+X-Received: by 2002:a05:6102:3c91:b0:7c3:9b8d:5124 with SMTP id
+ ada2fe7eead31-7cb3a0aed1dmr3343010137.18.1791961431528; Wed, 14 Oct 2026
+ 00:03:51 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261013223946.1836757-1-irogers@google.com>
+References: <20260927191359.6144-1-kmehltretter@gmail.com>
+In-Reply-To: <20260927191359.6144-1-kmehltretter@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 14 Oct 2026 09:03:40 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXfpChkH-Ad5x7p579+4rBQtfF5CKwwRrdZ6CxDPDWMCg@mail.gmail.com>
+X-Gm-Features: AclHuK-JPX25FVbWtEZgw5SZJYvwRgJ9Oj-OYRi5HkMjQopQgwpR2Z7Y6E2CNek
+Message-ID: <CAMuHMdXfpChkH-Ad5x7p579+4rBQtfF5CKwwRrdZ6CxDPDWMCg@mail.gmail.com>
+Subject: Re: [PATCH] sh: intc: sort the prio and sense lists after filling them
+To: Karl Mehltretter <kmehltretter@gmail.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On Tue, Oct 13, 2026 at 03:39:35PM -0700, Ian Rogers wrote:
-> Clang supports the 'require_explicit_initialization' attribute on struct
-> fields to enforce that the field is explicitly initialized when an
-> aggregate object is constructed, emitting -Wuninitialized-explicit-init
-> (enabled by default) if the field is omitted.
-> 
-> Following discussion at the Linux Plumbers Conference [1], this series
-> introduces __require_explicit_initialization in
-> include/linux/compiler_attributes.h and applies it to
-> struct kobj_type::release.
+Hi Karl,
 
-Cool, sorry I missed that talk.
+On Sun, 27 Sept 2026 at 21:14, Karl Mehltretter <kmehltretter@gmail.com> wrote:
+> register_intc_controller() sorts d->prio and d->sense right after
+> allocating them, with hw->nr_prio_regs and hw->nr_sense_regs as the
+> element count. The lists hold hw->nr_vectors entries and are only
+> filled later, by intc_register_irq().
+>
+> On SH7785, sh7785-irq0123 and sh7785-irq4567 have four vectors but the
+> SoC's eleven priority registers, so sort() swaps 88 bytes in a 32 byte
+> kmalloc object at boot. slub_debug=FZPU reports "Right Redzone
+> overwritten" in kmalloc-32, and v6.5 and v6.6 panic in
+> __kmem_cache_alloc_node() while registering sh7785-irq0123.
+>
+> Found with a custom QEMU model of the SH7785LCR. On it, v6.4
+> sh7785lcr_defconfig boots with SLAB, the defconfig default before v6.5,
+> and hangs before the console is up when built with SLUB.
+>
+> Sort the lists once all vectors are registered, with the number of
+> entries that were added.
+>
+> Fixes: b59f9f9775e6 ("sh: intc: optimize intc IRQ lookup")
+> Cc: stable@vger.kernel.org
+> Assisted-by: LLM
+> Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
 
-> As Documentation/core-api/kobject.rst notes:
->   "One important point cannot be overstated: every kobject must have a
->   release() method, and the kobject must persist (in a consistent state)
->   until that method is called. If these constraints are not met, the code
->   is flawed."
-> 
-> Annotating struct kobj_type::release caught 30 struct kobj_type
-> definitions across the tree that omitted .release:
-> - Patches 2-10 fix 10 struct kobj_type definitions where dynamically
->   allocated kobjects, ksets, or enclosing structures were either leaked on
->   kobject_put() or freed prematurely before kobject release (risking a
->   use-after-free when CONFIG_DEBUG_KOBJECT_RELEASE=y).
-> - Patch 11 annotates struct kobj_type::release with
->   __require_explicit_initialization and explicitly sets .release = NULL
->   (with explanatory comments) on the remaining legacy struct kobj_type
->   definitions whose kobjects are static, per-CPU, or embedded in devm- or
->   parent-managed structures.
+Thanks for your patch!
 
-Sounds great, but let's fix up the users before adding the attribute.
-Looks like some of these need another version so it might take a bit of
-time to get them all merged.
+> --- a/drivers/sh/intc/core.c
+> +++ b/drivers/sh/intc/core.c
+> @@ -275,9 +275,6 @@ int __init register_intc_controller(struct intc_desc *desc)
+>                         k += save_reg(d, k, hw->prio_regs[i].set_reg, smp);
+>                         k += save_reg(d, k, hw->prio_regs[i].clr_reg, smp);
+>                 }
+> -
+> -               sort(d->prio, hw->nr_prio_regs, sizeof(*d->prio),
+> -                    intc_handle_int_cmp, NULL);
 
-thanks,
+Yeah, if hw->nr_prio_regs > hw->nr_vectors, this overflows d->prio[].
+Furthermore, this sorting is useless, as d->prio[] is still empty
+(all zeroes).
 
-greg k-h
+>         }
+>
+>         if (hw->sense_regs) {
+> @@ -287,9 +284,6 @@ int __init register_intc_controller(struct intc_desc *desc)
+>
+>                 for (i = 0; i < hw->nr_sense_regs; i++)
+>                         k += save_reg(d, k, hw->sense_regs[i].reg, 0);
+> -
+> -               sort(d->sense, hw->nr_sense_regs, sizeof(*d->sense),
+> -                    intc_handle_int_cmp, NULL);
+
+Similar.
+
+>         }
+>
+>         if (hw->subgroups)
+
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
