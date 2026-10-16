@@ -1,56 +1,56 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D57E34CA78B;
-	Fri, 16 Oct 2026 13:50:44 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B415337E5D9;
+	Fri, 16 Oct 2026 14:04:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792158648; cv=none; b=ljj4qzFqhOTZkIVWVTrgw8IkNEmG3T7C6kUk/FEH9bsieA03+VKBe9Vk1mOKjaymYlW9a7HmHqjtT2GFkI4l8mNYhRk8C5hauIem0IQxqD4qI06gIdiGVbzLtaL/rwJW4Bcblz7d9KdnKDoqzcY4NWtgq9B9QObNFNtmXmLlFlc=
+	t=1792159454; cv=none; b=XV2uHRViNcYY1A7W2kAsbHddSWX0k5hvA3rx3Edaucys9tPdyDxHtzWLiHkREm3N8cEli2yQn4BSYM8PYTviOqphJEDU+yv7zysWUTl2R5XXC0YCgjJ2DYURqL3acjWGxMSPr5tyBgppljuyp8IHcKNCnUCLqdoKSIn4Inxetzg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792158648; c=relaxed/simple;
-	bh=n4/VRt6W4WN2nnymbTJWd/zO+oyjr+nQVB8vwqngF/I=;
+	s=arc-20240116; t=1792159454; c=relaxed/simple;
+	bh=xV4TVAWofMnQVMNSmbxvJ/W+ijl/Q6S5uJJqN3iUJok=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=QDwnrfvifoaWjHZEHOE3yIMPj+EBLBgbeMiD44hYZVTgIwyAKTqDjL0abevKaoBWFHMS1GLHVlDNgR5Z6wrtMLpkV4FZXx6Iz764A3oI2Ss2QYboWWky4VsdKZN5z3jbMbP5X5Hks3s6l86397THcKwIH2l+y+pbc1AiV862itU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Mbr1Wsx/; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=lDGB7zXx7WyTSmo6CZFqhdII3RL039uxQt2Gz5KzHeDeAN3ChT7s4/y9kGiIcgRhtbvMsEd5Uf802p20yfr3NJ2qaeTE6t72Zm4AENPzSSn4VUao1s+wTPs0Exlm6oV2Y+G7egTTILgN0hThaJ5XReVMrRgcD2jbVhyquYHfKNk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=IuEps/GS; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Mbr1Wsx/"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="IuEps/GS"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
 	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
 	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=Q4UsDgRYaanQzQK3Wt/yZkiQ+b6Z8NemUZLB73f4xbU=; t=1792158644;
-	x=1792763444; b=Mbr1Wsx/mkjPj3hIcufZhig5q+yesxLDTZs79XXltKU2HXkthSHUGjQXCC3bf
-	0FlE/n7ay9wocb385gU3F//AsLztJVXd4AAOU8ICpWaGj5AJWG1do4QWOYrZQKBSV1Qri6BV6p9M5
-	88yjgWOp1bdJ3eQSD/upOwynnjetRWp2rCL3INhJLHG31FVep0thXCQE/qUdIWHCzQcozBBuTOG9h
-	Rd4UsMooR6OzmVnFCsAWrctT8081/VH1qSv9QUZ4qB0uvfkyEvTBxXuWMdnhiTlYsPw4mcmoC/xXC
-	2Q5CgDFfekaBGQtXjcv7qgCpQfhxcqiW3IXbm4cfr3IiKm1gGg==;
+	References; bh=KJM0CgT4xb7zXt8wshrwxDE5N3S72S+N5ndebAadhtQ=; t=1792159451;
+	x=1792764251; b=IuEps/GSkIFPbiNebdsOpbqySv09ydhWTJUflinmQzH1NAXQJ5RPCAGbs1EEl
+	4o5Fl+ObZ72vWN58E28iVTPyrIt0Cuteq2grmmk0hOjKsO+0zvZwNG2JktmszDtym3mTJPRgTZJe8
+	2hAaBvEhokE12e0qykEEjYoVkoXz0vjEfEYaKqjne+d+OxeEPaEdXobIg/H9YQe3OjjFlm/RBOH3t
+	uwcgJB4ZBPrD3JGqcmpEem2UdN6oB4iZgjVo23CDhlb7ERBejvqYrc/GldRiqJYC/KYarKscF9RLZ
+	DwVVwqBQ0ASo4Yhu2+Y5Hh2gEMHyK0tk+go32BPioT2qWy3KXg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.100)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xHiKR-00000001YOp-1y6g; Fri, 16 Oct 2026 15:50:35 +0200
+          id 1xHiXY-00000001cgl-1nCB; Fri, 16 Oct 2026 16:04:08 +0200
 Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
           by inpost2.zedat.fu-berlin.de (Exim 4.100)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xHiKR-00000003zsT-0zJB; Fri, 16 Oct 2026 15:50:35 +0200
-Message-ID: <f46a2ef98217b3cb6bd374b9bdf0bcb2e3227940.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: mm: fix double mmap_lock release on SIGBUS and
- SIGSEGV faults
+          id 1xHiXY-000000041rl-0qR5; Fri, 16 Oct 2026 16:04:08 +0200
+Message-ID: <b208cd26ab1b7aaa42de2a284332e11b4abbe7bd.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: maple: use the matching IRQ cookie
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Karl Mehltretter <kmehltretter@gmail.com>, Yoshinori Sato
-	 <yoshinori.sato@nifty.com>, Rich Felker <dalias@libc.org>
-Cc: Peter Xu <peterx@redhat.com>, Andrew Morton <akpm@linux-foundation.org>,
- 	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date: Fri, 16 Oct 2026 15:50:34 +0200
-In-Reply-To: <atHwnaEUDihOsGUQ@gmail.com>
-References: <20260928001937.12793-1-kmehltretter@gmail.com>
-	 <atHwnaEUDihOsGUQ@gmail.com>
+To: Runyu Xiao <runyu.xiao@seu.edu.cn>, Yoshinori Sato
+	 <yoshinori.sato@nifty.com>, Geert Uytterhoeven <geert+renesas@glider.be>, 
+ Florian Fuchs <fuchsfl@gmail.com>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, stable@vger.kernel.org, Jianhao Xu
+	 <jianhao.xu@seu.edu.cn>
+Date: Fri, 16 Oct 2026 16:04:06 +0200
+In-Reply-To: <20261009040248.1136356-1-runyu.xiao@seu.edu.cn>
+References: <20261009040248.1136356-1-runyu.xiao@seu.edu.cn>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.60.2 
@@ -63,56 +63,51 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Karl,
+Hi Runyu,
 
-On Fri, 2026-10-16 at 11:46 +0200, Karl Mehltretter wrote:
-> On Mon, Sep 28, 2026 at 02:19:37AM +0100, Karl Mehltretter wrote:
-> > A process that survives the signal keeps an mm with a corrupted
-> > mmap_lock. With CONFIG_DEBUG_RWSEMS and lockdep, stress-ng --msync
-> > (which catches SIGBUS) reports within a minute:
-> >=20
-> >   WARNING: bad unlock balance detected!
-> >   stress-ng-msync/54 is trying to release lock (&mm->mmap_lock) at:
-> >   mm_fault_error+0xd0/0x16c
-> >   ...
-> >   DEBUG_RWSEMS_WARN_ON(tmp < 0): count =3D 0xffffff00, ...
-> >=20
-> > and without them, find_vma() warns that mmap_lock is not held right
-> > after it was taken. Seen on a custom QEMU model of the SH7785LCR, in
-> > both 29-bit and 32-bit mode.
-> >=20
-> > Drop the release from do_sigbus(), whose only caller is
-> > mm_fault_error(), and use bad_area_nosemaphore() for VM_FAULT_SIGSEGV.
-> > bad_area() has no users left and goes away.
-> >=20
-> > Fixes: fb027ada051a ("sh/mm: use helper fault_signal_pending()")
-> > Cc: stable@vger.kernel.org
-> > Assisted-by: LLM
-> > Signed-off-by: Karl Mehltretter <kmehltretter@gmail.com>
-> > ---
-> >=20
-> > Notes:
-> >     Tested in QEMU on a custom SH7785LCR model, not on hardware.
-> >     Reproducer: Debian sh4 stress-ng 0.22.01 --msync
-> >=20
+On Fri, 2026-10-09 at 12:02 +0800, Runyu Xiao wrote:
+> The Maple DMA and VBLANK handlers are registered with
+> &maple_unsupported_device as their dev_id. Passing NULL to free_irq()
+> cannot find either action, so the handlers remain registered and the
+> IRQ core warns.
 >=20
-> A friendly ping on this fix.
+> Use the same cookie when freeing both handlers on the error paths.
 >=20
-> I have now also reproduced it with stock QEMU 11.0.2 on the upstream
-> r2d machine (SH7751R): the unpatched kernel warns after a caught SIGBUS,
-> while the patched kernel does not.
+> Fixes: 17be2d2b1c33 ("sh: Add maple bus support for the SEGA Dreamcast.")
+> Cc: stable@vger.kernel.org
+> Assisted-by: LLM
+> Signed-off-by: Runyu Xiao <runyu.xiao@seu.edu.cn>
+> ---
+>  drivers/sh/maple/maple.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
 >=20
-> Also, the stress-ng command in the review notes is incorrect. Use:
->=20
->   stress-ng --msync 1 --timeout 60s
+> diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+> index 5585f220e..7df88e00c 100644
+> --- a/drivers/sh/maple/maple.c
+> +++ b/drivers/sh/maple/maple.c
+> @@ -863,10 +863,10 @@ static int __init maple_bus_init(void)
+>  	kmem_cache_destroy(maple_queue_cache);
+> =20
+>  cleanup_bothirqs:
+> -	free_irq(HW_EVENT_VSYNC, 0);
+> +	free_irq(HW_EVENT_VSYNC, &maple_unsupported_device);
+> =20
+>  cleanup_irq:
+> -	free_irq(HW_EVENT_MAPLE_DMA, 0);
+> +	free_irq(HW_EVENT_MAPLE_DMA, &maple_unsupported_device);
+> =20
+>  cleanup_dma:
+>  	free_pages((unsigned long) maple_sendbuf, MAPLE_DMA_PAGES);
 
-I'm trying to get this reviewed in the weekend. I'm not forgetting about
-patches as I'll always check what's on patchwork and pick everything up
-that I haven't taken yet [1].
+I'm not 100% versed in the IRQ code but looking how both HW_EVENT_VSYNC
+and HW_EVENT_MAPLE_DMA are registered using the maple_unsupported_device
+cookie but not unregistered using them, your change seems logical.
+
+Maybe Geert or Florian can have a second look and add their Reviewed-by.
+
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 Adrian
-
-> [1] https://patchwork.kernel.org/project/linux-sh/list/
 
 --=20
  .''`.  John Paul Adrian Glaubitz
