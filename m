@@ -1,144 +1,139 @@
-Received: from mail-wr1-f41.google.com (mail-wr1-f41.google.com [209.85.221.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BEC13AF666
-	for <linux-sh@vger.kernel.org>; Sat, 17 Oct 2026 18:22:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E1BEA382F1E;
+	Sat, 17 Oct 2026 18:34:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792261359; cv=none; b=OItg+gFIg3th+bjul/yePkqNkcGb/9UJhzLFRVhLdpD22YfI8GwpB7seR8tCZvjRcIGRFIZVgFGgFi4yQ55DoibZ6NwAvKIIIzJKpVHLlh/qttPre/T3lyKXc+ZaSLZKmHE9HseNDunX3p9g9MCt1XcXzl/fhpyi6Nyc4ofqVZ8=
+	t=1792262087; cv=none; b=Q19ueta1wOigr2+iwHinCHLbi6aiQRDeakmn4szeaUnJZbxjGRr0bEg8Pys0vSg4SS8SAuZuXGFrSBLZojEvNMx8Y9hZTiq84zNBngMM60JQCFP6YnkvikXhYb46NWtzGLhwd6I15movcL76k7xTwSFV2YsJWwkZr3tBkkw1BOk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792261359; c=relaxed/simple;
-	bh=pSHGp8EXL2VWTgqxVtbb1srpNASE94++qjfipyPc07U=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=NJLIre5B8EgeY3KgAEN9PgkHIWT8tLUN3wyiCG5plz8W2eAF7WNKoqnw6TqzfpHa8lKmt4nahMI4RuPBuq7c0Vr2BhBRP+MDv3R6C8ZEzE8TdnGOvwX84AA7FsoQ5mFeqxCTLXEXuaCEbCgTc9whFZoiQloO+m21s5qPCANg1M0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=gUQ5Cpmc; arc=none smtp.client-ip=209.85.221.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1792262087; c=relaxed/simple;
+	bh=WjtYC0JJVVHPGFt6KM5QwJv500+Juc/Cr2pUlgFC7Vo=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=J0u2JTXlqr95jKsTdZqnxHdOmlrP8ar0akoWcKvUskLjhkTgS7Q/peKlzne6FNekOcys+SD+mJWEu7MngvGXpd6c9efaW4mYkb/giAsgAqg228Bh0OKXGwF/HsPFXOF6UavH0rEGhgskKs9CUtPJfGLt8PNmvaWrrciWup6x0bQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=hfX7dMXl; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gUQ5Cpmc"
-Received: by mail-wr1-f41.google.com with SMTP id ffacd0b85a97d-48e0d885929so330227f8f.3
-        for <linux-sh@vger.kernel.org>; Sat, 17 Oct 2026 11:22:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1792261356; x=1792866156; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=lKYjKyTf4RjyhjQEohsiFNaGW/B8AaSxNStHaviaITQ=;
-        b=gUQ5Cpmc+cekn9zZ4jhX4PUFZgG3JxNDRWdxywOc6s6Ha05Pcpa5Uc/vomv9/Wnzti
-         y/ZjYvGqBd9GQImK2HVzAJPOVZzZTx0iWpEsK1NDopyMkPBZosflfH1I0F+aMAE+TBC2
-         Bc6wmiuhZE9/kBE5Q1M4QfRGwG+vkHKOMzFNFCL80Je4MmcP6opl6c0uBIiUVxHPlMRg
-         cd8mY0w1v11ldzEq8GH4RzwwY2P6i00do9Ukj5kSr4uGhFXUOrQMu8nMzOwwV3vycLLA
-         8qFko5+MU/FRbD2g68vNMH9NCu8nd8Xb2ENf7QPwWPg0iAlHiV9Tg8xJeX/7KLefLZ+g
-         KyPA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792261356; x=1792866156;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=lKYjKyTf4RjyhjQEohsiFNaGW/B8AaSxNStHaviaITQ=;
-        b=kF5OhKdMqpBItnIb+HldSSGJiW1Nw0xlrUU8MFFMFyqDjFK24L2bfpcVLMjPaxZBQx
-         BsQHYGGoSAjP8QNfSCGKEhJB+dvdr37YmQ2SUZ3WMYLIsG1OHTYCGRB8jrbANwwKrKGE
-         y39I6lx1QuVRGIe4+a2LyMxDadPxWR0e2EIkv4RZCvFy9rHxRvYaEVqTjF+wo0HsCtWI
-         8kRnH48NfeRuI1mSdg/b/heYWsIlNqyv+kl/CRJkEiHIrAJkTyFzVsLCcQRnMOw2W1No
-         A70B+3Z8l8ym75+cOBta26HeFnkkIrh7YXdDjm/4P7Q9nXl7mVhxTPYhsWM0V1doJNDo
-         yyQA==
-X-Forwarded-Encrypted: i=1; AKwUvBxS8anlDLoRIvrji0lDvJzMTqU3mNQF6+VoH1lvCQTGCFNVgk51/eTKqpcZEeGXTY0e8KmHNdywDw==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLK4RCr2a4Y/lUKdeeFMPyr/9l0Rw77tvG/qowakXWWhJoOewNA
-	Wd2/+xd8qsOma2eqU6L9MmlbhbpUC68zM0MKILlJYcNOu3D9qA6vubU=
-X-Gm-Gg: AYBFou2vKXXIEglIXbokoGkYjp9qKiSlmfej79q75b9nsy0sJinXGV0jYTJf2ALPYK+
-	AzDeNUoY/datYqWR7AkyoEiqazMD4pM1IOVSpI7cdbbyAo2kLOhtM4HCd0J9D9phi7zj9Z5m79S
-	+9n6Gp98nXyos+D1l4j64ahGC1dnSoTbAacZ/k4ZhP+xC7fWdykhw/wIOLQPgkdueQJultHsGwF
-	CQ9+3Z8UHLdEALMBY7ISZLjcI2gV5tmLRJlbN7B2UBQ+KaANly2JIiR3zBdvtYSu7OKwf59Q6j4
-	1OeGftOjHuuQNUJ4fyZ9x40To1kBVslzcz3aZM+Ibu1EQxA4lmbLgdwyHmbYagufOKYCVvSbLgk
-	zYXlex0JEvuOwmnA0dJO5Ecfa2ac7b/g6Vi+XXA1bbs0fcIHBC64wRrDFnjoWTQ+H0EfEcShncl
-	+EgnUvqtT2YrD1ymRUFM/ASt2G9ukmmF+Sxy4uK6ex2Zie9SlqPE2DKOCltwLxLRiYNyRWNL9ae
-	244B22Gs5+udVyHRfW3jOWE0Qvo1yWRydsqztsRIdrR12Eiaic=
-X-Received: by 2002:a05:6000:4908:b0:48e:f10:ce31 with SMTP id ffacd0b85a97d-48e0f10cf4bmr1238644f8f.28.1792261356021;
-        Sat, 17 Oct 2026 11:22:36 -0700 (PDT)
-Received: from lithos ([2a02:810d:4a94:b300:4ac6:ff14:fe01:9da2])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48dfd503a0dsm12750208f8f.47.2026.10.17.11.22.34
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 17 Oct 2026 11:22:35 -0700 (PDT)
-Date: Sat, 17 Oct 2026 20:22:29 +0200
-From: Florian Fuchs <fuchsfl@gmail.com>
-To: Runyu Xiao <runyu.xiao@seu.edu.cn>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org, Jianhao Xu <jianhao.xu@seu.edu.cn>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="hfX7dMXl"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=U38TNxbjZWPafcS+7I1nkZg5tbz0P1qs72gc4jTBwsI=; t=1792262084;
+	x=1792866884; b=hfX7dMXlEcQAegaKx9bxeQR1JIanTBYyqYZlNJTX4A/JLSFuK+4mCSpN6yCFi
+	rE9ZPlLa1wxhCQQ4fjKGrZoMpDUp52Y1dLmHSFEJjC5z/OFqHpy8nFIME3eOI7v+wjcdDXy6z2CBL
+	QNnTeypSbB5WfA9TjyfQHxA2ejG07hCkoOzTXJvetRuLhXT71vyvtQQ3tLk+3qxr5xhl/SEUcSLbr
+	4XKL+k87gnTfkEKQj/4vQXxAeuLIuELNm1wLDyK83IMTeIb+MPeN43a0j6sL2IGK6sW9nR8KF1b6U
+	1wn6OT2AWedUxvoLnE0UxGw8fczRPxOYFP1dzUobyrqq9tGNHQ==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.100)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1xI9Eo-00000003JjI-1CiV; Sat, 17 Oct 2026 20:34:34 +0200
+Received: from dynamic-002-242-066-005.2.242.pool.telefonica.de ([2.242.66.5] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.100)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1xI9En-000000049Wd-42q6; Sat, 17 Oct 2026 20:34:34 +0200
+Message-ID: <e94382c5fad225eff08bd7126997eeef05d0287b.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] sh: maple: use the matching IRQ cookie
-Message-ID: <atO85d3tjAyPiPRF@lithos>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Florian Fuchs <fuchsfl@gmail.com>, Runyu Xiao <runyu.xiao@seu.edu.cn>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
+ <dalias@libc.org>, 	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+ stable@vger.kernel.org,  Jianhao Xu <jianhao.xu@seu.edu.cn>
+Date: Sat, 17 Oct 2026 20:34:33 +0200
+In-Reply-To: <atO85d3tjAyPiPRF@lithos>
 References: <20261009040248.1136356-1-runyu.xiao@seu.edu.cn>
+	 <atO85d3tjAyPiPRF@lithos>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261009040248.1136356-1-runyu.xiao@seu.edu.cn>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On 09 Oct 12:02, Runyu Xiao wrote:
-> The Maple DMA and VBLANK handlers are registered with
-> &maple_unsupported_device as their dev_id. Passing NULL to free_irq()
-> cannot find either action, so the handlers remain registered and the
-> IRQ core warns.
-> 
-> Use the same cookie when freeing both handlers on the error paths.
-> 
-> Fixes: 17be2d2b1c33 ("sh: Add maple bus support for the SEGA Dreamcast.")
-> Cc: stable@vger.kernel.org
-> Assisted-by: LLM
-> Signed-off-by: Runyu Xiao <runyu.xiao@seu.edu.cn>
-> ---
->  drivers/sh/maple/maple.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-> index 5585f220e..7df88e00c 100644
-> --- a/drivers/sh/maple/maple.c
-> +++ b/drivers/sh/maple/maple.c
-> @@ -863,10 +863,10 @@ static int __init maple_bus_init(void)
->  	kmem_cache_destroy(maple_queue_cache);
->  
->  cleanup_bothirqs:
-> -	free_irq(HW_EVENT_VSYNC, 0);
-> +	free_irq(HW_EVENT_VSYNC, &maple_unsupported_device);
->  
->  cleanup_irq:
-> -	free_irq(HW_EVENT_MAPLE_DMA, 0);
-> +	free_irq(HW_EVENT_MAPLE_DMA, &maple_unsupported_device);
->  
->  cleanup_dma:
->  	free_pages((unsigned long) maple_sendbuf, MAPLE_DMA_PAGES);
-> -- 
-> 2.34.1
+Hi Florian,
 
-The patch looks correct to me and works like intended, that it frees the
-corresponding IRQ handler in the error path.
+On Sat, 2026-10-17 at 20:22 +0200, Florian Fuchs wrote:
+> On 09 Oct 12:02, Runyu Xiao wrote:
+> > The Maple DMA and VBLANK handlers are registered with
+> > &maple_unsupported_device as their dev_id. Passing NULL to free_irq()
+> > cannot find either action, so the handlers remain registered and the
+> > IRQ core warns.
+> >=20
+> > Use the same cookie when freeing both handlers on the error paths.
+> >=20
+> > Fixes: 17be2d2b1c33 ("sh: Add maple bus support for the SEGA Dreamcast.=
+")
+> > Cc: stable@vger.kernel.org
+> > Assisted-by: LLM
+> > Signed-off-by: Runyu Xiao <runyu.xiao@seu.edu.cn>
+> > ---
+> >  drivers/sh/maple/maple.c | 4 ++--
+> >  1 file changed, 2 insertions(+), 2 deletions(-)
+> >=20
+> > diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+> > index 5585f220e..7df88e00c 100644
+> > --- a/drivers/sh/maple/maple.c
+> > +++ b/drivers/sh/maple/maple.c
+> > @@ -863,10 +863,10 @@ static int __init maple_bus_init(void)
+> >  	kmem_cache_destroy(maple_queue_cache);
+> > =20
+> >  cleanup_bothirqs:
+> > -	free_irq(HW_EVENT_VSYNC, 0);
+> > +	free_irq(HW_EVENT_VSYNC, &maple_unsupported_device);
+> > =20
+> >  cleanup_irq:
+> > -	free_irq(HW_EVENT_MAPLE_DMA, 0);
+> > +	free_irq(HW_EVENT_MAPLE_DMA, &maple_unsupported_device);
+> > =20
+> >  cleanup_dma:
+> >  	free_pages((unsigned long) maple_sendbuf, MAPLE_DMA_PAGES);
+> > --=20
+> > 2.34.1
+>=20
+> The patch looks correct to me and works like intended, that it frees the
+> corresponding IRQ handler in the error path.
+>=20
+> Reviewed-By: Florian Fuchs <fuchsfl@gmail.com>
+> Tested-by: Florian Fuchs <fuchsfl@gmail.com>
+> Fixes: b3c69e248176 ("maple: more robust device detection.")
+>=20
+> Just a little addition, it looks like commit b3c69e248176
+> ("maple: more robust device detection.") introduced the issue, where the
+> static irqaction with IRQF_SHARED, was replaced by a request_irq() with
+> a cookie, but the free_irq() wasn't updated.
+>=20
+> I tested the patch with a forced failure of maple_bus_init(), which
+> gives the WARNs and keeps the handlers registered in /proc/interrupts:
+> Trying to free already-free IRQ 69
+> WARNING: kernel/irq/manage.c:1880 at 0x8c0522c4, CPU#0: swapper/0/1
+>=20
+> After the patch, the IRQ handlers are unregistered in /proc/interrupts
+> and no kernel WARN is shown.
+>=20
+> And tested if keyboard, mouse still work with the patch, which they do.
 
-Reviewed-By: Florian Fuchs <fuchsfl@gmail.com>
-Tested-by: Florian Fuchs <fuchsfl@gmail.com>
-Fixes: b3c69e248176 ("maple: more robust device detection.")
+Thanks a lot for both the additional review and testing!
+Since I'm using b4, it will automatically pick up the Fixes tag you provide=
+d.
 
-Just a little addition, it looks like commit b3c69e248176
-("maple: more robust device detection.") introduced the issue, where the
-static irqaction with IRQF_SHARED, was replaced by a request_irq() with
-a cookie, but the free_irq() wasn't updated.
+Will apply the patch tomorrow or Monday.
 
-I tested the patch with a forced failure of maple_bus_init(), which
-gives the WARNs and keeps the handlers registered in /proc/interrupts:
-Trying to free already-free IRQ 69
-WARNING: kernel/irq/manage.c:1880 at 0x8c0522c4, CPU#0: swapper/0/1
+Adrian
 
-After the patch, the IRQ handlers are unregistered in /proc/interrupts
-and no kernel WARN is shown.
-
-And tested if keyboard, mouse still work with the patch, which they do.
-
-Thank you!
-Regards
-Florian
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
