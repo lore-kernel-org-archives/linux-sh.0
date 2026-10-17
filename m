@@ -1,110 +1,104 @@
-Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1884F12D21B
-	for <linux-sh@vger.kernel.org>; Sat, 17 Oct 2026 04:14:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 55F3B342523;
+	Sat, 17 Oct 2026 07:48:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792210485; cv=none; b=GMoi9K4YIgqrOl+OEKRXCh/G99z8pJNVcxs9p32IK6HTm4vP8KykbsMbm9979yJwniQhHDPH3K0F3pXsZjBKzhZkKSYwEKOa4miarS9ja2zXnsooxaahumVpFgMGISS/eL7lm4u/5vwI8B1XzKU/ylbpR6i+v3RhNijLnN7JE74=
+	t=1792223341; cv=none; b=N8vavHeQvDmOd0qyTUGSOaaOqVBWbPOVKcw1Nn4L3p0lZ/NOejUoj7yHfxFZMJEgxojuHFZHbYybt68JQkiEEE7DC60ObVAynHlnIAf0Gp4tQ6wKyUFZND/ACOlgG8tLAhKYpMf8Y3QGy9Vlt14kQAxBNVk2HdEQvu0b0+KUKAQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792210485; c=relaxed/simple;
-	bh=giq9R9eqXmt3OIYtNymBZh0IZK3MauoJ2kjbep0I9gI=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=j9rtpgAxN6AWKxhLe6SjlAmAyU1z/2V9wsp85XsTfbaV9nnK7sECV7gQ1dhuvmitWBZxIemOBI5ALJDrCXxTpw7yj8nmyjD+67hh9KBXNsRn3Ze6mpZ1fWfXma+a31iwiiv2rZAZHIbpZIHbBebb9Hucl04cX/s50/J6MA/r1Dg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com; spf=pass smtp.mailfrom=0x0f.com; dkim=pass (1024-bit key) header.d=0x0f.com header.i=@0x0f.com header.b=YsScbDnN; arc=none smtp.client-ip=209.85.214.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=0x0f.com
+	s=arc-20240116; t=1792223341; c=relaxed/simple;
+	bh=eumY4mcIfVqmcqQteflfRkfPDLK9uAe0x4xFJAl1k5U=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=UUSYG7UIBZBPF66K0iMKFyCVGrqEP/+9mieLYvwpztNJNms6UNqi37XAKioLM2xynKqtQ0TsfCORDQxhlHKrEL3ptxnG9Tq73LBn3fg0qE2cGwHbCkmF9FnLpk1XjXJCT+4amNcWr4uIaH4pfmLRQQrU5RlNbMhkq9dZh4DOiDQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=FjbDITVJ; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=0x0f.com header.i=@0x0f.com header.b="YsScbDnN"
-Received: by mail-pl1-f171.google.com with SMTP id d9443c01a7336-2e8da6ef7ddso2412815ad.3
-        for <linux-sh@vger.kernel.org>; Fri, 16 Oct 2026 21:14:43 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=0x0f.com; s=google; t=1792210483; x=1792815283; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=J4P0SuxHGLACHNAbcWpcrEkq+SWEhLrJUpTGxCsDDCE=;
-        b=YsScbDnNS5JTnJ/sGCRWoeUgPKjzpQ4StlQDRo+w4CD6rrDB45eO/DThcOvNUO3zJs
-         9xK34DyPGC5J9tRTmXoyWfplP1hAg0r4ukx7NqooRg18LhUPxy5G5mbiEviGAhy0Rrco
-         ZHy9aNeA2WVsittRZ666b1Gzl9x2gc9Wqu7qE=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792210483; x=1792815283;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=J4P0SuxHGLACHNAbcWpcrEkq+SWEhLrJUpTGxCsDDCE=;
-        b=0b2hjbL3+w9GjvjV+DTsS2F9qgPN4wgf8B76c5UWJ8P4WLoHEUpHkKtwYKQnMuCjLQ
-         yi7X+JMnY+ly8/vjEqbOVcis/ht/HRfOWWGq5P78nv3fnzP5yTsWkrXCrMCU9yF+et1u
-         Ea1TUxloXfq79xPsCvRsYDS9xxryKXGmUt3eBib7sSMTwEKMK6luGmAhru4ULlLe3KsF
-         qZJNHjVasDbv6BT+UNz/7KA1QPHt/eMVSixy16FKxX53K6OQoEHGyhSB3jDulM3witCM
-         /KNTqDrBV9rkb+zF/DLT/LSlw5n+fF3+b9gRzDlKZ98txnBqtFgQ7mky//KDOIqeQnH9
-         iDMg==
-X-Forwarded-Encrypted: i=1; AKwUvBxLqXR7vHLPuDDJ6gP/4U08r8SNah7guViq/D1sHO7lkfeJcljmI5AzmZtMwSF4KNsVk70sQ3mJSw==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIEYhdrpuUl1d0iC1ieNEmczqnUR/fxDKy9BvMeFVuTsD7fALao
-	Bx/rqIW9CGCShzLmPgfknB6cNgZDkEzbD5KkmshgnpTSvRb5LbroGsgdmGK9R4ePdFiqdj2D/Jv
-	Emd+D
-X-Gm-Gg: AYBFou2/+NRF3fTbJE9d55RUQx0LRiN39HnqkC+SmIwF/aG9mLTWU84OdyB3fHQwDUG
-	A/fkR9qcoUrSX8O9eQj3dTG7tXQt+V32Kd+QxytXCr8yXZud2oKek60y5+xLmJKbHE7d2Z7FDnr
-	glD/m/SqnhHdsO7hlDYNyJusfHsPDYpfoAhuZl90IJic8pfJoCd05n/dIsnJIoYlpnX1a3x+unf
-	80cBpuHo/v0/ZHO/7AL42Ax8cZnDHbunYknRaYbXt+FfiEiv7Nj7czuJq3aK6U/C3yxt+g8Pa8W
-	eDF3s4C+eFcOHDN6sX1DxXUkS4OAlHbiM959iwvmHyYpIsCTvXX9pz+FZ6dW3sL6Z9qyCBpRXen
-	+2HrvHwHtPSkPSoPAhkN+H6mvvvS1ljQSy5xQqVp1zL5Jjt+KFpneL65VFoDQWkDa4KE6zVs7YZ
-	04FSyynasHldQQUi2aFKk5qh4Kq1REIP5Mw832cKLHm/C9S3EiHOgJ9MybXrnYubmQuuZfhXqax
-	6r/AMnJ0SCx5EPpysKw0EnTwzMPUQm4//dXHG3w2ygETSNju/Q=
-X-Received: by 2002:a17:90b:4ccc:b0:3ab:9f1a:3825 with SMTP id 98e67ed59e1d1-3acee2937ffmr1451115a91.4.1792210482363;
-        Fri, 16 Oct 2026 21:14:42 -0700 (PDT)
-Received: from shiro (p1722188-ipxg00e01sizuokaden.shizuoka.ocn.ne.jp. [153.166.142.188])
-        by smtp.googlemail.com with ESMTPSA id 98e67ed59e1d1-3ac945e72c6sm11609714a91.5.2026.10.16.21.14.40
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 16 Oct 2026 21:14:41 -0700 (PDT)
-From: Daniel Palmer <daniel@0x0f.com>
-To: ysato@users.sourceforge.jp,
-	dalias@libc.org,
-	glaubitz@physik.fu-berlin.de,
-	dlemoal@kernel.org,
-	cassel@kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-ide@vger.kernel.org
-Cc: geert@linux-m68k.org,
-	linux-kernel@vger.kernel.org,
-	Daniel Palmer <daniel@0x0f.com>
-Subject: [PATCH 2/2] sh: landisk_defconfig: enable PATA_ARTOP for the ATP865
-Date: Sat, 17 Oct 2026 13:14:19 +0900
-Message-ID: <20261017041419.311921-3-daniel@0x0f.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="FjbDITVJ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=C/RAplH+hrLPR9DD6y9cBreP21LmQpgXNUHiVHMkNvA=; t=1792223339;
+	x=1792828139; b=FjbDITVJ7Tsn/jlwMeYoKxZpUgpynQPC95QXwTH2CjQkQrGC0mSnyXT/bFCtx
+	QiWgCT4qVkpW1TN1bA/S/PwndEV/5VLExBoDYpK9m2Pvih1SEeBhnen68s7fRwdf1qUdwMnIkvsXK
+	jtZsRMqu1lx2T9DPPws0BuymV3AWjGaIbEDBkJ5BI/AtKCLUjWOojjnWgaP3ShcfhUoLxK50A//iU
+	59ohDNQRaj9Js+CfGrZWwB5WR0FXt9cXTUK2vnudy2BHjx9tWiY5pELZNQB4cillXCxUbJvJgyiOM
+	4KUDjrMijI7qQJuiVdfvVvPKvMut6zlQhEcVRLkzSwKrGWk81g==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.100)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1xHzA0-00000001AAL-10Ri; Sat, 17 Oct 2026 09:48:56 +0200
+Received: from dynamic-002-242-066-005.2.242.pool.telefonica.de ([2.242.66.5] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.100)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1xHz9z-00000002c2B-3iWO; Sat, 17 Oct 2026 09:48:56 +0200
+Message-ID: <4cdb2939264e0b7d767f44289fddffd40fddf504.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Daniel Palmer <daniel@0x0f.com>, ysato@users.sourceforge.jp, 
+	dalias@libc.org, dlemoal@kernel.org, cassel@kernel.org,
+ linux-sh@vger.kernel.org, 	linux-ide@vger.kernel.org
+Cc: geert@linux-m68k.org, linux-kernel@vger.kernel.org
+Date: Sat, 17 Oct 2026 09:48:55 +0200
 In-Reply-To: <20261017041419.311921-1-daniel@0x0f.com>
 References: <20261017041419.311921-1-daniel@0x0f.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-The landisk defconfig currently has a similar but incorrect IDE
-driver selected so IDE doesn't work out of the box.
+Hi Daniel,
 
-Select the right one.
+On Sat, 2026-10-17 at 13:14 +0900, Daniel Palmer wrote:
+> I dug out my landisk to look at kexec for Geert. Since I'm lazy and
+> LLMs are good at fixing bitrot I let my LLM work out how to get
+> it to boot again.
+>=20
+> There are some other issues (perf is apparently borken, there are
+> some issues with the decompresor and big kernels..) but this
+> seems to be the only thing stopping it booting with the defconfig.
+>=20
+> Disclaimer since we don't need to give LLM tags anymore:
+> - LLM debugged the issue.
+> - It has been checked on real hardware.
+> - I have checked the IDE driver patch, cleaned it up and
+>   cleaned out massive walls of text that LLMs seem to like
+>   to add but I have left its summary of the issue in the commit
+>   message.
+>=20
+> Daniel Palmer (2):
+>   ata: pata_artop: read the ATP865 mode register through pci_iomap
+>   sh: landisk_defconfig: enable PATA_ARTOP for the ATP865
+>=20
+>  arch/sh/configs/landisk_defconfig |  2 +-
+>  drivers/ata/pata_artop.c          | 12 ++++++++++--
+>  2 files changed, 11 insertions(+), 3 deletions(-)
 
-Signed-off-by: Daniel Palmer <daniel@0x0f.com>
----
- arch/sh/configs/landisk_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Great, thanks for fixing this. While I have LANDISK hardware myself,
+I cannot probably set it up fast enough now to test your patches as
+I don't know where I put it after moving places.
 
-diff --git a/arch/sh/configs/landisk_defconfig b/arch/sh/configs/landisk_defconfig
-index 2b7e10c9acee..6b5ec1f3ad71 100644
---- a/arch/sh/configs/landisk_defconfig
-+++ b/arch/sh/configs/landisk_defconfig
-@@ -28,7 +28,7 @@ CONFIG_BLK_DEV_LOOP=y
- CONFIG_BLK_DEV_RAM=y
- CONFIG_ATA=y
- CONFIG_ATA_GENERIC=y
--CONFIG_PATA_ATP867X=y
-+CONFIG_PATA_ARTOP=y
- CONFIG_SCSI=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_BLK_DEV_SR=y
--- 
-2.55.0
+I hope Geert can test and review your patches and I'll pick them up
+with his Reviewed-by and Tested-by signatures.
 
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
