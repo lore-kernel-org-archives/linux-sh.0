@@ -1,132 +1,121 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+Received: from mail-dy1-f181.google.com (mail-dy1-f181.google.com [74.125.82.181])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F802457E7A
-	for <linux-sh@vger.kernel.org>; Sun, 18 Oct 2026 19:01:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792350096; cv=none; b=aof1ztoqu1HEvlRaRelaoMJW+0x3IsiX2xgVuxZlLQD7hMrY+rZVlMvu+/1ifsAykjQjKFwMeHkgt/UIUODz7C4WeOYR1at7JcWGQ57jm2D99J04OQhNyB/XomEFFbWaCkvMexYC7phosn6C0D2SQiTC1ALC+zByOURTNMf+j4o=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792350096; c=relaxed/simple;
-	bh=kzqeDAgce2Ard5nYDJ+4m9yakbptSbQvaAV8qYpI9IA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Q4GpjAyWtgcOyoNV7wK1rM1VOFXdHbbIWstnfa9OmEgH0WcgVoUi4b8vHsHD4IUW2qcR9kTjcMa+8Y7oSUCr+TqsVYqJP8MbQ6ge2VYAiQsZh31aaP5csC6XNXl0JSigc9ymTVjrA0D65qS4sxbwnHINFHypETEQb5wEtmgnfQU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=BnRntcau; arc=none smtp.client-ip=209.85.128.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1EE683DF002
+	for <linux-sh@vger.kernel.org>; Sun, 18 Oct 2026 23:05:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.82.181
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1792364704; cv=pass; b=FMInDiubAZMONxHrVnQsmhZCKW6tWCbEpVVDX5CTl0RXbXySm8L6+6VidOHWcJgbPZx036HPdt/pH+ti/37meISgcefOSxvVuYTGNLCVtQY8zpMhoBKV+zbk/lbnU0O4G/Z4MAmLgSolRBx1mh1Rrb86BRz5ODJG0wrKSEbKw7g=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1792364704; c=relaxed/simple;
+	bh=5hlKbxxcI0prTGWkY2kVG+ktXHIzZp+G584+bSjB6Ys=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=Tmw9GW8e0yID35kWkbCnFdtQg54TrjyIweGqcGfocCaz7LNiCBUqQTR8tjHCIILipsbaW+vDN0QXJqQnyA7kS3WoKVlQr095qQqYTfPwxOIGdrlDK3++0ozlaHwvGpeb4AHzgs6MKgIu6jLh89XdkBIjFThYYXjFp1wI65IrgYA=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com; spf=pass smtp.mailfrom=0x0f.com; dkim=pass (1024-bit key) header.d=0x0f.com header.i=@0x0f.com header.b=YluGgYVu; arc=pass smtp.client-ip=74.125.82.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=0x0f.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BnRntcau"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4a1698ea378so10143625e9.2
-        for <linux-sh@vger.kernel.org>; Sun, 18 Oct 2026 12:01:31 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=0x0f.com header.i=@0x0f.com header.b="YluGgYVu"
+Received: by mail-dy1-f181.google.com with SMTP id 5a478bee46e88-3535bf8b3e0so3140989eec.0
+        for <linux-sh@vger.kernel.org>; Sun, 18 Oct 2026 16:05:01 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1792364701; cv=none;
+        d=google.com; s=arc-20260327;
+        b=TSs/YA/cEPlXdn7otqFoMDPGVOoqqXfu7z71MhR2BGWg8fm9ijfXjWQUlOC566ymhH
+         d1k7uz7jHO68e1rpeDAGyXLDgIxzB5R2AT3Q7CfH3QRsBVduFy/T1ameDjYEp5VDnKXT
+         rE5DueEgC9zvOkhd0lDk+w/I7GAjLohUQxUItr1XcsGLJxEkaELcZ3plezwWD9WW1UU6
+         x2/BQsk76LTyPgdTdio8AOJr4dqaK1Zxmyff/SEzCDgltMYGf5Sd6XOgtf8ellSmqdO1
+         ztt2ai9RtvMtizzRk9HBRVPsvM8NJYsufFiLhOFlY8ALG4yYYgfMgXyYW9BIKy7U3oAm
+         V40w==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=pdNuBmcWi1wZSwfuz2mNY+kCv6367R1XFhsEmvefW7M=;
+        fh=r+hGcJZRFOy0LQvkmqLCkeoEAMTnBJ04kFECBrQwmxM=;
+        b=nkcwRxaPnXxy47nWaiRLfBCcewwrJ7R1GrtwzjqMII8jxY45Lc9Tqmss3klU2Esscy
+         B3PdSEfoBIKWovaGRNV5mzyol37R0Al0WFYSdT1/m0Ug/Op4H7KhZP0xAGkoVyhvX+o9
+         o/V7jTv7NWrCzat8fTGFBoJ6oK6A/dF/m+Cp5msDv4vvAJJVqKKDbmUayyQ6XysL31WR
+         ZlY488NB3Equxukp/vtSwcpLLWxzUk8JtSU4QstSQqFAIcNiINzPtgnqSLQXT7/5FCM+
+         sAyXddFUiKFYMQRRDvpRuuiM5HSO1xDWWvyw2/QtGtStoooRnJCkjVOqNWaLStK1xFge
+         ucWg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1792350090; x=1792954890; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=NxERPHF1xEoT2ysKg9g7mOTwdVPNji0iYlNP3mxPrtY=;
-        b=BnRntcaudlySkYNy5JFRt1t+2hrnXPp6baly76qnNtHZaC1ZpuUDmq7tJK3+MWCT7H
-         PUBrjiWI+QrHzGfuix1ZOKhazGKP3nFqp5cZJIranjDk+PDbzqpm2xG+uKHtbgqTeQfB
-         JiBbQoBY1gYWJtho2z65YBk8p9nFLuI9eZUUjikmZofTba8ot+O3X/j/v0RHEWUDpeWn
-         hqdQ54j6n2TCgGBemMj845fQog+FU8CEMomguYaL7NyVyF3Ud4kPuxD764ipqhLClvHU
-         cmDEqIsNAHCWN7E7qzcjfVTzE6cY2qmNgYgFQwVjCQMYi9fZ+Dps5jvGe7T0T6RvpecT
-         4/ng==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792350090; x=1792954890;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=0x0f.com; s=google; t=1792364701; x=1792969501; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=NxERPHF1xEoT2ysKg9g7mOTwdVPNji0iYlNP3mxPrtY=;
-        b=RkX6GEPjsy99+E0wQDNHPVazvC04yZtYbMvkd/4pldVcPdLuLt66WjYWemfTYypKmF
-         CvuKNFQ+MrKSVYKFRFxVA10kiRowALkAjZ02ANpQ0yzJPtOassMS4ZBTTBBl4cyAOq1F
-         /MCpifckBD98PzOLtp+7c9vOgqmJGb4CDDTzryMxHjMEsBxLN5ScYkvyhBth1QRXP19R
-         gSdTRqKgk0u+hQA8FkK03YR+4OyHaykYdb9DVexhgaQjuR6dplOyFuTrol7fFRVhJE5E
-         I8YrUFlZQYiN7dpjDR8i4FCvbt6I+NrJRDmZedzdIqSwxkSKj6mqwg9Qnayiz81v0IKT
-         KH6Q==
-X-Forwarded-Encrypted: i=1; AKwUvBx9HdRmu2Al7a5L+3t6RAoTjXWIZtJS6jPa5iQ8XrRF88iIGHqn7fvoMl5l0mAfhaBGxLWtDGgtCg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYJkY12JMvvXAemRLBfVoOuLZldlx+aomo5GLV+SvmFmYjT/vfB2
-	snBzfA2OoZIeLy+RJVX/fYG/VZTFsml/KnOHs7cutVWw9MXZceRR9FE=
-X-Gm-Gg: AYBFou0tY7YLeBqBd8LlaFACRNu55OCMFpT7miZsZ0dcriBskFBw0uJDzqdY2l1HIdA
-	esMkUG+eSTbWXTmbeOWLSAvzVzGjtfjkcZHIk9aau3BOye30dyZQgZs5jO46oOd3pPcdvITV+ae
-	J5Dpk+NHbCTzEiXW/sV1vJCj/bwS2Qnfoz5uco3EQjx/cs862s+oWP4YXqU8OQtAyVGyg7Ddl0C
-	knfMkJEp4bIxEWmnevvGrOsIDXLpjymk9MItawgot/BrYgptFOSjSixtRNzdEsbLCmMw3VKIy0d
-	gvZsTXa0/qexa1ZH4uccMigMubponForMDJnPDoPoY/spKHVa3xGikGMncCfegk8v8wifCRyOYS
-	o5E6lmKIR30qpZjr3gWSOU41hyRRra++usWgqEyMmj/GDPBKOOkgTOXfcn6EPK9ItLHURiHYamY
-	IaAUdWc+Sfx4j+kKM/Yfd0mRzaFEecRVLP5vfkoHu1iTnTa6ifoV4pVQZWzUDfpip7N8KH8LjYN
-	9gRh2w0yXqvLEVDW2mRxy1fojifKZzwX6HND8nsm0+F+sfwbM8=
-X-Received: by 2002:a05:600c:c170:b0:4a0:1efa:c74a with SMTP id 5b1f17b1804b1-4a1d76060a7mr106131935e9.20.1792350090132;
-        Sun, 18 Oct 2026 12:01:30 -0700 (PDT)
-Received: from lithos ([2a02:810d:4a94:b300:f673:adaa:3deb:83f2])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a1bd91c55bsm271208015e9.0.2026.10.18.12.01.29
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 18 Oct 2026 12:01:29 -0700 (PDT)
-Date: Sun, 18 Oct 2026 21:01:23 +0200
-From: Florian Fuchs <fuchsfl@gmail.com>
-To: Daniel Palmer <daniel@0x0f.com>
-Cc: ysato@users.sourceforge.jp, dalias@libc.org,
-	glaubitz@physik.fu-berlin.de, dlemoal@kernel.org, cassel@kernel.org,
-	linux-sh@vger.kernel.org, linux-ide@vger.kernel.org,
-	geert@linux-m68k.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 2/2] sh: landisk_defconfig: enable PATA_ARTOP for the
- ATP865
-Message-ID: <atUXgx3Bmc4wdXdR@lithos>
-References: <20261017041419.311921-1-daniel@0x0f.com>
- <20261017041419.311921-3-daniel@0x0f.com>
+        bh=pdNuBmcWi1wZSwfuz2mNY+kCv6367R1XFhsEmvefW7M=;
+        b=YluGgYVuK6zHOtwa050thoQyPTDMUytKyzXG6iz9IeA180HKON9KF/bcCuLfv9Hxex
+         Awyw/ODwQBvboxpecUsmiONFiYiiLGS4KxyPia6Qu3bV8neKKJDrYXJVLY1VZ0M7UIWg
+         NfBjtfn2PCzdi+kKpZM28Iv3cW69DHN3dUTR8=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792364701; x=1792969501;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=pdNuBmcWi1wZSwfuz2mNY+kCv6367R1XFhsEmvefW7M=;
+        b=RDmLw+0QdIjZlEvRYJJ3mBVbuTXFwpQ+sRRCV/x8ttXmJHoJim8fP6ZGTzcxrGPR3F
+         fwxUE+JuUutTM2zQIr0LTbujk9PbjWmhAUzqD1e5xFLvc683DszSdDicilzCgimxHg/a
+         wRqHZgcmzqAjJY9mlceHJrUobCK+zYEl5N+USl7wf1q6+oJ4lFg6FLtPHb/k1g5m8tfI
+         T9qWoKfgAnGE2KazkRHEsOGoLtd5xpepi8oZfuHPkjAhbHHURmg1jvOcU0oc8cICY1be
+         6TtUnKiQD3ck+2ABvinTLT8uAKx7xkgtpJRibDQ6UVuS0Z0X8W5b8qzb/3kzqA8CzDcC
+         tFww==
+X-Forwarded-Encrypted: i=1; AKwUvBw0ijgl3eVDV4v3kZCvfTRgQZW27gaqO8XX5NRaDPDtE52o9K6XpaBpvUx7El5yTUuG9xuL7JM52w==@vger.kernel.org
+X-Gm-Message-State: AFq9FYI+4DJaGmQWobibV7IXYxByRKLCzX09sEJCpgFU9BSfXb8mmvu9
+	0vgDCnLN/efW3iM5DC4zkltr8t+NpMvb5TPpP6dYlU8nHinZCPwVuq3zB59b9S95O9KwL09IUee
+	b/FWjCOAxKYSU4Dhw4EoaTl6AKzRlhw2mN3+HeJJ1jA==
+X-Gm-Gg: AYBFou0vLZbQS+jerKFm7DxZxKG2CHYPUnpzSkRJAFG/xuisOR/Ii99beNhJmYaqDMv
+	eEFinHVaHHzm+4uFbuP0+KOeXb8HTavxvZ8AWVXVltcPA1B4BADWojDnHUUtEkUBLETGYWyNnye
+	Zv0wM9Pjpk1QmcTz5iYIDX9e/Xfw3rmZnT6TXwhi1vQv4qmdbriA8dvCPJ/srbDNqfJD+aj52kg
+	OqwmAwhXdq+KiHrnHGr2AOrspvWoBb+wKXG/joCqXdicXmaSuPLx68knYrwP2aOs3InFXGRpREG
+	TwVARzqyhFozb+gnxvKa8aoP4nVRfcj+BYDxUD6fUccfI2+8SbcnZeHdshnQWqYIYP9FBOuDyWT
+	q1DHujCtWwuCvr2I=
+X-Received: by 2002:a05:7023:a84:b0:188:e51:e86a with SMTP id
+ a92af1059eb24-1880e51e89bmr6391719c88.2.1792364699526; Sun, 18 Oct 2026
+ 16:04:59 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261017041419.311921-3-daniel@0x0f.com>
+References: <20261017041419.311921-1-daniel@0x0f.com> <4cdb2939264e0b7d767f44289fddffd40fddf504.camel@physik.fu-berlin.de>
+ <CAMuHMdXmZash+8PmfSVrT=Wwob-mkq0x4umyRgX2-yikV9kaVA@mail.gmail.com>
+In-Reply-To: <CAMuHMdXmZash+8PmfSVrT=Wwob-mkq0x4umyRgX2-yikV9kaVA@mail.gmail.com>
+From: Daniel Palmer <daniel@0x0f.com>
+Date: Mon, 19 Oct 2026 08:04:46 +0900
+X-Gm-Features: AclHuK-LLYBKws1C5cc1iDE2Bj1jC73GLJaKrThGJoscsEcvrzPj8IjxBlev-5I
+Message-ID: <CAFr9PXn4henL=rQ3n73H7Mjwd7v6XX6Jt63h=Sywu-boOPggKw@mail.gmail.com>
+Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, dalias@libc.org, dlemoal@kernel.org, 
+	cassel@kernel.org, linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, Yoshinori Sato <yoshinori.sato@nifty.com>, fuchsfl@gmail.com
+Content-Type: text/plain; charset="UTF-8"
 
-On 17 Oct 13:14, Daniel Palmer wrote:
-> The landisk defconfig currently has a similar but incorrect IDE
-> driver selected so IDE doesn't work out of the box.
-> 
-> Select the right one.
-> 
-> Signed-off-by: Daniel Palmer <daniel@0x0f.com>
-> ---
->  arch/sh/configs/landisk_defconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/sh/configs/landisk_defconfig b/arch/sh/configs/landisk_defconfig
-> index 2b7e10c9acee..6b5ec1f3ad71 100644
-> --- a/arch/sh/configs/landisk_defconfig
-> +++ b/arch/sh/configs/landisk_defconfig
-> @@ -28,7 +28,7 @@ CONFIG_BLK_DEV_LOOP=y
->  CONFIG_BLK_DEV_RAM=y
->  CONFIG_ATA=y
->  CONFIG_ATA_GENERIC=y
-> -CONFIG_PATA_ATP867X=y
-> +CONFIG_PATA_ARTOP=y
->  CONFIG_SCSI=y
->  CONFIG_BLK_DEV_SD=y
->  CONFIG_BLK_DEV_SR=y
-> -- 
-> 2.55.0
-> 
+Hi Geert,
 
-I can confirm the PATA_ARTOP is the right option for the Plextor PX-EH40L
-(which is like LANDISK HDL-U), the mismatch of options was btw introduced in 
-Fixes: b7aaf16d10bd ("sh: remove CONFIG_IDE from most defconfig")
+On Sun, 18 Oct 2026 at 23:48, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> > I hope Geert can test and review your patches and I'll pick them up
+> > with his Reviewed-by and Tested-by signatures.
+>
+> Sorry, I must have different hardware, as mine doesn't have an
+> ATP865 PCI device:
+>
+>     # lspci
+>     00:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd.
+> RTL-8139/8139C/8139C+ (rev 20)
+>     00:02.0 USB Controller: NEC Corporation USB (rev 43)
+>     00:02.1 USB Controller: NEC Corporation USB (rev 43)
+>     00:02.2 USB Controller: NEC Corporation USB 2.0 (rev 04)
+>
+> My CF rootfs uses pata_platform, which is enabled in my working .config.
+> landisk_defconfig lacks CONFIG_PATA_PLATFORM=y, so it hangs during
+> boot. After enabling that, the boot gets further, but it still hangs:
 
-which changed CONFIG_BLK_DEV_AEC62XX (which supported ATP865) to
-CONFIG_PATA_ATP867X. To my knowledge there is no sh landisk device with
-an ATP867 chip.
+I guess you have something like the USL-5P that uses the SH's onboard
+CF interface.
+Since Florian has confirmed their hardware has the PCI IDE controller
+like mine and reviewed the change I think we're good.
 
-Reviewed-by: Florian Fuchs <fuchsfl@gmail.com>
-
-My PX-EH40L has btw this lspci:
-
-00:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL-8100/8101L/8139 PCI Fast Ethernet Adapter (rev 20)
-00:01.0 Mass storage controller: Artop Electronic Corp ATP865 (rev 10)
-00:02.0 USB controller: NEC Corporation OHCI USB Controller (rev 43)
-00:02.1 USB controller: NEC Corporation OHCI USB Controller (rev 43)
-00:02.2 USB controller: NEC Corporation uPD72010x USB 2.0 Controller (rev 04)
-
-Regards
-Florian
+Daniel
