@@ -1,150 +1,104 @@
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mta-sndfb-w02.mail.nifty.com (mta-sndfb-w02.mail.nifty.com [106.153.227.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E1FCE4EB86F
-	for <linux-sh@vger.kernel.org>; Mon, 19 Oct 2026 13:08:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 18F4355CE8B;
+	Mon, 19 Oct 2026 14:15:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=106.153.227.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792415326; cv=none; b=M1ycA1eyQWu0UrK/nSCntBwG0A15SFi5pmiK3uWc5wnUhy6I0tc/6bnNxj+qgvGOq2I2nt0xkvsRC0ZLTePBroPj0uLmccpk3tfWKVpGUM65WbYuQciE4vKx8tKK99yf+4erUEXRJO1tzNrQJ1be6P5V6A5p2P0TzAHBGja9+OA=
+	t=1792419359; cv=none; b=Bqas8tGPwoTGnpmZ1JL9aOvDC81TwQoKxMCEjNzOajL0tCUqd3Ju/XyMegNMV6BKayx2T8Ttze0TD6mj2nLDR01Q2QBNoJuYj2YPfOv1WTACKu9ljzx5ZvK66f23FtkLhkzCzHJm3AXPaCgu+d1cv9UdbuiJEpVl62s7uD3cSDg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792415326; c=relaxed/simple;
-	bh=6n04UjmHWzHkRI2pU81sYk4TGUvABFkPV8ul8H4khJc=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=aNTP02jn8xlNIVY+etypttnehrWE6TOJSZu/RR0k4hjVgBIPUb1yt7hWtVECsS2g21rKhnmBpfSUAIi+FcDQcQeEkT0q5seLTk3nYYDEHNxcbcBkUMWeridrIGovWh6tdqoq4ScIRiGbhnlGVzebyq+IcHuddzcXBgiiKUXnnrg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=V5C0rCwh; arc=none smtp.client-ip=209.85.128.46
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1792419359; c=relaxed/simple;
+	bh=hMmZNe8RzyTfEzTCQsPcmhGBU5InORCEXO0uFVWInZ0=;
+	h=Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=upzy9Qunvl7dyO+H2gaRBrzVuRH0Xm781hKnS24I6SMgxgLqxIum/3Ya7BkMGdgEOM/H1b+lbtIWI837Tn6FF7FlgKrFSGvvicgFnBBiNqNIeY5kncoYaZBnAJWOg4JP8hDMoHdCWEm5ysJ2B169FyBpZKD5XK23LG/2UroivmQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=nifty.com; spf=pass smtp.mailfrom=nifty.com; dkim=pass (2048-bit key) header.d=nifty.com header.i=@nifty.com header.b=gKEMjdwI; arc=none smtp.client-ip=106.153.227.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=nifty.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=nifty.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="V5C0rCwh"
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4a1cef0439aso22665615e9.0
-        for <linux-sh@vger.kernel.org>; Mon, 19 Oct 2026 06:08:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1792415323; x=1793020123; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=vTQAPwM+cnw+xqrbQuZPi16xVs48V+krw0MsL6q3+zM=;
-        b=V5C0rCwhAEbMYRgw5cI6JESIJDR7L8tJpfRch3GmnL5Lnhi+yF/y1oigkXx+ZgEQI7
-         SdIPuBNz6rrAsk/cQOYPEWD/jTgtZSlDbDJugVoU2hgf0Il36Q5JPKmqe3Z3w/gFyEB1
-         Hbex/mfa1Z7bywpIGRfaP7pLwCYe/QWuMyzAKXBmJFo7mZJoFfCWkCVDld+bRD4YQuym
-         l/LXI71wEwctd1YuWtOC5gUBVJRZ70VbUP/xx68iVsdGBTT+2QUDHhsJ6TuGHwrnZV7A
-         VEIC8EeahShy2EvhVtQz1moTW1YY4J5hnaDUr8uVH5D8K6SQOsIBM+FcwMhPvIi/TK0k
-         s2gQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792415323; x=1793020123;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=vTQAPwM+cnw+xqrbQuZPi16xVs48V+krw0MsL6q3+zM=;
-        b=ohIxhG5c3hYzXdnVciKHmWzJ0vsT4NHFGWiSqBHIBL1LxrGtrZWAceBTxPaLQiTTYn
-         +2s6rS/tNmisacRRzosh8xq7HQdWoy6591xCyN9aXy4Nm7pGP/Awhl2p7S6mKOesSiaH
-         OiXG15zWx5FfHVX4VRRnlapjsPoEvWSK+FQ/yIt9js3sCHnepqlOuWvTuMVic1N2QIib
-         uWGppRP598Og99Sm1KbVtpACyuBwsrCIqgDjA3MzPipll9d+tb5yihAAUxK5M/vM/pwI
-         haNNj/fUpKLZMoUz0yBIQOTTVVQduqa84ZySfsCLhxMBqZ8S58yISnwmTz5y2mICrmOO
-         E7iQ==
-X-Forwarded-Encrypted: i=1; AKwUvByO4okD7ttxqCmSad3yJdR6zDGsRoDg1PWQaSbtp7hKaIFlWyxgJ5/JpYPOJehdFWsWoL5IGjC3PQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYKaQS8tUvoYLmyuhbY5waZ2x7q0rIabmp7BazW7sBsJsZrV9nHX
-	uqPHJcaJdhX1HkmKxNF4+B0h4xpwVIC/pLJMMyUZ8dKykac/0BTxdWo=
-X-Gm-Gg: AYBFou2p8Z5UgNF1SfpCEjaaNwMjshHSKvA4NRszz+9BVL4ldZMKkK+6DQtmHnH8jbQ
-	BQLR32ETPjit9sCeGoPyBprTEf4xSpGzQ1Okf3XQ6TvoDFdY0g8m14pq45DTn2V0iuEvuPJt/6i
-	N4PLi0nxslmtdFygUruKDVmZN6c5g/sHBFGaJP0I5FPc31KwdhD9kCDAoDKap+XHCyJYproHiul
-	XlLt45EVnU4KKmGOCjhIn59oVTpBM8ywd0Bs7Qxokz45t0k9PZSCKuOH8835r0rli+mYDGfIp76
-	Hb13zDMeyCagHi4tHOmQdxZeDIJdWMUQ2tB6ndhng0fz3pSWVC/Z8TaudzznZZTcPQOpvbuegaU
-	20AYOmRjliBZtKOtDwru/BfSb9n2TyShb+haSyLIae8qwixT7U4OxmqA+G6KXYN4WS4jLbiQ9vy
-	/FTFhJ8t3NzAD8l78FkldhkZbBNjNFz16GgrvkM9/jVxf3gBwAuNixf0yq+B+fIl+ZtQ7pBXqO0
-	XNfH9G+0B/8XKtv9ZzoeDgL9o727+FH3GoemzZ7ZfhEjvjD8htlmgU/pY8wOg==
-X-Received: by 2002:a05:600c:8485:b0:4a1:d7c3:d3d with SMTP id 5b1f17b1804b1-4a1ef992f33mr17017955e9.10.1792415322800;
-        Mon, 19 Oct 2026 06:08:42 -0700 (PDT)
-Received: from lithos ([2a02:810d:4a94:b300:7ea2:632d:ad2b:6944])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48dfd4f8d12sm23659618f8f.36.2026.10.19.06.08.41
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 19 Oct 2026 06:08:42 -0700 (PDT)
-Date: Mon, 19 Oct 2026 15:08:37 +0200
-From: Florian Fuchs <fuchsfl@gmail.com>
+	dkim=pass (2048-bit key) header.d=nifty.com header.i=@nifty.com header.b="gKEMjdwI"
+Received: from sakura.ysato.name by mta-snd-w07.mail.nifty.com with ESMTP
+          id <20261019140751810.DRGH.18412.sakura.ysato.name@nifty.com>;
+          Mon, 19 Oct 2026 23:07:51 +0900
+Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
+	by sakura.ysato.name (Postfix) with ESMTPSA id 2EDD11C0162;
+	Mon, 19 Oct 2026 23:07:51 +0900 (JST)
+Date: Mon, 19 Oct 2026 23:07:50 +0900
+Message-ID: <87qzhlss09.wl-yoshinori.sato@nifty.com>
+From: yoshinori.sato@nifty.com
 To: Daniel Palmer <daniel@0x0f.com>
-Cc: ysato@users.sourceforge.jp, dalias@libc.org,
-	glaubitz@physik.fu-berlin.de, dlemoal@kernel.org, cassel@kernel.org,
-	linux-sh@vger.kernel.org, linux-ide@vger.kernel.org,
-	geert@linux-m68k.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 1/2] ata: pata_artop: read the ATP865 mode register
- through pci_iomap
-Message-ID: <atYWVQ8ymEgIcyZh@lithos>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	dalias@libc.org,
+	dlemoal@kernel.org,
+	cassel@kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-ide@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	fuchsfl@gmail.com
+Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
+In-Reply-To: <CAFr9PXn4henL=rQ3n73H7Mjwd7v6XX6Jt63h=Sywu-boOPggKw@mail.gmail.com>
 References: <20261017041419.311921-1-daniel@0x0f.com>
- <20261017041419.311921-2-daniel@0x0f.com>
+	<4cdb2939264e0b7d767f44289fddffd40fddf504.camel@physik.fu-berlin.de>
+	<CAMuHMdXmZash+8PmfSVrT=Wwob-mkq0x4umyRgX2-yikV9kaVA@mail.gmail.com>
+	<CAFr9PXn4henL=rQ3n73H7Mjwd7v6XX6Jt63h=Sywu-boOPggKw@mail.gmail.com>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
+ FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
+ Emacs/30.1 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261017041419.311921-2-daniel@0x0f.com>
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
+Content-Type: text/plain; charset=US-ASCII
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com; s=default-1th84yt82rvi; t=1792418871;
+ bh=ZWP0POxKL7WL6Fwv13eX+VxN5lFxqWs+Vq0GdC6vMtI=;
+ h=Date:From:To:Cc:Subject:In-Reply-To;
+ b=gKEMjdwItn26U6iUKBgRzEbfsE6Y87nLj+LVlP75McMlAn9s6dy98hftazfUEsmNAoM1MiAU
+ KSZGEgeBO6baUtXxlbBZB/LP1AqvXPxSipmlQt2meCsq2UURf/yy814YSmTJ/46Zb8iodub2tp
+ 6vhlZt+6RrjH6GpgccjMVGj0jmqe4sPysSTO1nRjnklrT5sRsxunM2ILB2B0CFqaZLSaaWlsB9
+ mSznJmSH73zoGQMjIGni/iv9aX0gOnxu7Dw/KZV4DOdxiX1BQ4ZCR1uCcm2rUva5Lj/Lb9DQ6p
+ sksRZV8iOr1lEakb4hWsQbG+74ayKe1j2ukDG5liAuRS6hrA==
 
-Hi Daniel,
-
-On 17 Oct 13:14, Daniel Palmer wrote:
-> artop_init_one() probes the 6280's "fast" bit with inb() on the raw
-> start address of BAR 4.  That address is a PCI I/O address, which is
-> only a usable port number on platforms whose I/O port base maps PCI I/O
-> space one to one.  On an SH7751 LANDISK (identity io_port_base, PCI I/O
-> window at 0xfe240000) the resource starts at 0x1400 and inb(0x1400)
-> dereferences that address:
+On Mon, 19 Oct 2026 08:04:46 +0900,
+Daniel Palmer wrote:
 > 
->   BUG: unable to handle kernel paging request at 00001400
->   PC is at artop_init_one+0x10e/0x170
+> Hi Geert,
 > 
-> Map the BAR with pci_iomap() and use ioread8(), as libata-sff does for
-> the BMDMA registers later on.
+> On Sun, 18 Oct 2026 at 23:48, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> > > I hope Geert can test and review your patches and I'll pick them up
+> > > with his Reviewed-by and Tested-by signatures.
+> >
+> > Sorry, I must have different hardware, as mine doesn't have an
+> > ATP865 PCI device:
+> >
+> >     # lspci
+> >     00:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd.
+> > RTL-8139/8139C/8139C+ (rev 20)
+> >     00:02.0 USB Controller: NEC Corporation USB (rev 43)
+> >     00:02.1 USB Controller: NEC Corporation USB (rev 43)
+> >     00:02.2 USB Controller: NEC Corporation USB 2.0 (rev 04)
+> >
+> > My CF rootfs uses pata_platform, which is enabled in my working .config.
+> > landisk_defconfig lacks CONFIG_PATA_PLATFORM=y, so it hangs during
+> > boot. After enabling that, the boot gets further, but it still hangs:
 > 
-> Signed-off-by: Daniel Palmer <daniel@0x0f.com>
-> ---
->  drivers/ata/pata_artop.c | 12 ++++++++++--
->  1 file changed, 10 insertions(+), 2 deletions(-)
+> I guess you have something like the USL-5P that uses the SH's onboard
+> CF interface.
+> Since Florian has confirmed their hardware has the PCI IDE controller
+> like mine and reviewed the change I think we're good.
 > 
-> diff --git a/drivers/ata/pata_artop.c b/drivers/ata/pata_artop.c
-> index 9f8d41639a62..351ff4c8e48e 100644
-> --- a/drivers/ata/pata_artop.c
-> +++ b/drivers/ata/pata_artop.c
-> @@ -405,13 +405,21 @@ static int artop_init_one (struct pci_dev *pdev, const struct pci_device_id *id)
->  	case 1:		/* 6260 */
->  		ppi[0] = &info_626x;
->  		break;
-> -	case 2:		/* 6280 or 6280 + fast */
-> -		if (inb(pci_resource_start(pdev, 4)) & 0x10)
-> +	case 2: {	/* 6280 or 6280 + fast */
-> +		void __iomem *bmdma = pci_iomap(pdev, 4, 1);
-> +		u8 cfg;
-> +
-> +		if (!bmdma)
-> +			return -ENOMEM;
-> +		cfg = ioread8(bmdma);
-> +		pci_iounmap(pdev, bmdma);
-> +		if (cfg & 0x10)
->  			ppi[0] = &info_628x_fast;
->  		else
->  			ppi[0] = &info_628x;
->  		break;
->  	}
-> +	}
->  
->  	BUG_ON(ppi[0] == NULL);
->  
-> -- 
-> 2.55.0
-> 
+> Daniel
 
-There is a small logic change, where -ENOMEM is returned, when BAR 4 is
-unassigned, where libata would fallback to PIO [0], so maybe it
-shouldn't fail when BAR 4 is unassigned?
+Yes.
+LANDISK and USL-5P have almost the same hardware configuration,
+but the only difference is the IDE part.
+This issue needs to be confirmed with LANDISK hardware.
 
-Tested-by: Florian Fuchs <fuchsfl@gmail.com> # on PX-EH40L (LANDISK HDL-U, ATP865 1191:0009 rev 10)
+The LANDISK that I have cannot be used immediately, but here is qemu
+that can emulate LANDISK hardware.
+https://gitlab.com/yoshinori.sato/qemu/-/tree/landisk?ref_type=heads
+This will allow you to check if it is not broken.
 
-I also tested forced PIO4 mode via libata.force=pio4, which also works
-on the device. (ata1.00: FORCE: xfer_mask set to pio4)
-
-[0] https://github.com/torvalds/linux/blob/master/drivers/ata/libata-sff.c#L3088
-
-Regards
-Florian
+-- 
+Yosinori Sato
