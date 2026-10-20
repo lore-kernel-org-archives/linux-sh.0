@@ -1,104 +1,104 @@
-Received: from mta-sndfb-w02.mail.nifty.com (mta-sndfb-w02.mail.nifty.com [106.153.227.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=89.238.66.15
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1792468853;
+	b=xb4OOG9rRMDs7L58x0cD3Lm202GRDr6htGjN78Iu9Af1yHPjoyhWCxlKELRY72o7rK4S
+	 tmRz7FP3jApgaJHvB2dfC/GK3qoxgThD2vYmtTOltbCta/6S1jhchgONMZ7+4SBerZPjU
+	 lMXb3u4CKPxn6LB49SZa/wYCuXT5vIQzPkr1XemaJjwlXjJT4uUsfJBRzF06i9yFRd36r
+	 MYWTLoyku5gbSMygl/k0WsNU+zJOv7hRXIhLLYY7OrbPNTmUafEGLozj2mZCfkoKKgIbl
+	 9ZDs2HwM6xROoqv3QMI68S1Zy/UTHY0C0FbqRK8xRKiiAFNnxAOB+R6MQXUBWN1+VNg==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792468853;
+	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
+	 Message-ID:MIME-Version:Content-Type:Content-Disposition:
+	 X-Operating-System;
+	bh=SUG0S33P+8DbYao/7LzsjBfUCnUoIrSOZd6U9zj7lDs=;
+	b=G4N31jixYN3XfIn2Ff+T7D6PwDJxOm24aZxdj6M5V57yh5kCMJFJkD+Q9Qn0kemyIlrw
+	 2qX/D0byATbMwvZnCtBitqJHqy5exG0aiwQKsZnrAxWkFHNRHbaoLNl43+egWRv67bTCB
+	 gAfsA6kf9GBa6DgxiU2PqloWi2WS2GqaCsKa97iIVHUYj1d3RjU43SJz8ImFRwhiu0/g4
+	 NTaZ0kRnPaLIr0IrUhSg3IKQMopRl+0I1DULkoYZIDynsh7lAZue40wwcHB8W9Z+57owk
+	 Fo7RQRDgDpNyTN2s/v9f9bukXveRnHOMbFMz1y6uGMUXtjKYkn2l1eCq2DEARi/fhUQ==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=none header.from=openadk.org;
+	spf=pass smtp.mailfrom=openadk.org;
+	arc=none smtp.remote-ip=89.238.66.15
+Received: from helium.openadk.org (helium.openadk.org [89.238.66.15])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 18F4355CE8B;
-	Mon, 19 Oct 2026 14:15:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=106.153.227.66
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792419359; cv=none; b=Bqas8tGPwoTGnpmZ1JL9aOvDC81TwQoKxMCEjNzOajL0tCUqd3Ju/XyMegNMV6BKayx2T8Ttze0TD6mj2nLDR01Q2QBNoJuYj2YPfOv1WTACKu9ljzx5ZvK66f23FtkLhkzCzHJm3AXPaCgu+d1cv9UdbuiJEpVl62s7uD3cSDg=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792419359; c=relaxed/simple;
-	bh=hMmZNe8RzyTfEzTCQsPcmhGBU5InORCEXO0uFVWInZ0=;
-	h=Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=upzy9Qunvl7dyO+H2gaRBrzVuRH0Xm781hKnS24I6SMgxgLqxIum/3Ya7BkMGdgEOM/H1b+lbtIWI837Tn6FF7FlgKrFSGvvicgFnBBiNqNIeY5kncoYaZBnAJWOg4JP8hDMoHdCWEm5ysJ2B169FyBpZKD5XK23LG/2UroivmQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=nifty.com; spf=pass smtp.mailfrom=nifty.com; dkim=pass (2048-bit key) header.d=nifty.com header.i=@nifty.com header.b=gKEMjdwI; arc=none smtp.client-ip=106.153.227.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=nifty.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=nifty.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=nifty.com header.i=@nifty.com header.b="gKEMjdwI"
-Received: from sakura.ysato.name by mta-snd-w07.mail.nifty.com with ESMTP
-          id <20261019140751810.DRGH.18412.sakura.ysato.name@nifty.com>;
-          Mon, 19 Oct 2026 23:07:51 +0900
-Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-	by sakura.ysato.name (Postfix) with ESMTPSA id 2EDD11C0162;
-	Mon, 19 Oct 2026 23:07:51 +0900 (JST)
-Date: Mon, 19 Oct 2026 23:07:50 +0900
-Message-ID: <87qzhlss09.wl-yoshinori.sato@nifty.com>
-From: yoshinori.sato@nifty.com
-To: Daniel Palmer <daniel@0x0f.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	dalias@libc.org,
-	dlemoal@kernel.org,
-	cassel@kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-ide@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	fuchsfl@gmail.com
-Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
-In-Reply-To: <CAFr9PXn4henL=rQ3n73H7Mjwd7v6XX6Jt63h=Sywu-boOPggKw@mail.gmail.com>
-References: <20261017041419.311921-1-daniel@0x0f.com>
-	<4cdb2939264e0b7d767f44289fddffd40fddf504.camel@physik.fu-berlin.de>
-	<CAMuHMdXmZash+8PmfSVrT=Wwob-mkq0x4umyRgX2-yikV9kaVA@mail.gmail.com>
-	<CAFr9PXn4henL=rQ3n73H7Mjwd7v6XX6Jt63h=Sywu-boOPggKw@mail.gmail.com>
-User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
- FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
- Emacs/30.1 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
-Precedence: bulk
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C12DD606A31A
+	for <linux-sh@vger.kernel.org>; Tue, 20 Oct 2026 04:00:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C12DD606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=openadk.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=openadk.org
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=openadk.org; s=2022;
+	t=1792468844; bh=3ATkE3o4+BCXYozK4qqoPDKhxY6H6w4AjbE69NORBFM=;
+	h=Date:From:To:Cc:Subject:From;
+	b=DXfYQHxAxz3OGNAP7A4xmCVztsVBv+6MWrAJBueFTLAG8v9Hy0VscsalzIs8L3eyN
+	 GixTiGf6Gwv4uCTZI1Y4N9jlbrLGhrs6lbo4fe/l86F1bSdPQY67EHf80ouF8EJklK
+	 Pic90nuxX3yKXK5GqGvHcAlC3O0JxvnQ+euUTfx5GmpjMNoKmtN+oBEAaHQnN25FWP
+	 /Q1Bb75EDbfxIA7qvv6Vo5wNdVrEfc8IjYYuOrDjDQE7in9HESqurvIIC0ozMBRjmZ
+	 bx2p2jmChHLaiB0J7DzH93OsrJLWEtnI+cpITUD6abXvukz7SW3Dc+BfZFysvKyXLi
+	 kQ2zPSLksHwHA==
+Received: by helium.openadk.org (Postfix, from userid 1000)
+	id 8DAFF31E0A52; Tue, 20 Oct 2026 06:00:44 +0200 (CEST)
+Date: Tue, 20 Oct 2026 06:00:44 +0200
+From: Waldemar Brodkorb <wbx@openadk.org>
+To: linux-sh@vger.kernel.org
+Cc: Max Filippov <jcmvbkbc@gmail.com>, Greg Ungerer <gerg@linux-m68k.org>,
+	Damien Le Moal <damien.lemoal@wdc.com>
+Subject: [PATCH] sh: select BINFMT_FLAT_NO_DATA_START_OFFSET for noMMU
+Message-ID: <atbnbO68dvPSW5bI@waldemar-brodkorb.de>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
+List-Post: <mailto:linux-sh@vger.kernel.org>
+List-Help: <mailto:linux-sh+help@vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
-Content-Type: text/plain; charset=US-ASCII
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com; s=default-1th84yt82rvi; t=1792418871;
- bh=ZWP0POxKL7WL6Fwv13eX+VxN5lFxqWs+Vq0GdC6vMtI=;
- h=Date:From:To:Cc:Subject:In-Reply-To;
- b=gKEMjdwItn26U6iUKBgRzEbfsE6Y87nLj+LVlP75McMlAn9s6dy98hftazfUEsmNAoM1MiAU
- KSZGEgeBO6baUtXxlbBZB/LP1AqvXPxSipmlQt2meCsq2UURf/yy814YSmTJ/46Zb8iodub2tp
- 6vhlZt+6RrjH6GpgccjMVGj0jmqe4sPysSTO1nRjnklrT5sRsxunM2ILB2B0CFqaZLSaaWlsB9
- mSznJmSH73zoGQMjIGni/iv9aX0gOnxu7Dw/KZV4DOdxiX1BQ4ZCR1uCcm2rUva5Lj/Lb9DQ6p
- sksRZV8iOr1lEakb4hWsQbG+74ayKe1j2ukDG5liAuRS6hrA==
+List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
+Precedence: list
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+X-Operating-System: Linux 6.12.107+deb13-amd64 x86_64
 
-On Mon, 19 Oct 2026 08:04:46 +0900,
-Daniel Palmer wrote:
-> 
-> Hi Geert,
-> 
-> On Sun, 18 Oct 2026 at 23:48, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> > > I hope Geert can test and review your patches and I'll pick them up
-> > > with his Reviewed-by and Tested-by signatures.
-> >
-> > Sorry, I must have different hardware, as mine doesn't have an
-> > ATP865 PCI device:
-> >
-> >     # lspci
-> >     00:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd.
-> > RTL-8139/8139C/8139C+ (rev 20)
-> >     00:02.0 USB Controller: NEC Corporation USB (rev 43)
-> >     00:02.1 USB Controller: NEC Corporation USB (rev 43)
-> >     00:02.2 USB Controller: NEC Corporation USB 2.0 (rev 04)
-> >
-> > My CF rootfs uses pata_platform, which is enabled in my working .config.
-> > landisk_defconfig lacks CONFIG_PATA_PLATFORM=y, so it hangs during
-> > boot. After enabling that, the boot gets further, but it still hangs:
-> 
-> I guess you have something like the USL-5P that uses the SH's onboard
-> CF interface.
-> Since Florian has confirmed their hardware has the PCI IDE controller
-> like mine and reviewed the change I think we're good.
-> 
-> Daniel
+binfmt_flat offsets the in-memory start of the data segment by
+MAX_SHARED_LIBS words and then aligns it to FLAT_DATA_ALIGN, so FLAT_FLAG_RAM
+binaries end up with a gap between text and data (commit 2217b9826246
+("binfmt_flat: revert "binfmt_flat: don't offset the data start"")).
 
-Yes.
-LANDISK and USL-5P have almost the same hardware configuration,
-but the only difference is the IDE part.
-This issue needs to be confirmed with LANDISK hardware.
+SH position-independent code finds the GOT with a PC-relative mova of
+_GLOBAL_OFFSET_TABLE_, which assumes data follows text directly, as elf2flt
+lays out the image. With the gap, the GOT register points below the real GOT,
+so every GOT load reads the neighbouring slot and gets a wrong pointer. On a
+J2 (sh2eb, noMMU) this made userland crash or hang right after start-up.
+In my case the data was moved up by 0x20 bytes.
 
-The LANDISK that I have cannot be used immediately, but here is qemu
-that can emulate LANDISK hardware.
-https://gitlab.com/yoshinori.sato/qemu/-/tree/landisk?ref_type=heads
-This will allow you to check if it is not broken.
+Commit 04d82a6d0881 ("binfmt_flat: allow not offsetting data start") added
+CONFIG_BINFMT_FLAT_NO_DATA_START_OFFSET for architectures that cannot
+tolerate such a gap; currently only riscv noMMU selects it. Select it on SH
+as well when building without an MMU.
 
+Tested on a J2 board (Numato Mimas V2, sh2eb, noMMU) with Linux 6.18 and
+FLAT binaries built with elf2flt: with this change the data segment starts
+exactly at the end of text and init runs.
+
+Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
+Assisted-by: LLM
+---
+ arch/sh/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index d60f1d5a94c0..b501153551c0 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -15,6 +15,7 @@ config SUPERH
+ 	select ARCH_MIGHT_HAVE_PC_PARPORT
+ 	select ARCH_WANT_IPC_PARSE_VERSION
+ 	select ARCH_NEED_CMPXCHG_1_EMU
++	select BINFMT_FLAT_NO_DATA_START_OFFSET if !MMU
+ 	select CPU_NO_EFFICIENT_FFS
+ 	select DMA_DECLARE_COHERENT
+ 	select GENERIC_ATOMIC64
 -- 
-Yosinori Sato
+2.47.3
