@@ -1,78 +1,96 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792578413;
-	b=Df/8202kHMQDZpPtWagxVNUexrxC/jLifVwK6/+O4YvOzkHvri1c6c2eCOk1Gv26ejj9
-	 3U6x1+VfnELzFsUAdBLMEfobWqGEQn7QTkMSz11qOKxbl/40cs/4TClGLqNNpseoBlgON
-	 cvBtgTHTdYFLn4ad4n5l5wokaU8rJRmnm30zz5lRqyQ06bmCWOhLIcASIcpFd3JWahXA7
-	 YsBp6OjrQrABrZUbBAgKOHb9cG+M2OCBVubGN+2+KbzOsUjUw7z7RXiOe6nPCn9nkJhcj
-	 JdPXpdiZFmwiVSfvXVOAjv7AaD7iq85hhCHNCnEz/p1QV8IF2Ecc6CSWFGVD7KJ2yiA==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792578413;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
-	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
-	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
-	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=OMM3wojJV7bG/ci11CrefTmLsvm/KaeS5rTkI4y7t4A=;
-	b=ogPCRl0d2VJMOcICM5s9u30bB8+4Wh8Euw10cciptojZgo2s4wVOst74UsoJGaKtHwqP
-	 D5D2qn6bzeLBISE4qU8muDOsolKZoGM3ShiJwCl3g1Znn+BpRROOgi8dDMiTCjdeuLz3n
-	 9z0t2jeN99nopLe6J6sVkt3tuw4MtNBCAMYDhqmlrGDmXoP8F0QPqhewT9IQMdIxmMQB+
-	 rFZfeK7XVtZDmc29vemL6G1czuIwa31FPBf6s+XsOfdl2LolEowsc6Brv/wNDsmqRRuZS
-	 QfbY9r3387JHbgnqpjdpGks6o1CZhfliozTRAqD+kjZkpLtx5ZKe7YnVNXk0aNsxC7Q==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=physik.fu-berlin.de;
-	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b="dEZm7YM/";
-	arc=none smtp.remote-ip=130.133.4.66
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.174
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1792580159;
+	b=jJ5FpmAG+sDQ6eURg7FmXV2iO0LTT14u8t8f8alzLnxhA8C5AxDVK+aCEmH5AZ0L6zbJ
+	 KeNWKSVnnZBQXalqzb+RXS+unt1nYAbRkYwWo87DoGe1Eb/KDSARHKV+P5pAdkrwBjHFY
+	 7ImOabKZwzva50RPG1ezab3qFSWo2phXvrhVI6Sx8NaVt9lwZfi5JAstI7oGpp1i1fxn5
+	 1rU7JL9EHSg78BBk39Y2QdXAvKG5QTAL3gl9SoxySVY5mkisWg0meTsElhonj6EwRvAjz
+	 4S1aLmBM0RFO7wb+2f1CO8Oo8FpkFtLhqBXzqQ5dFFd3ilzxfYd8zp7E52Ia44EBQoA==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792580159;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type;
+	bh=4dkFwPF8mYUAaBh9IOGYKB+nWS60kkd0r3c1QMBo9hw=;
+	b=QF0BJNa9qLiVK04O7IVQjf4ky33bYE4fGmRMjH40/VEaS2HBETwH4ZE46ovLv+m8wiCV
+	 u4pr6EDZh5+TWbC/KYiUpOlv2+6P1Ufm+xgHHUrlyBFpVWallYJo+ynpfbA8ixmqyqern
+	 Q2fdj3bHZ4lrhoOr7hKeZ27wHJHyaadOxEbD5kNVK1KSZSCasqLazmBR9UXaaC0sLTeKq
+	 5nDSRs23A1MHaR9MDPBxs5DVr+4pH9FdAiiaeZepElOlBtY9Cn8a93/cG+TNzRMzMy8x8
+	 gzLvL/0CNhx4FlD8lpQKr+Wjh9Inz2jl2Kb7AK3xYVe0TYZuXLKUZiWgszwl3X6XaAw==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=none header.from=0x0f.com;
+	spf=pass smtp.mailfrom=0x0f.com;
+	dkim=pass header.d=0x0f.com header.i=@0x0f.com header.a=rsa-sha256 header.s=google header.b=LStKsrBA;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.174
+Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com [209.85.128.174])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36A5B606A319
-	for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 10:26:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 36A5B606A319
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90B5F606A319
+	for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 10:55:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 90B5F606A319
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=0x0f.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=dEZm7YM/
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=OMM3wojJV7bG/ci11CrefTmLsvm/KaeS5rTkI4y7t4A=; t=1792578412;
-	x=1793183212; b=dEZm7YM/NAJfLNufYkDMLy+kf8zg8cdYSAVtcjWADWck6RC/Vt8Xoo/I+D8mF
-	4Y1CdqprnfTVwf0BQWd9CCtZFeE4ocwlqom57jRmsuCOE+QMpdhpiJc/I/0KwKOv5FZLrktc9UKkl
-	q5MA+Ni9D2deA1cddjkWOLtJTtkmTZ8kTjXd/yrw7H4rG7m2d1O6iWD+Z/qsBjfbnhve99cTUYVdl
-	di0w6qQJimOTFEy2nLMyu5wyRhIQpbXiCdBoPvGj4FRSj/q6iPlcX99wsuqTK5w873/1bY3t89LeB
-	GTEw6MfF1w3ocgmHF/CzCfL02k8ilFsaqarqs2sUnKkSIYCryw==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xJTX0-00000002ekQ-0mlS; Wed, 21 Oct 2026 12:26:50 +0200
-Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xJTWz-00000003fpp-42Qg; Wed, 21 Oct 2026 12:26:50 +0200
-Message-ID: <63c55c8617829b301e461c32cc55786d0da29898.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: select BINFMT_FLAT_NO_DATA_START_OFFSET for noMMU
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Waldemar Brodkorb <wbx@openadk.org>
-Cc: linux-sh@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Greg
- Ungerer	 <gerg@linux-m68k.org>, Damien Le Moal <damien.lemoal@wdc.com>
-Date: Wed, 21 Oct 2026 12:26:49 +0200
-In-Reply-To: <atiJNhV5IDmRSWoT@waldemar-brodkorb.de>
-References: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
-	 <843827c5eb85807d4f55a0d8a4cd572811ee3644.camel@physik.fu-berlin.de>
-	 <atiFE4oreXlgTzQz@waldemar-brodkorb.de>
-	 <c6f6e7da42978b8368c9fcd66ab298dafef4636b.camel@physik.fu-berlin.de>
-	 <atiJNhV5IDmRSWoT@waldemar-brodkorb.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (1024-bit key, unprotected) header.d=0x0f.com header.i=@0x0f.com header.a=rsa-sha256 header.s=google header.b=LStKsrBA
+Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-8acda240937so4774687b3.3
+        for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 03:55:58 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1792580157; cv=none;
+        d=google.com; s=arc-20260327;
+        b=B5L80gok3qpiJb18tDdMFeYmKQtjeo7t9ewIOMDkCI/BbsQsMFUVk0S7blCleIa3v/
+         7aNLiVUjTCc13TbG+xe9csXagtvNs61lxHcP9S7X+O60fg7YtZ9B8EDvkTOnRBzVhGw2
+         WySdpqv1RhgGRXYVQGCZDISKOa+G/S3gu2X70u0K9DH/eRc9GlG0bu9QHqpgcg+jKLg7
+         XCexIHPvpbB50WQNKMAZm31OqiA8ELWOdU5Qel3EsWO4oocWgsWjQ8P4jIJrmjd0yFWu
+         gCQ1qRd/HM0HBOnoIyE7Cs15cytlQ1RaCylaqqm+HyAGPRK6CTM3Hbi+nDJ23JdXd4Lt
+         xxZA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=4dkFwPF8mYUAaBh9IOGYKB+nWS60kkd0r3c1QMBo9hw=;
+        fh=M8aj8Ld4Kuk5JvEHdGVb4hpqV07s7TdSEaTVl3kf3kY=;
+        b=f+hWlt1GyMsKBbzqLglvmo23nRfASgRd/NhHEgGUs9uLH3n9P0izVIF5r6H6/v9/T+
+         PUsBj4mHVE4EFpx9VFwlMY2X8Qju4COXhFYNa+B1rkjKjTdet1b4QvkmUPVu15a3No/u
+         W+rlfgmeG/52YatnABQkUdoEhpVknVzqIxDpkVLLLLnttMfC4Jrhq+muFQSrzQCO5Off
+         6Uew2RMKwnje3LEZ7Hz9s+oADFAiQ4P7UZtMcCXr9kIqPlaLWgqGRgordDMggXpzUs/0
+         NjDHeFq2qU6cNbkaVdkeFXOZP53r8XmMQoqc51FrneAgKHt8Qlo2X5XcP4n7U82ksy7j
+         xX4Q==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=0x0f.com; s=google; t=1792580157; x=1793184957; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=4dkFwPF8mYUAaBh9IOGYKB+nWS60kkd0r3c1QMBo9hw=;
+        b=LStKsrBAmkLyaIDo7eVvgJ/m9vUfRWLRIyJ6OihLsx6GHpMB7F8VmhEb9hY54nkHT+
+         XAsvZTrvDT3kC7e7pHIkkp1p0svg27WFaKT5upHJaufLe0yv7syM14crajjJrwyX9cB9
+         RXQCO8tRKSb7PW0WqE9heGNj6QsK/hQ7AT/K8=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792580157; x=1793184957;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=4dkFwPF8mYUAaBh9IOGYKB+nWS60kkd0r3c1QMBo9hw=;
+        b=Yml0kx1ad1gwwjFBEjA7VhiLYkUwDVa0mfrBugioceqPlYSpSpDUANBcsq+oResmwx
+         jyHOlPRb7Uo9NrkRBPOkoWsBpBTnxW4a4KcI5FV1CcsQGFlvQygf8DdgulPOi4N7oZO8
+         jbzEx8J1nCSuD0utGceTPQBosasFH85nSuQW4Fe/CoizI5C8VZRKPyw5Yeb95n8slTH/
+         Q3WwgHhEmynhimVYHg0yWpuTpVKpcwDc+gv5vfPxV+MY10marh6AlLnhYOEemnmYeBPK
+         E9mFPHfUHYCckMPXmdOxF19D4wDrzs2s0K4MvNEW5qFflKDlIhVMi3Zgpeo8q2CG+GYU
+         bowg==
+X-Forwarded-Encrypted: i=1; AKwUvBx5cjM24sksX3/ENzpmQlvl0aHT+YYqiC7vyg8DINvfPHuvIhmgTVU2sFe7bn/uc81J20+CuvLd6Q==@vger.kernel.org
+X-Gm-Message-State: AFq9FYK0h9CHlTIfCmlYZmkMLMOB7B78imK2xDS2GDhswN2ZWt4ULE8y
+	4EhgF6tmu4UojeBEPLI8pqmC5KXXf9/HZXv2qQHiq10VRsOdOtGsluAb3Yjn9rad/Ed/3+Pc8qV
+	tZN0l3OPSIVWXmT4NKjgkb8AT/I+GPpKa1Bmj5KDnfw==
+X-Gm-Gg: AYBFou3t0RTj6ls+mMiENiSKvVP8CAS4nFeBB1KZ1G/NK6TjU5ApoTrBPFDFIoHSKEw
+	Y56hi3lFZZrd6RQHo00XfVjrmKck2dbbm1EsONYY0bKf2ts++awU7AKhTpuXbXSwsJnnuq/mX8V
+	A98wRtyS7iOmG6WKiOluV4fCkkDDl+6mlh8iGcz5jumBt0mtZWjZNBJ6OBnSEAWbBuFfnHsLo7G
+	m8J5YYcrie0wQFI+6pqmTwB7zbyieX/7BuA12b/qkxXOOoYwDbdHQwwRV/wCdswqBZ/0/AXNlNQ
+	6Xs8C0O7UQzrbNozr3Js6B/HVC6YhXy50rm35wwpSVekwVwERML7tPuNFRQFpbn2hXkyqqtYXRk
+	2ZhWllSfMR5pMsR6d9Gu+guSOc1jNHtaChqeWI7Y=
+X-Received: by 2002:a05:690c:e1d1:20b0:8b0:ad90:98c6 with SMTP id
+ 00721157ae682-8b134013d3cmr5679527b3.35.1792580157475; Wed, 21 Oct 2026
+ 03:55:57 -0700 (PDT)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -82,36 +100,37 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+References: <20261017041419.311921-1-daniel@0x0f.com> <CAJpaz4abKAkDznoi3gczYHNQMF-j5cSajtG07Jws8LkFY9DZFg@mail.gmail.com>
+In-Reply-To: <CAJpaz4abKAkDznoi3gczYHNQMF-j5cSajtG07Jws8LkFY9DZFg@mail.gmail.com>
+From: Daniel Palmer <daniel@0x0f.com>
+Date: Wed, 21 Oct 2026 19:55:39 +0900
+X-Gm-Features: AclHuK-tt_OVDrOG_j7NK25609Kp5bxH3a2aysFucE6vALWwnla60mO_ZldS66Y
+Message-ID: <CAFr9PXmntwx06iMc200d9HPoOeCE7XURpS9jiWhB3ud_+QQggA@mail.gmail.com>
+Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
+To: Colton Pawielski <colton.pawielski@gmail.com>
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
+	dlemoal@kernel.org, cassel@kernel.org, linux-sh@vger.kernel.org, 
+	linux-ide@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, 
+	fuchsfl@gmail.com
+Content-Type: text/plain; charset="UTF-8"
 
-Hi Waldemar,
+Hi Colton,
 
-On Wed, 2026-10-21 at 11:43 +0200, Waldemar Brodkorb wrote:
-> > > They are not. Toybox uses musl C library, which is FDPIC.
-> > > I use OpenADK (https://openadk.org) to build a J2 image with
-> > > uClibc-ng and FLAT binaries. You could either try OpenADK or just
-> > > believe me :).
-> > > For OpenADK you need to choose experimental support and uClibc-ng
-> > > git version, as there was another bug in uClibc-ng to let it work.
-> >=20
-> > Thanks for the clarification. Wouldn't your patch then interfere with T=
-oybox then?
->=20
-> No, because it is BINFMT FLAT specific patch. It does not change
-> anything about FDPIC.
+On Wed, 21 Oct 2026 at 10:05, Colton Pawielski
+<colton.pawielski@gmail.com> wrote:
+> In testing I could often lock up the board when transferring data over
+> SSH. I don't believe it's related to this series and am fairly sure it's
+> in the 8139cp driver. I have a candidate fix that I plan to send in
+> a couple of days once I've tested it further and there's no more
+> lockups on my hardware.
 
-OK, thanks! I have no objection against taking this patch for v7.4 then.
-
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-
-PS: Please make sure to CC all SH maintainers for future submissions.
+There seems to be two issues: One it interrupts for every packet when
+the 8139cp can hold off and not storm the processor, and there is some
+issue with the chip refusing to send small skbs so the network layer
+starts locking up/timing out. I was planning to send fixes this
+weekend but if your fix is one of those, send your version, cc me and
+I'll test it out.
 
 Thanks,
-Adrian
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Daniel
