@@ -1,77 +1,71 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792572750;
-	b=IR0VSwZ8a4X+AutQH+Ia36FVOP61nL60G9gsx/iwY/YrYjUnLhOZ8GyVui16eiBefkhD
-	 RttsXNkXOYQySz1fk8CCzg/vYqBhfanB63K7dD3UTqwRsA8cEV9DophsO9YfcoAq12LEG
-	 YY4EhNbcJ4nkkzKcBvjV2KqbREmZiu+z8WBEFvY2i0WOmaHix9er3Ug9/bJ7b1UzBccmM
-	 4L3CFr5o3orxnoMD+L+vsHLyPJDUnt9G0oiPv5FVQZXCb4i9v5J92w2G16QZ7AVxkmGcY
-	 Z+zTzBnBiDoWtcBwbtyPCCjxkFa1ShR3OXgj6QPmJEgEdx7096RbQ0eIFQWnu3o2crw==
+	t=1792573015;
+	b=sAjWDkeNBePZnaZxDgG4vcldmfxMVUXXLoH71BYp4in+33Us5s7dxsGl5mS6zg8Dr3rJ
+	 6byikUXYqmjHswLO0MXDAOzVDkDuZhnPQCL5QEZt/z1kOAZvM10G9MQxvgVfgm8FyfoOf
+	 FN8TuCtakh0KVFvh9q7oOuebnlBk+8XcSkPF8ksJKiveLtWbRypUhIrGU5No6wk7M+iq9
+	 FInvnCuWhGf5boHG5iL3q21n11w5oo6hnpDsrVNrS16UgXp3TacuDsJFN3uXgI+32OLSJ
+	 /s/m0RG+E8fp4hAdB51us2Uikfr9YoXwxMxJPNFOqbG04KZ9FckFBnCl5mQnSCbdzWw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792572750;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792573015;
 	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
 	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
 	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
 	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=nLAv4znXqp7J4jKgEvw3NbURy0oURMFIRBJwXlCWHgc=;
-	b=EcP8j2vtdfB2n6nnO10Rbc3LduGMo8qPvKyGfo5tSgeswEe4Vq53SY1YG4SP5hzeGo24
-	 9KrklkQEvLF429vDyY6HpB9+GUe8oAnqbM9u1NaqqWy3MCahw2ea1PKLjtwgm9vxcF/vW
-	 uCf8OclvGjeaC9pw3Jw2ubrOrUKuYdS5CmgrwWqls7sr8NNUyTiWOa1by3fhXoFpOyAvT
-	 uHRvUvCWfy1ij4Xh9Ajf7YcNACPSu/AF0HBwuL9EEfmlYwhFJBpKkIOLk4S1506+zo7gT
-	 GeYoRORjvSXUO6mXOfGwhVQNUeqYaqffo/f1pajhjw/Msmp1GjZiPgqRI2yvuigtjWg==
+	bh=NN7X2qHI+Bzp7O4aI/7aSCG0nt92AEk+cvxkkewI1xo=;
+	b=3UP8B/vq9DeOIcr+m3pjO/DZoM+N5ivAFbLpaO6hd+jTp98o0yBSiy39y60GZuUlIeCx
+	 PDKApzn0MLtLR/TIXy1TpawY/Y4N/y0r1zhSJh/7bmfJ14xpxoI6YZmV0Rg7JlxakMgo3
+	 vk+VNM0+gKzWrSQWMPv8A3+BjpOdRNca7yBCWbB28KtYlUSa92ffyitKMhJa0EjXYjcjW
+	 rQN03Q3yhQjongsgfBfARfuiRLTpJkHKJs5ykK6a2XY3nR3Dd5D806KsDhYUAZ0jElbbi
+	 rcZaM8dfkxiiZqpkuAooRL+P6KNkzw2UzORpDwlunKnKWhkjlNHvo1bxXMyhW7dzF6Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=physik.fu-berlin.de;
 	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=N36hx7Ov;
+	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=jxENECQS;
 	arc=none smtp.remote-ip=130.133.4.66
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 318EE606A320;
-	Wed, 21 Oct 2026 08:52:27 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 318EE606A320
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A752606A319
+	for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 08:56:53 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0A752606A319
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=N36hx7Ov
+	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=jxENECQS
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
 	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
 	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=nLAv4znXqp7J4jKgEvw3NbURy0oURMFIRBJwXlCWHgc=; t=1792572748;
-	x=1793177548; b=N36hx7OvBDwonjMUw+vQZGNWUgwXxpoDmz5vIeTFgVY61KB2mL3OlSk699E5/
-	GTPxSqnHeCf5aOBFoZZYZAAaxjTaeW92rEBbnnajK1J7qyUaIA5NFkNK+XqCVlnrQ7nIyQfk3S669
-	phI6yzfWBf6EZgYFnTLbDDfjIe79qMyzJoI4yCyU6YxtPfIqP1s+kh7rDGvy1cw0S5BloHNpBdGqG
-	OriiBxzTO0jFgk8QpL6iz8mgfc/JZqCV/sHdrwIAKurnNG1itu+sHIBeYDWbHSRFS336nq4cvkOyL
-	+FAXlkmRfE4YJ84dZ53HxeS5yikbq0MMJBYi9ICQgryImF4xvQ==;
+	References; bh=NN7X2qHI+Bzp7O4aI/7aSCG0nt92AEk+cvxkkewI1xo=; t=1792573014;
+	x=1793177814; b=jxENECQSD/OKYmTBB7aReuLflEVTTjTns9YrWR5UnIwFPN3yaNGMb+kV4ukb8
+	dwy8Y7I7w6IISB6gdkf4Bs0edU3/qv0Cscx5O8sWlRJbaZf2qrI2IaitBsoQmU+j4HJvd3Bg6RXpf
+	JduVMjErxSXF0xSodZ8/iqY0bpJhN0/0BgHOLh+rCpKiGUOEdRpggb6Edx8wYg65TYcqqEvC7HYrF
+	mOvVizZNgfHgcGlzVmXnDvdzyTPWgr3P9XDRobQh68Q0wn/BObHn0/xygct/i/Cv8rodu7wZSzwJZ
+	lTkayH/pZJ4AEQLk5OX/7U+Y1EUFzepQVduKC8ljuXG1/JplaA==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.100)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xJS3c-00000001Fqm-0sQr; Wed, 21 Oct 2026 10:52:24 +0200
+          id 1xJS7w-00000001Kwc-0ic3; Wed, 21 Oct 2026 10:56:52 +0200
 Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
           by inpost2.zedat.fu-berlin.de (Exim 4.100)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xJS3b-00000003HQO-3yZw; Wed, 21 Oct 2026 10:52:24 +0200
-Message-ID: <0c70afc8a119504aa5c2d22361f613547b2750bc.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
+          id 1xJS7v-00000003INo-2oEc; Wed, 21 Oct 2026 10:56:52 +0200
+Message-ID: <843827c5eb85807d4f55a0d8a4cd572811ee3644.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v2] sh: select BINFMT_FLAT_NO_DATA_START_OFFSET for noMMU
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Daniel Palmer <daniel@0x0f.com>, Geert Uytterhoeven
- <geert@linux-m68k.org>
-Cc: dalias@libc.org, dlemoal@kernel.org, cassel@kernel.org, 
-	linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, Yoshinori Sato <yoshinori.sato@nifty.com>, 
-	fuchsfl@gmail.com
-Date: Wed, 21 Oct 2026 10:52:23 +0200
-In-Reply-To: <CAFr9PXn4henL=rQ3n73H7Mjwd7v6XX6Jt63h=Sywu-boOPggKw@mail.gmail.com>
-References: <20261017041419.311921-1-daniel@0x0f.com>
-	 <4cdb2939264e0b7d767f44289fddffd40fddf504.camel@physik.fu-berlin.de>
-	 <CAMuHMdXmZash+8PmfSVrT=Wwob-mkq0x4umyRgX2-yikV9kaVA@mail.gmail.com>
-	 <CAFr9PXn4henL=rQ3n73H7Mjwd7v6XX6Jt63h=Sywu-boOPggKw@mail.gmail.com>
+To: Waldemar Brodkorb <wbx@openadk.org>, linux-sh@vger.kernel.org
+Cc: Max Filippov <jcmvbkbc@gmail.com>, Greg Ungerer <gerg@linux-m68k.org>, 
+ Damien Le Moal <damien.lemoal@wdc.com>
+Date: Wed, 21 Oct 2026 10:56:50 +0200
+In-Reply-To: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
+References: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.60.2 
@@ -87,46 +81,79 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Daniel,
+Hi Waldemar,
 
-On Mon, 2026-10-19 at 08:04 +0900, Daniel Palmer wrote:
-> Hi Geert,
+On Wed, 2026-10-21 at 02:02 +0200, Waldemar Brodkorb wrote:
+> binfmt_flat offsets the in-memory start of the data segment by
+> MAX_SHARED_LIBS words and then aligns it to FLAT_DATA_ALIGN, so FLAT_FLAG=
+_RAM
+> binaries end up with a gap between text and data (commit 2217b9826246
+> ("binfmt_flat: revert "binfmt_flat: don't offset the data start"")).
 >=20
-> On Sun, 18 Oct 2026 at 23:48, Geert Uytterhoeven <geert@linux-m68k.org> w=
-rote:
-> > > I hope Geert can test and review your patches and I'll pick them up
-> > > with his Reviewed-by and Tested-by signatures.
-> >=20
-> > Sorry, I must have different hardware, as mine doesn't have an
-> > ATP865 PCI device:
-> >=20
-> >     # lspci
-> >     00:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd.
-> > RTL-8139/8139C/8139C+ (rev 20)
-> >     00:02.0 USB Controller: NEC Corporation USB (rev 43)
-> >     00:02.1 USB Controller: NEC Corporation USB (rev 43)
-> >     00:02.2 USB Controller: NEC Corporation USB 2.0 (rev 04)
-> >=20
-> > My CF rootfs uses pata_platform, which is enabled in my working .config=
-.
-> > landisk_defconfig lacks CONFIG_PATA_PLATFORM=3Dy, so it hangs during
-> > boot. After enabling that, the boot gets further, but it still hangs:
+> SH position-independent code finds the GOT with a PC-relative mova of
+> _GLOBAL_OFFSET_TABLE_, which assumes data follows text directly, as elf2f=
+lt
+> lays out the image. With the gap, the GOT register points below the real =
+GOT,
+> so every GOT load reads the neighbouring slot and gets a wrong pointer. O=
+n a
+> J2 (sh2eb, noMMU) this made userland crash or hang right after start-up.
+> In my case the data was moved up by 0x20 bytes.
 >=20
-> I guess you have something like the USL-5P that uses the SH's onboard
-> CF interface.
-> Since Florian has confirmed their hardware has the PCI IDE controller
-> like mine and reviewed the change I think we're good.
+> Commit 04d82a6d0881 ("binfmt_flat: allow not offsetting data start") adde=
+d
+> CONFIG_BINFMT_FLAT_NO_DATA_START_OFFSET for architectures that cannot
+> tolerate such a gap; currently only riscv noMMU selects it. Select it on =
+SH
+> as well when building without an MMU.
+>=20
+> Tested on a J2 board (Numato Mimas V2, sh2eb, noMMU) with Linux 7.3 and
+> FLAT binaries built with elf2flt: with this change the data segment start=
+s
+> exactly at the end of text and init runs.
+>=20
+> Without the patch bootup fails with:
+> [   12.080472] Fixing up unaligned userspace access in "init" pid=3D1 pc=
+=3D0x(ptrval) ins=3D0x6583
+> [   12.123609] Fixing up unaligned userspace access in "init" pid=3D1 pc=
+=3D0x(ptrval) ins=3D0x6583
+> [   12.175153] Kernel panic - not syncing: Attempted to kill init! exitco=
+de=3D0x00007f00
+>=20
+> Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
+> Assisted-by: LLM
+> Fixes: 2217b9826246 ("binfmt_flat: revert "binfmt_flat: don't offset the =
+data start"")
+>=20
+> ---
+> v1->v2:
+>   - add fixes tag (Geert)
+>   - tested with 7.3 + Florian's uaccess patch (Geert)
+>   - added failing bootup messages to commit message
+> ---
+>  arch/sh/Kconfig | 1 +
+>  1 file changed, 1 insertion(+)
+>=20
+> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> index d60f1d5a94c0..b501153551c0 100644
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+> @@ -15,6 +15,7 @@ config SUPERH
+>  	select ARCH_MIGHT_HAVE_PC_PARPORT
+>  	select ARCH_WANT_IPC_PARSE_VERSION
+>  	select ARCH_NEED_CMPXCHG_1_EMU
+> +	select BINFMT_FLAT_NO_DATA_START_OFFSET if !MMU
+>  	select CPU_NO_EFFICIENT_FFS
+>  	select DMA_DECLARE_COHERENT
+>  	select GENERIC_ATOMIC64
 
-Is disabling CONFIG_PATA_ATP867X still correct or would that brick the
-boot on USL-5P? I guess you are using any of the HDL-XXXU devices [1],
-aren't you?
+I have not tested this yet but I will do so later this week. Personally, I
+test my kernel images on J2 with ToyBox which builds a minimal rootfs with
+busybox.
 
-I actually own both as I did quite a SuperH shopping spree in Japan some
-ten years ago.
+I am not sure if the binaries are flat binaries in this case, do you know?
 
 Adrian
-
-> [1] https://www.iodata.jp/product/nas/personal/hdl-u/
 
 --=20
  .''`.  John Paul Adrian Glaubitz
