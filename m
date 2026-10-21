@@ -1,74 +1,76 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.177
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792573015;
-	b=sAjWDkeNBePZnaZxDgG4vcldmfxMVUXXLoH71BYp4in+33Us5s7dxsGl5mS6zg8Dr3rJ
-	 6byikUXYqmjHswLO0MXDAOzVDkDuZhnPQCL5QEZt/z1kOAZvM10G9MQxvgVfgm8FyfoOf
-	 FN8TuCtakh0KVFvh9q7oOuebnlBk+8XcSkPF8ksJKiveLtWbRypUhIrGU5No6wk7M+iq9
-	 FInvnCuWhGf5boHG5iL3q21n11w5oo6hnpDsrVNrS16UgXp3TacuDsJFN3uXgI+32OLSJ
-	 /s/m0RG+E8fp4hAdB51us2Uikfr9YoXwxMxJPNFOqbG04KZ9FckFBnCl5mQnSCbdzWw==
+	t=1792573329;
+	b=wQUTyZnWICjcs6cF11hdb3g22XGoruluTlNhhNTW5B6DZ7xi0AOOWb4edAJO9vqHVB4n
+	 +xBCfsn4GO0klaxQfds8u6rBWgASPBVE4pmV5Og5Wql4Dm9+cwYHBNAASna6Sv2kotIHJ
+	 UMJGHBgGBesPzBXUkrlcQ47Q75kdofxHs/6SYLmcdx2FLJ270mHWxp4P5REzkRuFIZGsi
+	 xwTyuR7GPecGxpAh2ZF3n2v686TpTkyybwZrDru9u0IALCXEWQP5oaXmUTA0wbQjpg7oO
+	 UbpffgaKqVtl60Fl+/1dbnYYYsE0F5vypMJr3ybxe0c2PYNxAJHMhNlS/Lt+4ttDw5A==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792573015;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
-	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
-	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
-	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=NN7X2qHI+Bzp7O4aI/7aSCG0nt92AEk+cvxkkewI1xo=;
-	b=3UP8B/vq9DeOIcr+m3pjO/DZoM+N5ivAFbLpaO6hd+jTp98o0yBSiy39y60GZuUlIeCx
-	 PDKApzn0MLtLR/TIXy1TpawY/Y4N/y0r1zhSJh/7bmfJ14xpxoI6YZmV0Rg7JlxakMgo3
-	 vk+VNM0+gKzWrSQWMPv8A3+BjpOdRNca7yBCWbB28KtYlUSa92ffyitKMhJa0EjXYjcjW
-	 rQN03Q3yhQjongsgfBfARfuiRLTpJkHKJs5ykK6a2XY3nR3Dd5D806KsDhYUAZ0jElbbi
-	 rcZaM8dfkxiiZqpkuAooRL+P6KNkzw2UzORpDwlunKnKWhkjlNHvo1bxXMyhW7dzF6Q==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792573329;
+	h=DMARC-Filter:Received:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Received:
+	 X-Forwarded-Encrypted:X-Received:MIME-Version:References:In-Reply-To:
+	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
+	 Subject:To:Cc:Content-Type;
+	bh=T4cci4gJNuFTfolxn/J6fu+B818vlNle5g1andJTAjs=;
+	b=J2xW8D+mbtfLwS6SACxQ/UrvEStWJLPlLZYoLIzLh2B+lwlf3AgzinAWgkkN69Jon64p
+	 W9brZsVTH6qGcmqh2hLAxjnlWgphNSsF9cNrEnCDfSLNXEgfHl5eqgeRkfiZoZKE43dV+
+	 +3RaC1pEf/AYcjobqEBUeYtBdYseNIivlkIPlThr9ZK1/ZUSVkXonXJtBY8jIzxYE/xAq
+	 KUN6DnaOUcaWXZ4cl+mFuzSPXJ2k5sQjJb1SOeFiMAV9XCwoHYAbgTrxXVz6YaUhBpKZb
+	 gDD8EMelMeBRZLLr5ygYRpvgzezsPTWW70ePPPiRf8P2OStZ4SvdxQtzyEt4X1rP3qg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=physik.fu-berlin.de;
-	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=jxENECQS;
-	arc=none smtp.remote-ip=130.133.4.66
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=none header.from=linux-m68k.org;
+	spf=pass smtp.mailfrom=gmail.com;
+	arc=none smtp.remote-ip=209.85.221.177
+Received: from mail-vk1-f177.google.com (mail-vk1-f177.google.com [209.85.221.177])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A752606A319
-	for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 08:56:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0A752606A319
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=jxENECQS
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=NN7X2qHI+Bzp7O4aI/7aSCG0nt92AEk+cvxkkewI1xo=; t=1792573014;
-	x=1793177814; b=jxENECQSD/OKYmTBB7aReuLflEVTTjTns9YrWR5UnIwFPN3yaNGMb+kV4ukb8
-	dwy8Y7I7w6IISB6gdkf4Bs0edU3/qv0Cscx5O8sWlRJbaZf2qrI2IaitBsoQmU+j4HJvd3Bg6RXpf
-	JduVMjErxSXF0xSodZ8/iqY0bpJhN0/0BgHOLh+rCpKiGUOEdRpggb6Edx8wYg65TYcqqEvC7HYrF
-	mOvVizZNgfHgcGlzVmXnDvdzyTPWgr3P9XDRobQh68Q0wn/BObHn0/xygct/i/Cv8rodu7wZSzwJZ
-	lTkayH/pZJ4AEQLk5OX/7U+Y1EUFzepQVduKC8ljuXG1/JplaA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xJS7w-00000001Kwc-0ic3; Wed, 21 Oct 2026 10:56:52 +0200
-Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xJS7v-00000003INo-2oEc; Wed, 21 Oct 2026 10:56:52 +0200
-Message-ID: <843827c5eb85807d4f55a0d8a4cd572811ee3644.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: select BINFMT_FLAT_NO_DATA_START_OFFSET for noMMU
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Waldemar Brodkorb <wbx@openadk.org>, linux-sh@vger.kernel.org
-Cc: Max Filippov <jcmvbkbc@gmail.com>, Greg Ungerer <gerg@linux-m68k.org>, 
- Damien Le Moal <damien.lemoal@wdc.com>
-Date: Wed, 21 Oct 2026 10:56:50 +0200
-In-Reply-To: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
-References: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC871606A31A
+	for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 09:02:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EC871606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-vk1-f177.google.com with SMTP id 71dfb90a1353d-5eac01ff101so154020e0c.2
+        for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 02:02:08 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792573328; x=1793178128;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=T4cci4gJNuFTfolxn/J6fu+B818vlNle5g1andJTAjs=;
+        b=DB+16vGGPmANV1wlMdh2dHEmpN/pEC5Fw70WTx6oE/+JDYCp6OE9I8vYB3HtvW88q6
+         2cQNIjN/NyaSXkS5nzQBuaNXsxywAAz5RUrzrKp3ky/K0Kjg8oI828bOTrhwKXvUpBxy
+         6fBgwTJLTnoZFdeYpZ2na7KN3s9MS0NLq5qZ9C6Pl67OWiXqja0evaHtKW8gZyjc7S/t
+         YO4z5yJasPGcWwa/yN+BPsnrXTUUscjkUJU49PgRu5atvCuTNqurNNAKg0yvJdxfLqUy
+         SNWofkLvbRRC90gGxYO8wBvkCP++N7Mn8nnVjm2QZe96xt0rqG0vC4RtTWmKqzBThnUJ
+         IYpw==
+X-Forwarded-Encrypted: i=1; AKwUvByO5iRxW8abzvfZVXu1CD2D665SlErmU80l7j2gez4SM4dgS2xYNCPLPU4HX45T3YDHJuXi51viVQ==@vger.kernel.org
+X-Gm-Message-State: AFq9FYI4+0HEbsi9k/XhOxyHNuOcwmjsM8D1PMkuKFoUnLqbyQNKk60b
+	SnwW7GtNI18jxkgFrNLIPwYaHxaRN4L5RGApj+anXtsL/xr86+j8BPtaGfP6PsbUgwc=
+X-Gm-Gg: AYBFou2pty6czBViQesks6vV1obXU/BBHX+PVB/oMJwbFHbsb8TWsaYECT18M/KLO11
+	p8YGYM8DuuNWxmrmxTmBFlSJL2GM0sKl7FesH7lsx7mQx2bgRIV6ki/9ZPEhvokGee3KI4hAN4A
+	oH7HtGrBJ8tMlisRmZLbwVnPohp4FoHUaGQ5c3IzgfVE4QistReVY5z0cUM0OGyTZKu5H4pTHoZ
+	exuNkWFTIQ6B39H4UN9K7AG/dftcoJ0ccy+5FeI5Kf+LI1MB6P69KiqLEqVawTxSUBJ386SZ6K3
+	R31lbqdjd/svbTbKLKyuZI1W3uxu0ujDopq2lkL02VIBvu6YEuqJCoXhoVCDfoBtnpunKYw8/r3
+	SBLa32iyr8YZU/B5Yjfz8GYsNi0bMIS+UDY9xIpP1qAxxFFu1vnVBUA75vQjZGxSNopjyTcoa1/
+	sfXaYD/Q5KKBJeczH48f1DR8/VIsyHFQhsJWFrKAOfjcBPngV5OoBDdDQ8/0FoQIVhYQNenHtLD
+	SRMbI/9Dncw7m0h5VvMK3X3nfnNDFhvfAk/3F5JU5PZY8Fdtj5DKKna60IWdlE1zXJlSvy0QAz4
+	ALVtEPoOoX4mpw/+J2555g==
+X-Received: by 2002:a05:6102:4426:b0:7c3:c0b9:9031 with SMTP id ada2fe7eead31-7cc9280f397mr394029137.36.1792573327826;
+        Wed, 21 Oct 2026 02:02:07 -0700 (PDT)
+Received: from mail-vk1-f172.google.com (mail-vk1-f172.google.com. [209.85.221.172])
+        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-990d108ff73sm2388449241.7.2026.10.21.02.02.07
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 21 Oct 2026 02:02:07 -0700 (PDT)
+Received: by mail-vk1-f172.google.com with SMTP id 71dfb90a1353d-5eab93a9862so120009e0c.0
+        for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 02:02:07 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AKwUvBxTHKszoPCZY1Lnbf6zttEGHhNE7BY1LsLyVhrdHcEqyltU40w5UvjlYXmJ8OvvOnUMCA2U3u2Qrg==@vger.kernel.org
+X-Received: by 2002:a05:6102:3709:b0:7c8:268:ecd7 with SMTP id
+ ada2fe7eead31-7cc92739b17mr365886137.23.1792573326757; Wed, 21 Oct 2026
+ 02:02:06 -0700 (PDT)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -78,85 +80,50 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+References: <20261017041419.311921-1-daniel@0x0f.com> <CAJpaz4abKAkDznoi3gczYHNQMF-j5cSajtG07Jws8LkFY9DZFg@mail.gmail.com>
+In-Reply-To: <CAJpaz4abKAkDznoi3gczYHNQMF-j5cSajtG07Jws8LkFY9DZFg@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 21 Oct 2026 11:01:54 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWZTwfbXqV=oiaSseGXZNKzWD-bptZVuhbCnXwkt7+WoA@mail.gmail.com>
+X-Gm-Features: AclHuK8GyFWJnCZctU9cyAk5_YSIDGkWTC6HLWIJClGOfTDRGxXReM4AFtrnhJk
+Message-ID: <CAMuHMdWZTwfbXqV=oiaSseGXZNKzWD-bptZVuhbCnXwkt7+WoA@mail.gmail.com>
+Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
+To: Colton Pawielski <colton.pawielski@gmail.com>
+Cc: Daniel Palmer <daniel@0x0f.com>, ysato@users.sourceforge.jp, dalias@libc.org, 
+	glaubitz@physik.fu-berlin.de, dlemoal@kernel.org, cassel@kernel.org, 
+	linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, fuchsfl@gmail.com
+Content-Type: text/plain; charset="UTF-8"
 
-Hi Waldemar,
+Hi Colton,
 
-On Wed, 2026-10-21 at 02:02 +0200, Waldemar Brodkorb wrote:
-> binfmt_flat offsets the in-memory start of the data segment by
-> MAX_SHARED_LIBS words and then aligns it to FLAT_DATA_ALIGN, so FLAT_FLAG=
-_RAM
-> binaries end up with a gap between text and data (commit 2217b9826246
-> ("binfmt_flat: revert "binfmt_flat: don't offset the data start"")).
->=20
-> SH position-independent code finds the GOT with a PC-relative mova of
-> _GLOBAL_OFFSET_TABLE_, which assumes data follows text directly, as elf2f=
-lt
-> lays out the image. With the gap, the GOT register points below the real =
-GOT,
-> so every GOT load reads the neighbouring slot and gets a wrong pointer. O=
-n a
-> J2 (sh2eb, noMMU) this made userland crash or hang right after start-up.
-> In my case the data was moved up by 0x20 bytes.
->=20
-> Commit 04d82a6d0881 ("binfmt_flat: allow not offsetting data start") adde=
-d
-> CONFIG_BINFMT_FLAT_NO_DATA_START_OFFSET for architectures that cannot
-> tolerate such a gap; currently only riscv noMMU selects it. Select it on =
-SH
-> as well when building without an MMU.
->=20
-> Tested on a J2 board (Numato Mimas V2, sh2eb, noMMU) with Linux 7.3 and
-> FLAT binaries built with elf2flt: with this change the data segment start=
-s
-> exactly at the end of text and init runs.
->=20
-> Without the patch bootup fails with:
-> [   12.080472] Fixing up unaligned userspace access in "init" pid=3D1 pc=
-=3D0x(ptrval) ins=3D0x6583
-> [   12.123609] Fixing up unaligned userspace access in "init" pid=3D1 pc=
-=3D0x(ptrval) ins=3D0x6583
-> [   12.175153] Kernel panic - not syncing: Attempted to kill init! exitco=
-de=3D0x00007f00
->=20
-> Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
-> Assisted-by: LLM
-> Fixes: 2217b9826246 ("binfmt_flat: revert "binfmt_flat: don't offset the =
-data start"")
->=20
-> ---
-> v1->v2:
->   - add fixes tag (Geert)
->   - tested with 7.3 + Florian's uaccess patch (Geert)
->   - added failing bootup messages to commit message
-> ---
->  arch/sh/Kconfig | 1 +
->  1 file changed, 1 insertion(+)
->=20
-> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-> index d60f1d5a94c0..b501153551c0 100644
-> --- a/arch/sh/Kconfig
-> +++ b/arch/sh/Kconfig
-> @@ -15,6 +15,7 @@ config SUPERH
->  	select ARCH_MIGHT_HAVE_PC_PARPORT
->  	select ARCH_WANT_IPC_PARSE_VERSION
->  	select ARCH_NEED_CMPXCHG_1_EMU
-> +	select BINFMT_FLAT_NO_DATA_START_OFFSET if !MMU
->  	select CPU_NO_EFFICIENT_FFS
->  	select DMA_DECLARE_COHERENT
->  	select GENERIC_ATOMIC64
+On Wed, 21 Oct 2026 at 03:05, Colton Pawielski
+<colton.pawielski@gmail.com> wrote:
+> This is my first message to the mailing list so please correct me if I've
+> done anything improper or non-standard.
 
-I have not tested this yet but I will do so later this week. Personally, I
-test my kernel images on J2 with ToyBox which builds a minimal rootfs with
-busybox.
+Thanks, LGTM.
 
-I am not sure if the binaries are flat binaries in this case, do you know?
+> In testing I could often lock up the board when transferring data over
+> SSH. I don't believe it's related to this series and am fairly sure it's
+> in the 8139cp driver. I have a candidate fix that I plan to send in
+> a couple of days once I've tested it further and there's no more
+> lockups on my hardware.
 
-Adrian
+8139cp is udeed not very reliable, hence nfsroot didn't work well for me.
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> Tested-by: Colton Pawielski <colton.pawielski@gmail.com> # 3x LANDISK
+> HDL-U, ATP865 rev 06/07
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
