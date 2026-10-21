@@ -1,77 +1,99 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792606323;
-	b=iamsJCDaTmb5+khAaQo40o4R2H3oDJ4UTUSii7UzqRgqcsH5wjYFusIx64GzOWwM98OV
-	 9oK88VtPY05vAh/tvuFVsbMoLH0DFkDgi17fLHDdKPkoFeleUsjtdDBTx+eSII8cA7TSp
-	 jPbzvUxKNPqXI2iGD9SLxacuWhjajWzqrb9QjdkA6pbdJkWN4/0gIqxrqkNTU9j3jO+QJ
-	 3KR66hNY6hVt/IEkE+5+6qVVDtX8BwsLPd+Wllerx4WPPHh5PHK0JFJ2opt8CmSkUhKQ9
-	 TvztNRLDX63eqxdaHL42mPFWxpUTWiP7Ho9ifkroDJ0qT5Qn/xdxVZhxSuag5rBTBWg==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792606323;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
-	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
-	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
-	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=+TbJY6n57LgNUxMots103uQ9dat6DVlFqW38S0+rh00=;
-	b=AwlT6D2tHNZoFlcqb5Oik18fz/qGD09YrwCRT613/MZoZFp2PwwFxxp6uijzxxsI6gAV
-	 9amXsAKJx+nkxzpgX5aL6hXLCzleLoWmQtGrgcO8yhAn2JJI3xTyDTwlOUD0hLMd3ZTYr
-	 ZpHC1mHPXh7dxgtKJMkpNOk6CMFgVxh3uverfjJBQZfgau30b/EyzhP+S4UJnxCjLCQud
-	 oQ4G0YvgkM3y/6TjXToep3tqQe856AbQQ2+kW8FF6vclElF+aVNpEPtu+IOW1d8VV2b3W
-	 psozs3e7oCWl2o4O0EF+O2PvzRqXXI5x3U0SiebjThFzHRGMvgyD4xANS9c58TfP4aQ==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=physik.fu-berlin.de;
-	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b="p/3CsATK";
-	arc=none smtp.remote-ip=130.133.4.66
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.210.52
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1792624985;
+	b=bC6cD4e3+nhXNcCtP1eI/7E7nD3rpKCJVVuIoW0sqKJqAqX42lz+HCe1kgLLwxOp1ao6
+	 r8OmTPfmom0NiplpW6O11loMGQuvHJHu+XNH5fQBz2o+VV8PfJT1hfUCrT6PRv5qqTVti
+	 /wzJ+d4bc2/lcirswBxYi3FCmsh7c7VwqojIQ4Zy3AcuVjwCqEayz38GptgqWZOtxNGZ2
+	 HEqu+ujMMqR8emT5XmcjYsJZkR1dEbUoQG4sauVoUo9fHA63dZwdyF2vKMD2U7zrDKtWK
+	 L76kCt4TvNjHNaRBajFWjz9kWiTZXLqavnrucgJSXYM8dZl11aqBVmne/XtZg+ETutw==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792624985;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type;
+	bh=UWTtYfkUlWyv+2UbtfIcf2fvliDHTQ0Yu20KCZoeOOA=;
+	b=Hho4CCX+NTAePNHabc1jRXHm47LQqBvMzUKbfYCOkkFiNrv4XulUFt5T1eqUGKVI+feU
+	 bccGoO7rH7ZqfNUanL5JgUZCq5AkHT6kQwvy9Vx9M6qo/qrlirkEpwqBznbxgYvpoxOSl
+	 mzPDvGjXRtxNY4C9+GUKsG0Lke5bLbIu0pX58+AilfaGHwiB5YsuoW+NXEyXouSn2WggZ
+	 gMEdG2NHX8glmaoFnveV6/UDv48da747Ae0rQsgssIEayZy0gxz3rftqdBVInOZlo0k+3
+	 xodvpPG7xwUAx8G1lAFZEbMtMRDWRc9gtBKh6TgiP5qd4qsRwTQ+CXXd1lNrKaQ7a3g==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=bswUs7Ka;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.210.52
+Received: from mail-ot1-f52.google.com (mail-ot1-f52.google.com [209.85.210.52])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D2BE606A31A;
-	Wed, 21 Oct 2026 18:12:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8D2BE606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46CB9606A31B
+	for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 23:23:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 46CB9606A31B
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=p/3CsATK
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=+TbJY6n57LgNUxMots103uQ9dat6DVlFqW38S0+rh00=; t=1792606321;
-	x=1793211121; b=p/3CsATKIRa6bsnmF+gIml9CI3r39zQe0JseAaQ5lEAW1GLEitBd1UTRkFstP
-	U2vi27b7NZJ3ZcyXsc7q39xakbOUkm1FSqfBgOVLqFpdmGzqTSr6zc5zP3tIp1YmBgZUsz/DTP3Yk
-	1Uu2+aXCTMCaNkyfvNI5Umf6kbIOXg/x1J4XP7I3FqA6no3JFM/NL2tb331hCtu9zc7FLxANR0HcG
-	rzQ/EEHItkR26rUsZxqlFcaeVrp6yQ/rcDeHSMyzWFgjOQMV/oHrsz/c5pnOh6Zh6Fh4/lN52aUmn
-	cPZJJf4WgQLMvSdOOLTWADt6LjNNfSlacKZgqtaJ6ufiPzMLwQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xJan7-000000019DS-2hcs; Wed, 21 Oct 2026 20:11:57 +0200
-Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xJan7-00000000x1o-1JeM; Wed, 21 Oct 2026 20:11:57 +0200
-Message-ID: <f5dc8ecb3f7ed091a4deb6447bd9e7c2c801b847.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 1/2] ata: pata_artop: read the ATP865 mode register
- through pci_iomap
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Daniel Palmer <daniel@0x0f.com>, ysato@users.sourceforge.jp, 
-	dalias@libc.org, dlemoal@kernel.org, cassel@kernel.org,
- linux-sh@vger.kernel.org, 	linux-ide@vger.kernel.org
-Cc: geert@linux-m68k.org, linux-kernel@vger.kernel.org
-Date: Wed, 21 Oct 2026 20:11:56 +0200
-In-Reply-To: <20261017041419.311921-2-daniel@0x0f.com>
-References: <20261017041419.311921-1-daniel@0x0f.com>
-	 <20261017041419.311921-2-daniel@0x0f.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=bswUs7Ka
+Received: by mail-ot1-f52.google.com with SMTP id 46e09a7af769-8446af403b5so912683a34.2
+        for <linux-sh@vger.kernel.org>; Wed, 21 Oct 2026 16:23:05 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1792624984; cv=none;
+        d=google.com; s=arc-20260327;
+        b=GSjqdxfRzE5MKwXcNWxcE2gUAbonVEvuZ4LB+4kwB7PVi16E7cfpkjbavo5FTDkqmr
+         yyCXPyldEa3qvfAwuPxYixga4INsAYnPrkxpzYSTUqy62D8LMNwsIPZSubJu2Z4cBt0n
+         yqZVYvibx1gHUJueUJbgRKIeZskgTXxf+nbJ8LuAyHAIV87irt4ea5sTrCfk6RjlpeDQ
+         tFacyDbot3ojfGPVTjx7r/Vw1HbP7yd+G6zwEFOssflliRKES6bVZqHxXpt141pQlKkg
+         QdHq7qq0rdVmLLvcfxNHC8bZYvOAdHSvE1Tav8J7DUaADYiI+izE5yGWdAuIeZBBvIeb
+         Jo3Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=UWTtYfkUlWyv+2UbtfIcf2fvliDHTQ0Yu20KCZoeOOA=;
+        fh=Wh8Mj4aVfb2evcCN2kEnNAD/ZyMQJN+GUfsooXKhhho=;
+        b=j8rjZ5ZmoPGLb3V+2J6E9Od8hGtCL2EA4cA1Jh/Gep7q8VIQRk/1uV8LXXys8WNHba
+         rwRFvM9fx0JfwOeE8wPD5hBrgbD5EYy76LC30KO1LTaa62uOB8YI4H+FIu4LoMXwAuGg
+         KjyTAz+RfnFR5b1eWLWQU/x9k62y3J41t+zy27/L9KyRqT3EY0UYE3W37SnumqkqXSug
+         kH9iMxAGAt+1U5nC1B8PHXo78QJxrhYIs01RG3JYllhNy5QwQJ/SxtGhB55WKtb6t6kv
+         zANQNX1udIzgCd9oxM8TOn5uxwvWACvhklx1MQYSRF1arDUfX2xe1MfKL/8TRLK717yt
+         WKlQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1792624984; x=1793229784; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=UWTtYfkUlWyv+2UbtfIcf2fvliDHTQ0Yu20KCZoeOOA=;
+        b=bswUs7KaQtVDzZeWu+MWiyJboN7ZZsa0rJoQF+iOWuESEO3rl3FcBVgfPYnaN5YGfF
+         EjV/Wtawl0coq/Pg0/i3QcsLxYidjtA1LO/2PqcSVzx53rhAN2x/zpMefR+C6/XCMG4G
+         N4DQB9V1zjgirP6GQA4xpSSF7D323JQnLliMu4oWg538jz8kCe4Q0j97wkFF0VGG3IZE
+         3lJIg4tcXBe1AepcbuLJY+nmSgyZS2Nue5zWy1LFWsKTNrMjhI/4aumhI9ks1qH7swUy
+         ZgbY23Nf4w5fpAPVIe1SutVFZyWYhVHgCFu95eR1kXAvAukvnC/ekv1jGMGoZSsbkbbp
+         JNUA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792624984; x=1793229784;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=UWTtYfkUlWyv+2UbtfIcf2fvliDHTQ0Yu20KCZoeOOA=;
+        b=dlvnjOx1HrhY5gXn0CGR3ygEZAfj1QfA4sINBrHBthNaacC1TlZXOOdXX30ExSXFRP
+         nxvrkVHWRBX7Wr20ybzppLZa5PJVDD4pXUh6CRe6uAjV1vcs/kzot9F5daqhVcWDarSx
+         s/k3Ph8l50UPK32mepAeqU+/8EjPNtDshMDMUzq4SznDa/cJmqc4A+asnR/YH058pdqU
+         TbUeaAZINDzEEhWkYKYb+A3cWkMm+n8/SKGCl9+Ru59nnC27NfAHXstuIOGcfWKla2gc
+         X1Lcv6P+o125eGga7ZTDFEEVxqQYL27kKWPp3eU5qxn693/0He7c8DJAmYG8FKN6wvaH
+         b1uQ==
+X-Forwarded-Encrypted: i=1; AKwUvByFyVD8ADLQK3keDSgGsOO9DScgRdMubxwv+XbDVKiTWq545jjKZwJc5vRU6WmzjQKDCaAZChGI4Q==@vger.kernel.org
+X-Gm-Message-State: AFq9FYLgDbQFG9oXMTVkEc2Yogffc47IK6+Vba/LOC6x1qmvbNUlaJ0m
+	VF1ix9SCsFXVD/jAXRSRo2SiqzaBD8XDRf1W6dHNxuovPRSqmQccEnbtRZGXN87BsYKcg9BgY+x
+	zthLfMe6tfToyCWl6AD4/hLs1pooYg6Q=
+X-Gm-Gg: AYBFou3zsdlRNHVDD2KA4V3Q4mOacBZldVUyCgLC62A2Jw5oS3rMubW8Bz7/SKwwNfT
+	VQyw3MARaSFWH9EfQtSWSy+hOAEf/FnpTSueXYonWjkIzkMvjzRdebADVx/6Ww04m4eNTgXh8GL
+	nJP0wvO/0FRKZY3Q8+jEEpFSmEPKLhCYPOXRkCdoQp04TNaI/bkus9Mc3HrxfO2rOnB70OocL++
+	GXsVCphjo8gY05Rz3wrB87GxV0wGPpU1E1xelfHShWTRjG2isNSy8x+lFMDAEYODlgK0nIs9VTA
+	xSLzrpilDOb4wxZInpb6C9srbiuSA1An7MOg/gY1aQaTy+oqUTL0jMcaKHxxAIubC2P8eBUnMpB
+	5ThH15fnds0H38yoUxfc93Jd8zi8RHCbVUgDNHbmvMEm0b4pxioU=
+X-Received: by 2002:a05:6808:1686:b0:4f3:e98f:fa27 with SMTP id
+ 5614622812f47-55359701a33mr2377377b6e.16.1792624984257; Wed, 21 Oct 2026
+ 16:23:04 -0700 (PDT)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -81,70 +103,41 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+References: <20261017041419.311921-1-daniel@0x0f.com> <CAJpaz4abKAkDznoi3gczYHNQMF-j5cSajtG07Jws8LkFY9DZFg@mail.gmail.com>
+ <CAFr9PXmntwx06iMc200d9HPoOeCE7XURpS9jiWhB3ud_+QQggA@mail.gmail.com>
+In-Reply-To: <CAFr9PXmntwx06iMc200d9HPoOeCE7XURpS9jiWhB3ud_+QQggA@mail.gmail.com>
+From: Colton Pawielski <colton.pawielski@gmail.com>
+Date: Wed, 21 Oct 2026 18:22:52 -0500
+X-Gm-Features: AclHuK-WfMKMCFvlwQ93fHdyuPOEefr5IORMgFLa-KSGZEsFjPpcPlLkY8bAXbc
+Message-ID: <CAJpaz4ZJ-zgcudHS705HSdcM-wiB5hmX=gg00wqzS18NF6fm1g@mail.gmail.com>
+Subject: Re: [PATCH 0/2] sh: Fix IDE on landisk
+To: Daniel Palmer <daniel@0x0f.com>
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
+	dlemoal@kernel.org, cassel@kernel.org, linux-sh@vger.kernel.org, 
+	linux-ide@vger.kernel.org, geert@linux-m68k.org, linux-kernel@vger.kernel.org, 
+	fuchsfl@gmail.com
+Content-Type: text/plain; charset="UTF-8"
 
 Hi Daniel,
 
-On Sat, 2026-10-17 at 13:14 +0900, Daniel Palmer wrote:
-> artop_init_one() probes the 6280's "fast" bit with inb() on the raw
-> start address of BAR 4.  That address is a PCI I/O address, which is
-> only a usable port number on platforms whose I/O port base maps PCI I/O
-> space one to one.  On an SH7751 LANDISK (identity io_port_base, PCI I/O
-> window at 0xfe240000) the resource starts at 0x1400 and inb(0x1400)
-> dereferences that address:
->=20
->   BUG: unable to handle kernel paging request at 00001400
->   PC is at artop_init_one+0x10e/0x170
->=20
-> Map the BAR with pci_iomap() and use ioread8(), as libata-sff does for
-> the BMDMA registers later on.
->=20
-> Signed-off-by: Daniel Palmer <daniel@0x0f.com>
-> ---
->  drivers/ata/pata_artop.c | 12 ++++++++++--
->  1 file changed, 10 insertions(+), 2 deletions(-)
->=20
-> diff --git a/drivers/ata/pata_artop.c b/drivers/ata/pata_artop.c
-> index 9f8d41639a62..351ff4c8e48e 100644
-> --- a/drivers/ata/pata_artop.c
-> +++ b/drivers/ata/pata_artop.c
-> @@ -405,13 +405,21 @@ static int artop_init_one (struct pci_dev *pdev, co=
-nst struct pci_device_id *id)
->  	case 1:		/* 6260 */
->  		ppi[0] =3D &info_626x;
->  		break;
-> -	case 2:		/* 6280 or 6280 + fast */
-> -		if (inb(pci_resource_start(pdev, 4)) & 0x10)
-> +	case 2: {	/* 6280 or 6280 + fast */
-> +		void __iomem *bmdma =3D pci_iomap(pdev, 4, 1);
-> +		u8 cfg;
-> +
-> +		if (!bmdma)
-> +			return -ENOMEM;
-> +		cfg =3D ioread8(bmdma);
-> +		pci_iounmap(pdev, bmdma);
-> +		if (cfg & 0x10)
->  			ppi[0] =3D &info_628x_fast;
->  		else
->  			ppi[0] =3D &info_628x;
->  		break;
->  	}
-> +	}
-> =20
->  	BUG_ON(ppi[0] =3D=3D NULL);
-> =20
+On Wed, 21 Oct 2026 at 05:55, Daniel Palmer <daniel@0x0f.com> wrote:
+> There seems to be two issues: One it interrupts for every packet when
+> the 8139cp can hold off and not storm the processor, and there is some
+> issue with the chip refusing to send small skbs so the network layer
+> starts locking up/timing out. I was planning to send fixes this
+> weekend but if your fix is one of those, send your version, cc me and
+> I'll test it out.
 
-Since neither of the two maintainers of this driver has responded yet, I ca=
-n't
-take this patch through my tree. Either Damien or Niklas should ack this ch=
-ange
-(according to ./scripts/get_maintainer.pl drivers/ata/pata_artop.c).
+My fix turned out to be neither of those, so please go ahead and send
+yours. It's a race in cp_rx_poll(): napi_complete_done() runs before
+cp->lock is taken, so an interrupt in between can leave Rx unmasked
+while NAPI is still scheduled, and the level-triggered IRQ then storms
+until the board hard-hangs. I've sent it to netdev with you on cc:
 
-Adrian
+https://lore.kernel.org/all/20261021-b4-8139cp-napi-v1-1-c9b683d9564b@gmail.com/
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+It should be independent of your two fixes. Please cc me when you
+send yours and I'll test them on my boards.
+
+Thanks,
+Colton
