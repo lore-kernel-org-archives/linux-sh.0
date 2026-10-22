@@ -1,78 +1,47 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792655188;
-	b=TwJ5hZDUXUbpGeUGOC8NBEQQjNgO0GWsz8gn8mjnmLJ4rnyG3t1pzt+QU+oD45U0rLiE
-	 SVjwWCpcUku4TE9CB9rYl42PE45e9IJSzCRKXy+sbHE4YOjU8xKRdnhSZzk2ChzwrGBQ3
-	 6XL4D/B/QG9JCxpyEMAPuMCY/jH8b6AZj4/XkiKTByhm7hJGN4Ra/nj1gGKKdImEXKDVa
-	 OPyVEUBrma26/BUjfs0i0edGKHNvpkDGPswWISyIgzt4UjWxXug9aNRR8BzdAqrsoAbY5
-	 WVD+7X4/VA4JbzL+xk5BqCVb3pmbZoJdKLVvDMvCpd4bWKgDAL9JP5DgGAXIrkdu5uQ==
+	t=1792655883;
+	b=WOmL7ps8daKX07BwYCCT5LFgAgwhR1/+HBWeEYWYD2oNl2qzBIPfZ+blQfHTQtBneA+y
+	 raaS1xI2zrOziXOyPSUvBCoH/y8fPz26NAUWLsYxtf3WB9gF5Zg5DBC+8elVmqXun4o+5
+	 Xr/8q+B9t3GEy9sncP65XaG4eusmIzHHS+5G5t49keqmc7Qc7DgWl2C+VKkyAoSfXRo6t
+	 5uR99EF+1ABjXnltsUwGbVjnjyo1luEtRbv64zray9OwKiBZqS59O/YJ+RQlG6xuFd/Qd
+	 SzXJzxEWO18GQx4/FbSZ9vGq1dT1jFhxRpS3n+2aDCsjiznUUoWk9zWtreJq2nPdwNw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792655188;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
-	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
-	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
-	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=gvZ8R3iNYCC2o78cer5OoILJ7qYtxYvoXIYa4LpkwDI=;
-	b=NW7DmQSFskRdhf/AdRTcJDid7AFhJvAv0KUaFhGfBxHjk6iIzaYVKxEh+NPGM12LC4Ys
-	 sP+yo9XkwI99E68hFWGPSXrZmrqDpi/vNVH/HQbFs5Sq3zQroQYvk3FjV8YZtsgjDWUQr
-	 epKQp9sstQ5MIY4WywEkLytyHwVdaSwcFyTqHRBjSiJOAdqQCDeF3HmHbpaHPbDZJE3HS
-	 s1YjlXAQuosnVa/y6P2XizRDu47rQLkclKEKBWL6dnY8pKXOfy1YsLGS57tOPqdbosvIR
-	 AND4sGTuO/kJ/4/PuYrqkZm9vh8Qwrh6myksP5/hqzncZHnliBxsZkealwBDQgg28CA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792655883;
+	h=Received:DKIM-Signature:Message-ID:Date:MIME-Version:User-Agent:
+	 Subject:To:Cc:References:From:Content-Language:Autocrypt:In-Reply-To:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=UbkcrVhug0AM31INW5/tZRh5XyQQUpxMrCXbZ/QJJr4=;
+	b=w0lUKi80e9hOvJMfRBmuqnI9ZllSJo9J1TxdjwaqFKrwd7UbjydgANo2Q1WmREbl4mDp
+	 fyUSwyMHrGnFc9AL0AABa0ThHGaVt9yOek13L/ROnYgSeKVfUEPgFfpMTpiRxSqevSLLR
+	 jJRPBJIO9RLbWIFR11ZfmrcLuvWP+WcpQTagt5ZvXjkwm+QwTYYe4jSJnb8ZZBQcjLEWJ
+	 EEKr5BrwaZ6Z2UD8T9Nfvw5fSdSYzuJ/7oLDzlKO4NLbxigKA6SOMtn0SNZ1yUFJ1rLEg
+	 QRIL27i2S2oRLZDkgXt3SUx0REQsnK6fhwunJu7qj5nOZCPGTcxSGm9mkrDFE7JCiIg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=physik.fu-berlin.de;
-	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=OJFX61ve;
-	arc=none smtp.remote-ip=130.133.4.66
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Bzg1rekp;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B518A606A319;
-	Thu, 22 Oct 2026 07:46:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B518A606A319
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ABBDD606A326;
+	Thu, 22 Oct 2026 07:58:02 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=OJFX61ve
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=gvZ8R3iNYCC2o78cer5OoILJ7qYtxYvoXIYa4LpkwDI=; t=1792655186;
-	x=1793259986; b=OJFX61vepWU/KFcLhFseB052OCMon37GFFjjiDmHUXHlTNXWtk1lHImFkN+xd
-	ueMSYS5uXaCTUU873Ujn8toKrxVI4Y6+6FbtUBGTlCDMUEde8/u95k7hnbpxJxcL8R3Fkxdh5jbTG
-	tjwtDxZwr5SOM6YiIrWeOeYPqCuajxqFhT8wtgWeOoeDclbRn/m2PuSLkBRGQz8K5wvn7S8gI6Gw7
-	//xdYLMI5/9iYQJkPOoP/X4zubH20JrXXPf6BHhTtwmebsxTtcB/CfIvzNagJQezvDD3eylalVrfz
-	zzlgXZpSdlqx6FZm16JzLKs+YWqJZ5f9pDObvy1WEIr4mG1HTg==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xJnVI-00000003uZR-18NE; Thu, 22 Oct 2026 09:46:24 +0200
-Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xJnVI-00000004Agl-0Dq6; Thu, 22 Oct 2026 09:46:24 +0200
-Message-ID: <4f37ee0df5c5b0b29c69b3770c06a885f0562c74.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] dt-bindings: soc: document Casio fx-9750GIII
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Krzysztof Kozlowski <krzk@kernel.org>, Artem Novak
- <artem122novak@gmail.com>, 	robh@kernel.org
-Cc: krzk+dt@kernel.org, conor+dt@kernel.org, devicetree@vger.kernel.org, 
-	linux-sh@vger.kernel.org
-Date: Thu, 22 Oct 2026 09:46:23 +0200
-In-Reply-To: <b8c7db3a-ad4d-4378-9e50-4c8591b93de8@kernel.org>
-References: <20261022063902.471383-1-artem122novak@gmail.com>
-	 <d6562416-05aa-452d-8fe5-a68cb8f50f01@kernel.org>
-	 <87fe0b0339e6f8763b9b385dbe8b8b5e587deebb.camel@physik.fu-berlin.de>
-	 <b8c7db3a-ad4d-4378-9e50-4c8591b93de8@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Bzg1rekp
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 18A841F000C2;
+	Thu, 22 Oct 2026 07:57:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1792655882;
+	bh=UbkcrVhug0AM31INW5/tZRh5XyQQUpxMrCXbZ/QJJr4=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To;
+	b=Bzg1rekpbYxjZcy8zRMmHT02rqymR4bVC1BGHiMpMhtLztWvsOlH+oWYZhTE7+eOc
+	 JJUKf6fk+Vhc6Ql8gfVjZ/KDTkSVIvkoCglSdfyKMkNmYHmBTyLpIMCJl5qh4DCiOD
+	 IBJjSZaxS3ijXOFGu+QZyDY2gGvUFXDyXhTPL0SRb7BtD2T7lGjwJpOmDG2n7/teUu
+	 7Hn3MKtT4apw8swOYVmmR9QXLgOVMTLnU0omWju2qVAk6M21Zk5vddJA2jZ4DSSDyc
+	 +v8XK+y/URfv3kbADZudJtl0wUH5NQWXyuMUoVANeYsmiG8oZ7LlQH1o3sMa3DUYkG
+	 l6wiehsaR4jyg==
+Message-ID: <643ce64e-23d4-4de3-b7c8-8e1e9b268d03@kernel.org>
+Date: Thu, 22 Oct 2026 09:57:58 +0200
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -82,26 +51,87 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] dt-bindings: soc: document Casio fx-9750GIII
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Artem Novak <artem122novak@gmail.com>, robh@kernel.org
+Cc: krzk+dt@kernel.org, conor+dt@kernel.org, devicetree@vger.kernel.org,
+ linux-sh@vger.kernel.org
+References: <20261022063902.471383-1-artem122novak@gmail.com>
+ <d6562416-05aa-452d-8fe5-a68cb8f50f01@kernel.org>
+ <87fe0b0339e6f8763b9b385dbe8b8b5e587deebb.camel@physik.fu-berlin.de>
+ <b8c7db3a-ad4d-4378-9e50-4c8591b93de8@kernel.org>
+ <4f37ee0df5c5b0b29c69b3770c06a885f0562c74.camel@physik.fu-berlin.de>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Content-Language: en-US
+Autocrypt: addr=krzk@kernel.org; keydata=
+ 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
+In-Reply-To: <4f37ee0df5c5b0b29c69b3770c06a885f0562c74.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Thu, 2026-10-22 at 09:33 +0200, Krzysztof Kozlowski wrote:
-> > There is a Casio calculator community out there that are users
-> > for this.
->=20
-> Upstream user, so any known upstream open source project using Linux
-> kernel DT bindings. We do not need bindings for non-upstream users.
+On 22/10/2026 09:46, John Paul Adrian Glaubitz wrote:
+> On Thu, 2026-10-22 at 09:33 +0200, Krzysztof Kozlowski wrote:
+>>> There is a Casio calculator community out there that are users
+>>> for this.
+>>
+>> Upstream user, so any known upstream open source project using Linux
+>> kernel DT bindings. We do not need bindings for non-upstream users.
+> 
+> Yes, I realized that hadn't had any coffee yet and I misunderstood
+> that comment.
+> 
+> I think that Artem is sending the users for these bindings in a different
+> patch set. I have not been able to review the changes for arch/sh yet.
 
-Yes, I realized that hadn't had any coffee yet and I misunderstood
-that comment.
+So this looks like binding for the board/soc, thus must be sent along
+with the DTS patchset.
 
-I think that Artem is sending the users for these bindings in a different
-patch set. I have not been able to review the changes for arch/sh yet.
+See:
+https://lore.kernel.org/all/20231121-topic-sm8650-upstream-dt-v3-0-db9d0507ffd3@linaro.org/
 
-Adrian
+https://lore.kernel.org/linux-samsung-soc/CADrjBPq_0nUYRABKpskRF_dhHu+4K=duPVZX==0pr+cjSL_caQ@mail.gmail.com/T/#m2d9130a1342ab201ab49670fa6c858ee3724c83c
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Best regards,
+Krzysztof
