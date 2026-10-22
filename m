@@ -1,51 +1,56 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=159.69.126.157
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=198.137.202.136
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792685557;
-	b=CL2AqXWDffXNAp1pdUlTYKdZqMB0V6n+C25fYLYn/2ELMJvb5s2H10hIJS2tv/6Vmqrg
-	 dtJxF05CXUod1bXn0WsW8u4lE719O1GXRktnSeQKGJBT3hPEorIGyuO870m2ARtudobwH
-	 HFfbTusJggiCbA4E6O8zokz4r6iNZy0Bvc/z28vT0Vb9wepszCcN6bTnnQW43X/Pr2zbB
-	 cXbUxU8zv3O3a1Jb5OUrj4BNQK4eLE3iu8FNcBo0c2PcyfQN/WoVYpDJRFQfP0ZJVKzeX
-	 L4ilX82+4SGk1RiMf4uAjgl6txQjCbonv0HjNyUUvfcrVWYYxJjolfkItzhA26sGxJg==
+	t=1792692290;
+	b=U9pLtiUxBEniFSeuL3xfTihqUng0NyGF4ARSzRjF/G5MNk4WvAfdNwHNgxrMo1LNOOB2
+	 XpNZ3hKisqo7eJzPI4kVR3qPyuw+Y8LkKcydH6cBzPl4LsAGl9xn/rTFR/ya+2BQwhG16
+	 W4hXRzyP5Q5zPFfEzTrVdTERSlm/6FrSLjEm+q4imwBq36Eloz3+Vixs9SlkYpQg6FMc/
+	 gaMI2Y88xoTMpQ54Q4GwCYBdUu+UxKX0QwycJSM64YTubEHuxtK0swfHezjly5zR1deAT
+	 O/oZAd01uBRJjnJU304qoW5BwAYLBb5Sxsu3laswYt25bL8fVYVPrYZVPdb63nU7Whg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792685557;
-	h=DMARC-Filter:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=HDnv1IJIP6oSjhDLM6LlHOM5+fMaByUs67f2+ZyjO6M=;
-	b=naK7pFrh53LXhgqfe/tMl4GkH5YPoEGGLK644Hff3FM6BEOuBxRqmJUgWk1LIpnnC7Oq
-	 iYtbWiLe3hJFcWA89Wfqfjs7/g2CTe99zOLrwBR41IDVP+EtcEXwDhi5/6qJHspoFRTY6
-	 3Fea/OKBkG8Fo+bFBwWyNLYRXAroTj6LX7BKQmwgtGxG6DPG/HN4/eLsS52XZBXeXK1YE
-	 WeWngZx+j0PG8KDt69xF6vdG/yD/FhJdu+et4X1JJyfZcJghDY/O5URWOOT+aq/1UzrgX
-	 0SX1Iqw3BlVCYRUF8nlfGUEJh63MNwEmuSnBX4nvyH8loHW2NJw9AI3XgF8++dlSNQQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792692290;
+	h=DMARC-Filter:Received:DKIM-Filter:DKIM-Signature:Message-ID:Date:
+	 MIME-Version:User-Agent:Subject:To:Cc:References:Content-Language:
+	 From:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+	bh=RhnfvKmfoxy+HUbDsORpInOXf0Z9ck2xlJJLmjkZQrQ=;
+	b=wKlFg5x+9IXxaqIqGze0znFrnDDWrdJLKX9zysd/fUOAIj/6I0bTUkeAS7pcyOsF6jN+
+	 d13sGMHbPzDSOpXNeCatRTqMSurXUet2tRqZX/y/NyIvPYbpD9AxRd4TeLdY2t+YhsxS9
+	 S839MWwjt1pOEmQfN3BbK70eCUlogtRAUhA7+Ht4YoYfQk6biCQIzJhrmJqBFnLhp6hzd
+	 6EplL86cYKNQv5biB2InnVQHXtLfwkdwHqwBqKeXwwIUUDH7yvlNx4KZ/Ph/mJL6Nyuqx
+	 bvo1FXqD9W95+qWeQhATG+K1MW/OBxdP0YMYMMJZiWgxEcZvQMzgAAnQS9y0H4SNHPg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=weissschuh.net;
-	spf=pass smtp.mailfrom=weissschuh.net;
-	dkim=pass header.d=weissschuh.net header.i=@weissschuh.net header.a=rsa-sha256 header.s=mail header.b=pNzbzt2D;
-	arc=none smtp.remote-ip=159.69.126.157
-Received: from todd.t-8ch.de (todd.t-8ch.de [159.69.126.157])
+	dmarc=pass header.from=zytor.com;
+	spf=pass smtp.mailfrom=zytor.com;
+	dkim=pass header.d=zytor.com header.i=@zytor.com header.a=rsa-sha256 header.s=2026092801 header.b=wS32jOje;
+	arc=none smtp.remote-ip=198.137.202.136
+Received: from mail.zytor.com (terminus.zytor.com [198.137.202.136])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85CA0606A319;
-	Thu, 22 Oct 2026 16:12:35 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 85CA0606A319
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=weissschuh.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58917606A31B;
+	Thu, 22 Oct 2026 18:04:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 58917606A31B
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zytor.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=weissschuh.net header.i=@weissschuh.net header.a=rsa-sha256 header.s=mail header.b=pNzbzt2D
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=weissschuh.net;
-	s=mail; t=1792685548;
-	bh=atgxzKoRU5cB/A8AIB23NbE+SMIbC5Zx2XbwRgsiy0I=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=pNzbzt2DO6KXWQqyRNCIuCq+gPYyCJQw4G7ivwz51a1bG1oQ8lELCY5qwoeEkn9v0
-	 dhHewMnZTdM6SmvzvKloc7Jyh+H/siH7tdHSgE5QZRqRZnuZf3x2kRTVF3D3vBBkNx
-	 3vnlYi7QeSdrLtm/++nOFEL0MealwwH+lMGqeCWc=
-Date: Thu, 22 Oct 2026 18:12:27 +0200
-From: Thomas =?utf-8?Q?Wei=C3=9Fschuh?= <linux@weissschuh.net>
-To: Daniel Palmer <daniel@0x0f.com>
-Cc: w@1wt.eu, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH] tools/nolibc: sh: enter _start_c with jsr instead of bsr
-Message-ID: <cd8fcccd-aa70-46f9-b497-ec3070b5f8db@t-8ch.de>
-References: <20261022100159.525910-1-daniel@0x0f.com>
+	dkim=pass (2048-bit key, unprotected) header.d=zytor.com header.i=@zytor.com header.a=rsa-sha256 header.s=2026092801 header.b=wS32jOje
+Received: from [172.27.3.124] (c-76-133-66-138.hsd1.ca.comcast.net [76.133.66.138])
+	(authenticated bits=0)
+	by mail.zytor.com (8.18.1/8.17.1) with ESMTPSA id 69MI2jre822700
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NO);
+	Thu, 22 Oct 2026 11:02:46 -0700
+DKIM-Filter: OpenDKIM Filter v2.11.0 mail.zytor.com 69MI2jre822700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=zytor.com;
+	s=2026092801; t=1792692174;
+	bh=RhnfvKmfoxy+HUbDsORpInOXf0Z9ck2xlJJLmjkZQrQ=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=wS32jOjeFWsFEs7/XC2lmhjx+vaso38Aa1yvVUAkT9A1W3myWjPjlKJ97J5iL0Ywq
+	 bPF69gGCe7jooHw6vT1puqfAAMWwIenPVsBB0BtjXDHBnYwO13DlDPhjiEozTqjEHM
+	 Tnne7bJIubMKnpcLaITiN/m+5GZf8SNZmR76JFs4RsiRgOXjXb7KnOu57Xbk4+jf0R
+	 res/2bYXDI5YQACu5N7auw0s2PeA2biV4pFQrygkfChnNdCyphEU5uiDFSgPKPiKVV
+	 mrz+yPrxO0ZpIXSlYj8frGR29U2PsHFm2Ceilf5VQYeo3Indd2RWAuBubWzuARjG4V
+	 DyvcySggronVQ==
+Message-ID: <9d875fab-fdad-413e-9737-6160fac2a406@zytor.com>
+Date: Thu, 22 Oct 2026 11:00:24 -0700
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -55,99 +60,73 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261022100159.525910-1-daniel@0x0f.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [patch 16/18] x86/entry: Get rid of the sys_ni_syscall()
+ indirection
+To: Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Thomas Gleixner <tglx@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>,
+        Peter Zijlstra
+ <peterz@infradead.org>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Shrikanth Hegde <sshegde@linux.ibm.com>, linuxppc-dev@lists.ozlabs.org,
+        Kees Cook <kees@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
+        loongarch@lists.linux.dev, Paul Walmsley <pjw@kernel.org>,
+        Palmer Dabbelt <palmer@dabbelt.com>, linux-riscv@lists.infradead.org,
+        Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org,
+        x86@kernel.org, Mark Rutland <mark.rutland@arm.com>,
+        Jinjie Ruan <ruanjinjie@huawei.com>, Andy Lutomirski <luto@kernel.org>,
+        Oleg Nesterov <oleg@redhat.com>,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>, Guo Ren <guoren@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Helge Deller
+ <deller@gmx.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Richard Weinberger <richard@nod.at>, Chris Zankel <chris@zankel.net>,
+        linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
+        linux-csky@vger.kernel.org, linux-m68k@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
+        Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
+        Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>,
+        Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        Andreas Larsson <andreas@gaisler.com>,
+        linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
+        linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-arch@vger.kernel.org,
+        =?UTF-8?Q?Michal_Such=C3=A1nek?= <msuchanek@suse.de>,
+        Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org
+References: <20260707181957.433213175@kernel.org>
+ <20260707190254.493733289@kernel.org> <20261022142425.3Wx-RrU5@linutronix.de>
+ <20261022150235.V2CSdtmu@linutronix.de>
+Content-Language: en-US, sv-SE
+From: "H. Peter Anvin" <hpa@zytor.com>
+In-Reply-To: <20261022150235.V2CSdtmu@linutronix.de>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Hi Daniel!
-
-On 2026-10-22 19:01:59+0900, Daniel Palmer wrote:
-> bsr has limited displacement and cannot reach _start_c if its
-> more than +/-4KiB away.
+On 2026-10-22 08:02, Sebastian Andrzej Siewior wrote:
+> On 2026-10-22 16:24:30 [+0200], To Thomas Gleixner wrote:
+>> The test could be updated via the hunk below in case the new behaviour
+>> is what is expected. hpa made the extension to the test in commit
+>> 795e2a023b808 ("selftests/x86/syscall: Add tests under ptrace to
+>> syscall_numbering_64").
+>>
+>> diff --git a/tools/testing/selftests/x86/syscall_numbering.c b/tools/testing/selftests/x86/syscall_numbering.c
+>> index ca0eca7b9dced..1435394fba022 100644
+>> --- a/tools/testing/selftests/x86/syscall_numbering.c
+>> +++ b/tools/testing/selftests/x86/syscall_numbering.c
 > 
-> This starts to show up if you have big programs (static binary
-> of the game Quake in my case) and/or use LTO and things get moved
-> around.
-
-That is certainly a usecase that justifies making the two other SH4
-nolibc users' binaries a bit larger :-)
-
-> Replace bsr with a calculation of the effective address of
-> _start_c and jsr.
+> Now I notice the fix depends on CONFIG_X86_X32_ABI=y (fails for =n).
+> But we want to get rid of it anyway so…
+> CONFIG_IA32_EMULATION is not affected (with the fix).
 > 
-> Tested on QEMU and real SH4 and SH4a machines.
-> 
-> Signed-off-by: Daniel Palmer <daniel@0x0f.com>
-> ---
-> 
-> I'm no SuperH asm expert but this works for me. :)
-> Maybe there is a way in C to get _start and _start_c to always
-> be close together that would avoid this entirely?
+It would be very simple to probe for by issuing a simple system call like
+getppid() with the x32 bit set.
 
-That would be my preference, too.
+	-hpa
 
-Maybe one of these works:
-
-1) Put both _start() and _start_c() in a dedicated .text subsection.
-
-Apparently the default GNU ld linkerscript contains '*(SORT(.text.sorted.*))'.
-So if we use .text.sorted.nolibc_start for both functions they should
-end up next to each other.
-See https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html.
-
-2) Put _start() *into* _start_c:
-
-diff --git a/tools/include/nolibc/crt.h b/tools/include/nolibc/crt.h
-index 714256228914..ebcd0ea2b9f2 100644
---- a/tools/include/nolibc/crt.h
-+++ b/tools/include/nolibc/crt.h
-@@ -115,6 +115,19 @@ void _start_c(long *sp)
-                (*--dtor_func)();
-
-        exit(exitcode);
-+
-+       __asm__ volatile (
-+               ".global _start\n"           /* The C function will have a prologue,         */
-+               ".type _start, @function\n"  /* corrupting "sp"                              */
-+               ".weak _start\n"
-+               "_start:\n"
-+
-+               "mov sp, r4\n"               /* save argc pointer to r4, as arg1 of _start_c */
-+               "bsr _start_c\n"             /* transfer to c runtime                        */
-+               "nop\n"                      /* delay slot                                   */
-+
-+               ".size _start, .-_start\n"
-+       );
- }
-
- #endif /* NOLIBC_NO_RUNTIME */
-
-But that for all architectures, using macros etc.
-
-If the .text.sorted. solution works, I'd prefer that.
-
->  tools/include/nolibc/arch-sh.h | 7 ++++++-
->  1 file changed, 6 insertions(+), 1 deletion(-)
-> 
-> diff --git a/tools/include/nolibc/arch-sh.h b/tools/include/nolibc/arch-sh.h
-> index 996cfbe1bee3..7318f52dcba9 100644
-> --- a/tools/include/nolibc/arch-sh.h
-> +++ b/tools/include/nolibc/arch-sh.h
-> @@ -154,8 +154,13 @@ void __attribute__((weak, noreturn)) __nolibc_entrypoint __nolibc_no_stack_prote
->  		"_start:\n"
->  
->  		"mov sp, r4\n"               /* save argc pointer to r4, as arg1 of _start_c */
-> -		"bsr _start_c\n"             /* transfer to c runtime                        */
-> +		"mova 1f, r0\n"              /* load the effective address of 1: into r0     */
-> +		"mov.l @r0, r1\n"            /* load the distance to _start_c from 1:        */
-> +		"add r0, r1\n"               /* calculate address of _start_c                */
-> +		"jsr @r1\n"                  /* transfer to c runtime                        */
->  		"nop\n"                      /* delay slot                                   */
-> +		".balign 4\n"
-> +		"1: .long _start_c - 1b\n"   /* Distance from here to _start_c               */
->  
->  		".size _start, .-_start\n"
->  	);
-> -- 
-> 2.55.0
-> 
