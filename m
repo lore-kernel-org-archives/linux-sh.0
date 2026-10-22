@@ -1,107 +1,51 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=193.142.43.55
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=159.69.126.157
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792681359;
-	b=LgPAK46ksoLcrtSzMud0aAQ/VGz60D1sZviyMMYPKe1A/dfjNQqlQAD6/8Qj9m0N3ovg
-	 DK+jc1JsWeOx5DVdF5vxDWn5G1yZ24SPVTS9Pw3KAEZY37HL8bphx4TU/6OaE5cQqZVif
-	 lB7wGs0pKThxcBjFNZbYZ94GBBreXWJw1DKnLQT2g/ih+hu8dfHJHiwTocyD4hAXYDv8v
-	 fKuUPIhu4lVMp6kbtDagazlrI38heJGwgI3kq5TywNC0TD5LpVRDkjnfHhCcSusXnWk9V
-	 sAo0KJ9sMa6vnxjNbwV/jvaoOYuJKgWedaj53sy8FDa2kYcYmxaCFRhR3t1NRTT1kmg==
+	t=1792685557;
+	b=CL2AqXWDffXNAp1pdUlTYKdZqMB0V6n+C25fYLYn/2ELMJvb5s2H10hIJS2tv/6Vmqrg
+	 dtJxF05CXUod1bXn0WsW8u4lE719O1GXRktnSeQKGJBT3hPEorIGyuO870m2ARtudobwH
+	 HFfbTusJggiCbA4E6O8zokz4r6iNZy0Bvc/z28vT0Vb9wepszCcN6bTnnQW43X/Pr2zbB
+	 cXbUxU8zv3O3a1Jb5OUrj4BNQK4eLE3iu8FNcBo0c2PcyfQN/WoVYpDJRFQfP0ZJVKzeX
+	 L4ilX82+4SGk1RiMf4uAjgl6txQjCbonv0HjNyUUvfcrVWYYxJjolfkItzhA26sGxJg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792681359;
-	h=DMARC-Filter:Date:DKIM-Signature:DKIM-Signature:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 Content-Transfer-Encoding:In-Reply-To;
-	bh=UzBCi/OSOXBVd/hf35Hctx/8s00KKyC8gNB54GWWKuw=;
-	b=VyUPMGFTYh39LSJuSVWp+7miqc8lGfv5iMRYGGQrgjutUX+7o6RULdx8JBUybVxsQFrE
-	 nQ/wxMDdTfGBbuevrRov87KIvXMDTvNuwEfsxTJNCzSSmftW7tvXsblexCoaXM6ZC1sFR
-	 PGodVhcXgAlUOV36R9FBO7PdbEMiGhBGoowV/rLM7h5kDJIGN5pKqYG+UviRGNL3SX3FH
-	 jSzDQ7spqUoGeYIdbNPTyAr+dFl43cPXlUJ27jp1TN+YiwSsDlWjh9rTkAmG4xjYbFYgO
-	 dlHd3bGXQ31C9CP3kHvNClMiun3eQ68JIGIi9D0s2p9sx3wwgvYOabnV8e1bBAey3lA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792685557;
+	h=DMARC-Filter:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
+	bh=HDnv1IJIP6oSjhDLM6LlHOM5+fMaByUs67f2+ZyjO6M=;
+	b=naK7pFrh53LXhgqfe/tMl4GkH5YPoEGGLK644Hff3FM6BEOuBxRqmJUgWk1LIpnnC7Oq
+	 iYtbWiLe3hJFcWA89Wfqfjs7/g2CTe99zOLrwBR41IDVP+EtcEXwDhi5/6qJHspoFRTY6
+	 3Fea/OKBkG8Fo+bFBwWyNLYRXAroTj6LX7BKQmwgtGxG6DPG/HN4/eLsS52XZBXeXK1YE
+	 WeWngZx+j0PG8KDt69xF6vdG/yD/FhJdu+et4X1JJyfZcJghDY/O5URWOOT+aq/1UzrgX
+	 0SX1Iqw3BlVCYRUF8nlfGUEJh63MNwEmuSnBX4nvyH8loHW2NJw9AI3XgF8++dlSNQQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=linutronix.de;
-	spf=pass smtp.mailfrom=linutronix.de;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=2kUGpeTG;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=rACQg86H;
-	arc=none smtp.remote-ip=193.142.43.55
-Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
+	dmarc=pass header.from=weissschuh.net;
+	spf=pass smtp.mailfrom=weissschuh.net;
+	dkim=pass header.d=weissschuh.net header.i=@weissschuh.net header.a=rsa-sha256 header.s=mail header.b=pNzbzt2D;
+	arc=none smtp.remote-ip=159.69.126.157
+Received: from todd.t-8ch.de (todd.t-8ch.de [159.69.126.157])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E2728606A31A;
-	Thu, 22 Oct 2026 15:02:38 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E2728606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85CA0606A319;
+	Thu, 22 Oct 2026 16:12:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 85CA0606A319
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=weissschuh.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=2kUGpeTG;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=rACQg86H
-Date: Thu, 22 Oct 2026 17:02:35 +0200
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020; t=1792681357;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=UzBCi/OSOXBVd/hf35Hctx/8s00KKyC8gNB54GWWKuw=;
-	b=2kUGpeTGDVBuYHmtDUk+ioLvFvif4ltj8rhWzocDuPm3HaFe4R4vTlOrnH+/NsK85KtmTp
-	BQjRWdChCYWAdK0+eKUDRrdj71IFDIxlOzl/dpE7YHJOp63rkeZsrL+lIMWPOayKDZmWQS
-	jZAmsd4OLiERAIm81xpmW1yxnaZhra+XaRdURt8feLSfDQkUZypkuicnE2Chx4WDXJq1W7
-	gDW8/bA/PN+qgiQxlc+hLTJKpE5MORxYd7/+QpWeOeTOBVrrUrdM+PZPV0PqyhtRPzLVvf
-	zZtCZj7gdLMshXYHbUIElhTwDBoSLh7+UVN4FV0jNASdMsB3S53YU8lnjUcMbw==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020e; t=1792681357;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=UzBCi/OSOXBVd/hf35Hctx/8s00KKyC8gNB54GWWKuw=;
-	b=rACQg86HepNQ8r26wtL/lrV9xxe+QpJ6z/mp4SnHXzsO+wI4ld+mzpC3AGpr+fKJ/pFfac
-	AwRn+5gmUDC3CcCw==
-From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-To: Thomas Gleixner <tglx@kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Shrikanth Hegde <sshegde@linux.ibm.com>,
-	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	linux-riscv@lists.infradead.org,
-	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org,
-	x86@kernel.org, Mark Rutland <mark.rutland@arm.com>,
-	Jinjie Ruan <ruanjinjie@huawei.com>,
-	Andy Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Guo Ren <guoren@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Helge Deller <deller@gmx.de>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Richard Weinberger <richard@nod.at>,
-	Chris Zankel <chris@zankel.net>,
-	linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
-	linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-	Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
-	Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>,
-	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
-	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
-	linux-arch@vger.kernel.org,
-	Michal =?utf-8?B?U3VjaMOhbmVr?= <msuchanek@suse.de>,
-	Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>
-Subject: Re: [patch 16/18] x86/entry: Get rid of the sys_ni_syscall()
- indirection
-Message-ID: <20261022150235.V2CSdtmu@linutronix.de>
-References: <20260707181957.433213175@kernel.org>
- <20260707190254.493733289@kernel.org>
- <20261022142425.3Wx-RrU5@linutronix.de>
+	dkim=pass (1024-bit key, unprotected) header.d=weissschuh.net header.i=@weissschuh.net header.a=rsa-sha256 header.s=mail header.b=pNzbzt2D
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=weissschuh.net;
+	s=mail; t=1792685548;
+	bh=atgxzKoRU5cB/A8AIB23NbE+SMIbC5Zx2XbwRgsiy0I=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=pNzbzt2DO6KXWQqyRNCIuCq+gPYyCJQw4G7ivwz51a1bG1oQ8lELCY5qwoeEkn9v0
+	 dhHewMnZTdM6SmvzvKloc7Jyh+H/siH7tdHSgE5QZRqRZnuZf3x2kRTVF3D3vBBkNx
+	 3vnlYi7QeSdrLtm/++nOFEL0MealwwH+lMGqeCWc=
+Date: Thu, 22 Oct 2026 18:12:27 +0200
+From: Thomas =?utf-8?Q?Wei=C3=9Fschuh?= <linux@weissschuh.net>
+To: Daniel Palmer <daniel@0x0f.com>
+Cc: w@1wt.eu, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Subject: Re: [PATCH] tools/nolibc: sh: enter _start_c with jsr instead of bsr
+Message-ID: <cd8fcccd-aa70-46f9-b497-ec3070b5f8db@t-8ch.de>
+References: <20261022100159.525910-1-daniel@0x0f.com>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -111,25 +55,99 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-In-Reply-To: <20261022142425.3Wx-RrU5@linutronix.de>
+In-Reply-To: <20261022100159.525910-1-daniel@0x0f.com>
 
-On 2026-10-22 16:24:30 [+0200], To Thomas Gleixner wrote:
-> The test could be updated via the hunk below in case the new behaviour
-> is what is expected. hpa made the extension to the test in commit
-> 795e2a023b808 ("selftests/x86/syscall: Add tests under ptrace to
-> syscall_numbering_64").
->=20
-> diff --git a/tools/testing/selftests/x86/syscall_numbering.c b/tools/test=
-ing/selftests/x86/syscall_numbering.c
-> index ca0eca7b9dced..1435394fba022 100644
-> --- a/tools/testing/selftests/x86/syscall_numbering.c
-> +++ b/tools/testing/selftests/x86/syscall_numbering.c
+Hi Daniel!
 
-Now I notice the fix depends on CONFIG_X86_X32_ABI=3Dy (fails for =3Dn).
-But we want to get rid of it anyway so=E2=80=A6
-CONFIG_IA32_EMULATION is not affected (with the fix).
+On 2026-10-22 19:01:59+0900, Daniel Palmer wrote:
+> bsr has limited displacement and cannot reach _start_c if its
+> more than +/-4KiB away.
+> 
+> This starts to show up if you have big programs (static binary
+> of the game Quake in my case) and/or use LTO and things get moved
+> around.
 
-Sebastian
+That is certainly a usecase that justifies making the two other SH4
+nolibc users' binaries a bit larger :-)
+
+> Replace bsr with a calculation of the effective address of
+> _start_c and jsr.
+> 
+> Tested on QEMU and real SH4 and SH4a machines.
+> 
+> Signed-off-by: Daniel Palmer <daniel@0x0f.com>
+> ---
+> 
+> I'm no SuperH asm expert but this works for me. :)
+> Maybe there is a way in C to get _start and _start_c to always
+> be close together that would avoid this entirely?
+
+That would be my preference, too.
+
+Maybe one of these works:
+
+1) Put both _start() and _start_c() in a dedicated .text subsection.
+
+Apparently the default GNU ld linkerscript contains '*(SORT(.text.sorted.*))'.
+So if we use .text.sorted.nolibc_start for both functions they should
+end up next to each other.
+See https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html.
+
+2) Put _start() *into* _start_c:
+
+diff --git a/tools/include/nolibc/crt.h b/tools/include/nolibc/crt.h
+index 714256228914..ebcd0ea2b9f2 100644
+--- a/tools/include/nolibc/crt.h
++++ b/tools/include/nolibc/crt.h
+@@ -115,6 +115,19 @@ void _start_c(long *sp)
+                (*--dtor_func)();
+
+        exit(exitcode);
++
++       __asm__ volatile (
++               ".global _start\n"           /* The C function will have a prologue,         */
++               ".type _start, @function\n"  /* corrupting "sp"                              */
++               ".weak _start\n"
++               "_start:\n"
++
++               "mov sp, r4\n"               /* save argc pointer to r4, as arg1 of _start_c */
++               "bsr _start_c\n"             /* transfer to c runtime                        */
++               "nop\n"                      /* delay slot                                   */
++
++               ".size _start, .-_start\n"
++       );
+ }
+
+ #endif /* NOLIBC_NO_RUNTIME */
+
+But that for all architectures, using macros etc.
+
+If the .text.sorted. solution works, I'd prefer that.
+
+>  tools/include/nolibc/arch-sh.h | 7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
+> 
+> diff --git a/tools/include/nolibc/arch-sh.h b/tools/include/nolibc/arch-sh.h
+> index 996cfbe1bee3..7318f52dcba9 100644
+> --- a/tools/include/nolibc/arch-sh.h
+> +++ b/tools/include/nolibc/arch-sh.h
+> @@ -154,8 +154,13 @@ void __attribute__((weak, noreturn)) __nolibc_entrypoint __nolibc_no_stack_prote
+>  		"_start:\n"
+>  
+>  		"mov sp, r4\n"               /* save argc pointer to r4, as arg1 of _start_c */
+> -		"bsr _start_c\n"             /* transfer to c runtime                        */
+> +		"mova 1f, r0\n"              /* load the effective address of 1: into r0     */
+> +		"mov.l @r0, r1\n"            /* load the distance to _start_c from 1:        */
+> +		"add r0, r1\n"               /* calculate address of _start_c                */
+> +		"jsr @r1\n"                  /* transfer to c runtime                        */
+>  		"nop\n"                      /* delay slot                                   */
+> +		".balign 4\n"
+> +		"1: .long _start_c - 1b\n"   /* Distance from here to _start_c               */
+>  
+>  		".size _start, .-_start\n"
+>  	);
+> -- 
+> 2.55.0
+> 
