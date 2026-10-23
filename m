@@ -1,113 +1,57 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=159.69.126.157
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792774483;
-	b=vgIJn5Tghrwb4JIay72m0jhAyis7djvkqPBIT/2ONbyTl8GXaYNPpnVf5ysQ5MGqLyc8
-	 f7Q+iZr1lM2ab6s1kR/AezDhrnt3Pr9ntitWx5hSUJ7CUWROdvUvnK2kbAnQnbsxdQFev
-	 jsGMBIu/xEbDpiJQp4Ocify+4rATlBVw8aP9VNU+T5KThkj6Hyd8RJ2IdnQm0YOe/kB4R
-	 a8IeEgTs3OZj9xP4eLi5ykZbo3RqGBbWR1QAg/QV9ylWAJwtfIVfe2Gfd9BkqXbkO1sKD
-	 Ux0thNChDqTW1UmZYvqsX+dfEAZCp7Z3ohxT4Au2UVgBOllgZhm/U3UQEd4xRUMX8Mw==
+	t=1792776786;
+	b=mbfR28jOezHId/3RDypv5iNlItQreMvB8gwxfmq/VR7mFUBvfKYfNC6DEOYGbEPMQRoc
+	 ntGHvPQouzmZOrxfr+xq0THNMIXY4TIkPsTK4FxumpT7zrjINUeDddjOLSTkUomodYmxY
+	 B9e5UpFV5gjVquaPXoSQELgYBbtsyTxkY5JNijIh5It2mK8lkCYsnnEBnoVz3OcJYQMj1
+	 X3dTQxMhZ3Um8XHDjOH20VARI/Q1+ozy1X81PCtUEEHkzasTSvENJ4T9xy8auT1WT3QiH
+	 eTawXC+P3PIZOnI4PMxTRqObsHfwBc15v/I729/Zyw/UEwJSlL4nJs2eF7uCwBrGVRA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792774483;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Date:From:To:Cc:
-	 Subject:Message-ID:References:MIME-Version:Content-Type:
-	 Content-Disposition:Content-Transfer-Encoding:In-Reply-To;
-	bh=pcT1nqswGvhjhJ6QI4zO5XNTRfIOEZo9dTuCxwHmQEQ=;
-	b=OG39Qiy9ejhiOTmaTm1vAySlWGvOotiKJ1LYDBvd7444I+NkWqPsJGmrIcI4k4oTQOB2
-	 ENUxZp/T7motJ2BAYxG6OSq0MfRwUzxKp8WXv7xwQjDlsgbQ8nizSfBvfk1m9rOl00nOs
-	 befvo30KNOMh/ePf9ED37VxCu2LfvoL7j5wYfdhtVKuiS9JQY3v8Z/o8xbG0ZMJkQ7q55
-	 Yjwbs1mbb46P0LjWlMb6ovXNUhQm8EoHcil+ojU3rZ81cTNAGTOYtuRLRYfz1Uki8fBN5
-	 xmHcQzfo6rwynmn1qdBfb1fVQNRqnjpEqPPbTbiQpuYlfa233HTqnYbS6eV3QkV8elg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792776786;
+	h=DMARC-Filter:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 References:MIME-Version:Content-Type:Content-Disposition:
+	 Content-Transfer-Encoding:In-Reply-To;
+	bh=OwQuD11aowvN59Yp8GTn1jvcoj+Fq2ATG5T1g4tSa/0=;
+	b=K7dsDUDIIdXTBKuq4hLIpxLw0/IPoi+AnYP2T02JfxKWYPPCGh6sBa0J2Tm8K91FEy6b
+	 1IcwxQx1w5brZ16ikCQf+Y+Q/RgHCyisbX9pzmPoeFiJc7wlkealVTEUjuG3k8nJFHrAW
+	 9AweDVN23BQrwTXtt6c0rwwTVTMMvVRS2Swk9YhSLcfMD9+kbcYHqOCWbArNRtAcu/QoB
+	 9wkUPn7JFWGm/euj9ZWLrt2xV+gn4ltDl0VLD7ML4aX7gD1w0bq66kmhmVl8czqIS+XMS
+	 TdHd4/VsDkUO07+QLuZVXgETwAjru/56KqH58B4N6CePhPaeZ9PJfUZSUXPnKRudw/A==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=infradead.org;
-	spf=pass smtp.mailfrom=infradead.org;
-	dkim=pass header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=casper.20170209 header.b=UnEe6EVt;
-	arc=none smtp.remote-ip=90.155.50.34
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+	dmarc=pass header.from=weissschuh.net;
+	spf=pass smtp.mailfrom=weissschuh.net;
+	dkim=pass header.d=weissschuh.net header.i=@weissschuh.net header.a=rsa-sha256 header.s=mail header.b=Cm73qzHT;
+	arc=none smtp.remote-ip=159.69.126.157
+Received: from todd.t-8ch.de (todd.t-8ch.de [159.69.126.157])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF2DE606A31B;
-	Fri, 23 Oct 2026 16:54:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org AF2DE606A31B
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 04F9D606A31D;
+	Fri, 23 Oct 2026 17:33:04 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 04F9D606A31D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=weissschuh.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=weissschuh.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=casper.20170209 header.b=UnEe6EVt
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Transfer-Encoding:
-	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
-	Sender:Reply-To:Content-ID:Content-Description;
-	bh=pcT1nqswGvhjhJ6QI4zO5XNTRfIOEZo9dTuCxwHmQEQ=; b=UnEe6EVtKxffwjLF3eLQvD/QRC
-	OYHwnUhoA9RikyKoyBO5MwHg3XpiNroyzCQJdB/spBGBilu3N+Adl6S/hZPWU6J3PfKjOhBk2bct0
-	s01jfhZ66XungAM18MXMRSM9WQZf6LF2a5pvPTL2iQ490BqfCfH7WORfLWLc/8YTuMvdBgDKSrRvK
-	d7ILi4kGsfbYrXIuZ2E8t1XAAGex7QEE9yXuVJ3P3CWFPrC71nqhqyv73WwzT1Y87Ca9oNsst114q
-	tLdpzcwZnREAABLBGjx8ed1rOygIB2WJaL6MRiZ0URMwTtZHSD6kUAXIWYjLVirLrAo631SAM75VA
-	LAXRk/dQ==;
-Received: from 77-249-17-252.cable.dynamic.v4.ziggo.nl ([77.249.17.252] helo=noisy.programming.kicks-ass.net)
-	by casper.infradead.org with esmtpsa (Exim 4.100.1 #2 (Red Hat Linux))
-	id 1xKIXL-0000000Cz7M-3hud;
-	Fri, 23 Oct 2026 16:54:35 +0000
-Received: by noisy.programming.kicks-ass.net (Postfix, from userid 1000)
-	id E4C55300720; Fri, 23 Oct 2026 18:54:34 +0200 (CEST)
-Date: Fri, 23 Oct 2026 18:54:34 +0200
-From: Peter Zijlstra <peterz@infradead.org>
-To: Frederic Weisbecker <frederic@kernel.org>
-Cc: Srikar Dronamraju <srikar@linux.ibm.com>,
-	Ingo Molnar <mingo@kernel.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>,
-	WANG Xuerui <kernel@xen0n.name>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Florian Fainelli <florian.fainelli@broadcom.com>,
-	Broadcom internal kernel review list <bcm-kernel-feedback-list@broadcom.com>,
-	Jiaxun Yang <jiaxun.yang@flygoat.com>,
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-	Helge Deller <deller@gmx.de>, Scott Wood <oss@buserror.net>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
-	Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-	Max Filippov <jcmvbkbc@gmail.com>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Srikar Dronamraju <srikar@linux.vnet.ibm.com>,
-	Dietmar Eggemann <dietmar.eggemann@arm.com>,
-	Kees Cook <kees@kernel.org>, Jinjie Ruan <ruanjinjie@huawei.com>,
-	mrigendrachaubey <mrigendra.chaubey@gmail.com>,
-	Marc Zyngier <maz@kernel.org>,
-	Pengjie Zhang <zhangpengjie2@huawei.com>,
-	Thierry Reding <treding@nvidia.com>, Xi Ruoyao <xry111@xry111.site>,
-	"Rafael J. Wysocki (Intel)" <rafael@kernel.org>,
-	Tiezhu Yang <yangtiezhu@loongson.cn>,
-	Rong Bao <rong.bao@csmantle.top>, Hui Wang <hui.wang@canonical.com>,
-	Thorsten Blum <thorsten.blum@linux.dev>,
-	Josh Poimboeuf <jpoimboe@kernel.org>,
-	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-	loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
-Subject: Re: [PATCH] sched/hotplug: Remove unused idle_task_exit
-Message-ID: <20261023165434.GX2823843@noisy.programming.kicks-ass.net>
-References: <20261016095711.1364609-1-srikar@linux.ibm.com>
- <attjv8zOftf9Hlqe@localhost.localdomain>
+	dkim=pass (1024-bit key, unprotected) header.d=weissschuh.net header.i=@weissschuh.net header.a=rsa-sha256 header.s=mail header.b=Cm73qzHT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=weissschuh.net;
+	s=mail; t=1792776776;
+	bh=vmPziPk2l4fvIsjWAFymEOIM1e+BT3WMm9SVEF/asOU=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=Cm73qzHTD4d5wdgAh74ZKXYQTuTlBSYQe4mvETKmBqVBbKXXnLHssCeVy3mFGX/7I
+	 Em/AIQY33b+gNl1q3XpDF66OXtIahGj2VpBOBAnoptoKDILEp1dIKtSqH5rHC3WPGU
+	 vI2MH0YNNn+TUTbj1F7Mp+saQbwztA91yzhx6ZDs=
+Date: Fri, 23 Oct 2026 19:32:55 +0200
+From: Thomas =?utf-8?Q?Wei=C3=9Fschuh?= <linux@weissschuh.net>
+To: Willy Tarreau <w@1wt.eu>
+Cc: Daniel Palmer <daniel@0x0f.com>, linux-kernel@vger.kernel.org, 
+	linux-sh@vger.kernel.org
+Subject: Re: [PATCH] tools/nolibc: sh: enter _start_c with jsr instead of bsr
+Message-ID: <5a82da39-1f60-41b6-9359-f08e6fefdb6d@t-8ch.de>
+References: <20261022100159.525910-1-daniel@0x0f.com>
+ <cd8fcccd-aa70-46f9-b497-ec3070b5f8db@t-8ch.de>
+ <atrsI4aaq9t4BVra@1wt.eu>
+ <81607eb0-596c-4943-a8fe-d272fcd258c4@t-8ch.de>
+ <atuJZwT7LIzceQ2c@1wt.eu>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -117,26 +61,110 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <attjv8zOftf9Hlqe@localhost.localdomain>
+In-Reply-To: <atuJZwT7LIzceQ2c@1wt.eu>
 
-On Fri, Oct 23, 2026 at 03:40:15PM +0200, Frederic Weisbecker wrote:
-> Le Fri, Oct 16, 2026 at 03:26:40PM +0530, Srikar Dronamraju a écrit :
-> > Commit 21641bd9a7a7 ("lazy tlb: fix hotplug exit race with
-> > MMU_LAZY_TLB_SHOOTDOWN") moved the handling previously performed by
-> > idle_task_exit() into the scheduler CPU hotplug path using
-> > sched_force_init_mm().
+On 2026-10-23 18:20:55+0200, Willy Tarreau wrote:
+> On Fri, Oct 23, 2026 at 05:53:51PM +0200, Thomas WeiÃŸschuh wrote:
+> > On 2026-10-23 07:09:55+0200, Willy Tarreau wrote:
+> > (...)
+> > > > > Replace bsr with a calculation of the effective address of
+> > > > > _start_c and jsr.
+> > > > > 
+> > > > > Tested on QEMU and real SH4 and SH4a machines.
+> > > > > 
+> > > > > Signed-off-by: Daniel Palmer <daniel@0x0f.com>
+> > > > > ---
+> > > > > 
+> > > > > I'm no SuperH asm expert but this works for me. :)
+> > > > > Maybe there is a way in C to get _start and _start_c to always
+> > > > > be close together that would avoid this entirely?
+> > > > 
+> > > > That would be my preference, too.
+> > > > 
+> > > > Maybe one of these works:
+> > > > 
+> > > > 1) Put both _start() and _start_c() in a dedicated .text subsection.
+> > > > 
+> > > > Apparently the default GNU ld linkerscript contains '*(SORT(.text.sorted.*))'.
+> > > > So if we use .text.sorted.nolibc_start for both functions they should
+> > > > end up next to each other.
+> > > > See https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html.
+> > > > 
+> > > > 2) Put _start() *into* _start_c:
+> > > > 
+> > > > diff --git a/tools/include/nolibc/crt.h b/tools/include/nolibc/crt.h
+> > > > index 714256228914..ebcd0ea2b9f2 100644
+> > > > --- a/tools/include/nolibc/crt.h
+> > > > +++ b/tools/include/nolibc/crt.h
+> > > > @@ -115,6 +115,19 @@ void _start_c(long *sp)
+> > > >                 (*--dtor_func)();
+> > > > 
+> > > >         exit(exitcode);
+> > > > +
+> > > > +       __asm__ volatile (
+> > > > +               ".global _start\n"           /* The C function will have a prologue,         */
+> > > > +               ".type _start, @function\n"  /* corrupting "sp"                              */
+> > > > +               ".weak _start\n"
+> > > > +               "_start:\n"
+> > > > +
+> > > > +               "mov sp, r4\n"               /* save argc pointer to r4, as arg1 of _start_c */
+> > > > +               "bsr _start_c\n"             /* transfer to c runtime                        */
+> > > > +               "nop\n"                      /* delay slot                                   */
+> > > > +
+> > > > +               ".size _start, .-_start\n"
+> > > > +       );
+> > > >  }
+> > > > 
+> > > >  #endif /* NOLIBC_NO_RUNTIME */
+> > > > 
+> > > > But that for all architectures, using macros etc.
+> > > > 
+> > > > If the .text.sorted. solution works, I'd prefer that.
+> > > 
+> > > Do be honest, I think that Daniel's proposal remains the most maintainable
+> > > one. We rarely touch the start code, and having only a few do arch-
+> > > specific tricks is likely less of a burden for the long term than
+> > > relying on linker's ordering of sections, or starting to play macro
+> > > games. And it gets a chance that someone more familiar with that arch
+> > > improves it later if needed. But I'm not opiniated on this at all :-)
 > > 
-> > As a result, idle_task_exit() is now an empty stub and the remaining
-> > architecture call sites have no effect.
-> > 
-> > Remove the calls to idle_task_exit() and the now unused stub.
-> > 
-> > Signed-off-by: Srikar Dronamraju <srikar@linux.ibm.com>
+> > I fear that we will have the same problems in other architectures.
+> > And for those we'll also need custom assembly. While the mechanisms
+> > above would not need that.
 > 
-> Reviewed-by: Frederic Weisbecker <frederic@kernel.org>
+> But all archs support indirect calls one way or another. Normally we
+> should be able to do the equivalent of placing an absolute value in a
+> storage area, load it in a register and branch to it at least.
 
-Excellent; less is more and all that. Shall I take this through the
-scheduler tree?
+Of course it is possible to do. But it differs between architectures and
+somebody will have to write and maintain that assembly code.
+
+> For me, sorted sections are most likely meant to be used to group code by
+> locality, not to guarantee that branch offsets will always remain
+> small enough for all architectures.
+
+Exactly this locality should provide small enough branch offsets.
+The section ".text.sorted.nolibc_crt" should only ever have two functions:
+Our _start() and _start_c().
+While there won't be a formal guarantee that the architecture's branch
+offsets will be able to handle those, I find it hard to imagine that
+they won't.
+
+> An indirect call on the other hand is well defined, standard and can
+> be adopted where needed at the cost of only 4 or 8 bytes in the
+> startup code.
+
+Its a few more bytes, not that it really matters.
+* 3 additional instructions -> 6 bytes
+* The embedded offset -> 4 bytes
+* Up to 3 bytes of alignment
+
+The adoption will require additional fiddling with assembly.
+
+Maybe we let Daniel break the tie? :-)
+
+
+Thomas
