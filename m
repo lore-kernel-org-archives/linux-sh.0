@@ -1,56 +1,111 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=51.159.59.229
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.157
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792732199;
-	b=KhUMzJN0L44rQ2j6n9ihKCYATFE6/nLVQq3Lai/tCUE4BTcRT/rjrttgepgtM3/uOdy4
-	 SU/bw65zdk8RQcRyLXDtpdFBHQ5ohMEGPWYU3F8he2M+7ktDhEfmaZ9lfSsLpOQ6yBYG2
-	 +wwwz+GItziG7zcqumNLCGsrgvbW8VJMGm7MNj5tBSRwS0sznE2haPAXVt30V/TYCmu79
-	 9p5V98X8+m2kTPeBFYnS+11OEIMAAAlSQKqQacozWNmawxIdrqOvonlAss86Yd5kKB0Fx
-	 89eIo2kb4RcYuOKbU9BhlZHfkXuVXgEmBGu5vcAwyNnu13H7ZVpmgKHMwIfSa9pJ2KQ==
+	t=1792739306;
+	b=pEdjsa1JBiCYdPURFyY3p4i15NNhzwCx7zx3Tke7Eqe4c03gBdiu8qlHIbh2OB5n7oWw
+	 zFTAjIRs0q0IXdg+1D+oRDtQ37SGzRv3l85BIlZoXTj9O9z19Nfn/OPUR5FdY4oW2kBs5
+	 spGtEHMKMZ9AyRoxI4dnbgPUJL4ur1HACFZKJYr4O3iuBUX6IY0HWC94+2bmCLby+CV7f
+	 bIR2iMwycOF0tg4C3tkV8A6O0uUqHySI0Ue7k3cH3oc+NCrrj+11hSoGvcfjE4ry2hcYm
+	 h8Lfee3CZXq3UTX2DmGIr2s9oZ9ZY0qsxq76Ys7L5cqY3nV/HeIsC+yfVTwuZzrjuAg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792732199;
-	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 Content-Transfer-Encoding:In-Reply-To;
-	bh=C8NxeL0gcEEIMqlUlw2aZTEmQq+FvYVszdFw30Ir44Q=;
-	b=sjhYflp2X1VtpUhBQ6jT1mCSb4QzNSZ/G1gLM0INH7mz3mnaN2JbzCI1jnKhkIblTxcg
-	 1wm/Q/hP/izunZ/knXPcnehnU4B/WWFBtW6WrbebYBLplwCZtAct/YDOFEbupL6nUUSNI
-	 Ffq9c4lw9lpXTbSUW/fdVBAMw6st7LBCO5pnSbXrjufMS3kl4TpN2hbwjlzJDp//UW7TP
-	 nn5koUyJhgiYS6j9p58iDW6cu+r8h/MpYnNeH5bLpwhSsJ3GKdLokAJreJH2/Tp9nlibE
-	 KZW+QFY8h3V9mamTfTGhKQfCmiChuO7pOvGENDNsRZexcZ2+2IE5NcExA+mdkyaybgQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792739306;
+	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
+	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
+	 X-ME-Sender:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:Received:X-Mailer:
+	 MIME-Version:X-ThreadId:Date:From:To:Cc:Message-Id:In-Reply-To:
+	 References:Subject:Content-Type:Content-Transfer-Encoding;
+	bh=82Wx7AX++5oKqGU7LtU3ThMwJm2RmYtBbwXGfMG0TKk=;
+	b=olTuLIWG4WLc3scjtRXhmz21I2l/4UJCsWyPtsfZodu85a4s6nsMqxHuaSDB3dyG9m1y
+	 oKh0gosE4iBPfvegbY1irW/mgEkyTjoT5WLF1xtT1LV4q7Z8LU+J003komnVDAnnOHstT
+	 Snv1tp4cZ4aLc2UklfXgs/Kt2niGOcG5Ht/ZuONegCFVMxgXHk2l8hJCjvzJu1M7ecd2t
+	 kwIJY7jcDumU5ZNroXd1SrnBGHK6Y2ER86YuZqd96rlDf5C0fLby3h7iEWPrOPG7foqoJ
+	 jDmvSw5FiklckJ+HIZUFv9VjBxMe9rTpqFg+E9wUz5lOZfO7BLNacxmQbhchN8CKH+g==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=1wt.eu;
-	spf=pass smtp.mailfrom=1wt.eu;
-	dkim=pass header.d=1wt.eu header.i=@1wt.eu header.a=rsa-sha256 header.s=mail header.b=ZX1BzRwc;
-	arc=none smtp.remote-ip=51.159.59.229
-Received: from mta1.formilux.org (mta1.formilux.org [51.159.59.229])
+	dmarc=pass header.from=arndb.de;
+	spf=pass smtp.mailfrom=arndb.de;
+	dkim=pass header.d=arndb.de header.i=@arndb.de header.a=rsa-sha256 header.s=fm1 header.b=c19a0Zg+;
+	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm2 header.b=IzH7f6Aq;
+	arc=none smtp.remote-ip=103.168.172.157
+Received: from fhigh-a6-smtp.messagingengine.com (fhigh-a6-smtp.messagingengine.com [103.168.172.157])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 35EA6606A31A;
-	Fri, 23 Oct 2026 05:09:57 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 35EA6606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=1wt.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=1wt.eu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 727B8606A31E
+	for <linux-sh@vger.kernel.org>; Fri, 23 Oct 2026 07:08:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 727B8606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=1wt.eu header.i=@1wt.eu header.a=rsa-sha256 header.s=mail header.b=ZX1BzRwc
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=1wt.eu; s=mail;
-	t=1792732196; bh=C8NxeL0gcEEIMqlUlw2aZTEmQq+FvYVszdFw30Ir44Q=;
-	h=From:Message-ID:From;
-	b=ZX1BzRwcMw5PSNbkTv57b2HR01excLveEXE29LY9tKt0lbGNjF6a0vHXB9a7PzeGC
-	 +hehxVJ8nai1IeWtT1SX+bGOcJHVyQiMLiYQb5Tscc0faOlsH5G0jDPryxi+/g6U2T
-	 eEVmgw8W3dw1HtWdV6Kh+K57Z2jTQqyd99BC7QhM=
-Received: from 1wt.eu (ded1.1wt.eu [163.172.96.212])
-	by mta1.formilux.org (Postfix) with ESMTP id 11018C0943;
-	Fri, 23 Oct 2026 07:09:56 +0200 (CEST)
-Date: Fri, 23 Oct 2026 07:09:55 +0200
-From: Willy Tarreau <w@1wt.eu>
-To: Thomas =?iso-8859-1?Q?Wei=DFschuh?= <linux@weissschuh.net>
-Cc: Daniel Palmer <daniel@0x0f.com>, linux-kernel@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Subject: Re: [PATCH] tools/nolibc: sh: enter _start_c with jsr instead of bsr
-Message-ID: <atrsI4aaq9t4BVra@1wt.eu>
-References: <20261022100159.525910-1-daniel@0x0f.com>
- <cd8fcccd-aa70-46f9-b497-ec3070b5f8db@t-8ch.de>
+	dkim=pass (2048-bit key, unprotected) header.d=arndb.de header.i=@arndb.de header.a=rsa-sha256 header.s=fm1 header.b=c19a0Zg+;
+	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm2 header.b=IzH7f6Aq
+Received: from ams-compute-02.internal (ams-compute-02.internal [10.64.2.62])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id 951F814000CC
+	for <linux-sh@vger.kernel.org>; Fri, 23 Oct 2026 03:08:24 -0400 (EDT)
+Received: from ams-imap-03 ([10.64.2.23])
+  by ams-compute-02.internal (MEProxy); Fri, 23 Oct 2026 03:08:24 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+	:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to; s=fm1; t=1792739301;
+	 x=1792825701; bh=82Wx7AX++5oKqGU7LtU3ThMwJm2RmYtBbwXGfMG0TKk=; b=
+	c19a0Zg+QIb2Dbuwv6n4IvjO5KfIy/sxA4HSfKDAn6rECQ/Byrr1Pyh44Nq5MDdj
+	iwqULif5RsC3BS1w6XFP9n4dRNgB5nenXQPKuSCfENHhGU5yczBCDpEEux/Aibi/
+	LKZK/rO4uCLsFmy4lgP3eHsVI1Gz8eqE2TcqkHX3CUHkIP+3EUJBrv8+zyGuegjT
+	c+esDiasbtWVd5/weCbuItM/wNT7dXinhoQ5X7vFuQs4uxfQTMZtqdADUHuiKp5Z
+	TxvefglbYAfArQjtmM4Xt5cpjwnCuuMbiiQvQXoiW6o74rAcqKEaStGLXfBX7SiH
+	AAd8YFBZO8jpbyLg8wu+Wg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1792739301; x=
+	1792825701; bh=82Wx7AX++5oKqGU7LtU3ThMwJm2RmYtBbwXGfMG0TKk=; b=I
+	zH7f6AqSdBND90jz/5bLpcjnO1PPDBhuZE4OpkBx1vaAY8yD9rqtwIy6witS5U1+
+	S1lS/ylH9mGtdgv6yKCiVD3A9yu+/648VkU5v2/eRdRA1cYdt7Bd3oiWhaSUNS4V
+	3dzph5Gf4jboGvFknvocCLLJyNOSgBbFiI7Lw/ICNO0hdD4y0FCqzZ+n9bugYOr2
+	YbWg58f08uQQ7wx3J5Qs9Hk7ec0zsGYY08CZ+9/TJmvkVMQ43yO6IUBRG3xUCU88
+	ue8AGOS7aZULQkk6dOY41G/CJ20jl3T9OMz2vsr+f1Pv+xIomRY+R5VziZgbLoao
+	LGyD35QsFLCjdl3VdmN5Q==
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-07;
+	repo=github.com/dkim2wg/interop; date=2026-10-18; sw=lmtpprox;
+	action=sign d=arndb.de a=rsa-sha256;
+DKIM2-Signature: i=1; m=1; t=1792739301; d=arndb.de;
+	mf=PGFybmRAYXJuZGIuZGU+;
+	rt=PGxpbnV4LXNoQHZnZXIua2VybmVsLm9yZz4=;
+	s=fm1:rsa-sha256:EkZN7U8Mtos/X+YnTTnamjwpCY9CNkGyDjxLUm28uu2zwoh
+	vdlYObm5yXiQtgziNu8Es93QtZb+PxOohEgmD5ELt/ygC82p8SlIdQYdpajzKgOm
+	5SxFPJgAWoYWztYbFgdBHPi3uxWki3FxCFjCMrnDNcoEvZDx40mhrHJ8fvNNCAFM
+	euBk8xwQHkz6U1/l3U8ETg45QidoUqKnImwl/oCrsHrX9uNouECXfeu1W+3D9FTd
+	jdxaDZYRC90vRQRFolFgRY6M7ej4SZeZs25uQOj1cqf9Pi0+HB311blbgOaxcqmb
+	WU3g+LzbxwL0pawlA/P7rTKXEraLOr91U8shEGA==;
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-07;
+	repo=github.com/dkim2wg/interop; date=2026-10-18; sw=lmtpprox;
+	action=mi-m=1; hc=12;
+	hn=cc,content-transfer-encoding,content-type,date,feedback-id,
+	from,in-reply-to,message-id,mime-version,references,subject,to;
+Message-Instance: m=1; h=sha256:eYicQZ4ZI09WKrUrzJ0vPIeuBu1/hfNmh/I/rUWrrPk=:+RJtS8dO2Obx2wQVHsui0+l0ARPaU3Cr9jdggohi87o=;
+X-ME-Sender: <xms:4gfbahUuKH9ZFY5KUt2iBe70UwKsmprjmKsGsGtWhFiqTNTmKfXzFA>
+    <xme:4gfbasZQbcpiHysVj_uISbnoD1UerQN-OyjtXXa8JuPI9yLF9GOtGPcATxF4jU_dm
+    RpM_Qofbv1hR6juVWtsnGsLy1_Z0ce639xf8rmmFnKhqhdvsC8OiA>
+X-ME-Proxy-Cause: dmFkZTFb9RAUOZ6dUYOBxlsQW6+NOLcFOtIqKejPOpG//e5EOnn73Jow7cHdL9QLax9Vl4
+    mQIG9ImqNAGu2AOcI+PMHEYaRAKaoYQmJe7EicQwC+zm+CfjWQEUMSQSUEWutUtMV/K64S
+    7NGqAup3qVnHlKkxv2vOySnM8AiEed5GpMq/CBjyvQJooi1Qgaq9igJ24H58IGGl/6Hs/X
+    WgvclVdyQXrPhNOotNeI91YZMhViuWzGC/5ZUHXqafqBXL5kQvdcq+vWxIDXPCCcku5puJ
+    vwcnY4JPjjCjK+LC+Ci6JJS53MwVvwlG9lMzBlC1C5tBgLW/vDMVLWcEaFnga+9aB+T1rE
+    qzT7ZwfNA8B0lggFMqhnKL9a6YkWAWcJm9vZVLG3My/pNQdAlF8HouzD7upJANuVRRQSM8
+    4AlFrD4Fg25fI2DHus1/Zlivl0PmZuWxwEQi/QGXvTONaD4nBliL2N+aGDOkYWu159YaaT
+    h+PJ6CDMYG2RRGsMbZ8sFqKKDgbIO00ZMk+0od43T1O4KyfbZLAvLYAgKSwcgVNtuYFZLs
+    sMSNBKzzTt1Q10tUs76oc7XsZGUWS4G9wAvdyBZiVNELcN8XtkNwU3JTwPyQVc32XtWG8i
+    TdOnTnSllV+hE9ztqM9/bDp9vSEr3fdNUA+7F9nt1GFLvkV8o/DQpyKl5xsQ
+X-ME-Proxy: <xmx:4wfbakJDruj2EROYUzs_RBReiWpgVVkuiJzjpAtbLo7gPFJBaFq2Dg>
+    <xmx:4wfbahvLu8po85o_dUQyT7b2crNr5JO5cyZd34ojtGdBdaPzNuSpvw>
+    <xmx:4wfbarIqA0DIFcQjRVUJPTBZcHhBFPD5Io3_fJmK4XF50_n1o5xklw>
+    <xmx:4wfbai_ugRnzpQwGdUHdhovaYc2erGP5Ep-O0FQTW-PP_kqd_UkUrQ>
+    <xmx:5Qfbas9Upsv89iheNnSmX3PtUNzbBvOtC4Wwfou4vhKTUr8ryP1Q41Li>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.ams.internal (Postfix, from userid 501)
+	id 0684032A0093; Fri, 23 Oct 2026 03:08:18 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -60,89 +115,58 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <cd8fcccd-aa70-46f9-b497-ec3070b5f8db@t-8ch.de>
+X-ThreadId: AJ6RlB2RkjcF
+Date: Fri, 23 Oct 2026 09:07:57 +0200
+From: "Arnd Bergmann" <arnd@arndb.de>
+To: "Florian Fuchs" <fuchsfl@gmail.com>, linux-sh@vger.kernel.org,
+ "Yoshinori Sato" <yoshinori.sato@nifty.com>, "Rich Felker" <dalias@libc.org>,
+ "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>
+Cc: linux-kernel@vger.kernel.org
+Message-Id: <04cfcbc2-0021-4ba2-b3bf-0da3cc82d046@app.fastmail.com>
+In-Reply-To: <20261022233410.2959823-1-fuchsfl@gmail.com>
+References: <20261022233410.2959823-1-fuchsfl@gmail.com>
+Subject: Re: [PATCH] sh: traps: Fix kernel unaligned access fixup in branch delay slots
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 
-Hi guys,
+On Fri, Oct 23, 2026, at 01:34, Florian Fuchs wrote:
+> Commit 75d4d29549e5 ("sh: remove CONFIG_SET_FS support") converted the
+> callers' set_fs(KERNEL_DS) sections, but missed copy_from_user() in
+> handle_delayslot() which relied on the caller's address limit. This also
+> broke delay slot instruction fetching through handle_trapped_io().
+>
+> Since the removal of set_fs(), access_ok() rejects kernel addresses, so
+> the fetch always fails for kernel code and the kernel dies with:
+>
+>   delay-slot-insn faulting in handle_unaligned_delayslot: 0000 [#1]
+>
+> The initial instruction fetch in do_address_error() already uses
+> copy_from_kernel_nofault() for kernel mode. So choose the matching
+> instruction-fetch accessor from user_mode(regs) and fetch the
+> instruction.
+>
+> Fixes: 75d4d29549e5 ("sh: remove CONFIG_SET_FS support")
+> Signed-off-by: Florian Fuchs <fuchsfl@gmail.com>
 
-On Thu, Oct 22, 2026 at 06:12:27PM +0200, Thomas Weißschuh wrote:
-> Hi Daniel!
-> 
-> On 2026-10-22 19:01:59+0900, Daniel Palmer wrote:
-> > bsr has limited displacement and cannot reach _start_c if its
-> > more than +/-4KiB away.
-> > 
-> > This starts to show up if you have big programs (static binary
-> > of the game Quake in my case) and/or use LTO and things get moved
-> > around.
-> 
-> That is certainly a usecase that justifies making the two other SH4
-> nolibc users' binaries a bit larger :-)
+Hi Florian,
 
-Indeed!
+The patch looks correct to me, but I find it a little confusing:
 
-> > Replace bsr with a calculation of the effective address of
-> > _start_c and jsr.
-> > 
-> > Tested on QEMU and real SH4 and SH4a machines.
-> > 
-> > Signed-off-by: Daniel Palmer <daniel@0x0f.com>
-> > ---
-> > 
-> > I'm no SuperH asm expert but this works for me. :)
-> > Maybe there is a way in C to get _start and _start_c to always
-> > be close together that would avoid this entirely?
+> @@ -287,8 +287,10 @@ static inline int handle_delayslot(struct pt_regs *regs,
+>  	insn_size_t instruction;
+>  	void __user *addr = (void __user *)(regs->pc +
+>  		instruction_size(old_instruction));
+> +	struct mem_access *insn_ma = user_mode(regs) ?
+> +		&user_mem_access : &kernel_mem_access;
 > 
-> That would be my preference, too.
-> 
-> Maybe one of these works:
-> 
-> 1) Put both _start() and _start_c() in a dedicated .text subsection.
-> 
-> Apparently the default GNU ld linkerscript contains '*(SORT(.text.sorted.*))'.
-> So if we use .text.sorted.nolibc_start for both functions they should
-> end up next to each other.
-> See https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html.
-> 
-> 2) Put _start() *into* _start_c:
-> 
-> diff --git a/tools/include/nolibc/crt.h b/tools/include/nolibc/crt.h
-> index 714256228914..ebcd0ea2b9f2 100644
-> --- a/tools/include/nolibc/crt.h
-> +++ b/tools/include/nolibc/crt.h
-> @@ -115,6 +115,19 @@ void _start_c(long *sp)
->                 (*--dtor_func)();
-> 
->         exit(exitcode);
-> +
-> +       __asm__ volatile (
-> +               ".global _start\n"           /* The C function will have a prologue,         */
-> +               ".type _start, @function\n"  /* corrupting "sp"                              */
-> +               ".weak _start\n"
-> +               "_start:\n"
-> +
-> +               "mov sp, r4\n"               /* save argc pointer to r4, as arg1 of _start_c */
-> +               "bsr _start_c\n"             /* transfer to c runtime                        */
-> +               "nop\n"                      /* delay slot                                   */
-> +
-> +               ".size _start, .-_start\n"
-> +       );
->  }
-> 
->  #endif /* NOLIBC_NO_RUNTIME */
-> 
-> But that for all architectures, using macros etc.
-> 
-> If the .text.sorted. solution works, I'd prefer that.
+> -	if (copy_from_user(&instruction, addr, sizeof(instruction))) {
+> +	if (insn_ma->from(&instruction, addr, sizeof(instruction))) {
+>  		/* the instruction-fetch faulted */
+>  		if (user_mode(regs))
+>  			return -EFAULT;
 
-Do be honest, I think that Daniel's proposal remains the most maintainable
-one. We rarely touch the start code, and having only a few do arch-
-specific tricks is likely less of a burden for the long term than
-relying on linker's ordering of sections, or starting to play macro
-games. And it gets a chance that someone more familiar with that arch
-improves it later if needed. But I'm not opiniated on this at all :-)
+The "insn_ma" pointer is always the same as the 'ma' argument
+you already pass, as both are set based on 'user_mode(regs)'.
+Why not just use the pointer you already have?
 
-Thanks,
-Willy
+       Arnd
