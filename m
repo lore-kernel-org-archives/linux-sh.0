@@ -1,109 +1,96 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=193.142.43.55
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792791838;
-	b=r32Jrd/M9lZcaK7lN03w6UTjBoDPL/J4KEH6CrTLxLFayDXMI5ro5PKKxQo0EmOHo0RV
-	 dVUFCULBggzSmpRjHmXHYJKBoDIDB9oAe1j7xAkTGbVWzaSUsy59Fn2bnutF1Ffijamk6
-	 rQmoElbok/YWTpbHaCaUfawnTOLMbVET/H6As/hgP/HKDTtVc98WN/Bx/8XKHBTCEh7fg
-	 QdZhohTHHA5iTG2be696BLONWbKG42L47xXo1bXDObwbn9EcaDffeztFnU4GPgc7TwB1S
-	 h2QL3rTLh+HSn5CUjEMtdeYFy6CtNPOuYqOZi4p+kAFfDTglfIkmE1+JMWVd078/Rmg==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792791838;
-	h=DMARC-Filter:Date:DKIM-Signature:DKIM-Signature:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To;
-	bh=rBYqzhjRmnws8Rm/5IL7e+PRpdOctdJtXb4xboAMWSA=;
-	b=pS5RM2Ww289PLDgyM4bM+aq3w+A5rk/vYgG8CTP6Y3iMu7mjuTBwarVfU7R1Q7z1+IMf
-	 hL3GuFMkxMSZGOdxxJx8v5fOlcpWvthwDCCD/fW3iX7ezXWuOIU8IL0xba8EzrM8at9D6
-	 buuorBb+9rkg/Z536Rv1nMPlA4lyGJW8Ok7VhsmKMI2PeKqd7OEtS4sTpgWVogmG4XLOp
-	 12h4UdRXljPlm5czQ4btcmz7HGlHZWgLphOWWq0JqUro/0dzsQ5mXKN2NOoRoAoQmbOf2
-	 wot4EOUErBhmaGJAznWjRxkSLe8TYEV+zmdgQQsq/Enq/E+QYUYD81GwzCb8kCFw39w==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=linutronix.de;
-	spf=pass smtp.mailfrom=linutronix.de;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b="hwASE/IL";
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=z943ERBm;
-	arc=none smtp.remote-ip=193.142.43.55
-Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.82.44
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1792818984;
+	b=0dtpTBcb5slWnP/VPVIFRTZC3WgtIBj2vtWjmdz78De0IYaeqjsi1U1m1hpd6r5i6oyv
+	 8BH/WIzPcDLXQptsfv8Vu7lENb3CBd//AlgHdzrxbSeMI1ywWhUh9YLpfbbVw+I1TA0uB
+	 1BWZsen9ykr9N0498a/7bk7ZWyD7fAHUz1uajFEUfzkPkseWOJuoBcYBxlgSOo/IsSu/F
+	 4ldVMqdBSAq3XhViZqgyUj6R0Ot6hUlVIhwl20QQRLdVQcKjnJQg00q7n+OWEfqqlK0ya
+	 dhRwixzaMU0e7T2CZRQfxl4z1aFRkpya1wDBrh9wUAlhKQgYocQtPicLZDgYTkNhVFQ==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792818984;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type;
+	bh=xK4SMVmULID+nciE/Lj6KOvW8I2NZswUGNT0We+t9YE=;
+	b=mn2zjM20ZQlj41b2n9Yn67JbjfFeHkD0sMh6d18r5aDGMpmbRhwvUND/yf1cfcpdS09c
+	 Na6MZum05OkiqPQy0E/5vi6Sg0E4CzMneSiVVSP8Lb339nXBNbZF2Q3qpFTpbkYxk/uc5
+	 hiFoBcB6iXpozgaCkYpeFH+vyNcP9PhbR7UozIMv9FJcKULvYQ4U6LTc0TaU+jaeaMhNe
+	 2sqwGSOou4y3zxIuPwLOxSoXzCQylcr3ICzLkDbu+0AozFhD2Bb6NqDWdhgnKtxEcN+VM
+	 Jnw1ApH93zL8swlLEFT9/WXP4NLrqb+sZImd/SLlSp81+qJw0PuAZB9JbEviJJnMURg==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=none header.from=0x0f.com;
+	spf=pass smtp.mailfrom=0x0f.com;
+	dkim=pass header.d=0x0f.com header.i=@0x0f.com header.a=rsa-sha256 header.s=google header.b="K/EmFxXY";
+	arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.82.44
+Received: from mail-dl1-f44.google.com (mail-dl1-f44.google.com [74.125.82.44])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0854F606A31A;
-	Fri, 23 Oct 2026 21:43:57 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0854F606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17639606A31B
+	for <linux-sh@vger.kernel.org>; Sat, 24 Oct 2026 05:16:22 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 17639606A31B
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=0x0f.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=hwASE/IL;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=z943ERBm
-Date: Fri, 23 Oct 2026 23:43:53 +0200
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020; t=1792791835;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=rBYqzhjRmnws8Rm/5IL7e+PRpdOctdJtXb4xboAMWSA=;
-	b=hwASE/ILIfvsagU4ja9zJyp6NCW7nhDXBrLgESHYvZc9OlC/GQdmV72Hfw8lCHeCcJDiIT
-	xFBb+eSpeLzJx+wG16eGrTDnCizzsAb6w+YXHutGNF3HFzHQkD8tsZ70QSbXCrE553aTtc
-	FyBITEp8ynQwIVKmsTH4edb2ELcKOcjRqPKGeu5zad/jr9HszyeKdSGpYIGAdGmjIg04RH
-	fcQJvL7izNOg661T28mb7TFw7IIiiiTlruIEDWxOW6votoei6lPtMgLjCAwFAfW1s9CXqg
-	i8k5N81Ek/SnmSCRgWHVGbIsWAsCZb3iRBPHtLu5gtarfP+kYufKyE0FptRrgw==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020e; t=1792791835;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=rBYqzhjRmnws8Rm/5IL7e+PRpdOctdJtXb4xboAMWSA=;
-	b=z943ERBmz9863Xr+14sVUMFBonUecgHEkMzxOZxtguvVf4IgWnapYNfN7FD67wKQCXc4NS
-	csUXXgLT71khc6BQ==
-From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-To: Thomas Gleixner <tglx@kernel.org>
-Cc: "H. Peter Anvin" <hpa@zytor.com>, LKML <linux-kernel@vger.kernel.org>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Shrikanth Hegde <sshegde@linux.ibm.com>,
-	linuxppc-dev@lists.ozlabs.org, Kees Cook <kees@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>, loongarch@lists.linux.dev,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	linux-riscv@lists.infradead.org,
-	Sven Schnelle <svens@linux.ibm.com>, linux-s390@vger.kernel.org,
-	x86@kernel.org, Mark Rutland <mark.rutland@arm.com>,
-	Jinjie Ruan <ruanjinjie@huawei.com>,
-	Andy Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Guo Ren <guoren@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Helge Deller <deller@gmx.de>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Richard Weinberger <richard@nod.at>,
-	Chris Zankel <chris@zankel.net>,
-	linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
-	linux-csky@vger.kernel.org, linux-m68k@vger.kernel.org,
-	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-	Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
-	Will Deacon <will@kernel.org>, Brian Cain <bcain@kernel.org>,
-	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
-	linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
-	linux-arch@vger.kernel.org,
-	Michal =?utf-8?B?U3VjaMOhbmVr?= <msuchanek@suse.de>,
-	Jonathan Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org
-Subject: Re: [patch 16/18] x86/entry: Get rid of the sys_ni_syscall()
- indirection
-Message-ID: <20261023214353.Q3pZID23@linutronix.de>
-References: <20260707181957.433213175@kernel.org>
- <20260707190254.493733289@kernel.org>
- <20261022142425.3Wx-RrU5@linutronix.de>
- <87fqxx1r80.ffs@fw13>
- <87cxt11ktr.ffs@fw13>
- <1149A39E-BEBA-46EA-94F4-4DFFC4733EF5@zytor.com>
- <871p9g1s3w.ffs@fw13>
- <87y0boze95.ffs@fw13>
+	dkim=pass (1024-bit key, unprotected) header.d=0x0f.com header.i=@0x0f.com header.a=rsa-sha256 header.s=google header.b=K/EmFxXY
+Received: by mail-dl1-f44.google.com with SMTP id a92af1059eb24-15dd124bbe7so2454032c88.1
+        for <linux-sh@vger.kernel.org>; Fri, 23 Oct 2026 22:16:22 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1792818982; cv=none;
+        d=google.com; s=arc-20260327;
+        b=cMWk0W6it2GCEfneKtEKWJYqJbL3ElidWDN1z2ehIPaBJHkatsvFPqHt7iU8lmFMLe
+         EFw0JpufL7rsI13au3fs8CiLrvKw12wU2J2HTqydQ7FOjLJZ/Go2GYanSESWS/CYkFTs
+         OxDBzPRjgx8zWuhREVN7QYMXHIYByJjp8SX/5DVO0hrEks/bgyPdTz9fw4sD3lM1ednE
+         wseNpX/hPfCOykEoht6wq5HgXxdrbsEs2widv/rtbel2hZPXkjs5c7Cr68dEhPBCVosL
+         RmI9gSgMJya4VGU3VZk2AfuJo46cH4rlnNvf3KD3iUmaYDs7mlqPAXUFZVIweyryDgqi
+         RDvg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=xK4SMVmULID+nciE/Lj6KOvW8I2NZswUGNT0We+t9YE=;
+        fh=e9RpRR9mWi3TVPIJrjRV0VkbaFRxxr8KUO/IkP1X5rc=;
+        b=bDbB+zo3+hlcR8o0FYZdtgDd8VPHIvpQnWB1X5YuYquU5g0pVPj3slo6efwBTNB/dq
+         /+0lPvJ9+Y+Ep9PpwU3v7KisQa5alZ/NPZDj7TWUCUE6Q0DSXXYJwRiBQ0zEaTIGumZH
+         XZBW5pBkDHJ0y+fmouf3FjXfzr2au4z9tl24ozPpjZETv4nsvS43WPenpv7ywb1/bZCz
+         miExvnp+mgBM1ogiWD3jFDrdhLmI+hYwSPKTMIam5agO2TWW3cllY65bK4Lok1s2P0KT
+         lTXb381cTvs+uFUA4BSRJRJ8ES50RjUtDuzB2CvoDQUW2YpBvmZcACm01SiAumImMLbS
+         9L/w==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=0x0f.com; s=google; t=1792818982; x=1793423782; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=xK4SMVmULID+nciE/Lj6KOvW8I2NZswUGNT0We+t9YE=;
+        b=K/EmFxXYJLoLSM8hzo5GFgUhAW14+F6AfkR7S6g1KmFpgECEFIc8J725R0nsQ4v8VG
+         ZCk0UHDQ6r2VbQxSwlc+BA3tT1xLfXCuvLZ8ICWToJU3KDmMo7NWDTj2wOHUgnXyBsO3
+         i3ui3QyiQZJyA0r3hLXTarZpRDtIyUKRD0DTE=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792818982; x=1793423782;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=xK4SMVmULID+nciE/Lj6KOvW8I2NZswUGNT0We+t9YE=;
+        b=egMM/e1YXLyL9MQvTBufU6nL41EQu9uSIxkRTr/oI1vtr/6JzXwwDmUIC65Xn//Szo
+         MIpVPhGPfsptDQFix2GbNIa+NlieE0oGPQjeOSpqfslwN/Tj/F8xb2D/nf4pr8NuAZYM
+         gJ78Bfxhle4oq3ppt+XA7V3Bo2sVf3qjRoGlAnCkm77yEFmftOYvVeg2Ai+3OVfIypqz
+         BWioPx91BHmWkW3ZO4Kwiyf7NdgJyLLCntyRg7nLYwHHhoUTREmPIE6NyP/YrSk7seSw
+         vCCQF/l5UxplFXZWnts+9e5zYxOkpDmnsfuV5O+RuEP37jiZNYSIWFqWzaSKfMgd5RiZ
+         JLVQ==
+X-Forwarded-Encrypted: i=1; AKwUvBzVEVebep/ngNk15BYwFPI8HiGdmAPeXEDtdokgad6nzeQyt57I7b8qsFDdGxt96t1Qr8ZWjK+gnA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYKOssmyTQkhHp9V3gUvb9W23knpzp8UFxCIS9mvsLzk2sjnLpTW
+	xJtI5GOqBdIMDKmJNLoJlxP9KJ4XfxwMOnfO3wBRIdIkEtZ8yTmdI5zkNNHY1EBGv6FZd1UIvyp
+	V66CBHnL06fFmFwCiQylYlw1VGua83RYeJVP9WRN6SQ==
+X-Gm-Gg: AYBFou1jexsMjDDU+FSvbaef10AOV0CC1kH/e3nUP1/6aPZ4uGQ1EmODA/EQe9wlK3e
+	KO0MHkO6GWYBtxM3db+4cH3MolbbhjcRDHl489BwO9IgQGQIHTpIelZPVFm1hgj9k+e+M7TX5g4
+	LLlBHJ7+zMpT9TqE6EVLXCe2kerqFbCGCXTBq99bW/bZI4ZgGJzBlPi5butr8cn1R3GeAUFj4y0
+	1O9QqWcegMHeAYJ3/6UXXZxxfAl46NhxMP+hsshza1CO0UoSI0D7JeD4hS7dynxjOfLimrfeZRg
+	OjUqyGwv0kLRmLYzC8OfxFweeimjBnEd0us2SIJGJCntXb8avLmOdW3YmyJ1jhNVA1PMFqap52/
+	KKghwbBO2cZYNui2BPefbLB6Z8/+WNU6WisdnV58=
+X-Received: by 2002:a05:7022:7f14:b0:144:c112:5f24 with SMTP id
+ a92af1059eb24-19936a5e5ccmr1673320c88.25.1792818981855; Fri, 23 Oct 2026
+ 22:16:21 -0700 (PDT)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -113,32 +100,48 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <87y0boze95.ffs@fw13>
+References: <20261022100159.525910-1-daniel@0x0f.com> <cd8fcccd-aa70-46f9-b497-ec3070b5f8db@t-8ch.de>
+ <atrsI4aaq9t4BVra@1wt.eu> <81607eb0-596c-4943-a8fe-d272fcd258c4@t-8ch.de>
+ <atuJZwT7LIzceQ2c@1wt.eu> <5a82da39-1f60-41b6-9359-f08e6fefdb6d@t-8ch.de> <atuo-ZOI7koEs8RV@1wt.eu>
+In-Reply-To: <atuo-ZOI7koEs8RV@1wt.eu>
+From: Daniel Palmer <daniel@0x0f.com>
+Date: Sat, 24 Oct 2026 14:16:10 +0900
+X-Gm-Features: AclHuK-5C_aN6bR6lBP7A9AgnpS_VUQ_G6cYB72lUcgFDDghR30PHJrxWl6o2c0
+Message-ID: <CAFr9PXnggcsL5JSV0ASXSfvcbkt30-g1kpTrsa0PDWqgdhcsOg@mail.gmail.com>
+Subject: Re: [PATCH] tools/nolibc: sh: enter _start_c with jsr instead of bsr
+To: Willy Tarreau <w@1wt.eu>
+Cc: =?UTF-8?Q?Thomas_Wei=C3=9Fschuh?= <linux@weissschuh.net>, 
+	linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On 2026-10-23 16:24:22 [+0200], Thomas Gleixner wrote:
-> IOW, a tracer modification of regs->ax is not overwritten when the
-> syscall number is out of range.
-> 
-> Between 2.6.19-rc2 and -rc3 x86_64 was changed to _always_ overwrite
-> regs->ax when the syscall number is out of range.
-> 
-> In the 3.8 merge window seccomp introduced the -1 == skip bogosity which
-> got fixed up and made "consistent" in several changes afterwards. Just
-> that it never reached a state of consistency due to the overloading.
-> 
-> So are we stuck with this behavior or do we sit down and define what the
-> correct behavior should be?
+Hi Willy, Thomas
 
-I wouldn't say we are stuck. The test did reassemble the status we had
-at the moment. As you wrote yourself the behaviour changed a few times
-and not on purpose.
-I would say we define what correct behaviour should be and make sure it
-is consistent across all the architectures.
+On Sat, 24 Oct 2026 at 03:35, Willy Tarreau <w@1wt.eu> wrote:
+> > Maybe we let Daniel break the tie? :-)
 
-> Thanks,
-> 
->         tglx
+mmm I have the same big binary (Quake using nolibc + a thin DRM/KMS +
+ALSA layer, some libm bits from musl) on 32 bit ARM and x86-64 and
+they were fine so my gut feeling would be that this is an SH issue and
+a few extra bytes is fine for such a niche arch.
+On SH this also seems to happen for much more normal binaries if you
+enable LTO and get unlucky which points me towards letting the SH
+entry code deal with it.
 
-Sebastian
+But also I'm still working on the static PIE thing so nolibc can
+create binaries that nommu can run and in that case it would probably
+be helpful for all of the code that runs before relocation to be close
+together.
+
+I'll have a go at the ld solution and see what happens.
+
+Slightly different topic but related: Another thing on my pile of
+patches is some stuff to extend memcpy() slightly so it generates
+word-by-word copies where possible without passing -O3. This helps
+m68k and SH a lot but everyone would end up with the extra bytes for
+the word-by-word copy loop and the check if fallback to byte-by-byte
+is needed. Would wrapping that in something like "#if
+NOLIBC_FAST_MEMCPY" be acceptable?
+
+Cheers,
+
+Daniel
