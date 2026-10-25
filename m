@@ -1,62 +1,96 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=51.159.59.229
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.216.54
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792819634;
-	b=t7jx945vn2rJOnclCOKck2KxxsUAsLDjARR3aJx2gmNf0A20TdD3MlRUxO/gv3SMHLRO
-	 rgfdxBsFsobyVs3f1Lb8Bjt7xlpqsK1y5VXp1sT/T0cWJy9CjJB1DuHQ2gB/Shmm1PulG
-	 +YCT2YSOZLbwzwStnKjfCbS8k+35dOJe15vViOOGsxE5xz9ZhpGSBQV8ygZA+Q0PysUS+
-	 A5WeyrHzXzNrCtqzpBlYEBgUu37XeNGwf67F53NqFoiUQ5Lum7A07MqDGrkeRs3tSnZcf
-	 R9O1DvrmIiqkqJvkafTVQ22fyBz9tdcpP9c1mhGc8Kh/sFGk2mjIsAVJb1Fhe2ReaDw==
+	t=1792899868;
+	b=3Lv5lthg5mN1nitHFmGZWHz9NlgvL+xec7p149XmnqkAApJ5p0J/nKF1Z1pczBFmwH9w
+	 u8J80l1QX4wdlb5Gd8o+bSUkaEJiORT+oMnCTnG7tBqD+A7lky4/5CFOWtySXfJxUDRxI
+	 Cu0sOsZUvkb6ogdnOhVi1dDvlk+uAgBzguON8xrj3nKH0V0YodKSQwoHKRqK7zZs6TW04
+	 ZSpXFelbkXaZq5Lchw4DBkJmFCyL1ZaOELvBYXEMOhQYqIMruzyJZdMPF0nIq9imUtBzW
+	 pqfoAfr3W97Zze1wGqQNEvbE6jal2etJkjUIjx7Ndo6uKwoUnzTJnF8GD4CCUp34ifA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792819634;
-	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To;
-	bh=zeB7Ey/qbrJR+OHigTHJh4vHbV7H095IbRUGb1BIXX8=;
-	b=wjT3/l4n7/HQ4SaHibX5F3hvT7jR7Hl+/kxS8IXIarb4hZ+2byV6jvt7hWCa4AKnBf3O
-	 99XAAe5+LePvfkKs7Wj3/xotd913pSbLQC4JGN+eRFZx1Pa+DbBzcEo0mnwn17CBseWWb
-	 2c9jKMmGvXAxbSPJwm8JR3TTxpF8xMCZNz4Z3wpHE+SQ5LJP5p7oqN7kPwZU6cta6mudM
-	 25bRw8vVBYPQG4dr+thkUmp9+j2SA3dwnDSmPDuxZOQUyj3klpwD+8xF2zE1xC6IHL0Lr
-	 P1lY9j1X3lUC+u9dLLmrimsQz2LMSFbmoW7MrINuXbrCc2xrPF0FYGPJ4m2dUzdNhZA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792899868;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=mzxcYUCwTt0YqgjKp0GiJp4QFX6CqOyEppZJrIxJY7A=;
+	b=cZIGCupJLfBSCOdcBpiY5SRaJQhTjS8hHeCI0ro1LuAf8rIGdvjn2UpdfY7x6i6vY4JC
+	 GedT/a4DN2G1FBdmaKsxaYl7X4+gLxx5Bd/ipkVBpjy/9HdRrNALtiPBp/W49GYTjIk8L
+	 sOIecpHz1Nirn0XGYTxu4Loq9mM2DIghAbJjOc0xCs3TtOYfNVWTy/YeTJL7zWrIzQn3f
+	 RJ9aqs2Sg6yHdGCbcKmrvFMI85M7hJaA7NtAGlZdoXEQqQCBmPcJ0wwwU3Tj+nNlQCQAB
+	 H9x78e4AA3vUan5pRBJBp78mdAID/5lCDe1oXmG9WGnaFpJYHYNY9I7HbPEINSoe0SA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=1wt.eu;
-	spf=pass smtp.mailfrom=1wt.eu;
-	dkim=pass header.d=1wt.eu header.i=@1wt.eu header.a=rsa-sha256 header.s=mail header.b=gjpHxwjL;
-	arc=none smtp.remote-ip=51.159.59.229
-Received: from mta1.formilux.org (mta1.formilux.org [51.159.59.229])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=none header.from=0x0f.com;
+	spf=pass smtp.mailfrom=0x0f.com;
+	dkim=pass header.d=0x0f.com header.i=@0x0f.com header.a=rsa-sha256 header.s=google header.b=inpmsh23;
+	arc=none smtp.remote-ip=209.85.216.54
+Received: from mail-pj1-f54.google.com (mail-pj1-f54.google.com [209.85.216.54])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E89B8606A31D;
-	Sat, 24 Oct 2026 05:27:12 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E89B8606A31D
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=1wt.eu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=1wt.eu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE2EA606A31E
+	for <linux-sh@vger.kernel.org>; Sun, 25 Oct 2026 03:44:27 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EE2EA606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=0x0f.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=0x0f.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=1wt.eu header.i=@1wt.eu header.a=rsa-sha256 header.s=mail header.b=gjpHxwjL
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=1wt.eu; s=mail;
-	t=1792819630; bh=zeB7Ey/qbrJR+OHigTHJh4vHbV7H095IbRUGb1BIXX8=;
-	h=From:Message-ID:From;
-	b=gjpHxwjLN7G4UO2LI2zbqgjlm46bJvuB/Y9dXGuoOoIgZA1YBhRUpL3/OHQBWusl5
-	 9jn6tdTzRHvqfQ30WRhPHNEVTfcRei7VhEON0TAerTwfA26vs6GA2BJnyue8el4Ici
-	 /OhsRdbDPWVgva6vKH4aJSsAoQXCyrUvm9R9HOnM=
-Received: from 1wt.eu (ded1.1wt.eu [163.172.96.212])
-	by mta1.formilux.org (Postfix) with ESMTP id CC340C0944;
-	Sat, 24 Oct 2026 07:27:10 +0200 (CEST)
-Date: Sat, 24 Oct 2026 07:27:10 +0200
-From: Willy Tarreau <w@1wt.eu>
-To: Daniel Palmer <daniel@0x0f.com>
-Cc: Thomas =?iso-8859-1?Q?Wei=DFschuh?= <linux@weissschuh.net>,
-        linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH] tools/nolibc: sh: enter _start_c with jsr instead of bsr
-Message-ID: <atxBrgD1Xfcvw7pL@1wt.eu>
-References: <20261022100159.525910-1-daniel@0x0f.com>
- <cd8fcccd-aa70-46f9-b497-ec3070b5f8db@t-8ch.de>
- <atrsI4aaq9t4BVra@1wt.eu>
- <81607eb0-596c-4943-a8fe-d272fcd258c4@t-8ch.de>
- <atuJZwT7LIzceQ2c@1wt.eu>
- <5a82da39-1f60-41b6-9359-f08e6fefdb6d@t-8ch.de>
- <atuo-ZOI7koEs8RV@1wt.eu>
- <CAFr9PXnggcsL5JSV0ASXSfvcbkt30-g1kpTrsa0PDWqgdhcsOg@mail.gmail.com>
+	dkim=pass (1024-bit key, unprotected) header.d=0x0f.com header.i=@0x0f.com header.a=rsa-sha256 header.s=google header.b=inpmsh23
+Received: by mail-pj1-f54.google.com with SMTP id 98e67ed59e1d1-3ab41538192so1527256a91.0
+        for <linux-sh@vger.kernel.org>; Sat, 24 Oct 2026 20:44:27 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=0x0f.com; s=google; t=1792899867; x=1793504667; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=mzxcYUCwTt0YqgjKp0GiJp4QFX6CqOyEppZJrIxJY7A=;
+        b=inpmsh23JZihZWIdxCXdcljqgx0ZfDMt/YGILuWXDgk8+0JzAgMh0ettSpv+Tv+NSY
+         mQw7yi3bz6cK+qKRZrcd7gvHgnrcWDWdhG6JnkS0V0/Qo5LGOgTw7Qt4yqCuTrEO1lrS
+         RIHQDLJdnMNWv5RGy6z3OJ7kBzFvi37Eb6vLo=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792899867; x=1793504667;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=mzxcYUCwTt0YqgjKp0GiJp4QFX6CqOyEppZJrIxJY7A=;
+        b=GBL/u5TEHi43fq9Fu+eXfAhdvffincCQn4ZPfbYCK3lP6jDnaIClyzcgjSvdvmq1V1
+         seorrsgwcQ6RzGfuuODwWlJ5i4VhBYGY3F0CFuLK6tu0qtpAUgMaFdWm+SOhA4yvpcSq
+         6xWGshvjlqng2qpAZfdGnsOcOk69KsPRyHhGrjoEtX/LN4veATBXr+G6azdukHSP7fMI
+         C5j+X9KS4OxxHWLNOseTawH3satlTAAqsUNzRy2wa2gbfsnwviQ4JQjmLA0UW/vmUDs2
+         5X1pyGB6qb907Eq4Teq4b+sw1jsptzgfy+639/wj4Bvme3fym1JmdW8Wn5pRksKIMJjq
+         EB5A==
+X-Forwarded-Encrypted: i=1; AKwUvBzRfpfj4Tcl+wse96W3WywGYONe5XRL2lHxS0/gDzFlzx91qt1LOUrN51at9Unrki4fcS8Y3NJMYQ==@vger.kernel.org
+X-Gm-Message-State: AFq9FYLs/3sAg59eOkZl/G0UdC32fIxFcTDm8b5Tu5Nvj6sPbvFxCoX3
+	n5g0cH5wr+cIXsjypm1RLLmqgJQUgX6NyTH7tBNaS69GByOrSgLSN8UcUGO9AlvtLhA=
+X-Gm-Gg: AYBFou1xF9Mu57V5Q1hi7OTo+wqSsNdLtelzsLuDpqLZhijH2V1FnY6QBidkugVmHuz
+	eNoUF65Z5aV1tSjOsIjhIa6k1RzhOepyDAA7mBva05oEDux44u1K3TWE/0FprAkgaZPpMkxx+Hv
+	ao9Hd4TAekginRYfGXDdKhAGfWbYsHBW9Xe3yRnS7FQR64NUCd72YmIdOU7qp0vwn5gV5P7zph/
+	i00HU1pjyFDPonY1ra0Ljyr0COPEjtR4ypXW0SxnOH229kL1hZmARISpPEpeQes/YzsPFMkdVk1
+	pRv+6I96cr9y67yHuIT0pIpQ8cHYmYyN4GnV2ViJqNW+Rr2JzrzQlsmZs3bTP1icrNjFY0TilLW
+	ifQHnwWLhOjlTzcx6yOQl364gKDPrm31b4AT+opBAX6PyZ9REDDZBoWk8WXbWydVz5/vqT09squ
+	Kj/eDTHdOtitSznPMVZofPxvrjI/2IzPNfLjcq63Y+A8NcHVJC9UOR2Lq3K/WcND9V5Byv9hm8b
+	gU6TEb3XhuYNJ32ff1BrrRtjSrv7EO0sC0pcoYBGlHH/eHFou57IN+aWGwnSZ/etYHqah9Q+MFO
+	0asdBysOFY9Hwy1kmceP
+X-Received: by 2002:a17:90b:4c8b:b0:3a4:f8da:2478 with SMTP id 98e67ed59e1d1-3adeae9c560mr3198326a91.29.1792899867044;
+        Sat, 24 Oct 2026 20:44:27 -0700 (PDT)
+Received: from shiro (p1469046-ipxg00b01sizuokaden.shizuoka.ocn.ne.jp. [153.223.97.46])
+        by smtp.googlemail.com with ESMTPSA id 98e67ed59e1d1-3adebe8f0b2sm4181927a91.8.2026.10.24.20.44.23
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 24 Oct 2026 20:44:25 -0700 (PDT)
+From: Daniel Palmer <daniel@0x0f.com>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	dlemoal@kernel.org,
+	cassel@kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-ide@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org,
+	Daniel Palmer <daniel@0x0f.com>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Florian Fuchs <fuchsfl@gmail.com>,
+	Colton Pawielski <colton.pawielski@gmail.com>
+Subject: [PATCH v2 0/2] sh: Fix IDE on landisk (HDD models)
+Date: Sun, 25 Oct 2026 12:44:08 +0900
+Message-ID: <20261025034410.808796-1-daniel@0x0f.com>
+X-Mailer: git-send-email 2.55.0
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -66,50 +100,54 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAFr9PXnggcsL5JSV0ASXSfvcbkt30-g1kpTrsa0PDWqgdhcsOg@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
 
-Hi Daniel,
+I dug out my landisk to look at kexec for Geert. Since I'm lazy and
+LLMs are good at fixing bitrot I let my LLM work out how to get
+it to boot again.
 
-On Sat, Oct 24, 2026 at 02:16:10PM +0900, Daniel Palmer wrote:
-> Hi Willy, Thomas
-> 
-> On Sat, 24 Oct 2026 at 03:35, Willy Tarreau <w@1wt.eu> wrote:
-> > > Maybe we let Daniel break the tie? :-)
-> 
-> mmm I have the same big binary (Quake using nolibc + a thin DRM/KMS +
-> ALSA layer, some libm bits from musl) on 32 bit ARM and x86-64 and
-> they were fine so my gut feeling would be that this is an SH issue and
-> a few extra bytes is fine for such a niche arch.
+There are some other issues (perf is apparently borken, there are
+some issues with the decompresor and big kernels..) but this
+seems to be the only thing stopping it booting with the defconfig.
 
-x86 can call 32-bit displacements, so you have some margin there ;-)
+Disclaimer since we don't need to give LLM tags anymore:
+- LLM debugged the issue.
+- It has been checked on real hardware.
+- I have checked the IDE driver patch, cleaned it up and
+  cleaned out massive walls of text that LLMs seem to like
+  to add but I have left its summary of the issue in the commit
+  message.
 
-> On SH this also seems to happen for much more normal binaries if you
-> enable LTO and get unlucky which points me towards letting the SH
-> entry code deal with it.
-> 
-> But also I'm still working on the static PIE thing so nolibc can
-> create binaries that nommu can run and in that case it would probably
-> be helpful for all of the code that runs before relocation to be close
-> together.
-> 
-> I'll have a go at the ld solution and see what happens.
+Changelog:
 
-OK!
+v2:
+- Fixed up the patch to pata_artop.c so it looks a bit nicer.
+- Updated the text in places to reflect that this covers the
+  models of landisk that use a PCI IDE controller.
+- Florian said that the pata_artop.c patch might change the behaviour
+  if the pci_iomap() fails. I think this is ok, if pci_iomap() fails
+  there is no point continuing into the core driver where it'll just
+  fail again.
+- I'll address the remaining style issues in pata_artop.c later.
+- Somehow I have now ended up with the CF based model (USL-5P) too
+  and I have tested these changes don't break it. As Geert mentioned
+  the CF models need their own patch to fix IDE in the defconfig.
+  I have a few other fixes for the USL-5P that I'll put together into
+  a series and send later.
 
-> Slightly different topic but related: Another thing on my pile of
-> patches is some stuff to extend memcpy() slightly so it generates
-> word-by-word copies where possible without passing -O3. This helps
-> m68k and SH a lot but everyone would end up with the extra bytes for
-> the word-by-word copy loop and the check if fallback to byte-by-byte
-> is needed. Would wrapping that in something like "#if
-> NOLIBC_FAST_MEMCPY" be acceptable?
 
-I've been thinking about similar things a few times, and I think that
-for such cases where we implementa naive function for size purposes, we
-could also rely on #ifdef __OPTIMIZE_SIZE__ to keep the small one and
-switch to the faster one otherwise. That way we can respect each user's
-expectations.
+cc: Geert Uytterhoeven <geert@linux-m68k.org>
+cc: Florian Fuchs <fuchsfl@gmail.com>
+cc: Colton Pawielski <colton.pawielski@gmail.com>
 
-Willy
+Daniel Palmer (2):
+  ata: pata_artop: read the ATP865 mode register through pci_iomap
+  sh: landisk_defconfig: enable PATA_ARTOP for the ATP865
+
+ arch/sh/configs/landisk_defconfig |  2 +-
+ drivers/ata/pata_artop.c          | 11 ++++++++++-
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+-- 
+2.55.0
+
