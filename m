@@ -1,64 +1,34 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792987640;
-	b=c5rgApMBWksvpkpmohPUShJdF6Xt5PaCAaCIZp6GOBZGDOd3wK7wlkvqWA+UrQlMEYQ8
-	 mOktdI8EL5XQmT67hkOuTsB0ZUXTreMR5wfFbanwUsDpJ+KtZjiIS3nuL+WsccMzyhNp5
-	 XK/yqKYcwI04xkYTfGzO4ThLIqgMpdtixygSWWyO9Npy/r5xqMNTDPs9TNI6aUsZUSEsQ
-	 QCAvkGKUXhDN1spp0R474bCmR5b3wlCfI+DDsK6vXbjSjaLbHjIAdCZ+UiZUeZhjp5gCG
-	 VWMcjkSt7WDDn5vPywkvCA7XDCLzbzEeI/6D7MvpMQMeHFhGiEkYWiOtn7LQT+6T2PA==
+	t=1793017963;
+	b=pll4xeFuJ1CA++gYQ3CpnuMKUrGyDq0kN6c/SVR12iFrrSAui1bSiZIlqbUjgFkYX0s+
+	 PIZqJ+fv/jpBKjzVZafR8qgAmRek1Xl8vJiCTXUpTGF5zfIesEcRouZ9jTeZx+oX+5fEr
+	 6wQuP9fbP5y8jBizpgWf1RsPLXBLN+aRO7XjkUy0hfx8psoKUwRnrLyD6uuk/EmnutMOX
+	 Hx0720thM9y4LWQuR+1T2w2b5i8Q4RnMWUByea4DAMoY0EX8gCiMkYgjb+TvM6uVIMEhK
+	 BEtbfdplqiZyufqS7Q6KxJ7B3vryPKn2RYZkEJrhSFrwBsp034n9j2qJm0vM7HV4//w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792987640;
-	h=Received:DKIM-Signature:Received:Subject:From:In-Reply-To:References:
-	 X-PR-Tracked-List-Id:X-PR-Tracked-Message-Id:X-PR-Tracked-Remote:
-	 X-PR-Tracked-Commit-Id:X-PR-Merge-Tree:X-PR-Merge-Refname:
-	 X-PR-Merge-Commit-Id:Message-Id:Date:To:Cc;
-	bh=2vRMZbacmySzNGUn8WSwiNYuSu69FcIXaed/9EqnY7Q=;
-	b=tdqOWEtuNjhZcogkdrWFB5Sa1yAUNDfiau4FU52GOR6omO6joW2Ns0WhMOul1AxoJCnT
-	 qN58gSBH7q1+XFS0w+NWznKuUE+zQEa3QJ7YGT4YaMSPsu7MC3ZwHdPCurR3I/oy3G3U5
-	 tZLp3Ue42N4ARDcaQPp+mryoMa7LpG8E4Nzi79loeX7vHTX3cBwgNHuRxlTSuftfQsdnB
-	 su9iDBud8wo1DQTRIKfO3M+PPI8REZvShkTyVkYSugddyPcx+MFuTZ6xaF3E/mrBVGuVH
-	 wf+xrTug2Xidpi/nGMlYYAupjam65Gj6SpTq6ll0AbZgriarmPO12oJnb9mydUxmdPQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793017963;
+	h=Received:Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:
+	 References:Content-Language:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=6wcu0gTZ6kvwKbMOCUrr3DfyjZWgbhGE2d7Y7IRiyP0=;
+	b=JfLW6LSH693F/T9uMQTZwwxjwS+gg9u6+m1cXDLN/eLq2g4kBLm1FtRP5urY0NxfH0Sl
+	 ZcqV32jJChl79gMemyVqZONKtRTn04FGIK4ekN2dbpajO216nj56v6piJO80QXgrvbwSn
+	 dMzBcbhoAgo+Y01UQSdpXsY804b2TbdP82378K1TvcQ/pklAxwirm4u3JEmvupOxkPHST
+	 /yViL/XFk03E8y+87PEkkEm3zd+GS8Xei1iWP7yb/5XVi90M5iznMlHVikq3orQ/XTU6L
+	 M0ExeEwTIZKj5IrVywKazXurdy+sW58SYFKSJem4RlUdmttEC+5VJbut2TpPXZT12yw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZdmxNTdh;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B0167606A321;
-	Mon, 26 Oct 2026 04:07:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZdmxNTdh
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8A7631F01825;
-	Mon, 26 Oct 2026 04:07:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792987639;
-	bh=2vRMZbacmySzNGUn8WSwiNYuSu69FcIXaed/9EqnY7Q=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc;
-	b=ZdmxNTdhqsXDOO4151X/RMG1VChNiuygJ0OYcjmKT2e+1z4pBcp2vJK0BlcEwU0J0
-	 9Jf6PzxHJoxT1+IRNIxaFM13ey1Ipl+iWavZkO1goX5F8/fYl2LLODUkxEsxm1/7uH
-	 Iwqor2+zvdpH2hcXcCXVu1X8SHexs9Pdy7aadTulw16hZN+0zpGeF0OYjCHmCoqN61
-	 KoYmv74Nqn2HR5NKeERCeb49ZH2UhD/zeqluihUwvb2tNYdUT03t7mq8DJWFVkYx+V
-	 Le09epjxmLV6YFbczwu94NLRNUZ64QRAXfeFsvSMCHvbH92d1k3G75l7OL3uf1ZtTN
-	 IVIcfnwYk99ig==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 8151239EA761;
-	Mon, 26 Oct 2026 04:07:19 +0000 (UTC)
-Subject: Re: [GIT PULL] sh updates for v7.4
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <3d0dc3463d42cf55ee69648fde508043b104369c.camel@physik.fu-berlin.de>
-References: <3d0dc3463d42cf55ee69648fde508043b104369c.camel@physik.fu-berlin.de>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <3d0dc3463d42cf55ee69648fde508043b104369c.camel@physik.fu-berlin.de>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v7.4-tag1
-X-PR-Tracked-Commit-Id: f45711b39e03ff5e80b60dcc1fd34b3fc7d3d36c
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 44dc57ed1e77a23248ef28732486f4b7e9468cf7
-Message-Id: <179298763810.2452649.1059596724368197811.pr-tracker-bot@kernel.org>
-Date: Mon, 26 Oct 2026 04:07:18 +0000
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Florian Fuchs <fuchsfl@gmail.com>, Karl Mehltretter <kmehltretter@gmail.com>, Pengpeng Hou <pengpeng@iscas.ac.cn>, Runyu Xiao <runyu.xiao@seu.edu.cn>, Waldemar Brodkorb <wbx@openadk.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <yoshinori.sato@nifty.com>, linux-sh <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 10AA6606A325
+	for <linux-sh@vger.kernel.org>; Mon, 26 Oct 2026 12:32:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AD5D41F01825;
+	Mon, 26 Oct 2026 12:32:41 +0000 (UTC)
+Message-ID: <1ead42f9-470d-4a04-846b-62d1b5ef3963@linux-m68k.org>
+Date: Mon, 26 Oct 2026 22:32:39 +1000
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -67,16 +37,79 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
+MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] sh: select BINFMT_FLAT_NO_DATA_START_OFFSET for noMMU
+To: Waldemar Brodkorb <wbx@openadk.org>, linux-sh@vger.kernel.org
+Cc: Max Filippov <jcmvbkbc@gmail.com>, Damien Le Moal <damien.lemoal@wdc.com>
+References: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
+Content-Language: en-US
+From: Greg Ungerer <gerg@linux-m68k.org>
+In-Reply-To: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-The pull request you sent on Sun, 25 Oct 2026 11:02:46 +0100:
+Hi Waldemar,
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v7.4-tag1
+On 21/10/26 10:02, Waldemar Brodkorb wrote:
+> binfmt_flat offsets the in-memory start of the data segment by
+> MAX_SHARED_LIBS words and then aligns it to FLAT_DATA_ALIGN, so FLAT_FLAG_RAM
+> binaries end up with a gap between text and data (commit 2217b9826246
+> ("binfmt_flat: revert "binfmt_flat: don't offset the data start"")).
+> 
+> SH position-independent code finds the GOT with a PC-relative mova of
+> _GLOBAL_OFFSET_TABLE_, which assumes data follows text directly, as elf2flt
+> lays out the image. With the gap, the GOT register points below the real GOT,
+> so every GOT load reads the neighbouring slot and gets a wrong pointer. On a
+> J2 (sh2eb, noMMU) this made userland crash or hang right after start-up.
+> In my case the data was moved up by 0x20 bytes.
+> 
+> Commit 04d82a6d0881 ("binfmt_flat: allow not offsetting data start") added
+> CONFIG_BINFMT_FLAT_NO_DATA_START_OFFSET for architectures that cannot
+> tolerate such a gap; currently only riscv noMMU selects it. Select it on SH
+> as well when building without an MMU.
+> 
+> Tested on a J2 board (Numato Mimas V2, sh2eb, noMMU) with Linux 7.3 and
+> FLAT binaries built with elf2flt: with this change the data segment starts
+> exactly at the end of text and init runs.
+> 
+> Without the patch bootup fails with:
+> [   12.080472] Fixing up unaligned userspace access in "init" pid=1 pc=0x(ptrval) ins=0x6583
+> [   12.123609] Fixing up unaligned userspace access in "init" pid=1 pc=0x(ptrval) ins=0x6583
+> [   12.175153] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00007f00
+> 
+> Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
+> Assisted-by: LLM
+> Fixes: 2217b9826246 ("binfmt_flat: revert "binfmt_flat: don't offset the data start"")
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/44dc57ed1e77a23248ef28732486f4b7e9468cf7
+That looks like the right fix for SH.
 
-Thank you!
+Reviewed-by: Greg Ungerer <gerg@linux-m68k.org>
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+Regards
+Greg
+
+
+
+> ---
+> v1->v2:
+>   - add fixes tag (Geert)
+>   - tested with 7.3 + Florian's uaccess patch (Geert)
+>   - added failing bootup messages to commit message
+> ---
+>  arch/sh/Kconfig | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> index d60f1d5a94c0..b501153551c0 100644
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+> @@ -15,6 +15,7 @@ config SUPERH
+>  	select ARCH_MIGHT_HAVE_PC_PARPORT
+>  	select ARCH_WANT_IPC_PARSE_VERSION
+>  	select ARCH_NEED_CMPXCHG_1_EMU
+> +	select BINFMT_FLAT_NO_DATA_START_OFFSET if !MMU
+>  	select CPU_NO_EFFICIENT_FFS
+>  	select DMA_DECLARE_COHERENT
+>  	select GENERIC_ATOMIC64
+
