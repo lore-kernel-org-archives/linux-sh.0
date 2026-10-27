@@ -1,75 +1,72 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.198
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793018350;
-	b=Pt7K4SFD57IhOdEwQWSOYyT6pDwFu6Ft+b4cFBuBVSH8vFCMowvFdNzzNPcMVkWN5lVs
-	 gwH+bV7IMCs6Wus1Rb+IfhceyXJNq3Bv9CU757PYdzKiflgxDIPR4Ro91ZI2Os6qsn+52
-	 qLFcxdHQt1gFdswji6rXdDFkqJhdkFXOYDKNNG9maJgy77bxk7seLWBM5q5OBqeXvtkbb
-	 Ea8ggou2eMp6+mH5WPWx0EATAN6s8yMb5C3pJ4rtBj14kXiK2p9ysuLnbkMFO2EpH5L7F
-	 mFKqCNJRFQMawIR0sj6Cl6GWfdnjP8CUgOdefFMyCBxB7Hc4mcvN55G/i8Fm8MnMy0g==
+	t=1793140751;
+	b=qAaaF/gu+2xtmhW2P8eejd1IRQ3t+HAP9GiNwdDk40+ip3pi6ef23fyTzZLM4F2q8dL6
+	 PoMix0Cmk+q0Clo7mXG51ybXZeuhXJUN85lAL6aL9m7ratMQIeBDDiaOP8jJc4YDFudhw
+	 vw+O8F6A5MghWeI92BnA2Cps3r/llfSLyidPNyZP/cJ76bNbOLhCFz7a5F9vYJCjT17F/
+	 20lMQG/skYAPqzRAmPnPxFXaCUdkgkvaKMoM/axrrsL6yGYzlhvo4Xsr6vVPjh8YOk/mC
+	 19n6efXxT/2yO8TA7DKQwqPxEhleIf3/TJvwiZdJovuVWZjk7WviJ49cOW5pHYFORSw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793018350;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
-	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
-	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
-	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=uH9DzsWwtOUf5TNTaECVznpCxu+r0jH1i9qKy4zL0RM=;
-	b=2EFmPUVVZy0T7pCebn4WuuRTk6OxWiuWNrVwIUyzRIpcSAUjLjMCUVxE1R8+wJouB/93
-	 gNCLFaGfck49suiT5OHoEzLNfqhqQ2aCRfjl2HsLuQaISQYkFzrM5bXu9HIhhS6XA8cq+
-	 A9PvDziQdz1vNznIEfic9MMM/6uoK5xtaLyJgSkdd7yGG1j2UvuqGFwql2SPMl6sDBiCX
-	 0ELwpwyjrCs0r6KLxdqobDCSXIfEntFa2R9XYYXdhM1Mbq8yXwO0afuE1UOZYd6EyqZcT
-	 Itbbm2W2qthYd315FP1C13WZkjshL68qIGvNxqWBJlGLaYBpL10xCKHAD7l2s9kkdCg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793140751;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:Mime-Version:
+	 X-Mailer:Message-ID:Subject:From:To:Cc:Content-Type;
+	bh=pEmx5PL3tlnBiGr2rjVOl0G+YHkBW7VB5cziBEiH9l0=;
+	b=NGMO1M672fd8UcP0fdhZxzLTmXsmLwA3Q59Ful98XVe9T3aSZA8xrLdnYl7Oy9YV0j2S
+	 UC7wrpodE75KuAYlADSwIp+29VFT4HYPGh/Ei8u6r21pOFDXrK8d19gWPemJPeSoC8PDx
+	 RVux1h0xR/2v9o9R+8R6pIDBc7mbrregu71FoygE9MGkp3Kganl7eFPm3SnZMiSAysb+7
+	 zBtFToy8xmoe1vT3MGJNfFIdgkHmb9gBqfNlePJ7novt53uEFP3HUIGZBY9zY9rJtuUqg
+	 0V4QKiNdqsHjXeN0RTikzDa2mxlvxaZ8/Kmvem4pohDX8bbuIa1P3/+y7wT+1uRL1/w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=physik.fu-berlin.de;
-	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=VNsZj1xB;
-	arc=none smtp.remote-ip=130.133.4.66
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=google.com;
+	spf=pass smtp.mailfrom=flex--irogers.bounces.google.com;
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=WwyADfSB;
+	arc=none smtp.remote-ip=74.125.82.198
+Received: from mail-dy1-f198.google.com (mail-dy1-f198.google.com [74.125.82.198])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C655E606A32A
-	for <linux-sh@vger.kernel.org>; Mon, 26 Oct 2026 12:39:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C655E606A32A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 40926606A320
+	for <linux-sh@vger.kernel.org>; Tue, 27 Oct 2026 22:39:10 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 40926606A320
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--irogers.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=VNsZj1xB
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=uH9DzsWwtOUf5TNTaECVznpCxu+r0jH1i9qKy4zL0RM=; t=1793018348;
-	x=1793623148; b=VNsZj1xBhFmvxFJ4cLj7+PeWOZ2jemRrnZQvsYAQylMCIqYrkX0jducgNs0NG
-	V9cDIJTL68fHMmMvM3t6a/AZAHr8f6fVy6Ee+NBWBhAdqPJWTPUDHIM7HrK1f2hAK6EmP14E+Jzmh
-	DxOF49l/OAKvSKqGsZV5EIoSAkxLSLDLEOzRJD07ozr0p3EKx7J5LxmWFcoaAzs5PyJ3zWi04XsvH
-	rB6h5lN4eIhCN6TvMgGJfGtlTIcf1Nee7HUQyj0O86S5K2cVOHxfHkVf3WAi6ntqjW/rsR4SFPnj7
-	oWc5VM1npl0pJbfuX0XJlml5Gl4IUMX/TDmIoIxkaHpiUGsKPA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xLJye-00000000uVm-0ygq; Mon, 26 Oct 2026 13:39:00 +0100
-Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xLJye-00000001Znt-03De; Mon, 26 Oct 2026 13:39:00 +0100
-Message-ID: <88989b6b3292c36fcdbdee2cc352290ab86ddc0e.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: select BINFMT_FLAT_NO_DATA_START_OFFSET for noMMU
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Greg Ungerer <gerg@linux-m68k.org>, Waldemar Brodkorb <wbx@openadk.org>,
- 	linux-sh@vger.kernel.org
-Cc: Max Filippov <jcmvbkbc@gmail.com>, Damien Le Moal <damien.lemoal@wdc.com>
-Date: Mon, 26 Oct 2026 13:38:59 +0100
-In-Reply-To: <1ead42f9-470d-4a04-846b-62d1b5ef3963@linux-m68k.org>
-References: <atgBKmRydeRteQ0T@waldemar-brodkorb.de>
-	 <1ead42f9-470d-4a04-846b-62d1b5ef3963@linux-m68k.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 
+	dkim=pass (2048-bit key, unprotected) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=WwyADfSB
+Received: by mail-dy1-f198.google.com with SMTP id 5a478bee46e88-33c35f5ca6cso579221eec.1
+        for <linux-sh@vger.kernel.org>; Tue, 27 Oct 2026 15:39:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20260707; t=1793140749; x=1793745549; darn=vger.kernel.org;
+        h=content-type:cc:to:from:subject:message-id:mime-version:date:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=pEmx5PL3tlnBiGr2rjVOl0G+YHkBW7VB5cziBEiH9l0=;
+        b=WwyADfSBKnfQhnWY2Vcc6CNZLTbO+rAle5B1hKwX8je30uuwYFtB/vLJcoE5YY8g3l
+         ZP1V0bwQMghUb9OH8d+nqaUwuF0QhBserXEYkJY30hDkrjNFMmDQV+NHMsvOfzeO5Smj
+         W3fOXMl0JNgZhE7FX+6rfE0FyfvCs0KmuVF9AJhs4u5xFwJMb+jaWfil9w878EOrRsZY
+         CUqereYX0RsTxyE2KJ/ls1UGDevHByw15KWdqkK8Ms8Ozs9o6RT8cmJwBsNQm2eQleg+
+         e1ohgzf4BQQIJO/4X/jZBsZEqtoprO5FOBgNNOSI0iyC+HNFg11Ynpnkv5fSF/W9aYty
+         crcQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793140749; x=1793745549;
+        h=content-type:cc:to:from:subject:message-id:mime-version:date
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=pEmx5PL3tlnBiGr2rjVOl0G+YHkBW7VB5cziBEiH9l0=;
+        b=Nn04RuRl55/88xtL2x7bDVZo9FOJHrWdE2qhAfnBsHGif/Gt9frVMDsA3sXiRREFx+
+         W4WwBFw873FTSPrGTQsaLc2iMKVQsM2AM76uNQOd3do6C7HCi21db2iYn8oOQgKghVWM
+         geBHsUGjAvzaVNQBPPocBQEj2SE0sA0+dHX4bulvyOXITNXhC57Xl3vO0mlMJqJwGFo9
+         3417qpAigZPjVfVdkwcdm1jMIvFzlaGJINGVJhuWNeZsvKUv2ENPNMYcdaATJThAsNdV
+         x+qsBA2KmTXUpUy5ZUe7CgdijM62E6PQse7IZ7XvoMYyzzKty/f6pH9hTMmpmvAHBpk8
+         3e/g==
+X-Forwarded-Encrypted: i=1; AKwUvBzVLvrryhVcLhP5dyAi619sEzSq/G/YX0IzTnzAeqGXL3POPd05/gjU/3HLYYBLUdTrh1P+/43B7g==@vger.kernel.org
+X-Gm-Message-State: AFq9FYI4b4+O/+Z7HCjX+XQ2V1Tswawbmh4IMqtRWtGCgaSam/PfduME
+	bpaGFdjGNmrH5HJNoeF+chX8ohFKvEm+3xnGRA5fLg++1XYuTRbr3/PGm+lK8kC+Q+CHkL1el0+
+	yT4YwrfS5bQ==
+X-Received: from dli9.prod.google.com ([2002:a05:7022:289:b0:1a1:da78:f9b9])
+ (user=irogers job=prod-delivery.src-stubby-dispatcher) by 2002:a05:7022:6989:b0:165:90af:a25f
+ with SMTP id a92af1059eb24-1a6cfa0c447mr941563c88.41.1793140748444; Tue, 27
+ Oct 2026 15:39:08 -0700 (PDT)
+Date: Tue, 27 Oct 2026 15:38:35 -0700
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -78,90 +75,152 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.56.0.313.g2479322e68-goog
+Message-ID: <20261027223847.652884-1-irogers@google.com>
+Subject: [PATCH v2 0/9] Add __must_init and require explicit kobj_type::release
+From: Ian Rogers <irogers@google.com>
+To: Kees Cook <kees@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+	Miguel Ojeda <ojeda@kernel.org>, "Rafael J . Wysocki" <rafael@kernel.org>, Danilo Krummrich <dakr@kernel.org>
+Cc: Nathan Chancellor <nathan@kernel.org>, Nick Desaulniers <ndesaulniers@google.com>, 
+	Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>, 
+	"=?UTF-8?q?Christian=20K=C3=B6nig?=" <christian.koenig@amd.com>, Zhihao Cheng <chengzhihao1@huawei.com>, 
+	Zhongqiu Han <zhongqiu.han@oss.qualcomm.com>, Sumanth Korikkar <sumanthk@linux.ibm.com>, 
+	Bill Wendling <morbo@google.com>, Justin Stitt <justinstitt@google.com>, driver-core@lists.linux.dev, 
+	llvm@lists.linux.dev, linux-hardening@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org, 
+	linux-acpi@vger.kernel.org, linux-pm@vger.kernel.org, 
+	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, 
+	linux-s390@vger.kernel.org, gfs2@lists.linux.dev, 
+	xen-devel@lists.xenproject.org, linux-mtd@lists.infradead.org, 
+	amd-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org, 
+	linux-kernel@vger.kernel.org, Ian Rogers <irogers@google.com>
+Content-Type: text/plain; charset="UTF-8"
 
-Hi Greg,
+Clang supports the 'require_explicit_initialization' attribute on struct
+fields to enforce that the field is explicitly initialized when an
+aggregate object is constructed, emitting -Wuninitialized-explicit-init
+(enabled by default) if the field is omitted.
 
-On Mon, 2026-10-26 at 22:32 +1000, Greg Ungerer wrote:
-> Hi Waldemar,
->=20
-> On 21/10/26 10:02, Waldemar Brodkorb wrote:
-> > binfmt_flat offsets the in-memory start of the data segment by
-> > MAX_SHARED_LIBS words and then aligns it to FLAT_DATA_ALIGN, so FLAT_FL=
-AG_RAM
-> > binaries end up with a gap between text and data (commit 2217b9826246
-> > ("binfmt_flat: revert "binfmt_flat: don't offset the data start"")).
-> >=20
-> > SH position-independent code finds the GOT with a PC-relative mova of
-> > _GLOBAL_OFFSET_TABLE_, which assumes data follows text directly, as elf=
-2flt
-> > lays out the image. With the gap, the GOT register points below the rea=
-l GOT,
-> > so every GOT load reads the neighbouring slot and gets a wrong pointer.=
- On a
-> > J2 (sh2eb, noMMU) this made userland crash or hang right after start-up=
-.
-> > In my case the data was moved up by 0x20 bytes.
-> >=20
-> > Commit 04d82a6d0881 ("binfmt_flat: allow not offsetting data start") ad=
-ded
-> > CONFIG_BINFMT_FLAT_NO_DATA_START_OFFSET for architectures that cannot
-> > tolerate such a gap; currently only riscv noMMU selects it. Select it o=
-n SH
-> > as well when building without an MMU.
-> >=20
-> > Tested on a J2 board (Numato Mimas V2, sh2eb, noMMU) with Linux 7.3 and
-> > FLAT binaries built with elf2flt: with this change the data segment sta=
-rts
-> > exactly at the end of text and init runs.
-> >=20
-> > Without the patch bootup fails with:
-> > [   12.080472] Fixing up unaligned userspace access in "init" pid=3D1 p=
-c=3D0x(ptrval) ins=3D0x6583
-> > [   12.123609] Fixing up unaligned userspace access in "init" pid=3D1 p=
-c=3D0x(ptrval) ins=3D0x6583
-> > [   12.175153] Kernel panic - not syncing: Attempted to kill init! exit=
-code=3D0x00007f00
-> >=20
-> > Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
-> > Assisted-by: LLM
-> > Fixes: 2217b9826246 ("binfmt_flat: revert "binfmt_flat: don't offset th=
-e data start"")
->=20
-> That looks like the right fix for SH.
->=20
-> Reviewed-by: Greg Ungerer <gerg@linux-m68k.org>
+Following discussion at the Linux Plumbers Conference [1], patch 1 adds
+the attribute to include/linux/compiler_attributes.h as __must_init. In
+v1 it was called __require_explicit_initialization. Kees picked up that
+patch with a first seq_file user [2], and in that thread Greg suggested
+the shorter __must_init spelling, which Kees and Miguel agreed to. As
+the attribute did not land in the v7.4 merge window, Kees asked that
+this series carry the renamed attribute. The Acked-by/Reviewed-by tags
+on patch 1 were given for the original spelling; the rename is
+mechanical.
 
-The patch is already in Linus' tree.
+As Documentation/core-api/kobject.rst notes:
+  "One important point cannot be overstated: every kobject must have a
+  release() method, and the kobject must persist (in a consistent state)
+  until that method is called. If these constraints are not met, the
+  code is flawed."
 
-Adrian
+Annotating struct kobj_type::release caught struct kobj_type definitions
+across the tree that omitted .release:
+- Patches 2-8 fix struct kobj_type definitions where dynamically
+  allocated kobjects, ksets, or enclosing structures were either leaked
+  on kobject_put(), freed prematurely before kobject release, or missing
+  proper static initializers.
+- Patch 9 annotates struct kobj_type::release with __must_init and
+  explicitly sets .release = NULL (with explanatory comments prefixed
+  with "Pre-existing:") on the remaining legacy struct kobj_type
+  definitions whose kobjects are static, per-CPU, permanent firmware
+  structures, or embedded in devm- or parent-managed structures.
 
-> > ---
-> > v1->v2:
-> >   - add fixes tag (Geert)
-> >   - tested with 7.3 + Florian's uaccess patch (Geert)
-> >   - added failing bootup messages to commit message
-> > ---
-> >  arch/sh/Kconfig | 1 +
-> >  1 file changed, 1 insertion(+)
-> >=20
-> > diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-> > index d60f1d5a94c0..b501153551c0 100644
-> > --- a/arch/sh/Kconfig
-> > +++ b/arch/sh/Kconfig
-> > @@ -15,6 +15,7 @@ config SUPERH
-> >  	select ARCH_MIGHT_HAVE_PC_PARPORT
-> >  	select ARCH_WANT_IPC_PARSE_VERSION
-> >  	select ARCH_NEED_CMPXCHG_1_EMU
-> > +	select BINFMT_FLAT_NO_DATA_START_OFFSET if !MMU
-> >  	select CPU_NO_EFFICIENT_FFS
-> >  	select DMA_DECLARE_COHERENT
-> >  	select GENERIC_ATOMIC64
+Note on tool use: An LLM coding assistant was used to help audit the
+compiler diagnostics across the tree, draft the fixes and changelog
+descriptions, and verify builds and review feedback.
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Changes in v2:
+- Rebased on v7.3-16928-g83f32c773255 (v7.4 merge window).
+- Patch 1: Rename __require_explicit_initialization to __must_init per
+  Greg Kroah-Hartman; document the Clang >= 20 requirement per Miguel
+  Ojeda; note the Clang gap for file-scope objects without an
+  initializer reported by Kees Cook; add tags from v1 and from Kees's
+  posting.
+- Move LLM assistance attribution from Assisted-by tags to this cover
+  letter per commit 1e035297ffda ("docs: remove Assisted-by
+  references").
+- Patch 4 (cpufreq): Use "cpufreq: governor:" prefix, drop Fixes tag,
+  fix typo, and remove the redundant runtime assignment in
+  cpufreq_dbs_governor_init() per Zhongqiu Han.
+- Dropped v1 patch 5 (ACPI: CPPC), already fixed upstream by
+  commit 27954e29d7de ("ACPI: CPPC: Release CPC descriptors through
+  kobject").
+- Patch 5 (dlm): Call kobject_del() before dlm_recoverd_stop() in
+  release_lockspace() and the new_lockspace() error path, and wait on a
+  new ls_kobj_done completion before freeing the lockspace or dropping
+  the module reference, avoiding races with delayed kobject release.
+- Dropped v1 patch 8 (s390/sclp_mem) per Sumanth Korikkar: the
+  /sys/firmware/memory/memoryX kobjects are permanent, so sclp_mem.c is
+  folded into patch 9 with .release = NULL.
+- Patch 7 (ubifs): Add Tested-by and Reviewed-by from Zhihao Cheng.
+- Patch 8 (drm/amdkfd): Check q->kobj.state_in_sysfs before
+  kobject_del() in kfd_procfs_del_queue().
+- Patch 9 (kobject): Cover sclp_mem.c and the new amdgpu_ualink.c
+  ualink_xcp_info_ktype, fix the overlay-sysfs.c comment, and prefix
+  legacy .release = NULL comments with "Pre-existing:".
+- Patch 9 (kobject): The ioat, kunpeng_hccs and omapfb display comments
+  now say that the existing teardown can use-after-free under
+  CONFIG_DEBUG_KOBJECT_RELEASE (reported by Sashiko). Fixing those
+  drivers is left to follow-up patches.
+
+v1: https://lore.kernel.org/all/20261013223946.1836757-1-irogers@google.com/
+[1] https://lpc.events/event/20/contributions/2392/
+[2] https://lore.kernel.org/lkml/20261014225811.i.852-kees@kernel.org/
+
+Ian Rogers (9):
+  Compiler Attributes: Add __must_init macro
+  powerpc/secvar: Add missing kobject release callback to secvar_ktype
+  sh: sq: Add missing kobject release callback to ktype_percpu_entry
+  cpufreq: governor: Initialize kobj_type release callback statically
+  dlm: Free dlm_ls in kobject release callback
+  xen/sys-hypervisor: Add release callback to hyp_sysfs_kobj_type
+  ubifs: sysfs: Use kset_create_and_add() for ubifs_kset
+  drm/amdkfd: Free queue in procfs_queue_type kobject release callback
+  kobject: Require explicit initialization of struct kobj_type::release
+
+ Documentation/conf.py                         |  1 +
+ arch/arm64/kernel/cpuinfo.c                   |  5 ++++
+ arch/powerpc/kernel/secvar-sysfs.c            |  6 +++++
+ arch/sh/kernel/cpu/sh4/sq.c                   |  6 +++++
+ drivers/acpi/sysfs.c                          |  2 ++
+ drivers/cpufreq/cpufreq_conservative.c        |  5 +++-
+ drivers/cpufreq/cpufreq_governor.c            |  4 +--
+ drivers/cpufreq/cpufreq_governor.h            |  1 +
+ drivers/cpufreq/cpufreq_ondemand.c            |  5 +++-
+ drivers/dma/ioat/sysfs.c                      |  7 +++++
+ drivers/gpu/drm/amd/amdgpu/amdgpu_ualink.c    |  5 ++++
+ drivers/gpu/drm/amd/amdgpu/amdgpu_xcp.c       | 10 +++++++
+ drivers/gpu/drm/amd/amdkfd/kfd_process.c      | 12 ++++++---
+ drivers/gpu/drm/amd/amdkfd/kfd_queue.c        |  5 +++-
+ drivers/infiniband/hw/hfi1/sysfs.c            |  5 ++++
+ drivers/infiniband/hw/usnic/usnic_ib_sysfs.c  |  2 ++
+ drivers/parisc/pdc_stable.c                   |  5 ++++
+ drivers/power/supply/ab8500_fg.c              |  5 ++++
+ drivers/s390/char/sclp_mem.c                  |  2 ++
+ drivers/soc/hisilicon/kunpeng_hccs.c          | 21 +++++++++++++++
+ .../fbdev/omap2/omapfb/dss/display-sysfs.c    |  7 +++++
+ .../fbdev/omap2/omapfb/dss/manager-sysfs.c    |  5 ++++
+ .../fbdev/omap2/omapfb/dss/overlay-sysfs.c    |  5 ++++
+ drivers/xen/sys-hypervisor.c                  |  6 +++++
+ fs/dlm/dlm_internal.h                         |  1 +
+ fs/dlm/lockspace.c                            | 26 ++++++++++++++-----
+ fs/erofs/sysfs.c                              | 10 +++++++
+ fs/f2fs/sysfs.c                               | 15 +++++++++++
+ fs/ocfs2/cluster/masklog.c                    |  5 ++++
+ fs/ubifs/sysfs.c                              | 24 +++++------------
+ include/linux/compiler_attributes.h           | 12 +++++++++
+ include/linux/kobject.h                       |  2 +-
+ scripts/checkpatch.pl                         |  1 +
+ tools/lib/python/kdoc/xforms_lists.py         |  1 +
+ 34 files changed, 202 insertions(+), 32 deletions(-)
+
+
+base-commit: 83f32c773255720a661aa45d83e36278135f23f5
+-- 
+2.56.0.313.g2479322e68-goog
+
