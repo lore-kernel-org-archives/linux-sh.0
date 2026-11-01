@@ -1,100 +1,86 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.215.180
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793401619;
-	b=4QDRLkeK3YGWkW67Mf2+oabIyG9l9Dw4jN42tGw6OehDeHQfD/d/f3AYj1utfXSwRxnj
-	 qYpg4yCg/50h8+90wNoqcOg4MmCEKesgthK/xoKHuYjklKLfljcWreVQad2tszkl3eA/w
-	 4BLBFNLNE4zjsfZoeyjDbLrOWSMg/C7Gle/ldtouAXbnOEScg2IydCM3Bh4sPMQSIvxWJ
-	 wKiUaWvWudM42xR8XMnn2Z7Y7++nNomzyLSZkzLhiEpi1y/+fLTARIEzmC4g6LxQlfa8h
-	 SbrpJwBsQcxqiY5RtcvyM946NgHStpYsvpsKabJNlQdMOdAjCTJMZ7QkIGMrJSR/H3w==
+	t=1793555892;
+	b=FXIcFh7dOmBvLkccW6Pmtfk9UNfYtnbK2nFMIYfF7USaK2GOjNjmgWTIdZjYXK+JpG44
+	 tqyZ0MOuwDi/WYZxJq2vyrGUGsUtRFafjL2GebWj4/sufLRJsJBbyPOS6g+vpKQG2jOz/
+	 d08Nm6+1MdAl4XDfljYFpgteSVYmPyBNOrbjeYKAN+utLcDzRv7EtRP6sfdU3WPwggRhZ
+	 gt3pmB2dbX842tC4cXpO8qbDFq+1x+3GWd36mGLP3BDbxJG2s/y43YRQSG4BX8G3FL/JH
+	 VKpfCGNTp1Hz0GdDcZARYpLUn5L45Fh2eEljXH2E7aR2A95SjzD1/7WJ45Hy9hXQgLg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793401619;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=jkr/MExl/h9Ffvm2Dl+YvUyWJ/qkIg+g22Ak07CjG0w=;
-	b=AtMIDMop6MZ4WmRxOYfSVpDYxez+zlT6ZKTqsJKnFKrNBkfxE+/8sXJkGfhFKjv4osBj
-	 qnrL0qvKdwoiEQxfEk6waUGMERBjLqDmbOj5WiTXDV//Bo9pcAKS2JWLvMmT8aqzppau5
-	 USv9aPw1cSRur4s686GxYSTwsSPlflH6Hwvo6s6eDOzM9oszl3rEnSx/tD5c7/vTivQGm
-	 IisKk1lcKbMPtN9+xusKiiw6fcUbJC2Qm2xUe2xt1Y+ZOptRvWkGfahpRGg5ulc9pE4GW
-	 iDbFiuf8t928zKCLn18cUz+E4MtPxvvWlSbUKQ67aZ3L+aBZfkIuBhr+PU7/M6VClug==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793555892;
+	h=Received:DKIM-Signature:From:To:Cc:Subject:In-Reply-To:References:
+	 Date:Message-ID:MIME-Version:Content-Type;
+	bh=+7HwRXGWtYS3xmU+Z46/w0lVl31Dl0sZcMyXjmUDfIs=;
+	b=e5Xj0w/BMboK2HQTrlV3GC9nl6B4wY2eIhjnYKaxYXq6FcqHV6g/4o/4sNm7Yk8pIt1P
+	 GubvDHoF3P9IfIZ64kH/SrqXU+FvyHXCkHkydGw4xIZVnM3zDZaDNVHLokOm3NLlUV5tz
+	 aj4+LvcdpZFGZawmh6JY5Sc8UMl8DTlgnC93b6QJ43JQmcZCXaa6LIvDPp3rJjDHQ9p1g
+	 0TPGTX3jwWN/n+YsCLlKSua75jB7b+KM3N/9V45vjViVZa2NwK1GRGCfVyEyuhkhDNWdl
+	 O1P/fPfVoq1Z7ZkCr6dgNpsYtUuNmhKMMMu5ivftXcMwLcIVwKssjyXi+rzxGn1H6MQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ocjQ8Qvc;
-	arc=none smtp.remote-ip=209.85.215.180
-Received: from mail-pg1-f180.google.com (mail-pg1-f180.google.com [209.85.215.180])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=FkpyzqH8;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1CA6606A31A
-	for <linux-sh@vger.kernel.org>; Fri, 30 Oct 2026 23:06:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A1CA6606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 155C7606A338;
+	Sun,  1 Nov 2026 17:58:12 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ocjQ8Qvc
-Received: by mail-pg1-f180.google.com with SMTP id 41be03b00d2f7-cc7d154ec4fso572428a12.0
-        for <linux-sh@vger.kernel.org>; Fri, 30 Oct 2026 16:06:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793401618; x=1794006418; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=jkr/MExl/h9Ffvm2Dl+YvUyWJ/qkIg+g22Ak07CjG0w=;
-        b=ocjQ8QvcY4R3WIfeNPMNfGN0d5jvGeV/U5kWwLjZs4mzmjQuyREQ0bbe5Aw8eBduWQ
-         BkmO2bEvGTQI7Wmk0L8uEfOFv2WOgj2kJ9l4xqqQE+XAl13jNPBgADnh41lpWJxZbN+B
-         GWWFvl2VfIZaGwgnTKSYLcH3SFAvwMZ3jn4ZYUYa2cyVV5AMfd366C3bNWLH/RVlVaqy
-         7igXKWWmmcNl7CxqvdAoq+ZF3jBVTjYO+EJ2RPpDL9NXCvlG/4hj1JtETmwqAsHqoxTb
-         dVtYjvF3nYzCTO5B5wNs6jLX2fExKflCdx1pU/o4TgNwJjbUyP0t2qRhyVGp+8aG15ax
-         8Ang==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793401618; x=1794006418;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=jkr/MExl/h9Ffvm2Dl+YvUyWJ/qkIg+g22Ak07CjG0w=;
-        b=B8AM9KGhtfl9e9sKxGv9TbyMt6jqjPNvlR9ANb9COi06vPKGRQsMD7phK8GmqunLwe
-         lNa8dhVuSvEiRYKfB/nCAn+MfXbAGQpnJlxTSq3gUnqBvKPvkAe3ZgFpACRiHuIGxMjl
-         6GuyJOKndhcKMRRWfVYLBRzNlLstAMN8tZnhy2jEs+qeE5t1xMAs5c7h1XymEjVMtZdZ
-         QNq4i23tnMIHUNUSwAI4cVoAQq4mvL0fx1zf97t+7B+YWUsfaYP7mItXe1ecSKvJ0dmA
-         tOgwFf9n5G8rpIupgpHhME9hGDbrCOxLQVT19wpN4tSJWcjoT6ISjE8XyvhR5rZijgsH
-         eKFQ==
-X-Forwarded-Encrypted: i=1; AKwUvBx62C/J/DjzuttQC72ZnrjCItQLB23mBX/0asUxfgfEHchPT7LvQE6ei2wJMRkC5P95yO92i7kgJA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIry1TwVQrX+iGDDiUoMbMc7Q6c189QeN2RCtGsGDPbAx5H0hAX
-	pU1PgYUStyf4risGxeJqEfCT0n/ZFDiW843wgWsSQBFCmnenTFtK5PBK
-X-Gm-Gg: AYBFou3kFeT6SeecMNLqhTvvS/rQHWV+4QTReXDgeGcainzEpIaRKStxRL6/N5PVf3c
-	dsB6jMQ53FVKD8qdbyJaLOO7M3auiY5VohLRwGcmOb1O2lAg/8O0qJ3PZRgIlCisaBRWVD+eyqs
-	AJiZa9v2zHILxPn8CU31+ECLy9+tCyk+qpLDLi+BcWg0SBvS4NrBc7qgO9/B3w+uWxwNhGNf3cv
-	rgrMKhYKa73pNrM8QhpCFdzAqmDro0VkNkxoIa4RsS3Z62jPbW56zlEJXzU2CRGMz3tDUum6Qrc
-	edga05ALUI0HBmNxAdypT9c2iBgQORRba8+jU4NEiYmyyVMC6u4e/KsXBABNRvq8l7KlRxuTXXg
-	dCt0f1n8PQbGZIgtWf86d9FbqBSCEVgTCxLQR62Zgwv51l3y1KPaeZjHdYIRhCmcvpiM16GY4KX
-	xtVU/bNM898Jb0CW2SN5fhPAzv7dd7P1ixVuiiL7hpMTn0P/kjK5STJvihImwQfKhFbYMqQd/iw
-	kY3jLVYV7fL81Oe1v6O61REJn2EgqzmMPxsMwVUHcNzGfSZlQouMg7ZaM/34LzNdfbL/yxRLXbF
-	tZeth9fLKSc/Fh7M0Rp59DUcylJP+oidk6sMzE8S63yAr0HkAfTZj5G7WoC8qG+uauPrKEEn/Ru
-	4M+I18EYZ
-X-Received: by 2002:a17:90b:268d:b0:3a5:147a:3b63 with SMTP id 98e67ed59e1d1-3ae895a5bdemr2863341a91.8.1793401617933;
-        Fri, 30 Oct 2026 16:06:57 -0700 (PDT)
-Received: from archlinux (d173-183-236-7.abhsia.telus.net. [173.183.236.7])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae845aa27esm5322736a91.11.2026.10.30.16.06.56
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 30 Oct 2026 16:06:57 -0700 (PDT)
-From: Artem Novak <artem122novak@gmail.com>
-To: glaubitz@physik.fu-berlin.de,
-	dalias@libc.org
-Cc: geert+renesas@glider.be,
-	magnus.damm@gmail.com,
-	robh@kernel.org,
-	krzk+dt@kernel.org,
-	conor+dt@kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-renesas-soc@vger.kernel.org,
-	devicetree@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Artem Novak <artem122novak@gmail.com>
-Subject: [PATCH v2] sh: sh7305: add TMU0 clock support
-Date: Fri, 30 Oct 2026 17:06:46 -0600
-Message-ID: <20261030230646.709687-1-artem122novak@gmail.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=FkpyzqH8
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 388A21F00A17;
+	Sun,  1 Nov 2026 17:58:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1793555891;
+	bh=+7HwRXGWtYS3xmU+Z46/w0lVl31Dl0sZcMyXjmUDfIs=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date;
+	b=FkpyzqH892Y24Bf4MzJaxg0GENU+W3h1HrKoje37+gLiStKVwoHULfobDtcxPd97k
+	 O7yDPvc5mWSjJBu8vqqdIiJljIIY/6Z6d8PFXXCg74LTEn4DannL5V6rcy3NiVl7Cu
+	 DnutKq7d2bLfY2EkKJcg1fiS7Qvebb0UQQu9SHDSugPX5Tba1NEXcVGdUEzB6sw+y5
+	 V2z/p2t+EDUDEUhm+YjJeNELsgmzPgXTja1HpGoACFV2HxgapWeRjmaKUW4P/rTSol
+	 vGE0a3SiPbMJFefI/JNfVFZ/R4iCFJ+Rd4uFfOaqAIzWd7mtslcqNYqP4841tBmpOx
+	 x3REifKbTPuGQ==
+From: Thomas Gleixner <tglx@kernel.org>
+To: "H. Peter Anvin" <hpa@zytor.com>, Sebastian Andrzej Siewior
+ <bigeasy@linutronix.de>
+Cc: LKML <linux-kernel@vger.kernel.org>, Peter Zijlstra
+ <peterz@infradead.org>, Michael Ellerman <mpe@ellerman.id.au>, Shrikanth
+ Hegde <sshegde@linux.ibm.com>, linuxppc-dev@lists.ozlabs.org, Kees Cook
+ <kees@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
+ loongarch@lists.linux.dev, Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt
+ <palmer@dabbelt.com>, linux-riscv@lists.infradead.org, Sven Schnelle
+ <svens@linux.ibm.com>, linux-s390@vger.kernel.org, x86@kernel.org, Mark
+ Rutland <mark.rutland@arm.com>, Jinjie Ruan <ruanjinjie@huawei.com>, Andy
+ Lutomirski <luto@kernel.org>, Oleg Nesterov <oleg@redhat.com>, Richard
+ Henderson <richard.henderson@linaro.org>, Russell King
+ <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Guo
+ Ren <guoren@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Thomas
+ Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller <deller@gmx.de>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Richard Weinberger
+ <richard@nod.at>, Chris Zankel <chris@zankel.net>,
+ linux-arm-kernel@lists.infradead.org, linux-alpha@vger.kernel.org,
+ linux-csky@vger.kernel.org, linux-m68k@vger.kernel.org,
+ linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linux-sh@vger.kernel.org, linux-um@lists.infradead.org, Arnd Bergmann
+ <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>, Will Deacon
+ <will@kernel.org>, Brian Cain <bcain@kernel.org>, Michal Simek
+ <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>, "David S. Miller"
+ <davem@davemloft.net>, Andreas Larsson <andreas@gaisler.com>,
+ linux-snps-arc@lists.infradead.org, linux-hexagon@vger.kernel.org,
+ linux-openrisc@vger.kernel.org, sparclinux@vger.kernel.org,
+ linux-arch@vger.kernel.org, Michal =?utf-8?Q?Such=C3=A1nek?=
+ <msuchanek@suse.de>, Jonathan
+ Corbet <corbet@lwn.net>, linux-doc@vger.kernel.org
+Subject: [PATCH V2] x86/entry: Fix ptrace regression
+In-Reply-To: <87mrrvxaty.ffs@fw13>
+References: <20260707181957.433213175@kernel.org>
+ <20260707190254.493733289@kernel.org>
+ <20261022142425.3Wx-RrU5@linutronix.de> <87fqxx1r80.ffs@fw13>
+ <87cxt11ktr.ffs@fw13> <1149A39E-BEBA-46EA-94F4-4DFFC4733EF5@zytor.com>
+ <871p9g1s3w.ffs@fw13> <87y0boze95.ffs@fw13>
+ <C6D7BF04-4CF7-48D1-93B5-E80D52C2617D@zytor.com> <87se1wyvs8.ffs@fw13>
+ <87mrrvxaty.ffs@fw13>
+Date: Sun, 01 Nov 2026 18:58:08 +0100
+Message-ID: <87ecd4xwlr.ffs@fw13>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -104,163 +90,87 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
 
-Register the SH7305 master, peripheral, bus and CPU clocks using
-the SuperH clock framework. Add the TMU0 module clock gate using
-MSTPCR0 bit 15.
+The recent rework of the syscall entry code missed the historical detail of
+the abuse of syscall number -1L to abort a syscall and keep modifications
+by tracers to the return value, while a rewrite of the syscall number to an
+invalid value undoes eventual tracer modification to the return value and
+overwrite it with -ENOSYS.
 
-Keeping SH7305 clock initialization independent of the legacy CPG
-initialization framework, which relies on arch_init_clk_ops().
-Disable SH_CLK_CPG_LEGACY for SH7305.
+Restore the original behaviour.
 
-update: SH7305 TMU device tree node will use the
-renesas,tmu-sh7305 compatible.
-
-Signed-off-by: Artem Novak <artem122novak@gmail.com>
+Fixes: 1b1f3b3e1b39 ("x86/entry: Get rid of the sys_ni_syscall() indirection")
+Reported-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@kernel.org>
+Cc: stable@vger.kernel.org
+Closes: https://lore.kernel.org/all/20261022142425.3Wx-RrU5@linutronix.de
 ---
- arch/sh/Kconfig                        |  2 +-
- arch/sh/boot/dts/sh7305.dtsi           |  2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7305.c | 78 +++++++++++++++++++-------
- 3 files changed, 60 insertions(+), 22 deletions(-)
+V2: Add the missing -1 check in the 32bit path - sashiko
+---
+ arch/x86/entry/syscall_32.c |    4 ++++
+ arch/x86/entry/syscall_64.c |   26 ++++++++++++++++++++++----
+ 2 files changed, 26 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 5ce7df11c3ec..315a1d6ee452 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -532,7 +532,7 @@ config SH_CLK_CPG
- 	def_bool y
- 
- config SH_CLK_CPG_LEGACY
--	depends on SH_CLK_CPG
-+	depends on SH_CLK_CPG && !CPU_SUBTYPE_SH7305
- 	def_bool y if !CPU_SUBTYPE_SH7785 && !ARCH_SHMOBILE && \
- 		      !CPU_SHX3 && !CPU_SUBTYPE_SH7757 && \
- 		      !CPU_SUBTYPE_SH7734 && !CPU_SUBTYPE_SH7264 && \
-diff --git a/arch/sh/boot/dts/sh7305.dtsi b/arch/sh/boot/dts/sh7305.dtsi
-index e7dd8b15445d..501b166554b0 100644
---- a/arch/sh/boot/dts/sh7305.dtsi
-+++ b/arch/sh/boot/dts/sh7305.dtsi
-@@ -30,7 +30,7 @@ intc: interrupt-controller {
- 	 * hardware. Clock provider integration is still required.
- 	 */
- 	tmu0: timer@a4490000 {
--		compatible = "renesas,sh7305-tmu", "renesas,tmu";
-+		compatible = "renesas,tmu-sh7305", "renesas,tmu";
- 		reg = <0xa4490000 0x2c>;
- 		interrupts = <0x400>, <0x420>, <0x440>;
- 		interrupt-names = "tuni0", "tuni1", "tuni2";
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7305.c b/arch/sh/kernel/cpu/sh4a/clock-sh7305.c
-index 0e683dd6de11..03d4b5f987dd 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7305.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7305.c
-@@ -7,6 +7,8 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/io.h>
-+#include <linux/clk.h>
-+#include <linux/clkdev.h>
- #include <linux/sh_clk.h>
- 
- #include <asm/clock.h>
-@@ -84,13 +86,13 @@ static unsigned int sh7305_divisor(unsigned int shift)
- /*
-  * master_clk is the clock before the B/I/P divider stages.
-  */
--static void master_clk_init(struct clk *clk)
-+static unsigned long master_clk_recalc(struct clk *clk)
- {
--	clk->rate = sh7305_base_rate();
-+	return sh7305_base_rate();
+--- a/arch/x86/entry/syscall_32.c
++++ b/arch/x86/entry/syscall_32.c
+@@ -77,6 +77,10 @@ static __always_inline void do_syscall_3
+ 	if (likely(nr < IA32_NR_syscalls)) {
+ 		nr = array_index_nospec(nr, IA32_NR_syscalls);
+ 		regs->ax = ia32_sys_call(regs, (unsigned int)nr);
++	} else {
++		/* See comment in do_syscall_64() */
++		if (nr != -1UL) {
++			regs->ax = -ENOSYS;
+ 	}
  }
  
- static struct sh_clk_ops sh7305_master_clk_ops = {
--	.init = master_clk_init,
-+	.recalc = master_clk_recalc,
- };
- 
- 
-@@ -140,27 +142,63 @@ static struct sh_clk_ops sh7305_cpu_clk_ops = {
- 
- 
- /*
-- * Ordering must match arch/sh/kernel/cpu/clock-cpg.c:
-- *
-- *   0 master
-- *   1 peripheral
-- *   2 bus
-- *   3 cpu
-+ * SH7305 main clocks.
-  */
--static struct sh_clk_ops *sh7305_clk_ops[] = {
--	&sh7305_master_clk_ops,
--	&sh7305_peripheral_clk_ops,
--	&sh7305_bus_clk_ops,
--	&sh7305_cpu_clk_ops,
-+static struct clk master_clk = {
-+	.ops		= &sh7305_master_clk_ops,
-+	.flags		= CLK_ENABLE_ON_INIT,
- };
- 
--void __init arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
--{
--	if (idx < ARRAY_SIZE(sh7305_clk_ops))
--		*ops = sh7305_clk_ops[idx];
--}
-+static struct clk peripheral_clk = {
-+	.ops		= &sh7305_peripheral_clk_ops,
-+	.parent		= &master_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static struct clk bus_clk = {
-+	.ops		= &sh7305_bus_clk_ops,
-+	.parent		= &master_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static struct clk cpu_clk = {
-+	.ops		= &sh7305_cpu_clk_ops,
-+	.parent		= &master_clk,
-+	.flags		= CLK_ENABLE_ON_INIT,
-+};
-+
-+static struct clk *main_clks[] = {
-+	&master_clk,
-+	&peripheral_clk,
-+	&bus_clk,
-+	&cpu_clk,
-+};
-+
-+#define MSTPCR0		0xa4150030
-+
-+static struct clk mstp_clks[] = {
-+	SH_CLK_MSTP32(&peripheral_clk, MSTPCR0, 15, 0),
-+};
-+
-+static struct clk_lookup lookups[] = {
-+	CLKDEV_CON_ID("master_clk", &master_clk),
-+	CLKDEV_CON_ID("peripheral_clk", &peripheral_clk),
-+	CLKDEV_CON_ID("bus_clk", &bus_clk),
-+	CLKDEV_CON_ID("cpu_clk", &cpu_clk),
-+	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[0]),
-+};
- 
- int __init arch_clk_init(void)
- {
--	return cpg_clk_init();
-+	int i, ret = 0;
-+
-+	for (i = 0; !ret && i < ARRAY_SIZE(main_clks); i++)
-+		ret = clk_register(main_clks[i]);
-+
-+	if (ret)
-+		return ret;
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
-+
-+	return sh_clk_mstp_register(mstp_clks, ARRAY_SIZE(mstp_clks));
+--- a/arch/x86/entry/syscall_64.c
++++ b/arch/x86/entry/syscall_64.c
+@@ -64,15 +64,20 @@ static __always_inline bool do_syscall_x
+ 	return false;
  }
--- 
-2.56.0
-
+ 
+-static __always_inline void do_syscall_x32(struct pt_regs *regs, unsigned long nr)
++static __always_inline bool do_syscall_x32(struct pt_regs *regs, unsigned long nr)
+ {
++	if (!IS_ENABLED(CONFIG_X86_X32_ABI))
++		return false;
++
+ 	/* Adjust the starting offset of the table */
+ 	nr -= __X32_SYSCALL_BIT;
+ 
+-	if (IS_ENABLED(CONFIG_X86_X32_ABI) && likely(nr < X32_NR_syscalls)) {
++	if (likely(nr < X32_NR_syscalls)) {
+ 		nr = array_index_nospec(nr, X32_NR_syscalls);
+ 		regs->ax = x32_sys_call(regs, (unsigned int)nr);
++		return true;
+ 	}
++	return false;
+ }
+ 
+ /* Returns true to return using SYSRET, or false to use IRET */
+@@ -81,8 +86,21 @@ static __always_inline void do_syscall_x
+ 	if (likely(syscall_enter_from_user_mode_randomize_stack(regs, &nr))) {
+ 		instrumentation_begin();
+ 
+-		if (!do_syscall_x64(regs, nr))
+-			do_syscall_x32(regs, nr);
++		if (unlikely(!do_syscall_x64(regs, nr))) {
++			/*
++			 * The special treatment of syscall number -1 is a
++			 * historical bogosity as the original code used -1 to
++			 * indicate syscall abort, which is not distinguishable
++			 * from a syscall which is invoked with syscall number
++			 * -1. The historic behavior is to keep the return value
++			 * in regs->ax unmodified in that case, which means it's
++			 * either the preset value -ENOSYS or a value which was
++			 * written by a tracer. If the syscall number is invalid
++			 * but not -1 then overwrite any tracer modification.
++			 */
++			if (!do_syscall_x32(regs, nr) && nr != -1L)
++				regs->ax = -ENOSYS;
++		}
+ 
+ 		instrumentation_end();
+ 	}
