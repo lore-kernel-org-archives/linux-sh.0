@@ -1,125 +1,72 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.43
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.197
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794164398;
-	b=KHcpcHzlsDn4UELiW6BwlhmT0zCCd2HYxnJYsiyWsa4nlNhTolJ/MoazFu9pmEJOfmgM
-	 FpGFWH3cLW9P1FMW0sF6HEyC4GpTqRVzVRvz/HQW5SBAPIC9OHM3pG6cSpojHm8duBqPQ
-	 1oWhUbQQjbrkJvR4/Y/yhawkbsxgLrJq1j3231yK5EVFqsg+Ol9cYLiyJPL5hidcCGTuu
-	 Re88NL545x8tq1pYJ/LQ0uLzSO9bzgAnfl/HTLI2sXFDpBgCurbBKRTe/Ct49ptGfEPWW
-	 oya0aGxf23jN+OtwNJE3bxnOXuyD1//DmHhWX2OF82Tdk3vBWQEe+a27Wz5hcB6aXyw==
+	t=1794177582;
+	b=CmaLcIbA9mvDRmxS2E5r56d7YS/IbFiy45wdGS4nGD4WiBeslXboj9grNWMFmZ7I4KmT
+	 a4ZXAocaudUBRhCtllivVUIBOAmeEhyPqgPQ91/i8JHCZdKUfyVWdNBjr+P3l1jgBi36B
+	 7xbLh8IjIBbNLfIIhWLBgPIOQw0sf+w1bhT21ZHXtd6OhSgBFA05Oe57Xpa43banbyphc
+	 9tPzJ+tyIXmfbnjYZsgnEe+dTUgx6s88XGFB4WdISAb+kGjU/q44KrUYVwO4qwxTTrawA
+	 Yull4hVF+d2J/dvvRCgW8Lkb1hxp2RG6mAPbB3PiKIxNcwBDNHEOIoZ8i8w0rJwXlWA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794164398;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794177582;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:X-Mailer:
-	 MIME-Version:Content-Type:Content-Transfer-Encoding;
-	bh=JLhUwzup1lwefYy8NOOFjthYnrByVfTsqIe79kkV+Lk=;
-	b=hdiLHYK6WJmAi/DGIxW6O6PVA/v3UL9+dwXQhKNJmnSk4P5bodMZTOJEqYuElj+nnkqS
-	 DO2lGMI0eY6wmQM+4x4ncAI+IxJq3j7PcNva3yOhYUP/uM9h+jyt0JrwtvG4MghiY3Uf7
-	 dTtU79M8lSQOLncak+opXZ4RFFZKFdz3p72CFgW657RpuHeJYdRzQd2LGQl1XO80Ikl9V
-	 2Sdblxkdt5zeYZX9mlVK0K9/Gk50fK4Jz2qaPWk2iF6mzGs56NwVlOHnGzDfLjkY6X62W
-	 kzKDETJH8RPNL/hvvWfnCT5NyRpxtW+nabcY19E4XHvrDWPq8fwN5t8uLyrUaPWF0Ag==
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:Mime-Version:
+	 X-Mailer:Message-ID:Subject:From:To:Cc:Content-Type;
+	bh=dh1tm53EjhTHyh6SV5ixAXTcy4PG9n9Z3Dkm6AKA6MM=;
+	b=KkXGtE8cVv/Qj3Stxt9pmdgrhwFII2wcbr5uqUn5Nv9tKTuPRq6T+BLXP/fjmJTSR5i0
+	 /X6utOy+h83shQ4EivXIyrLmDLahHIjID+QJjom4VMq2LVpyeyrw6gQEpujTIcxDuX7dF
+	 7+kmttvMuJcJKYNwlqroulk6+bF7m7Yh6ORTSftlPkG922yQwRwdAmFYUixlYGguqYf4C
+	 P86uOqDfokhW5lqflSs054Xuv17WC+kKol1d6yLDoGKpnl2ALNuB3eYvhVGJ57LTEfjoR
+	 qSh0iNWs/UwVzEmE+EApPWbXr2UTSNHd4JnlPwtoPVyPayxmw5zsIYmKRGNeKjErZEg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=XrEUEgHU;
-	arc=none smtp.remote-ip=209.85.128.43
-Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+	dmarc=pass header.from=google.com;
+	spf=pass smtp.mailfrom=flex--irogers.bounces.google.com;
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=ldVjID6l;
+	arc=none smtp.remote-ip=74.125.82.197
+Received: from mail-dy1-f197.google.com (mail-dy1-f197.google.com [74.125.82.197])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42F52606D805
-	for <linux-sh@vger.kernel.org>; Sun,  8 Nov 2026 18:59:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 42F52606D805
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B511606A332
+	for <linux-sh@vger.kernel.org>; Sun,  8 Nov 2026 22:39:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4B511606A332
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--irogers.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=XrEUEgHU
-Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-4a2153c8525so1338215e9.3
-        for <linux-sh@vger.kernel.org>; Sun, 08 Nov 2026 10:59:58 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=ldVjID6l
+Received: by mail-dy1-f197.google.com with SMTP id 5a478bee46e88-36de26cb4b3so346891eec.1
+        for <linux-sh@vger.kernel.org>; Sun, 08 Nov 2026 14:39:41 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794164397; x=1794769197; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=JLhUwzup1lwefYy8NOOFjthYnrByVfTsqIe79kkV+Lk=;
-        b=XrEUEgHUwv+lt2Z0T4RzlOQuYT1yMbnY/MJrtF5HY2pc8m0ujKE+1IGJbqc3A1SsPJ
-         Pz+po0Wh7ECcrOl1hyNdZBme+OsO/r11IeCA1lW9KMbstFhlOkC0Hm7Ef+TTavGsfrDk
-         7T2AE8nlcorDhYFpLo0KTCt4xOv09AacMRilfH2h4PS2mZ0iBReAF8XAcgtI3iT+qlRY
-         EJQPYUIUlDRCCjadf1+24R8V0flZyhCZpLCroCVsidoQ510350k4POOaAcSXgGRrBTWF
-         rbpUnz5O6K0TOR8uz/zwLHiObwDAqnCJFWP0+ssCNYCBYnXJwQ2yMfUqdKkv6ro/lp/q
-         XMaA==
+        d=google.com; s=20260707; t=1794177580; x=1794782380; darn=vger.kernel.org;
+        h=content-type:cc:to:from:subject:message-id:mime-version:date:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=dh1tm53EjhTHyh6SV5ixAXTcy4PG9n9Z3Dkm6AKA6MM=;
+        b=ldVjID6loqmnPNFD/OaQ1ryvyuLqFJ8E4Rmks8oFWxH8wb56ZGhOTinJd6AgOSJN6X
+         eyQWYvinnqT6zEG01/RQdCnGd6x2V0Jftj7n4U/vmVkJUAhXm9rpFjoL01D6FYnKlWMB
+         Se/KJEsvGUwegaaKRjgstvqc+0E4NQMuqMIJdhVIGH4bcKeGAMpeJ2uStDl2Agul0sFQ
+         YSe6vinpwXu6tG+d9D+72/I67lvbThO1xg3qGRJUtBZaFA/7UJHqfOcZnShjW51+jr0M
+         Zgd8zjOIOlB2rBdIFJRuAFHSOb8t2TN7R5dw1AvU8DbOcav9gt8mQ58ntKfCqbONMFCX
+         d4zg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794164397; x=1794769197;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:subject:cc:to:from:date:x-gm-gg
+        d=1e100.net; s=20260707; t=1794177580; x=1794782380;
+        h=content-type:cc:to:from:subject:message-id:mime-version:date
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=JLhUwzup1lwefYy8NOOFjthYnrByVfTsqIe79kkV+Lk=;
-        b=0jiD5T6gNNnwiOh5koQocpTIaRbxTjT+g4V+j5zyVKMxM74vJw37l4fGKD1API12rM
-         C/4x+DPFLWATvKRl54Puyxf5Z4QMznaPz447f8f7GYl8E81cMsXMqiCCbcM4Xg6cWQfP
-         KpLD9r2CnX37mLaEt/r7ShgYQ7tcqriTs9Ru+4A8y1kH5NMMb0iq6sT66CYAIVOSq+pI
-         kpVc/9wcGAmn1Z/YlzK7aeMQv6g1wKx1uqnnpyhqLV5ODb+6Ya6FF4GJBPvDqMtpSXT4
-         NSqNBT+jwB2WmYlVZks+fSXv+DKJubsFzLEAURqcmbDP/QPGUoNI+v65ujTlYYfLM9OR
-         nXqw==
-X-Forwarded-Encrypted: i=1; AL+hErGMTPg0/duKPE36SpfE/eyz8Cxqx28/uZRmPPaSKjlhCebT8ZlQ3OreyG4CiyHMn5M+SN4VQYLi2w==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/95SxmX4JNIctrWddc/LN+D/eneAbPMGLOTzNjaS53Kvz1nWAa
-	hWTt3rHQ0W/MPdyLKmWB6vJF+H2lhpphVn+e4gm40vJ/rMiYaNtf3rjM
-X-Gm-Gg: AYBFou3o2OYEzZhaM3MRj/GJ7jeKcL6y0fRuIvhja3HV/iCKyFmaCmY0N6aLvRKfCRS
-	yMxUBM4e9rOds57EOEmaNsz1RVwLdvMu0tnaJlreRdOy9gGI8SuB1O35AAA4mYbObhxPj1/ABri
-	YqvOqHaKErsC749S1ga6P+L//CSvGZnFSSsL7qshEMu5AtyuQchCmENC44pasMFQkNL5E34bcSG
-	gKgN0CyS3XUchYlaKDlAbugF/fbDZ6r3qLRFzdVTuNnNSlOlawEgFsruYEDTfRTp7okAkvx6yQq
-	WV79sum/ViHn+o9EMuR4qHvrJ65vqG/Qbg6wNCe7wgvwD8ev2Oud/b6aJZMyODO+/UZGU9Jj73o
-	PVWjtCLh+27Dc/7dmk+i+6iS025mKTrIkZyoz1xom4jE7Gwgoq0Hm7st0Va+KwYY2fvWxMDAmjC
-	CJpHjZq8OG/T6UtKtog+0Pt3hxmYu3UJp9OHHARrBDOazBKSIYelcYtijCbPAUpJh+y8w5GXatr
-	Dg/t3gIIfsdO451lw+QSZt5q7cUqLzxSi1jAK4EWuEnBR1JIRZqRAElJ/EGZz1lJZnm3thIufKy
-	xiTDEjJr2aKMHeT1KJ9uZWgJwpcjJHEdZL8V7orviDHaPD/6g/8k8fK/xFySpG9U
-X-Received: by 2002:a05:600c:468f:b0:4a1:7e77:c382 with SMTP id 5b1f17b1804b1-4b960d9b170mr35982125e9.5.1794164396406;
-        Sun, 08 Nov 2026 10:59:56 -0800 (PST)
-Received: from pumpkin (82-69-66-36.dsl.in-addr.zen.co.uk. [82.69.66.36])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4b7efb1f3acsm185228445e9.14.2026.11.08.10.59.55
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 08 Nov 2026 10:59:56 -0800 (PST)
-Date: Sun, 8 Nov 2026 18:59:53 +0000
-From: David Laight <david.laight.linux@gmail.com>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
- linux-fsdevel@vger.kernel.org, Linus Torvalds
- <torvalds@linux-foundation.org>, Jann Horn <jannh@google.com>, Josef Bacik
- <josef@toxicpanda.com>, Chris Mason <mason@kernel.org>, Jeff Layton
- <jlayton@kernel.org>, NeilBrown <neil@brown.name>, Eric Dumazet
- <edumazet@kernel.org>, Thomas Gleixner <tglx@kernel.org>, Al Viro
- <viro@zeniv.linux.org.uk>, Jonathan Corbet <corbet@lwn.net>, Christoph
- Hellwig <hch@lst.de>, Greg Kroah-Hartman <gregkh@suse.de>, Joel Granados
- <joel.granados@kernel.org>, Kees Cook <kees@kernel.org>, Jan Kara
- <jack@suse.cz>, Jan Kara <jack@suse.com>, linux-kernel@vger.kernel.org,
- linux-nfs@vger.kernel.org, linux-acpi@vger.kernel.org,
- linux-kselftest@vger.kernel.org, linux-s390@vger.kernel.org,
- linux-scsi@vger.kernel.org, linux-um@lists.infradead.org,
- linux-wireless@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- netdev@vger.kernel.org, ntfs3@lists.linux.dev,
- platform-driver-x86@vger.kernel.org, coreteam@netfilter.org,
- kexec@lists.infradead.org, linux-pci@vger.kernel.org,
- linux-sound@vger.kernel.org, netfilter-devel@vger.kernel.org,
- dri-devel@lists.freedesktop.org, ibm-acpi-devel@lists.sourceforge.net,
- jfs-discussion@lists.sourceforge.net, linux-alpha@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, linux-cifs@vger.kernel.org,
- linux-fbdev@vger.kernel.org, linux-hwmon@vger.kernel.org,
- linux-mm@kvack.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org,
- samba-technical@lists.samba.org, sparclinux@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, linux-doc@vger.kernel.org,
- linux-serial@vger.kernel.org, linux-atm-general@lists.sourceforge.net,
- Takashi Iwai <tiwai@suse.de>, linux-input@vger.kernel.org,
- linux-raid@vger.kernel.org, linux-ext4@vger.kernel.org,
- linux-modules@vger.kernel.org, linux-debuggers@vger.kernel.org, Chuck Lever
- <cel@kernel.org>
-Subject: Re: [PATCH RESEND v2 14/23] proc: let procfs copy in writes before
- pinning the entry
-Message-ID: <20261108185953.28054fb3@pumpkin>
-In-Reply-To: <20261107-akteur-gemieden-eckdaten-21304d085e35@brauner>
-References: <20261104-work-procfs-core-v2-14-76ace653a773@kernel.org>
-	<CAMuHMdVfakapgBK6TBhO1iWX8qzvLDk8jzRS=t2MVa5G=MCUeg@mail.gmail.com>
-	<20261107-akteur-gemieden-eckdaten-21304d085e35@brauner>
-X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; arm-unknown-linux-gnueabihf)
+        bh=dh1tm53EjhTHyh6SV5ixAXTcy4PG9n9Z3Dkm6AKA6MM=;
+        b=VPdUEJvK0tnwjB9oq71WYRAukWqCbbRfECOYSevrUO9R/3paff5g3qUBM5MRvs8ZkD
+         uDmj2jXha2AdUBxTlGN74IiuqfZOND8tT0CZ9iY7dIPeezITv6pxIoFifQ8AY6HHI/H+
+         6bGbeGcC74M5mbGFiDTP09uYuhAVcU5JTUUECKc8/Ih87FKUA3HEotlONno0slVMoSHa
+         Hv9byNkzuurbnc5k/wJiZCiF0pU+34B9Fof9S7sMGdd6b//71dodolcyYhXAGcmTH6Ca
+         8jaBloSrwJd299pLanJc1kNqAUdsLj4AjiFodLma9Po4c2VAbUOQqB8QyKP6fxTOIBEF
+         CEoA==
+X-Forwarded-Encrypted: i=1; AL+hErFQFvNQV7ys7LyP1kqfwYLCLKpEH3JTaTkzGP9j8EqZZETwnhUgEf+KkkPt6xnzPkYMcyLcSU94TA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9t5KANKcXaJuBHdmXywO/EaSd8NjCui8OqGAOH3CJBms37Yv0I
+	keOoyqk3+z6cqcBFsK5RuxHQtZcqTLQbJu+Xg6sCPaJ+ZM4Z94WhygHsm0F2wM7wHrhwjxkoMh/
+	Gojg7PI8S5Q==
+X-Received: from dyba7.prod.google.com ([2002:a05:693c:63c7:b0:372:278c:c777])
+ (user=irogers job=prod-delivery.src-stubby-dispatcher) by 2002:a05:7300:e5cb:b0:370:d6e4:e8aa
+ with SMTP id 5a478bee46e88-3725826f58cmr4715450eec.41.1794177579956; Sun, 08
+ Nov 2026 14:39:39 -0800 (PST)
+Date: Sun,  8 Nov 2026 14:39:04 -0800
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -128,20 +75,188 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.56.0.455.g6c5a503b38-goog
+Message-ID: <20261108223913.3624571-1-irogers@google.com>
+Subject: [PATCH v3 0/9] Add __must_init and require explicit kobj_type::release
+From: Ian Rogers <irogers@google.com>
+To: Danilo Krummrich <dakr@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+	Kees Cook <kees@kernel.org>, Miguel Ojeda <ojeda@kernel.org>, 
+	"Rafael J . Wysocki" <rafael@kernel.org>
+Cc: Madhavan Srinivasan <maddy@linux.ibm.com>, Michael Ellerman <mpe@ellerman.id.au>, 
+	Nicholas Piggin <npiggin@gmail.com>, Christophe Leroy <chleroy@kernel.org>, Nayna Jain <nayna@linux.ibm.com>, 
+	Srish Srinivasan <ssrish@linux.ibm.com>, Mimi Zohar <zohar@linux.ibm.com>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Juergen Gross <jgross@suse.com>, 
+	Stefano Stabellini <sstabellini@kernel.org>, 
+	Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>, Nathan Chancellor <nathan@kernel.org>, 
+	Nick Desaulniers <ndesaulniers@google.com>, Viresh Kumar <viresh.kumar@linaro.org>, 
+	Zhongqiu Han <zhongqiu.han@oss.qualcomm.com>, Alexander Aring <aahringo@redhat.com>, 
+	Felix Kuehling <felix.kuehling@amd.com>, 
+	"=?UTF-8?q?Christian=20K=C3=B6nig?=" <christian.koenig@amd.com>, Zhihao Cheng <chengzhihao1@huawei.com>, 
+	Sumanth Korikkar <sumanthk@linux.ibm.com>, Bill Wendling <morbo@google.com>, 
+	Justin Stitt <justinstitt@google.com>, driver-core@lists.linux.dev, llvm@lists.linux.dev, 
+	linux-hardening@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-doc@vger.kernel.org, linux-acpi@vger.kernel.org, 
+	linux-pm@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-sh@vger.kernel.org, linux-s390@vger.kernel.org, gfs2@lists.linux.dev, 
+	xen-devel@lists.xenproject.org, linux-mtd@lists.infradead.org, 
+	amd-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org, 
+	linux-kernel@vger.kernel.org, Ian Rogers <irogers@google.com>
+Content-Type: text/plain; charset="UTF-8"
 
-On Sat, 7 Nov 2026 10:48:35 +0100
-Christian Brauner <brauner@kernel.org> wrote:
+Clang supports the 'require_explicit_initialization' attribute on struct
+fields to enforce that the field is explicitly initialized when an
+aggregate object is constructed, emitting -Wuninitialized-explicit-init
+(enabled by default) if the field is omitted.
 
-> > While at it, I think it would be good to use this conversion as an
-> > opportunity to replace "char *" by "void *", which will probably let
-> > you drop several casts from users.  
-> 
-> So I tried that too. The thing is it drops exactly one u8 * cast in
-> ntfs3's label write. 
+Following discussion at the Linux Plumbers Conference [1], patch 1 adds
+the attribute to include/linux/compiler_attributes.h as __must_init. In
+v1 it was called __require_explicit_initialization. Kees picked up that
+patch with a first seq_file user [2], and in that thread Greg suggested
+the shorter __must_init spelling, which Kees and Miguel agreed to. As
+the attribute did not land in the v7.4 merge window, Kees asked that
+this series carry the renamed attribute.
 
-Since char is now unsigned that one isn't even needed...
+As Documentation/core-api/kobject.rst notes:
+  "One important point cannot be overstated: every kobject must have a
+  release() method, and the kobject must persist (in a consistent state)
+  until that method is called. If these constraints are not met, the
+  code is flawed."
 
-David
+Annotating struct kobj_type::release caught struct kobj_type definitions
+across the tree that omitted .release:
+- Patches 2-8 fix struct kobj_type definitions where dynamically
+  allocated kobjects, ksets, or enclosing structures were either leaked
+  on kobject_put(), freed prematurely before kobject release, or missing
+  proper static initializers.
+- Patch 9 annotates struct kobj_type::release with __must_init and
+  explicitly sets .release = NULL (with explanatory comments prefixed
+  with "Pre-existing:") on the remaining legacy struct kobj_type
+  definitions whose kobjects are static, per-CPU, permanent firmware
+  structures, or embedded in devm- or parent-managed allocations.
+
+Danilo Krummrich offered to route the series as a whole through the
+driver-core tree [3]. Subsystem maintainer Acked-by tags are still
+needed (and would be much appreciated!) for the following three patches:
+- Patch 2: powerpc/secvar: Add missing kobject release callback to secvar_ktype
+- Patch 3: sh: sq: Add missing kobject release callback to ktype_percpu_entry
+- Patch 6: xen/sys-hypervisor: Add release callback to hyp_sysfs_kobj_type
+
+Note on tool use: An LLM coding assistant was used to help audit the
+compiler diagnostics across the tree, draft the fixes and changelog
+descriptions, and verify builds and review feedback.
+
+Changes in v3:
+- Rebased on v7.4-rc1.
+- Note in cover letter that patches 2 (powerpc/secvar), 3 (sh: sq), and
+  6 (xen/sys-hypervisor) are still awaiting subsystem Acked-by tags for
+  merging through the driver-core tree, and CC those maintainers on the
+  cover letter.
+- Patch 1: Add Reviewed-by from Kees Cook; clarify that LLVM issue
+  #232483 affects Clang versions prior to its upstream fix (pointed out
+  by Nathan Chancellor).
+- Patch 4 (cpufreq): Drop obsolete reference to cpufreq_governor_dbs in
+  the commit message per Zhongqiu Han; add Reviewed-by from Zhongqiu Han
+  and Acked-by from Rafael J. Wysocki and Viresh Kumar.
+- Patch 5 (dlm): Add Acked-by from Alexander Aring.
+- Patch 8 (drm/amdkfd): Add Reviewed-by from Felix Kuehling.
+- Patch 9 (kobject): Fix omapfb manager-sysfs.c and overlay-sysfs.c
+  comments to describe managers[] and overlays[] as dynamically
+  allocated rather than static and note the CONFIG_DEBUG_KOBJECT_RELEASE
+  hazard, fix a struct-vs-member wording nit in usnic_ib_sysfs.c, and
+  generalize the commit message note on CONFIG_DEBUG_KOBJECT_RELEASE
+  (reported by Sashiko).
+
+Changes in v2:
+- Rebased on v7.3-16928-g83f32c773255 (v7.4 merge window).
+- Patch 1: Rename __require_explicit_initialization to __must_init per
+  Greg Kroah-Hartman; document the Clang >= 20 requirement per Miguel
+  Ojeda; note the Clang gap for file-scope objects without an
+  initializer reported by Kees Cook; add tags from v1 and from Kees's
+  posting.
+- Move LLM assistance attribution from Assisted-by tags to this cover
+  letter per commit 1e035297ffda ("docs: remove Assisted-by
+  references").
+- Patch 4 (cpufreq): Use "cpufreq: governor:" prefix, drop Fixes tag,
+  fix typo, and remove the redundant runtime assignment in
+  cpufreq_dbs_governor_init() per Zhongqiu Han.
+- Dropped v1 patch 5 (ACPI: CPPC), already fixed upstream by
+  commit 27954e29d7de ("ACPI: CPPC: Release CPC descriptors through
+  kobject").
+- Patch 5 (dlm): Call kobject_del() before dlm_recoverd_stop() in
+  release_lockspace() and the new_lockspace() error path, and wait on a
+  new ls_kobj_done completion before freeing the lockspace or dropping
+  the module reference, avoiding races with delayed kobject release.
+- Dropped v1 patch 8 (s390/sclp_mem) per Sumanth Korikkar: the
+  /sys/firmware/memory/memoryX kobjects are permanent, so sclp_mem.c is
+  folded into patch 9 with .release = NULL.
+- Patch 7 (ubifs): Add Tested-by and Reviewed-by from Zhihao Cheng.
+- Patch 8 (drm/amdkfd): Check q->kobj.state_in_sysfs before
+  kobject_del() in kfd_procfs_del_queue().
+- Patch 9 (kobject): Cover sclp_mem.c and the new amdgpu_ualink.c
+  ualink_xcp_info_ktype, fix the overlay-sysfs.c comment, and prefix
+  legacy .release = NULL comments with "Pre-existing:".
+- Patch 9 (kobject): The ioat, kunpeng_hccs and omapfb display comments
+  now say that the existing teardown can use-after-free under
+  CONFIG_DEBUG_KOBJECT_RELEASE (reported by Sashiko). Fixing those
+  drivers is left to follow-up patches.
+
+v2: https://lore.kernel.org/all/20261027223847.652884-1-irogers@google.com/
+v1: https://lore.kernel.org/all/20261013223946.1836757-1-irogers@google.com/
+[1] https://lpc.events/event/20/contributions/2392/
+[2] https://lore.kernel.org/lkml/20261014225811.i.852-kees@kernel.org/
+[3] https://lore.kernel.org/all/DMLWX8NY1N1N.2OMQMQCIVRR18@kernel.org/
+
+Ian Rogers (9):
+  Compiler Attributes: Add __must_init macro
+  powerpc/secvar: Add missing kobject release callback to secvar_ktype
+  sh: sq: Add missing kobject release callback to ktype_percpu_entry
+  cpufreq: governor: Initialize kobj_type release callback statically
+  dlm: Free dlm_ls in kobject release callback
+  xen/sys-hypervisor: Add release callback to hyp_sysfs_kobj_type
+  ubifs: sysfs: Use kset_create_and_add() for ubifs_kset
+  drm/amdkfd: Free queue in procfs_queue_type kobject release callback
+  kobject: Require explicit initialization of struct kobj_type::release
+
+ Documentation/conf.py                         |  1 +
+ arch/arm64/kernel/cpuinfo.c                   |  5 ++++
+ arch/powerpc/kernel/secvar-sysfs.c            |  6 +++++
+ arch/sh/kernel/cpu/sh4/sq.c                   |  6 +++++
+ drivers/acpi/sysfs.c                          |  2 ++
+ drivers/cpufreq/cpufreq_conservative.c        |  5 +++-
+ drivers/cpufreq/cpufreq_governor.c            |  4 +--
+ drivers/cpufreq/cpufreq_governor.h            |  1 +
+ drivers/cpufreq/cpufreq_ondemand.c            |  5 +++-
+ drivers/dma/ioat/sysfs.c                      |  7 +++++
+ drivers/gpu/drm/amd/amdgpu/amdgpu_ualink.c    |  5 ++++
+ drivers/gpu/drm/amd/amdgpu/amdgpu_xcp.c       | 10 +++++++
+ drivers/gpu/drm/amd/amdkfd/kfd_process.c      | 12 ++++++---
+ drivers/gpu/drm/amd/amdkfd/kfd_queue.c        |  5 +++-
+ drivers/infiniband/hw/hfi1/sysfs.c            |  5 ++++
+ drivers/infiniband/hw/usnic/usnic_ib_sysfs.c  |  5 ++++
+ drivers/parisc/pdc_stable.c                   |  5 ++++
+ drivers/power/supply/ab8500_fg.c              |  5 ++++
+ drivers/s390/char/sclp_mem.c                  |  2 ++
+ drivers/soc/hisilicon/kunpeng_hccs.c          | 21 +++++++++++++++
+ .../fbdev/omap2/omapfb/dss/display-sysfs.c    |  7 +++++
+ .../fbdev/omap2/omapfb/dss/manager-sysfs.c    |  8 ++++++
+ .../fbdev/omap2/omapfb/dss/overlay-sysfs.c    |  8 ++++++
+ drivers/xen/sys-hypervisor.c                  |  6 +++++
+ fs/dlm/dlm_internal.h                         |  1 +
+ fs/dlm/lockspace.c                            | 26 ++++++++++++++-----
+ fs/erofs/sysfs.c                              | 10 +++++++
+ fs/f2fs/sysfs.c                               | 15 +++++++++++
+ fs/ocfs2/cluster/masklog.c                    |  5 ++++
+ fs/ubifs/sysfs.c                              | 24 +++++------------
+ include/linux/compiler_attributes.h           | 12 +++++++++
+ include/linux/kobject.h                       |  2 +-
+ scripts/checkpatch.pl                         |  1 +
+ tools/lib/python/kdoc/xforms_lists.py         |  1 +
+ 34 files changed, 211 insertions(+), 32 deletions(-)
+
+
+base-commit: 6628e7d4c6b25c8d18f1345e3a20d21829aae7e4
+-- 
+2.56.0.455.g6c5a503b38-goog
+
