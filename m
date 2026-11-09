@@ -1,74 +1,99 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794207858;
-	b=IaJRuIjUfIJHwWPIK2GjWbnIDwJneLCvfQq1op94mr8uyo2Ogr+TuzplfGlTCZ+G16fB
-	 z0Lm8+VrP9OpireMvMGtCZHaSQ63bmKrUDyb7VyvDoTWEEPpoNa6F0VtOBZik+9jOt8+2
-	 +BcyJzTSTYfVt7+6C9cKLbPblJZIbVLPLbF4IOtxHfbSyNOGmcqVNGDpU9jJ/9XmRsK8n
-	 i8KOoXzwFIHkxaQ92gBtU8WMaqEl8hCuz72GXomQeSN1PYzdxxl5oEzTXATvEoOhk5SNJ
-	 YFLfOBOnKVvIX2an2mAblT+zhweChXIJeK/O8Wwa35HJGL9nQHyyfAZAavflZ5KnTlQ==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794207858;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
-	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
-	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
-	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=4djJwUp2KDOzPyE+2SoRQotxdrTIk9E7zGQoNV5uat4=;
-	b=rA9CNqu+eaAo5ULa4kqtrW8f0fchmnJiMIrsufX8earz4wFY7HE+/YQRSxO1+hWpG76y
-	 AiJ0KWicuDG2omVpDtYp+r1HVTDkhiIWQEo3Fcr1/uVsSm/PILgV/8ghXzefF538KBEWU
-	 KOFNUT7bjUkTtfi8q8v9zMd/GLaTyOc9NtFfoCDXwc36gYykG/C0MHUGYiC6e6jlRmAJC
-	 L+xl4tFiQkVHC+56yFteplVIJRyQ29PSONpgbPw+UdJIy3Jyi3bOwr0vgrH3Xvwnr3TPS
-	 eTp4sDK7+qK6KJCJCCzOtGsBSvPAqQ4RjLN9lRE8IyMAKsWrh10kVpB/yafrcMuP5FA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=physik.fu-berlin.de;
-	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=IALyzZxe;
-	arc=none smtp.remote-ip=130.133.4.66
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.43
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1794208329;
+	b=xjpeKxlqjllf3j5qsAk6MWWXVt53yvKYc2ApZakRDLEdQZO3qKarsT4XChLTt5ZogZ4+
+	 a0ViPS7rq4ew59pVqC1njt8YlUynPUUhmeIMGgRld2BgZBR6sdP9yXK4dTa2SJ5UD4azn
+	 clPu+ocyT6jDsxCAmCieg1Nuht0GwUdmbiXetdXYyR2u4ib5i+4s94H8ooAVjWrcQAvlT
+	 866bl/l/XP7Y4PuVTRSwUnAGOE5rp8RhcKSYqmNKwGx+jXm3gOAmYjfh01BTnztg3IEky
+	 c05Equq1MX0wVgS056HX5ROqzaSkwWoDPUQxzJaL8Fh08j3j0HGlrFPYXsuy6oYNDFQ==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794208329;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
+	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
+	b=Qz+xTA3nIJjA+52zpjaC7sLbIDVR6pJf85ehOztCRqggeHydnMut85yNEu7eQQukbq92
+	 YvjEgujUIXyjdF8M+NZxIoLzhbJV+qZtoGsGLkVZGYsoyNfd/FwXQHYg9TgVs+SO41QGz
+	 9LcY9akyy3kyKEsKRcmuU6i3ERA5uyb+xSr8S1XPJvNpx+hBbelvqO22nCHspA1C/eZOx
+	 EZOZ3Hf2uhVDKnEwfrGllWu23KxgS42hu5VY1bQdWIF/dOl0EwaslDPexknhXtDpWrSUG
+	 TGWId6tnipXXz//HFVd9yDJ6LqNsjQOYAiOtwXGh6Na4con/LtKXJg1gMN2Zi2t4yww==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=S3VYJ1Ch;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.43
+Received: from mail-qv1-f43.google.com (mail-qv1-f43.google.com [209.85.219.43])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A13E9606A323;
-	Mon,  9 Nov 2026 07:04:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A13E9606A323
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 20424606A31C
+	for <linux-sh@vger.kernel.org>; Mon,  9 Nov 2026 07:12:09 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 20424606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=IALyzZxe
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=4djJwUp2KDOzPyE+2SoRQotxdrTIk9E7zGQoNV5uat4=; t=1794207856;
-	x=1794812656; b=IALyzZxeSY/vEBSaV9CnT/UiMUuHWQC/+4fA9qmyRXs7mX+YQs8uDdJbL7NKV
-	2Xie5IM3vWn621NqFiIX69PNuvB/2quaaVA3Dnnd2EkbH+OkOOFjcwcVX84c5BB1rM+qkH4QxdUQz
-	ltZoWTB7zFWaAFeeGkMdF9KK0hFDPA2tBqvuiflPua4uXCq9Tu1gkDRo7gRLhJjOk/ilxUby+J2CG
-	r20g6Ryi22urHwMFLbf+Cya1ESpZ2xSiX6iO+CowkxEGHH74fl7ok2xc4WqSDvDj8B2+k3ouzGjGt
-	drz1FCl4r3dnngoMdy3CkFElqlgmWLqTyttbWOnCKM6U8dq2ig==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xQJQF-000000013Jr-3oWA; Mon, 09 Nov 2026 08:04:07 +0100
-Received: from p5b13a90a.dip0.t-ipconnect.de ([91.19.169.10] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xQJQF-00000003H1R-2whf; Mon, 09 Nov 2026 08:04:07 +0100
-Message-ID: <469a405f0a447cf433e9449016551cb408fd11dc.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2 0/2] sh: add initial SH7305 CPU support
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Artem Novak <artem122novak@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date: Mon, 09 Nov 2026 08:04:07 +0100
-In-Reply-To: <CAPufuhaE=pg9yzqZYaDcfkxooZeQPzSNsKQw-kX7PHN99yZyQQ@mail.gmail.com>
-References: <20261002041220.133911-1-artem122novak@gmail.com>
-	 <CAPufuhaE=pg9yzqZYaDcfkxooZeQPzSNsKQw-kX7PHN99yZyQQ@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.62.1 
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=S3VYJ1Ch
+Received: by mail-qv1-f43.google.com with SMTP id 6a1803df08f44-91ea3f6a506so5272746d6.0
+        for <linux-sh@vger.kernel.org>; Sun, 08 Nov 2026 23:12:09 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1794208328; cv=none;
+        d=google.com; s=arc-20260327;
+        b=Cp6QN+iu9d4Fku5dRGcUkBvrc0BQQleCB0S1eO4SL6Ot6J/I1ZA1UZMCW961TYJGYm
+         jyJnt6LKDGz33htli0yLNqVksKjq5z6EyzQm7N4/DNsZb3seZvIk02U9TPziVhDfqXqp
+         c3kXZGKJebTnDWw/jPuztlPZDaaux5m2pYfrHqh6+mXFyJAzkJ4nPs41dBUvn15pj9g+
+         mPNQglIJ23E/DykYiAMkTGsU9z3eENYRYCcdJozXqwvhdm/idoJlGqrDINhkRk7K9+N/
+         7VQvbe54G1DDNKFNmHmjU2Uv2HGIVeKRjouEgymNzTDOK7Vjm+eLuJ0TaZBQ/qOOFIia
+         epLQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
+        fh=nI0Els2nYq3KAno0DivxJESryiLlH/ymIieODASnOz4=;
+        b=sRW6CuojGmEP+MDl7EfReRJqPgRsUBEJ84B0ue7KgGFRrtjhS7AXpGb76vMt5uBZz2
+         jW7IC7E8FC1Y/q3v9Zet31K8OxYGTS461rqU8O1X3xiWFCzSIhFCUNiXeq7llVCPIkYw
+         oFxW1D1Znrcuxe6H3fD4GAE6qIa/AHk5MZXzUtpG9dnmILWF2bs0VqxvWp6/LpfS43jI
+         XQ6+s797YrKU4md2NP2vpBz/Fme/RiCgRpQQL4MUl2iyON3ITOnhKQFT5ODLghp0I2cc
+         6BKPjXO2eStePs4vEJkV5nuHsV2meiXgq8DE2NXB104m+eN6TRg/cIdY0MngEXuhDyer
+         XhUw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1794208328; x=1794813128; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
+        b=S3VYJ1ChTDVlnZj+ORlw3KQTe4wFrKpaIAerq2bLU+VqDtH0D62D+PF3ST71FgSKI+
+         k1KBQoX5cgBknJwIVa4+v74qnq7guJen+5Mi3pSWXAvG/6KxzRROdUD9ZCBVIIC47Aev
+         NdntDwYgJwQRuTbSHQOU1HTk4ydzNikWETFE1v6pzuJnbsxJ/xRxx+sThdeF2sllZkDl
+         ntVA+YCCpQEIpTyFDPU1J7q9JZCEI6uDFFeOdAZvOc3nPmQ7moYUlxwzyFBDVrb1XK6D
+         gpVA68mlf54X1gjcI/xPPjua/XDCwpeogYnFwPZoQYTVk8QR7hyfQZLaSbQohcJZNHXr
+         sjPA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794208328; x=1794813128;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
+        b=FWx6zQVTNT8xhH9yRMLz//aTwGS0iOpckF2A5wU57JwwqPthCdhk8VZjzawgKeEBnP
+         D81gog+g89Cp6XkcHp8F2Ubz87PWMdm8R9QD86AwuE8FT4dWwu/gMkmKvB+O+g8Cp62b
+         r2ACh3U+PSsuqm60iR4i898YCgIjAwEQttzuqLWNCQNrFoWqDIe/UZGWAd/WR3YNDkxr
+         NvFgT+y+RMv6HjSe70+boTvv4QHRGp07by9Z5Vq9FjuT3C98/EghTKK0DaObDmNkANcM
+         G43oRlCVB7KZksS0O8iNzJVckbD0dydmlQow36eP7c7An5IjKumZ66IV1ZDhGh6gOT6n
+         yQVw==
+X-Gm-Message-State: APuU4Z8G6ZB1B07I0bEC0hZdNbAZDyFR05Sm3l6udoP8o0JFUaf3L0zi
+	iB/fq19nstZTL3mR29PI1p4MEgTivM6JMAAGP9xTOiK6yDd+Yq+FwmjbTGyQCAevKbOIYImoYd0
+	t0LXet7XQjrhJTCBwERk9uPT/vq9HTQfm8QgOBdk=
+X-Gm-Gg: AYBFou35IMt2QMPx6J8zNhwVAEfj0upwzmym3z7QVbAyWE6xQwJ63FXmxekwgSSJIQL
+	fqmQp0XRhPPtP+DTIH4nkKt+nRqSfj10NdWOoVcqE5LK/LKgnJBeTcEmV9vV4bnOGgArCfUOcfP
+	dgbn04C/riNEMhChQmw7LZCQ8y9onn6pmkP10B0CDVE5EVoT0TJcYlr41VjulW5BVhD0kXSNNyT
+	rq5fdsU2nzovgNkIj9RSrMSfXxaDiQwXL8sKeQP7WsnZ3f+S9TYePCJzhfC/7Og/nuuMRDQb+9d
+	k55fnYdXxGOxccimkUtRnPg6KuaII7Xi01BSc/P1TmOi4Oo/eGf2NSdVDIEtnROPtz06VKmrfh3
+	sJ7vGW13wot/CvpHhVBUi1tumfg8FhybtfRQF
+X-Received: by 2002:ad4:5c46:0:b0:91e:9d18:6a61 with SMTP id
+ 6a1803df08f44-91ed21f31e0mr43992646d6.5.1794208328122; Sun, 08 Nov 2026
+ 23:12:08 -0800 (PST)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -78,30 +103,50 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+References: <20261002041220.133911-1-artem122novak@gmail.com>
+ <CAPufuhaE=pg9yzqZYaDcfkxooZeQPzSNsKQw-kX7PHN99yZyQQ@mail.gmail.com> <469a405f0a447cf433e9449016551cb408fd11dc.camel@physik.fu-berlin.de>
+In-Reply-To: <469a405f0a447cf433e9449016551cb408fd11dc.camel@physik.fu-berlin.de>
+From: Artem Novak <artem122novak@gmail.com>
+Date: Mon, 9 Nov 2026 01:11:57 -0600
+X-Gm-Features: AclHuK9M0NU4pJUOxjwJxtUPXJmeVW_GjcaKtkSrXnuPLAjKurNTbXo_mGqnfSw
+Message-ID: <CAPufuhbXzbgBR=L+5o3eBRXXnHh2FPqThdUnnPsSOuSyjgOsfw@mail.gmail.com>
+Subject: Re: [PATCH v2 0/2] sh: add initial SH7305 CPU support
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Hi Artem,
+Hi Adrian,
 
-On Mon, 2026-11-09 at 00:43 -0600, Artem Novak wrote:
-> I wanted to follow up on this patch series,
-> as it's been a little over five weeks since the v2 submission.
+No problem, thanks for the update
 
-I'm sorry, but there has been too much else on my plate in the
-past weeks. And before I can get to your patches, there are a
-few others still lingering on Patchwork for SH that I need to
-review and pick up.
+Best regards,
+Artem
 
-See: https://patchwork.kernel.org/project/linux-sh/list/
-
-> I'm happy to revise and resubmit if necessary.
-
-Not necessary. I will let you know.
-
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+On Mon, Nov 9, 2026 at 1:04=E2=80=AFAM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+>
+> Hi Artem,
+>
+> On Mon, 2026-11-09 at 00:43 -0600, Artem Novak wrote:
+> > I wanted to follow up on this patch series,
+> > as it's been a little over five weeks since the v2 submission.
+>
+> I'm sorry, but there has been too much else on my plate in the
+> past weeks. And before I can get to your patches, there are a
+> few others still lingering on Patchwork for SH that I need to
+> review and pick up.
+>
+> See: https://patchwork.kernel.org/project/linux-sh/list/
+>
+> > I'm happy to revise and resubmit if necessary.
+>
+> Not necessary. I will let you know.
+>
+> Adrian
+>
+> --
+>  .''`.  John Paul Adrian Glaubitz
+> : :' :  Debian Developer
+> `. `'   Physicist
+>   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
