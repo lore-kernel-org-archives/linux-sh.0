@@ -1,99 +1,75 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.43
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1794208329;
-	b=xjpeKxlqjllf3j5qsAk6MWWXVt53yvKYc2ApZakRDLEdQZO3qKarsT4XChLTt5ZogZ4+
-	 a0ViPS7rq4ew59pVqC1njt8YlUynPUUhmeIMGgRld2BgZBR6sdP9yXK4dTa2SJ5UD4azn
-	 clPu+ocyT6jDsxCAmCieg1Nuht0GwUdmbiXetdXYyR2u4ib5i+4s94H8ooAVjWrcQAvlT
-	 866bl/l/XP7Y4PuVTRSwUnAGOE5rp8RhcKSYqmNKwGx+jXm3gOAmYjfh01BTnztg3IEky
-	 c05Equq1MX0wVgS056HX5ROqzaSkwWoDPUQxzJaL8Fh08j3j0HGlrFPYXsuy6oYNDFQ==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794208329;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
-	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
-	b=Qz+xTA3nIJjA+52zpjaC7sLbIDVR6pJf85ehOztCRqggeHydnMut85yNEu7eQQukbq92
-	 YvjEgujUIXyjdF8M+NZxIoLzhbJV+qZtoGsGLkVZGYsoyNfd/FwXQHYg9TgVs+SO41QGz
-	 9LcY9akyy3kyKEsKRcmuU6i3ERA5uyb+xSr8S1XPJvNpx+hBbelvqO22nCHspA1C/eZOx
-	 EZOZ3Hf2uhVDKnEwfrGllWu23KxgS42hu5VY1bQdWIF/dOl0EwaslDPexknhXtDpWrSUG
-	 TGWId6tnipXXz//HFVd9yDJ6LqNsjQOYAiOtwXGh6Na4con/LtKXJg1gMN2Zi2t4yww==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=S3VYJ1Ch;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.43
-Received: from mail-qv1-f43.google.com (mail-qv1-f43.google.com [209.85.219.43])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1794223657;
+	b=spEtiLHs1vykCb7mu18k+fj5gS7BEkKaMdlKxXuZJw3m5VVuJjpOfkW4LAMFYy+Mly6E
+	 VZKQbyZF2edVcC2p8IWqFFLV1YOlSllKdKV/KNi86+yQ9vWNWc9G9wgPMVVGLrMpuOU3s
+	 g01geXp53SmaWi3iH5M0YLchwGkOSqRtXngI8Gy+F8sRhrqFmOTJr1/xm7/7x8/Zn/SS+
+	 T+y62K9SOKsPGV5pY8CNL3u2US196cooTgHmR6ypd+jSSRn/H5IN5QHvbvg4V3ubmStst
+	 PYejedaFY/tIGx9zQ5yBtUVV0s8UZkV9Lp0tO+as/awA/wK8fpPtrRtwfN7L4q+M7yQ==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794223657;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
+	bh=GTe3rVqqBFubJwfvXPNDDRZX+sidHXepwnZzWomDy5A=;
+	b=NfU9kT2bZiORXw5zCXCda/QL8aJYOgH2BUdYtc79k8w+H+He5VhdNu9Cnf2/2IcxBuZu
+	 whoIpQKrD35eFow0FLSeMsppAHs7T/JowXmdaEvnahhYKBHCrBHaeXZYVCvXSKNKTWszk
+	 Bu8qi6oDSgI1VXT2Gz0/7R+qYdNY941e6XcKfGF8hCMO9ChGo+afDYbgil6zPxFQW8Ini
+	 zhqGLTzGo1Higv2QnpkZm+THa5sLuSQ314SC+lkWoKCvQA7uNE01oHPo+7+uf7W7pI2vb
+	 YaXO+uRyI3C57qCB2gf8wMWl5rPrj/0D0L6RxC02HaZZJotqm2D1dRWZD7LMkPwW/AA==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=iU5O51DC;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 20424606A31C
-	for <linux-sh@vger.kernel.org>; Mon,  9 Nov 2026 07:12:09 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 20424606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E54B7606A31C;
+	Mon,  9 Nov 2026 11:27:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=S3VYJ1Ch
-Received: by mail-qv1-f43.google.com with SMTP id 6a1803df08f44-91ea3f6a506so5272746d6.0
-        for <linux-sh@vger.kernel.org>; Sun, 08 Nov 2026 23:12:09 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1794208328; cv=none;
-        d=google.com; s=arc-20260327;
-        b=Cp6QN+iu9d4Fku5dRGcUkBvrc0BQQleCB0S1eO4SL6Ot6J/I1ZA1UZMCW961TYJGYm
-         jyJnt6LKDGz33htli0yLNqVksKjq5z6EyzQm7N4/DNsZb3seZvIk02U9TPziVhDfqXqp
-         c3kXZGKJebTnDWw/jPuztlPZDaaux5m2pYfrHqh6+mXFyJAzkJ4nPs41dBUvn15pj9g+
-         mPNQglIJ23E/DykYiAMkTGsU9z3eENYRYCcdJozXqwvhdm/idoJlGqrDINhkRk7K9+N/
-         7VQvbe54G1DDNKFNmHmjU2Uv2HGIVeKRjouEgymNzTDOK7Vjm+eLuJ0TaZBQ/qOOFIia
-         epLQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
-        fh=nI0Els2nYq3KAno0DivxJESryiLlH/ymIieODASnOz4=;
-        b=sRW6CuojGmEP+MDl7EfReRJqPgRsUBEJ84B0ue7KgGFRrtjhS7AXpGb76vMt5uBZz2
-         jW7IC7E8FC1Y/q3v9Zet31K8OxYGTS461rqU8O1X3xiWFCzSIhFCUNiXeq7llVCPIkYw
-         oFxW1D1Znrcuxe6H3fD4GAE6qIa/AHk5MZXzUtpG9dnmILWF2bs0VqxvWp6/LpfS43jI
-         XQ6+s797YrKU4md2NP2vpBz/Fme/RiCgRpQQL4MUl2iyON3ITOnhKQFT5ODLghp0I2cc
-         6BKPjXO2eStePs4vEJkV5nuHsV2meiXgq8DE2NXB104m+eN6TRg/cIdY0MngEXuhDyer
-         XhUw==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794208328; x=1794813128; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
-        b=S3VYJ1ChTDVlnZj+ORlw3KQTe4wFrKpaIAerq2bLU+VqDtH0D62D+PF3ST71FgSKI+
-         k1KBQoX5cgBknJwIVa4+v74qnq7guJen+5Mi3pSWXAvG/6KxzRROdUD9ZCBVIIC47Aev
-         NdntDwYgJwQRuTbSHQOU1HTk4ydzNikWETFE1v6pzuJnbsxJ/xRxx+sThdeF2sllZkDl
-         ntVA+YCCpQEIpTyFDPU1J7q9JZCEI6uDFFeOdAZvOc3nPmQ7moYUlxwzyFBDVrb1XK6D
-         gpVA68mlf54X1gjcI/xPPjua/XDCwpeogYnFwPZoQYTVk8QR7hyfQZLaSbQohcJZNHXr
-         sjPA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794208328; x=1794813128;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=OupCEGaIrNwuKpf7Jfdnd1ZAhIgrnuD9zgt3Qr7q5bI=;
-        b=FWx6zQVTNT8xhH9yRMLz//aTwGS0iOpckF2A5wU57JwwqPthCdhk8VZjzawgKeEBnP
-         D81gog+g89Cp6XkcHp8F2Ubz87PWMdm8R9QD86AwuE8FT4dWwu/gMkmKvB+O+g8Cp62b
-         r2ACh3U+PSsuqm60iR4i898YCgIjAwEQttzuqLWNCQNrFoWqDIe/UZGWAd/WR3YNDkxr
-         NvFgT+y+RMv6HjSe70+boTvv4QHRGp07by9Z5Vq9FjuT3C98/EghTKK0DaObDmNkANcM
-         G43oRlCVB7KZksS0O8iNzJVckbD0dydmlQow36eP7c7An5IjKumZ66IV1ZDhGh6gOT6n
-         yQVw==
-X-Gm-Message-State: APuU4Z8G6ZB1B07I0bEC0hZdNbAZDyFR05Sm3l6udoP8o0JFUaf3L0zi
-	iB/fq19nstZTL3mR29PI1p4MEgTivM6JMAAGP9xTOiK6yDd+Yq+FwmjbTGyQCAevKbOIYImoYd0
-	t0LXet7XQjrhJTCBwERk9uPT/vq9HTQfm8QgOBdk=
-X-Gm-Gg: AYBFou35IMt2QMPx6J8zNhwVAEfj0upwzmym3z7QVbAyWE6xQwJ63FXmxekwgSSJIQL
-	fqmQp0XRhPPtP+DTIH4nkKt+nRqSfj10NdWOoVcqE5LK/LKgnJBeTcEmV9vV4bnOGgArCfUOcfP
-	dgbn04C/riNEMhChQmw7LZCQ8y9onn6pmkP10B0CDVE5EVoT0TJcYlr41VjulW5BVhD0kXSNNyT
-	rq5fdsU2nzovgNkIj9RSrMSfXxaDiQwXL8sKeQP7WsnZ3f+S9TYePCJzhfC/7Og/nuuMRDQb+9d
-	k55fnYdXxGOxccimkUtRnPg6KuaII7Xi01BSc/P1TmOi4Oo/eGf2NSdVDIEtnROPtz06VKmrfh3
-	sJ7vGW13wot/CvpHhVBUi1tumfg8FhybtfRQF
-X-Received: by 2002:ad4:5c46:0:b0:91e:9d18:6a61 with SMTP id
- 6a1803df08f44-91ed21f31e0mr43992646d6.5.1794208328122; Sun, 08 Nov 2026
- 23:12:08 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=iU5O51DC
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 96EA41F0089F;
+	Mon,  9 Nov 2026 11:27:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1794223656;
+	bh=GTe3rVqqBFubJwfvXPNDDRZX+sidHXepwnZzWomDy5A=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=iU5O51DC6zVVQKzDHuys9tIxjfbSOhYw8z0UcE86pb//wkXavh32S2N8S2PUurU2A
+	 o1E3RopKG7W94xtmWo25LA834OkIsoplK5Zc5sWRxNqoMBKXFQxzncUeAVAHVqzYUN
+	 x0xzl99BebTVjgItzYyFM18S+rvSgi3xMyTZJ/jJZ69X0Gf56Vq2vszIAP9EEsAUq5
+	 YP1A5SHoyPmQVAQUq/DaV61yYmuj4yVaaeC+HIcZMJhadQiWUxN4AW86j7fp4xdZK/
+	 SKtdAofdOgM6AVAC0cEZ3+8Z/6By8LpM/kvwzBv9E4RtCHAt3TdDxZIlKuxADBPb0I
+	 863RWmyUQ6DWA==
+Date: Mon, 9 Nov 2026 12:27:22 +0100
+From: Christian Brauner <brauner@kernel.org>
+To: Kees Cook <kees@kernel.org>
+Cc: linux-fsdevel@vger.kernel.org, 
+	Linus Torvalds <torvalds@linux-foundation.org>, Jann Horn <jannh@google.com>, Josef Bacik <josef@toxicpanda.com>, 
+	Chris Mason <mason@kernel.org>, Jeff Layton <jlayton@kernel.org>, NeilBrown <neil@brown.name>, 
+	Eric Dumazet <edumazet@kernel.org>, Thomas Gleixner <tglx@kernel.org>, 
+	Al Viro <viro@zeniv.linux.org.uk>, Jonathan Corbet <corbet@lwn.net>, Christoph Hellwig <hch@lst.de>, 
+	Greg Kroah-Hartman <gregkh@suse.de>, Joel Granados <joel.granados@kernel.org>, 
+	Jan Kara <jack@suse.cz>, Jan Kara <jack@suse.com>, linux-kernel@vger.kernel.org, 
+	linux-nfs@vger.kernel.org, linux-acpi@vger.kernel.org, linux-kselftest@vger.kernel.org, 
+	linux-s390@vger.kernel.org, linux-scsi@vger.kernel.org, linux-um@lists.infradead.org, 
+	linux-wireless@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, 
+	ntfs3@lists.linux.dev, platform-driver-x86@vger.kernel.org, coreteam@netfilter.org, 
+	kexec@lists.infradead.org, linux-pci@vger.kernel.org, linux-sound@vger.kernel.org, 
+	netfilter-devel@vger.kernel.org, dri-devel@lists.freedesktop.org, 
+	ibm-acpi-devel@lists.sourceforge.net, jfs-discussion@lists.sourceforge.net, 
+	linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-cifs@vger.kernel.org, 
+	linux-fbdev@vger.kernel.org, linux-hwmon@vger.kernel.org, linux-mm@kvack.org, 
+	linux-sh@vger.kernel.org, linux-usb@vger.kernel.org, samba-technical@lists.samba.org, 
+	sparclinux@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-doc@vger.kernel.org, 
+	linux-serial@vger.kernel.org, linux-atm-general@lists.sourceforge.net, 
+	Takashi Iwai <tiwai@suse.de>, linux-input@vger.kernel.org, linux-raid@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-modules@vger.kernel.org, linux-debuggers@vger.kernel.org, 
+	Chuck Lever <cel@kernel.org>
+Subject: Re: [PATCH RESEND v2 07/23] proc: let procfs own the seq_file of
+ seq_file entries
+Message-ID: <20261109-atemberaubend-begabung-bedienen-85aade0f99b4@brauner>
+References: <20261104-work-procfs-core-v2-0-76ace653a773@kernel.org>
+ <20261104-work-procfs-core-v2-7-76ace653a773@kernel.org>
+ <8A21EE2A-F392-40B7-9152-CBC440FDDA70@kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -103,50 +79,37 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <20261002041220.133911-1-artem122novak@gmail.com>
- <CAPufuhaE=pg9yzqZYaDcfkxooZeQPzSNsKQw-kX7PHN99yZyQQ@mail.gmail.com> <469a405f0a447cf433e9449016551cb408fd11dc.camel@physik.fu-berlin.de>
-In-Reply-To: <469a405f0a447cf433e9449016551cb408fd11dc.camel@physik.fu-berlin.de>
-From: Artem Novak <artem122novak@gmail.com>
-Date: Mon, 9 Nov 2026 01:11:57 -0600
-X-Gm-Features: AclHuK9M0NU4pJUOxjwJxtUPXJmeVW_GjcaKtkSrXnuPLAjKurNTbXo_mGqnfSw
-Message-ID: <CAPufuhbXzbgBR=L+5o3eBRXXnHh2FPqThdUnnPsSOuSyjgOsfw@mail.gmail.com>
-Subject: Re: [PATCH v2 0/2] sh: add initial SH7305 CPU support
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <8A21EE2A-F392-40B7-9152-CBC440FDDA70@kernel.org>
 
-Hi Adrian,
+On Sat, Nov 07, 2026 at 08:10:28AM -0800, Kees Cook wrote:
+> Please use the new style typed allocation calls for objects:
+> 
+> ops = kmalloc_obj(*ops);
+> 
+> (This happened to jump out at me, but please check the other patches for this pattern.)
 
-No problem, thanks for the update
+Done, there are 5 of them in total:
 
-Best regards,
-Artem
+proc: resume readdir after the last name it returned
+-		cursor = kmalloc(sizeof(*cursor), GFP_KERNEL_ACCOUNT);
++		cursor = kmalloc_obj(*cursor, GFP_KERNEL_ACCOUNT);
 
-On Mon, Nov 9, 2026 at 1:04=E2=80=AFAM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
->
-> Hi Artem,
->
-> On Mon, 2026-11-09 at 00:43 -0600, Artem Novak wrote:
-> > I wanted to follow up on this patch series,
-> > as it's been a little over five weeks since the v2 submission.
->
-> I'm sorry, but there has been too much else on my plate in the
-> past weeks. And before I can get to your patches, there are a
-> few others still lingering on Patchwork for SH that I need to
-> review and pick up.
->
-> See: https://patchwork.kernel.org/project/linux-sh/list/
->
-> > I'm happy to revise and resubmit if necessary.
->
-> Not necessary. I will let you know.
->
-> Adrian
->
-> --
->  .''`.  John Paul Adrian Glaubitz
-> : :' :  Debian Developer
-> `. `'   Physicist
->   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+proc: sysctl: resume readdir after the last name it returned
+-		cursor = kmalloc(sizeof(*cursor), GFP_KERNEL_ACCOUNT);
++		cursor = kmalloc_obj(*cursor, GFP_KERNEL_ACCOUNT);
+
+proc: keep the open files of an entry in an open node
+-		dp->open = kzalloc(sizeof(*dp->open), GFP_KERNEL);
++		dp->open = kzalloc_obj(*dp->open);
+
+proc: own the wait queue of an entry with a ->proc_poll()
+-	on = kzalloc(sizeof(*on), GFP_KERNEL);
++	on = kzalloc_obj(*on);
+
+proc: let procfs own the seq_file of seq_file entries
+-	ops = kmalloc(sizeof(*ops), GFP_KERNEL);
++	ops = kmalloc_obj(*ops);
+
+-- 
