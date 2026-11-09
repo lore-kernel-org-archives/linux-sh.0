@@ -1,127 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.49
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794260763;
-	b=k61m8mXRIXR1uab4+2q6OOdgovVPlX4YeIesBU4z1N7jR1MVx0rZTmr+rRJ6ia+VRujG
-	 ITXCGCaEEqpbBkCLwWQt4WafxHdDIBTgeNunNaSxDvrQ2R5hEJX9bLlgW8ikUdlCHmGoi
-	 Zg4oARAUKHM6VOXI6yAmmtG9iMvPMaDoWCNqSIP0XJPLhmUHlDYQ/gnD6szByJxKGk2mg
-	 tvVHhRR/AQ42u7sQOyGFmNQVvncaAHterw4d00tthb+eOLr2iHh7kGjUl/QWr1txG68ny
-	 G+H2V4ADRvjaZngcohiBdTR1pVfc4nh3vRGdeztcmTUKET7KRfLAfT0eJjqxavDVclA==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794260763;
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.160.171
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1794263409;
+	b=iDyVgrpQ7z7MRKxDCNXqDiAIRp54mwifyb2aj4aJXatJMwfRhJT43dDoeykhmO4ivQop
+	 yGvG73GLNzNIlYrChvkypQk6gOSFtEah6oe2u4xgSiJUdCpR+BpKPkbCY/VtrBg68ueZK
+	 WYpoI8jnsAv6wQGbB+A3KfNEkT5GQ8x3m1MbqKq0pATABNpzEwpr4OQ2sNZ8HFUqr2clD
+	 hBGWNAnsSbpzU9gJgcZ+g37eDnSZctRRJ4tqXBJ4SOWLYuiknm7Nh7ROpsZpzvkkFtQn5
+	 e46GsKB6/rnG1Ds5sIhhmrIaVJ1h+qycBu6S5PKk+qRRxyzI2exN8vShgob5pBRhTlw==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794263409;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:X-Mailer:
-	 MIME-Version:Content-Type:Content-Transfer-Encoding;
-	bh=874yjmK9ypxK94+nKOJ/uR1d6HpqK0owgIThZQA8ZUA=;
-	b=hXFKQ7z3JVlHb/rMx8o+/W7OE5LwI9kPzPvMwunq/7j2A3N09ikzCgNOHeNjpPLioA5h
-	 4wqQ5QE2NLfYHxB/kvx77EAh78SKVtEKd6kdPKqahyUwpIWAzky7dYGeaK08aPAAzYv0z
-	 lo7Fr+oUqLrruVpfL0UlYP/my3psJdYaABSD8TyuQOR6J0nIsu6jA5HODajmrFrghcP9y
-	 sG6bYOrViuX7UX6wsvaCBrAfC3r10whZAmTLV4oKiNXyt2pwtECkvSDea2hk6MaC/Dz7e
-	 dBjhijOQ5DGGyTDDptXVaQV7dBCNxhnN48PNHFL7LNJ3UMaYVY5Neq5u578QZ1DqKWg==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=LaZ0qPv5;
-	arc=none smtp.remote-ip=209.85.221.49
-Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=S6J9qhUwfhfejNNDnNi/t39zME3R/+tshu3QmKCryWs=;
+	b=dT42D4bHc91WAjTNOwuKcVgLmdR5P7yHPSKzFxWyiHaPIqSTYcoUs+Vj6roU3QfxukQH
+	 I3TgMGYEbONFkmwYzswiwK5WUeRh51fY2qnYa9gdIuLRGHrTlnuQoNJ2On5Zdgd9TrcAp
+	 MDVgf7YS2i50JTCATmZTVVTeUP2tU5W4HeqkudsPUGlvrRk60UuMzw/jMgY/8j7VaqrTa
+	 qT9KASkQgNaB0F4qkNhgU3UPuGfQ2Ss8Rvk4RBo4SYuEmXiFlGriyzjhIamd3ucgiIZ0B
+	 NeKTBhEjDm1EFIzouP1UHcF11FKaUJ2QiUe8D/xkeiCP2RoR/LvTIoVlAIP48ReHOjQ==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=google.com;
+	spf=pass smtp.mailfrom=google.com;
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=bc6ecKnX;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.160.171
+Received: from mail-qt1-f171.google.com (mail-qt1-f171.google.com [209.85.160.171])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C694460A2605
-	for <linux-sh@vger.kernel.org>; Mon,  9 Nov 2026 21:46:02 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C694460A2605
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4908E606A331
+	for <linux-sh@vger.kernel.org>; Mon,  9 Nov 2026 22:30:09 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4908E606A331
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=LaZ0qPv5
-Received: by mail-wr1-f49.google.com with SMTP id ffacd0b85a97d-492f6b7f70dso881099f8f.0
-        for <linux-sh@vger.kernel.org>; Mon, 09 Nov 2026 13:46:02 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=bc6ecKnX
+Received: by mail-qt1-f171.google.com with SMTP id d75a77b69052e-535f598d126so39611cf.1
+        for <linux-sh@vger.kernel.org>; Mon, 09 Nov 2026 14:30:09 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1794263408; cv=none;
+        d=google.com; s=arc-20260327;
+        b=juWNtOjXWnxfxeSAbmzOLMUx0Kw3FOkYjl3UIrSSgO5PcxBC7mMsy1hMfZkR/j5RHj
+         j5NM4fLvykwNiLrkd/KK9wOFDqr9gDLG/fVoYZ3DjIOx4GAnbkiDUAcGCqYBrO5XDcPw
+         b8oT4Qa1qsTZsBZD8LPVFBJh/v06a/ol85oG9aLI91+gS1vSv0+ErpjjJ4u0WFGhJQx6
+         wwHxDy30hySHKRdwZ4ZlmMT7/n2UNe5U69ILlYNqpwpFJkK8IdwYX/7tsRet5T5DRQ4w
+         hvQmy2X+SrT5QIj/8X4fPdvdcgHwugEOVUX8ldVxW0X0pwYBF6l3q4BUPamzF+JBSUkF
+         DkYw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=S6J9qhUwfhfejNNDnNi/t39zME3R/+tshu3QmKCryWs=;
+        fh=aGqepDdzsQ7YZUibRGhRZ/0uulD/rAJrpkOFd23B8T4=;
+        b=bFtpI512VC87v11FjjrnJ7/Z5ot9RkbBNV6N39gKzkJRGFeINq4Um88tD3bUcsv4SW
+         mItQ2lC3NEK233T5L9EUfbOtYdBeJhdbQgZuTB9BRWOtRAkHXtKhShCMFDKOL5hK6ntU
+         D/Zzy3UxNk2RLVQqyFOmfZXy+pQtE4cK5kgqyo5Iu+qTZ7yZ2yAKOZaW/HsSIJ6XFSoK
+         /zqjPltMitNhbJovCyNcX5wb7399G2CWqITsf0RXOXtqOkF4EBwyMbeBdtbg6xukWL2e
+         xqBfvVcLaq52O4uH13GwWB9D8uJlcToTMPBJ4pPcjJLjTRlPW+o40S+hh8QaCTbful7x
+         93MQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794260761; x=1794865561; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:subject:cc:to:from:date:from:to:cc:subject
+        d=google.com; s=20260707; t=1794263408; x=1794868208; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=874yjmK9ypxK94+nKOJ/uR1d6HpqK0owgIThZQA8ZUA=;
-        b=LaZ0qPv5+whTFQHjIA7oYo021SUS2QeXnWN8ii9Y4im7Ue68o46nz2xh/hHMwIUfQ/
-         ICad5fyoXePYl6/8nNVhZk6UxBKiDwJbHcHq6QklDSJskt7Ox2MaUqpcgklbAASOb1WD
-         7U13gt1MK2zXHTSuMFiAfjmE40I4QhfpTIR2Mc6nMOBQW6Dg/mqe6U/h69Hyf/QnrKae
-         CyKIviPRPYc2tnG0IM8qOylYYY2PKnrUJzf833wY0ZcFYDbyZdAS7ekVESO+FaUUNtdA
-         WzN6sPDUCv7pE3hPSGmxzNcqgZM1jmpktE+mpPCXGo9ukB9qCsiBySNit7DIM51G+Ivt
-         K68Q==
+        bh=S6J9qhUwfhfejNNDnNi/t39zME3R/+tshu3QmKCryWs=;
+        b=bc6ecKnXzqp5zahKN5US+W/GLFNu9bOCxLTorv75CdL/TyOgB/Qh6QFUi86M3M/XI3
+         3gbxOXuAYS2+xcjqU4SLj5C27dCKM/SCCgBGdSbxDV00eICb4MzgEjo9vjECQ1QTCTmr
+         MgCtojiqIWlVyB6AunwAs2qSQJP0tUdJsdT71C1y4WilJg+rQa++O5B+9FpAikzFpyGD
+         TU94u5aUZCMHCz2bEPFushfsTW1bpin21NCA0WBKSF7omxyVw4eI3lnqeaGfI4JhzN5X
+         ZQZwi7mBvwRBGIVH1EKWZ2xsmVHzuYxoBrVKANockiyw6pDDJKKlw7J5nTOQpM4hDjUm
+         KR1A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794260761; x=1794865561;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:subject:cc:to:from:date:x-gm-gg
+        d=1e100.net; s=20260707; t=1794263408; x=1794868208;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=874yjmK9ypxK94+nKOJ/uR1d6HpqK0owgIThZQA8ZUA=;
-        b=IbLpOc4nhWj9x00k7sHrD7eOTsYy5BE0CmEXK2MAZTnzCqxW9rjUMJo4NSQXyM0yKP
-         CnQF4oQVUUyGueUgLb2TAcr1vrx44ewGlk7MyWD7tYuzfKb2lOq720Ejo2jy42SlfSWp
-         f+TR+N8LeoZbfWI/ME+oa9Emh/pfjcok08+wb2MoaoeKfDIG3RwZjjpS6gLCMJ4l29Qa
-         dNTk9LFI7r3z6/jH5JT5h7O50XtktgNKb878dvy0XVxnCE3oM8nX3Dce4eR1dySVYWKr
-         789jefQloRHehaJQN9zKWJ6b0LoYtoC/h85FEZ7PfzNcGtk4/GAhxsvtLKwJnlu23Cb1
-         kbDQ==
-X-Forwarded-Encrypted: i=1; AL+hErGcJng7eFTxn2uX+yTvJ7tjQtgKWqhchwTHT8BRXIeacCfnlGcGvokXacO0C9vk0YM8wXNjM/JfHg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z97mt/Uv1jOqx1fr2jsfD/+AbMKj+IvMNen1x/dQfMDCOgZo/FW
-	ZU8/gw4Pw5dPliX9VHQnnh84z/sNR6FWW7bYYYjbw56jN/FTIABFd0rQ
-X-Gm-Gg: AYBFou2KyClovHh/vrD0sWXMu3yEbsCwIwMUbV59+Mdn+6QaAgCz6gabBRxReDPh6QD
-	PNHX1aa+eQ4bOJ7SdeZVCYrwLDmbuYUCmOQJE+AtoUIE7HSjJuofc8YLP1P5xVJIPuNs6x2JkPc
-	JF6p+p9TD830iAJ3Q5aLRYJ4xxM/HlCRgfRjkVHe8Z0buKvAkki5Yz+atnyHL9Px5e90lFYrsJZ
-	GfgoTEtskjonBf0eeqwN0AivjDcUzDIS7fF6Q/cE20hVJJhIUTLQlFOFcWOP9NzTPd17KMzXGNW
-	sO8gaIEDdNquAEcYy/FbvSMeciKJcSz7X22k6GhjkMFPvIN1Sz0PiDNH7lLzIlNpno4iraOtQAW
-	M5BB5TTSkoozIMBVfZnzXsMLwWnR+LY5rE/yafXzWYtTDgwdtGzb7f6parvvV0kOp3e5i3aLisu
-	g2V7FS9sjDYb1F9dzz3i4EE8VKrRRZLdJNlYHyuP2gsg253VX5q6QmAyNorSNhixXEh38M17N0f
-	IbWvgOuSAi6xG26g5pW7JfAmSn7AOz/gDy1WjfBwUTcm7NCyhMyufUBarsR7XhtOmanOm2v7zgG
-	LizLDtGc8U4JGgf8+ii9JfnTagkU7O1Z4TqF/bNoVJKXzPYVwZtmPyLAPd+szOlYBw==
-X-Received: by 2002:a05:6000:288d:b0:48e:25e1:5eb8 with SMTP id ffacd0b85a97d-4982b28aa42mr1487213f8f.3.1794260760763;
-        Mon, 09 Nov 2026 13:46:00 -0800 (PST)
-Received: from pumpkin (82-69-66-36.dsl.in-addr.zen.co.uk. [82.69.66.36])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4983585c4fdsm1213644f8f.10.2026.11.09.13.45.59
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 09 Nov 2026 13:46:00 -0800 (PST)
-Date: Mon, 9 Nov 2026 21:45:58 +0000
-From: David Laight <david.laight.linux@gmail.com>
-To: "Maciej W. Rozycki" <macro@orcam.me.uk>
-Cc: Christian Brauner <brauner@kernel.org>, Geert Uytterhoeven
- <geert@linux-m68k.org>, linux-fsdevel@vger.kernel.org, Linus Torvalds
- <torvalds@linux-foundation.org>, Jann Horn <jannh@google.com>, Josef Bacik
- <josef@toxicpanda.com>, Chris Mason <mason@kernel.org>, Jeff Layton
- <jlayton@kernel.org>, NeilBrown <neil@brown.name>, Eric Dumazet
- <edumazet@kernel.org>, Thomas Gleixner <tglx@kernel.org>, Al Viro
- <viro@zeniv.linux.org.uk>, Jonathan Corbet <corbet@lwn.net>, Christoph
- Hellwig <hch@lst.de>, Greg Kroah-Hartman <gregkh@suse.de>, Joel Granados
- <joel.granados@kernel.org>, Kees Cook <kees@kernel.org>, Jan Kara
- <jack@suse.cz>, Jan Kara <jack@suse.com>, linux-kernel@vger.kernel.org,
- linux-nfs@vger.kernel.org, linux-acpi@vger.kernel.org,
- linux-kselftest@vger.kernel.org, linux-s390@vger.kernel.org,
- linux-scsi@vger.kernel.org, linux-um@lists.infradead.org,
- linux-wireless@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- netdev@vger.kernel.org, ntfs3@lists.linux.dev,
- platform-driver-x86@vger.kernel.org, coreteam@netfilter.org,
- kexec@lists.infradead.org, linux-pci@vger.kernel.org,
- linux-sound@vger.kernel.org, netfilter-devel@vger.kernel.org,
- dri-devel@lists.freedesktop.org, ibm-acpi-devel@lists.sourceforge.net,
- jfs-discussion@lists.sourceforge.net, linux-alpha@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, linux-cifs@vger.kernel.org,
- linux-fbdev@vger.kernel.org, linux-hwmon@vger.kernel.org,
- linux-mm@kvack.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org,
- samba-technical@lists.samba.org, sparclinux@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, linux-doc@vger.kernel.org,
- linux-serial@vger.kernel.org, linux-atm-general@lists.sourceforge.net,
- Takashi Iwai <tiwai@suse.de>, linux-input@vger.kernel.org,
- linux-raid@vger.kernel.org, linux-ext4@vger.kernel.org,
- linux-modules@vger.kernel.org, linux-debuggers@vger.kernel.org, Chuck Lever
- <cel@kernel.org>
-Subject: Re: [PATCH RESEND v2 14/23] proc: let procfs copy in writes before
- pinning the entry
-Message-ID: <20261109214558.0d9d5228@pumpkin>
-In-Reply-To: <alpine.DEB.2.21.2611090504170.17804@angie.orcam.me.uk>
-References: <20261104-work-procfs-core-v2-14-76ace653a773@kernel.org>
-	<CAMuHMdVfakapgBK6TBhO1iWX8qzvLDk8jzRS=t2MVa5G=MCUeg@mail.gmail.com>
-	<20261107-akteur-gemieden-eckdaten-21304d085e35@brauner>
-	<20261108185953.28054fb3@pumpkin>
-	<alpine.DEB.2.21.2611090504170.17804@angie.orcam.me.uk>
-X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; arm-unknown-linux-gnueabihf)
+        bh=S6J9qhUwfhfejNNDnNi/t39zME3R/+tshu3QmKCryWs=;
+        b=ElwqBJ7epMaC9T/ZR5DyZx5O+rdxz80QqHqQNT4i7jf4k0FIObtPkNfYrsCFaylko3
+         nv3w15jKlFqy4P/lGjpVPHc/8WJjGHT13CMO3U8ZRp4gn+shvITAKdW1a6G49IP6pglT
+         Tt0uKWcxFnl39Ct+9C7khp/ZDkq7PROkOoKbxj6S8pUGY/5I+lNcFdXCLGl62vO+k601
+         PqLWN0ebhe2ZcsonLrufJjPMI598lS+wGhjZQ7zaTIg95VZUYuZqgQoNKII8CTb/K3Se
+         x1R2F7tG3Jz6X5qalbr3NiBNsX60HoGja+nkPdX9vcV/yNB/y3vK7wyZtiGAhyS1rP9n
+         ZBKw==
+X-Forwarded-Encrypted: i=1; AL+hErGcztlSqZO1jsH9nmr8SgK/IJXcw4PRwJH7odEDmcdeMpPIi2w9eTmsxZtzKcBW4ZobrpWYMzggzQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8xxrQpfYEy4awF91rq6FIVGHI8iwU1ZA+wdtMRdP/OTXntf0pK
+	n0v5tDn0El9IFAHJhqOoMurLnI3xx513Fi/i5iTrUeGejzUzOmAGxgyT7vD+ou5nJ+S8PT1pUP5
+	zJSWmpFYDaHWw/XJlWo0gnirMyJoSdrRv0vDglqkh
+X-Gm-Gg: AYBFou1gaJ0FpBIzEBLM1ZZuxJSOzxK/08FG9yu91P1loIYSwGpf9M6qaKZQVNw4buh
+	LaQNb8mzIEfeYBgH030NWnUmBbI0SNxXSN8Dw3Mq9me+fnwXoyeB4INaszOzj9ZHnVPyY+DQXvd
+	DvASHVair7ecy0XsWaJwRVfPCL8KmEBhbo90qOhIOFXpaTTahkVxcXO7ErjqjmtltxJqP0J40lW
+	vaC134ymPzjhVxj3trZiDAKoC1hyQV0iZdfTo7kNBi68o0hkyFOxxyW4qBqNxZRyDmGY0WZhDhj
+	1z4Lss7a7akh9KLia/7ULVX5bf19TXuQRuUc2Fynmxs4D8n1frawQ8ikTlPwm6OOok7ZZkUxIF3
+	lTpIEOOy3FjDTXUDGsSBOqMfYJoan4blr3yNEUfVIpv3momPiT51Cm/9BZ05Nj3IgAGQ=
+X-Received: by 2002:a05:622a:1b16:b0:530:e00f:7768 with SMTP id
+ d75a77b69052e-555290bb288mr6464421cf.0.1794263407457; Mon, 09 Nov 2026
+ 14:30:07 -0800 (PST)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -131,34 +104,114 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+References: <20261108223913.3624571-1-irogers@google.com> <20261108223913.3624571-7-irogers@google.com>
+ <b8d171de-52fe-474e-96db-d119840c6240@suse.com>
+In-Reply-To: <b8d171de-52fe-474e-96db-d119840c6240@suse.com>
+From: Ian Rogers <irogers@google.com>
+Date: Mon, 9 Nov 2026 14:29:55 -0800
+X-Gm-Features: AclHuK-dlWDp0B4FdK6V9QBR5LM_sA67_T-19O3ovPwDJ5RdBpzojQ18ICzxF_E
+Message-ID: <CAP-5=fXd640kfaR+soPdiEV2mfqCPGDANCt04KzaXBphYP4Htg@mail.gmail.com>
+Subject: Re: [PATCH v3 6/9] xen/sys-hypervisor: Add release callback to hyp_sysfs_kobj_type
+To: Juergen Gross <jgross@suse.com>
+Cc: Danilo Krummrich <dakr@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+	Kees Cook <kees@kernel.org>, Miguel Ojeda <ojeda@kernel.org>, 
+	"Rafael J . Wysocki" <rafael@kernel.org>, Madhavan Srinivasan <maddy@linux.ibm.com>, 
+	Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>, 
+	Christophe Leroy <chleroy@kernel.org>, Nayna Jain <nayna@linux.ibm.com>, 
+	Srish Srinivasan <ssrish@linux.ibm.com>, Mimi Zohar <zohar@linux.ibm.com>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Stefano Stabellini <sstabellini@kernel.org>, 
+	Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>, Nathan Chancellor <nathan@kernel.org>, 
+	Nick Desaulniers <ndesaulniers@google.com>, Viresh Kumar <viresh.kumar@linaro.org>, 
+	Zhongqiu Han <zhongqiu.han@oss.qualcomm.com>, Alexander Aring <aahringo@redhat.com>, 
+	Felix Kuehling <felix.kuehling@amd.com>, =?UTF-8?Q?Christian_K=C3=B6nig?= <christian.koenig@amd.com>, 
+	Zhihao Cheng <chengzhihao1@huawei.com>, Sumanth Korikkar <sumanthk@linux.ibm.com>, 
+	Bill Wendling <morbo@google.com>, Justin Stitt <justinstitt@google.com>, driver-core@lists.linux.dev, 
+	llvm@lists.linux.dev, linux-hardening@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org, 
+	linux-acpi@vger.kernel.org, linux-pm@vger.kernel.org, 
+	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, 
+	linux-s390@vger.kernel.org, gfs2@lists.linux.dev, 
+	xen-devel@lists.xenproject.org, linux-mtd@lists.infradead.org, 
+	amd-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org, 
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Mon, 9 Nov 2026 05:05:57 +0000 (GMT)
-"Maciej W. Rozycki" <macro@orcam.me.uk> wrote:
+On Sun, Nov 8, 2026 at 10:56=E2=80=AFPM Juergen Gross <jgross@suse.com> wro=
+te:
+>
+> On 08.11.26 23:39, Ian Rogers wrote:
+> > hypervisor_init() in drivers/base/hypervisor.c creates hypervisor_kobj
+> > with kobject_create_and_add() (which allocates a dynamic kobject using
+> > dynamic_kobj_ktype), and hypervisor_subsys_init() in
+> > drivers/xen/sys-hypervisor.c then overwrites hypervisor_kobj->ktype wit=
+h
+> > &hyp_sysfs_kobj_type, which had no .release callback.
+> >
+> > Add hyp_sysfs_release() calling kfree(kobj) to preserve the dynamic
+> > kobject release behavior.
+> >
+> > Fixes: cff7e81b3dd7 ("xen: add /sys/hypervisor support")
+> > Signed-off-by: Ian Rogers <irogers@google.com>
+> > ---
+> >   drivers/xen/sys-hypervisor.c | 6 ++++++
+> >   1 file changed, 6 insertions(+)
+> >
+> > diff --git a/drivers/xen/sys-hypervisor.c b/drivers/xen/sys-hypervisor.=
+c
+> > index 91923242a5ae..0e8a2cd69fd6 100644
+> > --- a/drivers/xen/sys-hypervisor.c
+> > +++ b/drivers/xen/sys-hypervisor.c
+> > @@ -659,7 +659,13 @@ static const struct sysfs_ops hyp_sysfs_ops =3D {
+> >       .store =3D hyp_sysfs_store,
+> >   };
+> >
+> > +static void hyp_sysfs_release(struct kobject *kobj)
+> > +{
+> > +     kfree(kobj);
+> > +}
+> > +
+> >   static const struct kobj_type hyp_sysfs_kobj_type =3D {
+> > +     .release =3D hyp_sysfs_release,
+> >       .sysfs_ops =3D &hyp_sysfs_ops,
+> >   };
+> >
+>
+> Wouldn't it make sense to have a common function for just kfree(kobj)?
+>
+> In your series there are 3 instances of .release just doing kfree(kobj).
+>
+> In case this is not wanted or with using the suggested common .release
+> helper you can add my
+>
+> Reviewed-by: Juergen Gross <jgross@suse.com>
 
-> On Sun, 8 Nov 2026, David Laight wrote:
-> 
-> > > > While at it, I think it would be good to use this conversion as an
-> > > > opportunity to replace "char *" by "void *", which will probably let
-> > > > you drop several casts from users.    
-> > > 
-> > > So I tried that too. The thing is it drops exactly one u8 * cast in
-> > > ntfs3's label write.   
-> > 
-> > Since char is now unsigned that one isn't even needed...  
-> 
->  Please excuse me missing the context, but what circumstances does your 
-> claim refer to?
+Thanks Juergen!
 
-Just that the cast would have to be:
-	u8 *foo = (u8 *)bar;
-where 'bar' is 'char *', and I don't think you need a cast there when
-char is unsigned.
+lib/kobject.c already has a static dynamic_kobj_release() that does
+this (and there are ~15 other places in the tree open-coding a static
+kfree(kobj) release wrapper), so include/linux/kobject.h +
+lib/kobject.c would be the natural home if we exported one.
 
-David
- 
-> 
->   Maciej
-> 
+I kept them as local static functions here for two reasons:
 
+1. Patches 2/9, 3/9, and 6/9 carry Fixes: tags, and keeping the small
+   local callbacks avoids a dependency on a new driver-core export for
+   backports.
+2. Since kobjects are normally embedded in a larger struct and freed via
+   container_of(), I wasn't sure whether Greg and Danilo would view an
+   exported kfree(kobj) release helper (especially alongside
+   __must_init) as an invitation for misuse on embedded kobjects.
+
+Unless Greg or Danilo would like dynamic_kobj_release() (or similar)
+exported now, I'll plan to keep the local callbacks for this series
+and can send a follow-up cleanup for the tree-wide callers if
+driver-core maintainers think a shared helper makes sense.
+
+Thanks,
+Ian
+
+>
+>
+> Juergen
