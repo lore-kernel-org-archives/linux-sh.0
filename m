@@ -1,96 +1,84 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.215.174
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=82.195.75.108
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794359240;
-	b=i2g9EzkCCqeddgqyX21/6fEi5Lqmb7m7yMsrMdAXwobFon3CQ80IQkaJ/eI8lhniG2+T
-	 8ICnTrvcFkCC6gLlqNyYeKST8+5eO1Be+l57qyysQzl2i9ms+28/rEDXGgiYhH9jL1EQ9
-	 z53ewIHgp/DgyueFkOxzpBKU2O9GDBeIkmCdzUTx5yCp4FLnTTYiOU1+B0pQxdB7f99ns
-	 nUoW1NzaMb9l1dp7DJ3h/YISqhZq+caodVYfnJntSYGcRbHwGaFc6KjSap1dVwTJi7qKV
-	 1eBbAY6JjduKQ6K3LDkjISarS4LZFyHv7e0iL6qkCem3aYzZkMS09Yn2nPrn9A02ieQ==
+	t=1794398064;
+	b=eBaSdccKQpBHGgvYilgSk5nY1nsrRJApqPHXTfJqLhJbAXt6oWRDVwg2DIna5NpEJxFx
+	 3PjRg2F53FP/ohb3jalNgRok/rLnQsc66QQA6Y3nchx7q2odXZ1sjSGdGvTlvvuzGIfoH
+	 pAvhCYUPKpxYBXYkzJKJhcUXtZlqjT1cvy8TZJFspFZnnT84yEmOkVavMvvWca7aUKN3j
+	 5SDwW/Zk9ZM6n2XxKNu2NgoujIBAwl5c7ZXpvP2rNVQaiwo4QfdsOnjqFk684yzx6qpii
+	 93eE1ac5INl/0t0Qy8DbyVy9UUgiH4i/uZ5FBkWpsT+pPSPipJ20xZOGXq5Lm43r0Gw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794359240;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:To:Cc:Subject:
-	 Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=az9gLR2CIWHo3AVLRcdFpGDfb4bNdsqdJahroZfhtgk=;
-	b=31I5JBacuoKFxLv/CWiXANRToWawmAedLi52fAoPo/bUg91qY09lScaCpJfsvz8mU6rb
-	 JYxJFb6gd8b3phKgDluOm1zH5oaP5HTiq/EUixDVaU8cXmx7ZLC3RSu5rNjFUzuNo6COy
-	 BXr7He7+qv/qLGAHZR5kLiP1t6VcXFDksohD/HFijS+zamIZBfDHlCUYViLofDDCjut0R
-	 Fh31VlohrTPV1RdQnOR82g6HBMo3KV6F/Y4je6AoVv/w/OAzGkAxLl0cEYeh2mrZVsH2a
-	 N8UzyWKzEKFArBttmpb/M2Wv4LYNZrCVXYQ3WvzjDXgvdQJsM/h0t4crCdfRun5EB1w==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794398064;
+	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:X-Debian-User;
+	bh=Ep5AJlsUvRo/Sl9Rg+NwP6D7Lq/wQPVEaLy1Gie9QQ4=;
+	b=kSLfRzPZ+UKsasYkIbpqJ/vITapkU0elP5o0JXeuaDjOpN+g3TP59lLBg2hg5PXjNGJt
+	 vwgPYlXZR1d9ZvixRGmUHeOkWt+tsdyV0qBn9ZAY5xzYVzXf7hmuGyTFX6S57GOTnpIzF
+	 AcnCBHNlTmWJ5edE+ZyX1yJLTuL6ve8DMStbkxWbSK+bfFfRnr8+kFgNTssE4l4ykYMFS
+	 M6LTGpqnK4ylkmAdd9kx7/CPXQ14EKwSdB/OAXpAMzpoK7U+2i6ZyeY1r7zS9k45HxshI
+	 LG6WpR1UQ4lYITagxJN5ayExy30UWYFegZa4g5E4JZiBEI2ZpVK+KshwtMpXC/95joA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=mTnOSLD9;
-	arc=none smtp.remote-ip=209.85.215.174
-Received: from mail-pg1-f174.google.com (mail-pg1-f174.google.com [209.85.215.174])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=debian.org;
+	spf=pass smtp.mailfrom=debian.org;
+	dkim=pass header.d=debian.org header.i=@debian.org header.a=rsa-sha256 header.s=smtpauto.stravinsky header.b=vV5nh+mu;
+	arc=none smtp.remote-ip=82.195.75.108
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BD5F606A334
-	for <linux-sh@vger.kernel.org>; Wed, 11 Nov 2026 01:07:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0BD5F606A334
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E310B606A321;
+	Wed, 11 Nov 2026 11:54:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E310B606A321
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=mTnOSLD9
-Received: by mail-pg1-f174.google.com with SMTP id 41be03b00d2f7-cdab9e9761cso1350919a12.2
-        for <linux-sh@vger.kernel.org>; Tue, 10 Nov 2026 17:07:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794359239; x=1794964039; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=az9gLR2CIWHo3AVLRcdFpGDfb4bNdsqdJahroZfhtgk=;
-        b=mTnOSLD9tLnLfdQ5QuiVTJeC/UYpdhTm9yNMlFEcLtz3lo1+qKFmyyDeRh8Qgvxh3Z
-         s2hFnHYcGqAZP7zc2M2PuiRiMY5l4dAqoWwT958tfdlrLyPAyRor0czIwppkLGNl6x0h
-         Tpkza+cnDD4fKhI9ku5XS2rXj3TUmSU2863iXthliMV5MIdYgtONEN3nWZIk1Voe+RL1
-         CDKMAoIOtUG4mqEs3KmDrl4NVwSeOKL8XaJNZDiNE4lGkSaKdRE8+c/ZL7v6e8oK/uMd
-         sGYNjTo0FOcPgHhYWUgLgEYpPeTg60b6cI/myYyoUn3VN5V+O5xwum1njvXKdMLw2Ndl
-         0IXQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794359239; x=1794964039;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=az9gLR2CIWHo3AVLRcdFpGDfb4bNdsqdJahroZfhtgk=;
-        b=h+C499PyZbR+ILywKQcS+VOJO+3vhPki9FvbixpbDOi1/VxUvMP3ZwAtlqh22LFl7l
-         EXWsVi1P5OQFS1fbEfMjN+0XW5Fbf1gw1/NuxEGc3EcXkjY9dxEMqaPIKU/iakCl9AYM
-         aDKWHbL83e9zfDDgikN+SmpxX8QitF9MVw8G+QeqVqrdNiKwKceXdq8tuQpjssJzUq1K
-         znSVG1bOmCVf2DhDOjciQpbbD3ykEq1F+HMO/SsEP0VyOzOZ9t9N5GHj7rR7IPX/YYr3
-         MY+0lpHdLqnEhr3ZMcQwaSfO7+M0gOp9FOLiDSL9JSVJchpBZxHxhkmnWxjQsmWpUd9H
-         9qsw==
-X-Gm-Message-State: APuU4Z8GGUAy+p61JVttnNB/x5lqQJEqU+LivKYeT+2eugEOAQqmJCLy
-	EnOfLqpt/fqUWyzDodAhRVG+84ChyoDuM1nj07EAmaCsagasdmJMpwMx
-X-Gm-Gg: AYBFou0/YLalK3oKo+H9VeyKC8xuYgkhRMZRj4enQFkIcbG8BHSDL90FvuUFZIkTUX2
-	SnpFLHRI5R5ygsFMxcqavtJ9MCeikCAgc/Gbe8DFc0Fw6ei4KTpcWQVUefaga634RR4Wdl9RPAi
-	LpaE+gEkjoqQA4sZVa+xM+RPG+BZnxaJMIukEGy034ZETvjJW6/tXVniipCeGPIMTdmRFD+MNH9
-	XZiATP04rpbL+D0owbFWVFSJnjX0tjfPq32OnnYoYFY/OA6cH+SVEy4lYYRxM3M0DYq5JEkRqQS
-	QJOOq+xOGM7TkAYHNdNTENiHH0yf9jV1JwIXJShCI+b4aOdbJiIc1DwSGTCWaSdLF9zA4SxTZhh
-	IHJrnuBmNWWcBu4CWMeiR9iZzpQ8V7QfkbgplLYEV0T2YSDNPoDZ0Oz9JsBfDrPOcC8l1diqyUm
-	5hOCkcPtySHY44oI4Utoy5DjGDaKAA2IrBbLPBljvolGHppF43DoaAJFJpzBQcJlAaOPPK/Ipz4
-	kdQOF6lZAMVKQpDoboTSQ4Em/jMc04k/NGcYcUD3j9Qk1HO1POwHPNPEml/JVlArKwB9DMQDvjB
-	53QMvcL4+GCwrG5QNwCMjxL+LLl7/ufTc91nf2cNZTt69IJeNSngOHC9EuO9CIoS
-X-Received: by 2002:a17:90b:1c01:b0:3b0:9a2e:b491 with SMTP id 98e67ed59e1d1-3b182f8c3e4mr721125a91.66.1794359239499;
-        Tue, 10 Nov 2026 17:07:19 -0800 (PST)
-Received: from fedora.lan (d173-183-236-7.abhsia.telus.net. [173.183.236.7])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b181f8fd59sm701711a91.1.2026.11.10.17.07.18
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Nov 2026 17:07:19 -0800 (PST)
-From: Artem Novak <artem122novak@gmail.com>
-To: ysato@users.sourceforge.jp,
-	dalias@libc.org,
-	glaubitz@physik.fu-berlin.de,
-	geert+renesas@glider.be
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Artem Novak <artem122novak@gmail.com>
-Subject: [PATCH v4 2/2] sh: sh7305: exclude from legacy CPG clock framework
-Date: Tue, 10 Nov 2026 19:07:14 -0600
-Message-ID: <20261111010714.227429-3-artem122novak@gmail.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261111010714.227429-1-artem122novak@gmail.com>
-References: <20261111010714.227429-1-artem122novak@gmail.com>
+	dkim=pass (2048-bit key, unprotected) header.d=debian.org header.i=@debian.org header.a=rsa-sha256 header.s=smtpauto.stravinsky header.b=vV5nh+mu
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=Ep5AJlsUvRo/Sl9Rg+NwP6D7Lq/wQPVEaLy1Gie9QQ4=; b=vV5nh+muii9KUwMXfoK65C9FPK
+	aNSl0OiG0j4I+LFXc7WeA74kYOFf834TBtI7qS+ZEF0cf7hSHSrnoI47iOSAXQPCAXQU9fne6O/8R
+	G2wk/XluU5ugbAZ7f5jU4JBscAk6nd/VyyPFhAk65/tq7U9wZjt9SJD8a8A/m2R6Cxj7l7C76kg9H
+	1KIPLAQYQ/Fv+JWvD04uouKwGYT/8gu4uHiCPUf9Bg4PxVdqeWdNvrfltP4AIW+MdO1/5WBfOmizl
+	DellelcAiKmJM9KaaC82wP83/72jAdgWurCb/I4tMo/beG16KgajqNT/PO+VCT1shIIGmoQlyuzr0
+	Arg3hVEA==;
+Received: from authenticated-user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.96)
+	(envelope-from <leitao@debian.org>)
+	id 1xR6u3-00DA6f-37;
+	Wed, 11 Nov 2026 11:54:12 +0000
+Date: Wed, 11 Nov 2026 03:54:00 -0800
+From: Breno Leitao <leitao@debian.org>
+To: Christian Brauner <brauner@kernel.org>
+Cc: linux-fsdevel@vger.kernel.org, 
+	Linus Torvalds <torvalds@linux-foundation.org>, Jann Horn <jannh@google.com>, Josef Bacik <josef@toxicpanda.com>, 
+	Chris Mason <mason@kernel.org>, Jeff Layton <jlayton@kernel.org>, NeilBrown <neil@brown.name>, 
+	Eric Dumazet <edumazet@kernel.org>, Thomas Gleixner <tglx@kernel.org>, 
+	Al Viro <viro@zeniv.linux.org.uk>, Jonathan Corbet <corbet@lwn.net>, Christoph Hellwig <hch@lst.de>, 
+	Greg Kroah-Hartman <gregkh@suse.de>, Joel Granados <joel.granados@kernel.org>, 
+	Kees Cook <kees@kernel.org>, Jan Kara <jack@suse.cz>, Jan Kara <jack@suse.com>, 
+	linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org, linux-acpi@vger.kernel.org, 
+	linux-kselftest@vger.kernel.org, linux-s390@vger.kernel.org, linux-scsi@vger.kernel.org, 
+	linux-um@lists.infradead.org, linux-wireless@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+	netdev@vger.kernel.org, ntfs3@lists.linux.dev, platform-driver-x86@vger.kernel.org, 
+	coreteam@netfilter.org, kexec@lists.infradead.org, linux-pci@vger.kernel.org, 
+	linux-sound@vger.kernel.org, netfilter-devel@vger.kernel.org, dri-devel@lists.freedesktop.org, 
+	ibm-acpi-devel@lists.sourceforge.net, jfs-discussion@lists.sourceforge.net, 
+	linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-cifs@vger.kernel.org, 
+	linux-fbdev@vger.kernel.org, linux-hwmon@vger.kernel.org, linux-mm@kvack.org, 
+	linux-sh@vger.kernel.org, linux-usb@vger.kernel.org, samba-technical@lists.samba.org, 
+	sparclinux@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-doc@vger.kernel.org, 
+	linux-serial@vger.kernel.org, linux-atm-general@lists.sourceforge.net, 
+	Takashi Iwai <tiwai@suse.de>, linux-input@vger.kernel.org, linux-raid@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-modules@vger.kernel.org, linux-debuggers@vger.kernel.org, 
+	Chuck Lever <cel@kernel.org>, stable@vger.kernel.org
+Subject: Re: [PATCH RFC 25/38] powerpc/crash_dump: check ioremap_cache() in
+ copy_oldmem_page()
+Message-ID: <avRXHYDKemkiDvoj@gmail.com>
+References: <20261102-work-procfs-bugfixes-v1-0-59422ed3e465@kernel.org>
+ <20261102-work-procfs-bugfixes-v1-25-59422ed3e465@kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -100,33 +88,24 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261102-work-procfs-bugfixes-v1-25-59422ed3e465@kernel.org>
+X-Debian-User: leitao
 
-SH7305 now uses its own Common Clock Framework clock
-implementation.
+On Mon, Nov 02, 2026 at 03:21:40PM +0100, Christian Brauner wrote:
+> copy_oldmem_page() maps a page of the old kernel that isn't in the
+> linear mapping with ioremap_cache() and copies from it without checking
+> whether the mapping worked. If it didn't, the copy reads from an offset
+> into the NULL page. That oopses unless the copy happens to be a user
+> copy, whose exception table entries turn the fault into a short copy.
+> 
+> Return -ENOMEM like the other architectures do. read_from_oldmem()
+> turns that into -EFAULT like any other short copy.
+> 
+> Reported-by: Chris Mason <mason@kernel.org>
+> Fixes: 54c32021eb6f ("[PATCH] powerpc: Add arch-dependent copy_oldmem_page")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 
-Exclude SH7305 from SH_CLK_CPG_LEGACY to prevent the
-legacy CPG clock framework from being enabled for this
-CPU subtype.
-
-Signed-off-by: Artem Novak <artem122novak@gmail.com>
----
- arch/sh/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 5ce7df11c3ec..c5cc486eb1a3 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -536,7 +536,7 @@ config SH_CLK_CPG_LEGACY
- 	def_bool y if !CPU_SUBTYPE_SH7785 && !ARCH_SHMOBILE && \
- 		      !CPU_SHX3 && !CPU_SUBTYPE_SH7757 && \
- 		      !CPU_SUBTYPE_SH7734 && !CPU_SUBTYPE_SH7264 && \
--		      !CPU_SUBTYPE_SH7269
-+		      !CPU_SUBTYPE_SH7269 && !CPU_SUBTYPE_SH7305
- 
- endmenu
- 
--- 
-2.56.0
-
+Reviewed-by: Breno Leitao <leitao@debian.org>
