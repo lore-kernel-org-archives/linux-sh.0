@@ -1,58 +1,76 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.217.53
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794501650;
-	b=eyYFN2BnCsGZLm0xi0ln78aLrU0AP3qHw9For6MqlX+P2chIRnRLYiOkStxakgqOUFiD
-	 vtwtVjZXDUK/nCgD/2wvyyhzd9GF3kYjWHDpuzoajlJKr1MMapyvTBZLX6Ne0ILNcVdsh
-	 rJA6sfu2eVXAKKnP/SbwqYHXQDXQq6nhZdNfX0uB9xi4Yv+89oR0bFqXaSq6/AEKB2Fqk
-	 J/ouQzvqzEj2IOnRfXiy+J3grVUfmTZTmly1Ddrf52my9yQq12VVgtX7a16faB5+GqRsw
-	 LzsLOH2WWoVRR7NNaWdapqSbEMZF8j4futU9ApJHIfxYbQCMjihyNJrWQ7w4xMT3XQQ==
+	t=1794510501;
+	b=PQM5dX3O6doalT4z2TvZNgqm1tJ6IoXAENfCD5Fe73zysDPg1tRTB31lDtYiENP1gf80
+	 j0g/c1i2cH66k+3TsljYslpR/n71jDY5epFs+vrVYSCQtVRn5/OqIsAw/rmXWh6nyWlK1
+	 OlbThuFo/z/Z3XWE7XebIanoGvp6m0AQZLPrn36lngQleABVzW92ID0elk2JLtaTxOpeS
+	 8Gw4UtdrltS2Z8q32cjY/GDtm9fSJ/+Zt/69L3x6NfLfx4rLCNzkJoKwhu0zIEdHmzZp1
+	 JvoEnbN2wHmHgqKmPYuHDDsqt/lu/skS9WQyPXqJgEPq4PfJh4Gl29p2WSrxrW4a1Hw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794501650;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=h4XhdGstHHaoDKhn87VxtYdFBjOR/ijZJS15gJryUyk=;
-	b=xFP2z60z92VCFnhw3sxHn3uRBpsDVu4HOvL+S+fwKtJMsNu/61d2WR2Cw1Z7spsPv5oi
-	 lvykPyQTrY/VsNhxDeVP0cjzHkJjbnhVT6NIxgHVit3AAukxSrngFw9NTX5/RMV6RuXX9
-	 YpuBZIJsa1vlPeE/woQIq5D0wzpmZvHMzvHCXU8SKM32sGWPiWAAHS0HgOg+xfd7kUa8v
-	 HxP0Um+Q0lD8Vce2Sylb4wxGEW6tc5ZpcVUeTESHMl6hS2lQVjee/4lmtB9cL/5bMGNnA
-	 II7OgjCQy5VW7hEiTXLcs9upOs2bqJqcNXHqklQpxClPLDX/p79NLy04SZKNn5Ir09A==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794510501;
+	h=DMARC-Filter:Received:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Received:
+	 X-Forwarded-Encrypted:X-Received:MIME-Version:References:In-Reply-To:
+	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
+	 Subject:To:Cc:Content-Type;
+	bh=x7avfF8CE7MQkedzx8waSCJsEYoj4qczcsv6b4mLDHA=;
+	b=a6L9oPMeLUORYrvDaw6Zw7l/E9xuBKWJfmMdp99Jj6NG0rn64u6l2CWxY01sXzHLmHJw
+	 60BLWFh6+HZ8UebyRHXC6P/5tNn337Zt6kdUZZG0qR2jXiyKDPqIt27xiaPcoUQSd/ogu
+	 YH1JwTfdmCrmPaA4qOauiHohYOCK1l+h4zrtwvDFS7pWysTKgGaAQTh/f8ZOMkhd3OaMp
+	 dGBpZiwmTRLnyzJk4rxrLzyxKECcfFUmG1f++W6oCXiNpk+hzHJLyO71MoPKlZnrqEV9Y
+	 OHwoWgsg0cXJIoS8zNNiJ4HCfoo/wfyam62LWmT2ozASe3QUNooKy5Y+w1vjkeigOTw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="Z2HWyp/t";
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=none header.from=linux-m68k.org;
+	spf=pass smtp.mailfrom=gmail.com;
+	arc=none smtp.remote-ip=209.85.217.53
+Received: from mail-vs1-f53.google.com (mail-vs1-f53.google.com [209.85.217.53])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3C31606A890;
-	Thu, 12 Nov 2026 16:40:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Z2HWyp/t
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 222B31F000C4;
-	Thu, 12 Nov 2026 16:40:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794501649;
-	bh=h4XhdGstHHaoDKhn87VxtYdFBjOR/ijZJS15gJryUyk=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=Z2HWyp/tJDDjjTHcJR3EqrO+Co3DWeMLJ1+cp2ynX2OINbp8WyivGS6bUYCElRnHv
-	 j82yu2W0I6XbhRl6k1jGMrybLRN3rtsxa9jpBTx+ED6Lo2I2lVItYT5jq4zrZSGZzs
-	 JXUgU8bmDotIuPcRgcQnRfdkmCpC0cle2atzG2wdTeGxjiblOhweVWrNK8sHl3qORz
-	 AptP+WXgJYapp1q4qpa21NtXJZGJFCXXQTz9CI+U/mh2RSFbpUGKjXJrisLA5A/IyL
-	 WRrvvgmWPTatgjPr4LX8gIKpHS1COMkia2Rnrxs+diTDADTj0jXe4+8KHHufORL2wP
-	 EtFhzktL6OIhg==
-Date: Thu, 12 Nov 2026 17:40:43 +0100
-From: Christian Brauner <brauner@kernel.org>
-To: linux-fsdevel@vger.kernel.org
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, 
-	Breno Leitao <leitao@debian.org>, Chris Mason <mason@kernel.org>, 
-	Thomas Gleixner <tglx@kernel.org>, x86@kernel.org, kexec@lists.infradead.org, 
-	linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org, 
-	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev, linux-mips@vger.kernel.org, 
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	David Hildenbrand <david@kernel.org>, stable@vger.kernel.org
-Subject: Re: [PATCH RFC 0/4] crash_dump: recover from machine checks in
- copy_oldmem_page()
-Message-ID: <20261112-singt-gewettert-rohkost-74009dcf3366@brauner>
-References: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B86F9606A32D
+	for <linux-sh@vger.kernel.org>; Thu, 12 Nov 2026 19:08:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B86F9606A32D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-vs1-f53.google.com with SMTP id ada2fe7eead31-7cc53938a8fso59194137.2
+        for <linux-sh@vger.kernel.org>; Thu, 12 Nov 2026 11:08:20 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794510500; x=1795115300;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=x7avfF8CE7MQkedzx8waSCJsEYoj4qczcsv6b4mLDHA=;
+        b=qE1FXhECExUKNwCBwBlUe4yLW7Gb5DbXyoWtBahYDlqcX9h8OdHM1/iq68Nkn+bjBq
+         1habkSVrL6+l8VVQRekJl7fea6uDk0mgx616tf9aMPUlkdgBXqdE8FIKrrU29e0SAFNB
+         5u41UbDTGfVbuLjW0wQ8bOdjiqAP9J1vFPdae5cxuFgASI36WjP6vI3pEP450D/Zn+2s
+         OpIdnAjLv1KXdSRjECe8eheZGsTnFl9eWrYOhAzMZl7JgYK/9AO2YK1mBiIkhB02Y+BM
+         HfnaSIWoxbc4fX2sAdgc8kd8PJG/x/mC6RaSEvDhXyQys2UYaTVJooMUQLWbu1M9nPU8
+         GFzQ==
+X-Forwarded-Encrypted: i=1; AL+hErF4FD1/16KeBHLWZEwHdx3tqqDtX3w6C942ORUALLnhbkL7HSkVTuM6M9NZjUJV4sQZB38DFAI9VQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/f92s7L1mJOUNyO3inAS/sfpOBlE9SRoLKKgt46guCnlEQc6sA
+	XJI4hNdHUocKgKOp9q6VWV8QBxCLu5Rwg2Zt0TifZrvH4uAm5xCiZjVEOe1GqTME5lU=
+X-Gm-Gg: AYBFou06VZoalIGg8kIFjiL2swLUr8VM8IrUdQOXACLZhg5Zt1rVlPObONFq9lgCxv6
+	H8vm3dIWJ3vj8PET4a6R2jTM7KA+icDx96bNfxg2JGoNxJIv6u6cuMfOzH4Znp1FJvkAChM2BzW
+	tm7k+N/yPcb2RM9nSdSAbBY2dLboZbA2DB706Sju/edmrhOc/bOzqDIQT1MWn0LL1wzlXrqnxdI
+	T3FYjBQembiuItf77pestMMSmkE54QY9wI+jXpfqObU7j7rTOz40udT1c9hxJX9GcKVKtTO4gZv
+	DwEk7V5P6+QtcM6Ka7k8wYlrVYtVZlUaRAxu4/Rjg3m6MeNuvBU188OzNXVCihJm/1F+eut39eG
+	SbDnOPxWa97JW8fzZFlDLtHTFqvGaNPb34S2HwGjKYz3aVnqePx5CFCD99sR8H13VcWcL0eXLob
+	Lcwxfc9f3CNmkIGLap/PKuaAa4j4js+lkZvAhKMJjREu/evViszMajWZ07iY7rSGRW5vAUTr02g
+	UqJVuVKDarfbivBXdSqFtuQd3OyTzEChEHYHJxONLPxQehh4yY7yzccesobpUjVmrtByI0LUJt3
+	BWmgHvrWVvjP8SaoOhzN1x5bS9VP436miXOWQ6a4A0bjP9vUDb1L8VIytJ7nR2/TLLI=
+X-Received: by 2002:a05:6102:2d03:b0:7c3:f36:c7b with SMTP id ada2fe7eead31-7d64d769e5dmr72392137.14.1794510499695;
+        Thu, 12 Nov 2026 11:08:19 -0800 (PST)
+Received: from mail-ua1-f50.google.com (mail-ua1-f50.google.com. [209.85.222.50])
+        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-99c8425d142sm234115241.5.2026.11.12.11.08.02
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 12 Nov 2026 11:08:07 -0800 (PST)
+Received: by mail-ua1-f50.google.com with SMTP id a1e0cc1a2514c-998749fe872so137571241.0
+        for <linux-sh@vger.kernel.org>; Thu, 12 Nov 2026 11:08:02 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AL+hErFz9jBvKzupTKgmnzBqyqrOLsTjZxQ6KdwnoET7DZpMM4Y7M+czm0OLfptjH2gicgSPaB9BhhmIcA==@vger.kernel.org
+X-Received: by 2002:a05:6102:c15:b0:7d2:8dd0:2eb with SMTP id
+ ada2fe7eead31-7d64d6ed886mr73919137.8.1794510481935; Thu, 12 Nov 2026
+ 11:08:01 -0800 (PST)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -62,28 +80,47 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org>
+References: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org> <20261112-work-procfs-oldmem-v1-2-ecdcafd99265@kernel.org>
+In-Reply-To: <20261112-work-procfs-oldmem-v1-2-ecdcafd99265@kernel.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 12 Nov 2026 20:07:50 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdUgOGjwOUMxSabUgtaVeKZW1wx78XOJL8joGKkZEj7RZw@mail.gmail.com>
+X-Gm-Features: AclHuK8l5OcVstuPYNpoHJ657hIuMQK5i9ySH9sE9lHb16H-lVuh0fnzCqi0JCs
+Message-ID: <CAMuHMdUgOGjwOUMxSabUgtaVeKZW1wx78XOJL8joGKkZEj7RZw@mail.gmail.com>
+Subject: Re: [PATCH RFC 2/4] sh/crash_dump: check ioremap() in copy_oldmem_page()
+To: Christian Brauner <brauner@kernel.org>
+Cc: linux-fsdevel@vger.kernel.org, 
+	Linus Torvalds <torvalds@linux-foundation.org>, Breno Leitao <leitao@debian.org>, 
+	Chris Mason <mason@kernel.org>, Thomas Gleixner <tglx@kernel.org>, x86@kernel.org, 
+	kexec@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, 
+	linux-arm-kernel@lists.infradead.org, linux-riscv@lists.infradead.org, 
+	loongarch@lists.linux.dev, linux-mips@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	David Hildenbrand <david@kernel.org>, stable@vger.kernel.org, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Content-Type: text/plain; charset="UTF-8"
 
-On Thu, Nov 12, 2026 at 05:37:06PM +0100, Christian Brauner wrote:
-> A capture kernel reads the memory of the crashed kernel. That memory
-> may have uncorrectable errors in it. Which is likely also what murdered
-> the first kernel.
-> 
-> On x86 a machine check in the copy that /proc/vmcore does out of an old
-> page panics the capture kernel. On book3s64 the read() comes up short
-> and splice() panics. Breno has observed that on a fleet iiuc. The first
-> kernel dies of a machine check and then there's no vmcore either.
-> 
-> I had the powerpc half of this as a fix in part 1 of the procfs series
-> because Chris ran into it there. Breno pointed out that x86 has the same
-> hole.
-> 
-> I think that likely makes this a kdump problem and not a procfs problem.
-> So I moved this out together with the ioremap_cache() fix.
+On Thu, 12 Nov 2026 at 17:43, Christian Brauner <brauner@kernel.org> wrote:
+> copy_oldmem_page() maps a page of the old kernel with ioremap() and
+> copies from it without checking whether the mapping worked. If it
+> didn't, the copy reads from an offset into the NULL page.
+>
+> Return -ENOMEM like the other architectures do. read_from_oldmem() turns
+> that into -EFAULT like any other short copy.
+>
+> Fixes: 4d5ade5b29c6 ("sh: kdump support.")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 
-So I'm not super familiar with the machine check stuff. I know that
-@Linus has some familiarity with this. So I guess a yay or nay would be
-nice. Not sure if really a localized fix for the architectures that have
-mc support makes more sense. A common helper seems less fragile to me.
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
