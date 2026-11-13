@@ -1,102 +1,69 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.170
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1794562712;
-	b=DNCEPaLFYR4MhCD6mWmsC0EWVBgpXGFfdCx7fTzDm2+NAcByu7HtsKPaZ0E/BI8GSMGz
-	 tbbVnFSje3d7b8SoZ+UecfjVsB0inFi8zRXftOnsLjk1ywrmm9NEHJlTS+mqaNg7c/3Li
-	 a9sYcJyS/3B5038wXpze6vi0j4ulhty3oapXPGMCYoSpeK3H1298J031aGzFW/FzBw3On
-	 PaqU3y575jtn8/DVK688hKMThaKP6UX5JsIecTAP2bJvpxS/kVvpYYci1mpcpsSKY1nqK
-	 BNGnr0cYX+CwG8Wvr0c1/Jm4FZO5cTtiHb5SbODAQHMqG7BDBv4qpeTIRWi/TMkK9DQ==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794562712;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=vwaSOUD1+F3Uh3wDhst/F9A1M+bA9w5kaeCRuz3dMQ0=;
-	b=oAHqjXz4cenw47P1eseod3Gu0sfeXl98GWv++59TMmhtOOdIt7Dhf313GlJJtXMGtYVr
-	 DXthdvgsSJdvX8VC34e17fu99bHbC+8/2OHFaWRSIY4yixxOOGiKCdbZw+oMc8hhICMQj
-	 HAUeOrTzL4aJgv8g7gxyYGrPZMov0aadcF3op6aC6q1vEiJlOclLDXH+PoKFh6Osio/jl
-	 bV8VExhcf6szkHmoqiXiCMOm8My5riyuhGDaqLiZmEIx2FsPpE1OCW1Gp1ak1B6oLkf1n
-	 uEotMZUSDxfg5YLj7lwKokBu4a6/yIB3qk0kuzwRjZpvPFPSM7xkQS2ZCMDm5Bunjfg==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=avpyrTvi;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.170
-Received: from mail-yw1-f170.google.com (mail-yw1-f170.google.com [209.85.128.170])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=82.195.75.108
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1794562714;
+	b=aXoDrqRT9xGU2cC237yM8Wklz4uAJkfokUOYHVuSbOYBfdfjTRV/ZdJskOlWRKovVoRe
+	 Lq1MbueWmhsCNfV6kGMB2skGV/oYGMJjkemy8SkrQtMw/y9/CIRtzZm7nWb10RFxxWe/H
+	 +L3lngc1L5Ixc+4MfIuaEEQtyqzf78AgqtUCUel13xgRE+396JAOkj2zvnQYfz8M3A3VR
+	 PWP8k6hHhNZbgLHB10/0LeikJEIqWATrHBkZBQeimCpXU0xrhQPFDC6voS3O5UetATcbh
+	 BqLl6hF2KK+cS3pQiGRbjIOtr4w/ryVFXBrze0oNiUm/HAoZTmk5mAL2rXCRnuzXolg==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794562714;
+	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:X-Debian-User;
+	bh=8Pc1VZfIDVGJzZNtwuo8QG46Hbc/13m3DgBGkiUdd+o=;
+	b=ngNnkuWzP+fVmJA9dZVzJ0Qrp19C/0WtELAvUfR2GngU59w9hTtCxaM2O+hUC3fu/vDG
+	 MYucPeXAF9bIoAx+qtOxKIstrp+m/FF3B+p2nbA71ZucWnbMUAOBloh6nacfbzHiD9NFy
+	 dpvEvgGnjVrnumhxPHEqUopJYv6+4pPnsTo0N2dsMy4HIoTtlVPesCznZW+65yuHyiuNU
+	 P0UrcaDTW7bhdBItOCRN4zi8sHksoqf44QIeBA/iL4OuqOH+SKOVlCfPh3ZtxESM2v0U8
+	 lReck9Ra8H8oRha7w+OT+M3zoG+KfSkBWUsRxZH9+jXEkODG/GuSHzVX/PpUi3SQEQw==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=debian.org;
+	spf=pass smtp.mailfrom=debian.org;
+	dkim=pass header.d=debian.org header.i=@debian.org header.a=rsa-sha256 header.s=smtpauto.stravinsky header.b=UpCRHb2K;
+	arc=none smtp.remote-ip=82.195.75.108
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6BB80606A321
-	for <linux-sh@vger.kernel.org>; Fri, 13 Nov 2026 09:38:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6BB80606A321
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3227606A33D;
+	Fri, 13 Nov 2026 09:38:33 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F3227606A33D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=avpyrTvi
-Received: by mail-yw1-f170.google.com with SMTP id 00721157ae682-8b305d38bafso5325717b3.3
-        for <linux-sh@vger.kernel.org>; Fri, 13 Nov 2026 01:38:31 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1794562710; cv=none;
-        d=google.com; s=arc-20260327;
-        b=G8lmvND2SlJ3sU3pXrWtuhQiNGo1AHGuc1EvtWrqHY3ocTlhGL4NcSXSjmfDB4FZgk
-         gD244Y0GIZoP2R3BNfFxGgS5hPc4/Hu/6pMnq57MgfMlT4GIetny0EYObT14Rd9J3PDE
-         vCIpVvFLDDieN9HuWVrb7EJ2VurUt6LdkocZf4bpJuWukYdwdj782FgXyQ0XgnIK7hG5
-         vWJhe1Lqv1asAlTjxYXJPhsEnavENdlHHazqMteHdQmAM4NP5OjG9XL70YWnHgb5VLXE
-         QSnSbg+fkMmln/MVIPnzt6J1epKYGo7iOo24UBJXJ6TDrH0KbCGWXbi1ri5xhjjsAG3B
-         ZqIw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=vwaSOUD1+F3Uh3wDhst/F9A1M+bA9w5kaeCRuz3dMQ0=;
-        fh=ORaeKODfma47/IBqwdn+0A8v3u4X1s+va/eK0wknJ9g=;
-        b=b+YP/pMN6UfEbpHY9np0rykUxKcza2J6NAO956BrC2nfdM1LD5h+E8kheLaZMfFslD
-         BW+addHEBTm28BTSW4ZuxluC25GFlt1EjlsSp6F8dEQHXxLEgpE132f9zSZ4IMi6uQpe
-         jJXJaWGjRPoTSyTosKjzbIbKWQ6QZazr5rrLM3LIR+3BizW4dmnekJ9aWBY5hw2pJ/z7
-         sw4tLGA75RsSQ4Liuqiy0afQ5n1eOuVMi50W9G6FYyoZ/jM2LwHZFvJyGoV6IhcYGy+S
-         Fb9qjwbUPY9NJOQmndtShN9RQGmm8RA6tKjZgTV73KNer3pBonSWXCF6Ifb0wBjcCRv0
-         VqEA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794562710; x=1795167510; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=vwaSOUD1+F3Uh3wDhst/F9A1M+bA9w5kaeCRuz3dMQ0=;
-        b=avpyrTvi4oK5W3E4mvGN2d3McV1cvJMinrQQk9ZcQAlCjlH0BfUksq4dhRDqRitzIn
-         wB1FCrOOPRqI3Rn7xXhQW11ZOgRa0Gjd3ExI03bogX9cwH4iCYOu+/BPwkahcbRAN/6d
-         NTWuIeW0NbkghW7vkpnUfx6CYRzzIdDWsleLny2760Xsq3YhS+u2DOnmdoP/25yfBihU
-         MoEk9e4jmII8V2TVVwx69pIsY3XcR4b+NoqzJYVmYPvRLQfAKzg5EDTrtsEhwoCi6gD7
-         FBguBY9bMbd0GGBhb/nRJOYo2PHYSuKAe3F68zv8Q22pCiKCQSjZdXTq5q6sWNrn0mYM
-         6wCA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794562710; x=1795167510;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=vwaSOUD1+F3Uh3wDhst/F9A1M+bA9w5kaeCRuz3dMQ0=;
-        b=jBX3qtDoDxPs7DcA/kA5ErsHQNCbjzBF9bQGfmQ0YjqjiI8YIIg4b2MA/5cM+VQviZ
-         1ibEknS6n3RtLMkIgY6LWJ6ghe10IPHeNUO+rzmADy5xXIwTmkfbnmcYm25k/qjn+5A6
-         x+aW5RHE2bkksPplEvhIktDf5vndmXCoRv/Qy1p1bQEuNtKn2j89P9C9Uo5TyEte4Dhn
-         wbv+Pke2N6GpqI2eRaHzvYzZ+pVPCeppk/zQ6UTPOzwoRlsQ5z7H6mEst4yPEVI32NQ6
-         PrKk4P85KgnZVdABexSbwB8kDM3+FdS0E4u9dTGpPxNl1e7amwzmwBuH8FbRej9u0uAR
-         omdw==
-X-Forwarded-Encrypted: i=1; AL+hErE9DTVb9Hxv++ar3YswDSYf547OPbX+LHJ6/QNz3yvaZuqoH6GIEsXs2PFrnIvvoPGBZroUEfg+JQ==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9UAMy/An5pxNE9kjuzPWrdNGYFOG451wUl5Kf6SQmarLXpRVIV
-	aSXM8zvpKsi8rfPVxvE9N/jA6uz7z6h4140TQa0AkTQoQFMZFni5oqifbFXJJl7wj6UBL/1+/an
-	UlBCS9re+06BIlpzV2OgluHs2ineWijM=
-X-Gm-Gg: AYBFou1OXxqG8sR8pnq7xEwbsIeYoZNMvbUx7VbMR13mFL0yce02l9h2sL3BDLO4O28
-	US+SDlRD6eZS1/NmANYcsS5SopoZbvgxZ+xDX7oZ83Ze89sb6JmtIzR6aaWdSETIpJhJGO8yWqc
-	wVB11njNrRUc9VowQWLFTgz0LUvWJMCgNL2KZaNk3BQha3a6YaT6/gD4MEkufiTGOhm+9qUZ3DO
-	L7I2S1mEhSDDeX0QbenKJ5oz30Q2+QtrzjgIUQ5L7sn5sa14zacsrPKsgMItJajV+ZnJtFUD8Rm
-	1M/FtRCidf4WinOV1PVJzACcXhmOnwwFLeow0A+Ohg+2JifPvBdDV6aLyhvCYxSvMlQfpcOCKBl
-	oEpUOG7aMrWKM37Pi+qDtMgBDABgb/vE34wGcjTl/4n8ZX5leWwU7iZ7DikxQsh9i2SN7Uo+WoU
-	kzdgMn3zFYw09hSAgs+6Nh6P59Ue2Y128R4e+FmInAEUmhBj6fUusOccofhRydy4cQ29+ODODK+
-	G05+ZNrZASbKw9ByjV3EAsBGf17NWQJZzAlgooEVgP5J+bV0mpfCX7qwDUDCw==
-X-Received: by 2002:a05:690c:c4e5:b0:8ab:4989:bc9d with SMTP id
- 00721157ae682-8b4aa3126d2mr14797977b3.65.1794562710293; Fri, 13 Nov 2026
- 01:38:30 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=debian.org header.i=@debian.org header.a=rsa-sha256 header.s=smtpauto.stravinsky header.b=UpCRHb2K
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=8Pc1VZfIDVGJzZNtwuo8QG46Hbc/13m3DgBGkiUdd+o=; b=UpCRHb2KbmBJPwtI+DbP0LaL8d
+	sOk0q8WFr88S3iAMSHj2p/NnbWVzQGiNdZN3nNdO1zLyJsTHzDT2AYpDsszvlBsPXovwNFHmP0hr1
+	SY9lV829yFxFIN3zvj63ln8CFFNj2wJUNMYIHBmKmY/JsW4XoVGlDKbDaDwxxN5mWJ+s4cUXlOuR/
+	42UfaRA1qiSu2ICNxybe2yLc35tfTycNpZWbHnjQ/jcxlqy6tYUcS/Bi6fkLYSwXtlLGPpV1jMI8t
+	xnhOZeXq4yQ0FVHQXpu6b4xvxJ6oAklL5bw8J+RqC+cFo9eyWVg+5AE204arB4mOGXs0IEiF0Nobe
+	Yc0NfHCw==;
+Received: from authenticated-user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.96)
+	(envelope-from <leitao@debian.org>)
+	id 1xRnjp-00Eeb5-2V;
+	Fri, 13 Nov 2026 09:38:30 +0000
+Date: Fri, 13 Nov 2026 01:38:22 -0800
+From: Breno Leitao <leitao@debian.org>
+To: Christian Brauner <brauner@kernel.org>
+Cc: linux-fsdevel@vger.kernel.org, 
+	Linus Torvalds <torvalds@linux-foundation.org>, Chris Mason <mason@kernel.org>, 
+	Thomas Gleixner <tglx@kernel.org>, x86@kernel.org, kexec@lists.infradead.org, 
+	linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org, 
+	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev, linux-mips@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	David Hildenbrand <david@kernel.org>, stable@vger.kernel.org
+Subject: Re: [PATCH RFC 3/4] crash_dump: recover from a machine check in
+ copy_oldmem_page()
+Message-ID: <avbagwxWrmFrjrtV@gmail.com>
+References: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org>
+ <20261112-work-procfs-oldmem-v1-3-ecdcafd99265@kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -106,35 +73,100 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <20261112065037.1800467-1-dmitry.torokhov@gmail.com> <20261112065037.1800467-6-dmitry.torokhov@gmail.com>
-In-Reply-To: <20261112065037.1800467-6-dmitry.torokhov@gmail.com>
-From: Andy Shevchenko <andy.shevchenko@gmail.com>
-Date: Fri, 13 Nov 2026 11:37:53 +0200
-X-Gm-Features: AclHuK_djmP9MqgezxklWmxc9D08cGWxuo_8XnZ2UDBve8INb7OAHhKwKVITLVk
-Message-ID: <CAHp75VeWV39isCSpSxsuzw07iXf7rBfdYeSn=eJsBM-oWui01Q@mail.gmail.com>
-Subject: Re: [PATCH 5/5] Input: tsc2007 - use IRQF_NO_AUTOEN when requesting interrupt
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Svyatoslav Ryhel <clamor95@gmail.com>, "H . Nikolaus Schaller" <hns@goldelico.com>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, Andreas Kemnade <andreas@kemnade.info>, 
-	Johannes Kirchmair <johannes.kirchmair@skidata.com>, Yuki Horii <yuuki198708@gmail.com>, 
-	Geert Uytterhoeven <geert+renesas@glider.be>, 
-	Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-input@vger.kernel.org, 
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261112-work-procfs-oldmem-v1-3-ecdcafd99265@kernel.org>
+X-Debian-User: leitao
 
-On Thu, Nov 12, 2026 at 8:50=E2=80=AFAM Dmitry Torokhov
-<dmitry.torokhov@gmail.com> wrote:
->
-> Request the threaded interrupt with IRQF_NO_AUTOEN so that the interrupt
-> line remains disabled after probe until the input device is opened by
-> user space. Explicitly initialize the stopped flag to true before
-> requesting the interrupt and drop the immediate tsc2007_stop() call.
+On Thu, Nov 12, 2026 at 05:37:09PM +0100, Christian Brauner wrote:
+> A capture kernel reads the memory of the crashed kernel, and that memory
+> may well have uncorrectable errors. That is after all what the first
+> kernel often died of. Every architecture that maps a page of the old
+> kernel and copies it out does so with copy_to_iter(), and a machine
+> check in that copy takes the capture kernel down.
+> 
+> On x86 a machine check in the kernel is only recovered from if the
+> instruction that took it has a machine check safe exception table entry
+> or copies from userspace (cf. error_context()). The copy of an old page
+> is neither. Its source is kernel memory, whether it goes to the buffer
+> of a read() or, since commit 4a22fd20379c ("vmcore: convert
+> __read_vmcore to use an iov_iter"), into a kernel page for splice(),
+> sendfile() and copy_file_range(). So a read of /proc/vmcore that runs
+> into a poisoned page panics the capture kernel, and so do vmcore's own
+> reads of the ELF headers and notes. Breno sees the result on a fleet:
+> the first kernel dies of a machine check and the capture kernel produces
+> no usable vmcore at all (cf. [1]).
+> 
+> On book3s64 a machine check in the kernel is recovered from if the
+> instruction that took it has an exception table entry (cf.
+> mce_common_process_ue()). The user copy has them, so a read() comes up
+> short there and read_from_oldmem() returns -EFAULT. The copies into
+> kernel pages have none and panic the same way. Other powerpc platforms
+> don't recover from a machine check in such a copy at all.
+> 
+> Copy with _copy_mc_to_iter() instead. x86_64 and PPC64 select
+> ARCH_HAS_COPY_MC, and on x86_64 and book3s64 the machine check safe copy
+> turns the machine check into a short copy, which read_from_oldmem()
+> turns into -EFAULT like any other short copy. On x86 that holds for the
+> fragile and the enhanced fast string variant, a CPU with neither gets
+> the plain copy it has today. Everywhere else _copy_mc_to_iter() is
+> _copy_to_iter(). Put the call into a helper, copy_oldmem_to_iter(), so
+> that the copy of a page of the old kernel lives in one place and an
+> architecture that gains a machine check safe copy later gets this for
+> free. The helper does the same check_copy_size() as copy_to_iter(), so
+> hardened usercopy keeps checking the copy.
+> 
+> With a v7.4-rc1 capture kernel reading /proc/vmcore and a machine check
+> injected into the copy of an old page the capture kernel is gone. A
+> machine check panic prints no trace of its own, this one comes from
+> panic_sys_info=all_bt:
+> 
+> [    0.580568] mce: [Hardware Error]: CPU 0: Machine Check Exception: 7 Bank 1: bd80000000000134
+> [    0.580574] mce: [Hardware Error]: RIP 10:<ffffffff81909b11> {_copy_to_iter+0x81/0x850}
+> [    0.580584] mce: [Hardware Error]: TSC 202f2117f ADDR 10000000 MISC 8c
+> [    0.580587] mce: [Hardware Error]: PROCESSOR 2:aa0f02 TIME 1794493617 SOCKET 0 APIC 0 microcode aa0021c
+> [    0.580589] mce: [Hardware Error]: Machine check: Uncorrected unrecoverable error in kernel context
+> [    0.580591] Kernel panic - not syncing: Fatal local machine check
+> [    0.582587] CPU: 0 UID: 0 PID: 1 Comm: init Not tainted 7.4.0-rc1-g6628e7d4c6b2 #1 PREEMPT(lazy)
+> [    0.583101] Call Trace:
+> [    0.583198]  <#MC>
+> [    0.583279]  dump_stack_lvl+0x4d/0x70
+> [    0.583419]  nmi_cpu_backtrace.cold+0x18/0x6e
+> [    0.583584]  ? __pfx_nmi_raise_cpu_backtrace+0x10/0x10
+> [    0.583772]  nmi_trigger_cpumask_backtrace+0xba/0xf0
+> [    0.583955]  sys_info+0x83/0xb0
+> [    0.584075]  vpanic+0x1b4/0x303
+> [    0.584197]  panic+0x66/0x70
+> [    0.584488]  mce_panic+0x19e/0x290
+> [    0.584799]  do_machine_check+0x627/0x9a0
+> [    0.584953]  ? _copy_to_iter+0x81/0x850
+> [    0.585099]  exc_machine_check+0x68/0xb0
+> [    0.585246]  asm_exc_machine_check+0x1e/0x40
+> [    0.587747]  </#MC>
+> [    0.587831]  <TASK>
+> [    0.588092]  ? iomem_map_sanity_check+0x98/0xb0
+> [    0.588430]  ? __ioremap_caller.isra.0+0x1a9/0x300
+> [    0.588604]  ? __copy_oldmem_page+0x3d/0xb0
+> [    0.588928]  __copy_oldmem_page+0x5e/0xb0
+> [    0.589079]  read_from_oldmem.part.0+0xe3/0x140
+> [    0.589247]  read_vmcore+0x137/0x280
+> [    0.589381]  proc_reg_read_iter+0x49/0x90
+> [    0.589533]  vfs_read+0x348/0x490
+> [    0.589666]  ksys_read+0x76/0x100
+> [    0.589792]  do_syscall_64+0xde/0x4b0
+> [    0.590103]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+> 
+> With this patch the same injection ends the read() with -EFAULT, the
+> capture kernel logs the machine check and keeps running.
+> 
+> [1]: https://lore.kernel.org/all/avRXzzCSzT9Qj2FC@gmail.com/
+> 
+> Reported-by: Chris Mason <mason@kernel.org>
+> Suggested-by: Breno Leitao <leitao@debian.org>
+> Fixes: 4ae362be5093 ("[PATCH] kdump: read previous kernel's memory")
+> Fixes: 54c32021eb6f ("[PATCH] powerpc: Add arch-dependent copy_oldmem_page")
+> Fixes: 4a22fd20379c ("vmcore: convert __read_vmcore to use an iov_iter")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 
-I believe this also closes a window of possible IRQ storms or floods.
-Reviewed-by: Andy Shevchenko <andy@kernel.org>
-
---=20
-With Best Regards,
-Andy Shevchenko
+Reviewed-by: Breno Leitao <leitao@debian.org>
