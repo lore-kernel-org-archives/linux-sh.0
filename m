@@ -1,102 +1,98 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.53
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=198.175.65.13
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794816103;
-	b=3QFmE0VaiF/COkg35ZkRaZYJBnydJ42v+RvehKgv7j13Tj/3QYtuAMdVec8ueIwyMEDJ
-	 d06erC3Y9dTQl5QqZGCS5FW08FxZeSe2CrYfhDAzYTfhUOtNzimx46jHc/a52BmbLD1Pi
-	 lUhNzt0Qv3lWvwMNFISk7rPBwtbm0C5JMYr8rDd1EPLfn7iEgB/YWvDhr+Fh35eF2tGx5
-	 6+bAXF82IG6iY3yuGO5nL9TREi81nt+Dd4+e5FO7j15715JabClCVL5x+bqBkAiIvLq8m
-	 u1ZpUtn1jveNJgqJbdDC7DOP8a1FzLrlG56EtCU5xTdQjZx5HXagOukqjHOWhM/Uqww==
+	t=1794842674;
+	b=P/cvPjaO23iVUlImS7DrALputVvuF7hjDxvadHXIb+wAUfZSz3tbns2kK0UVrELGZ4SH
+	 WOfI79RY6SrlYkvurfOXAoZf9VHgG6zHtKxImTSVMAVX3PM2aQPjf6GnYtidAjp2ZFMQQ
+	 wcd4sLkIwN2YN6mif9gLafojRmWtCQmKJ3DPNf/MjCgldvudSgk0Ea3HMXy3egw9y+QmZ
+	 cjgHmhJsOjqpSgzADBKGwhSZEp/ydDIArnLmfduMawqxH0Ed9k/2j5iGbIieQX2KTndwl
+	 UKeQTNqHM1eIftgvjY+xKDrNunNsqAxqFjEwkq04VdMK4sQxpUIfZ6xGDpilD40zw3w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794816103;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:Content-Transfer-Encoding:User-Agent:MIME-Version;
-	bh=YsacxGE14wOKz6Pg8TZXlOHyLRTqOTqtvBl+xKa/O2U=;
-	b=GqWNozf4vewNM7OZFm3dsdAqxb21X3NuiTWA4dS1xo6DrQDzdGoDEzJt73uN8vdL2Ey6
-	 gsbLOh08usk3w4m6/d++PkUjpBa2MoQBJpb0cLyZMOuMoM4NSPQC+ldXLV1D2KSidbUTY
-	 fwnS2nz12bmbChbCSXygn5lnMENuekmzTWvXCrNgncGjzw3leE6fv0EPH9fNjnqXFt7rd
-	 GgRG+Fr1/VGA+Uz+YWPGsrxgz5mxHknJxGYCjSIiJ5BV1v91jNyBHrE/8pZQL6Bm7TFPa
-	 ouq9DhTEOxjqf0isBOmHfpj1NtVDhBt7Kd4i2GlmgRYQhaub3h2+WQrIGDIhULmLxqA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794842674;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:X-IronPort-AV:Received:X-CSE-ConnectionGUID:
+	 X-CSE-MsgGUID:X-ExtLoop1:X-IronPort-AV:Received:From:To:Cc:Subject:
+	 Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=zPcsfexdVFJoJqpUGHtJyBFcgi9bW4vNsT7/VKyzF7c=;
+	b=ZgH652LFqQTlnQwimCHFHxr7H5tl66Kqr5ATo22Amp/NyD0hlUIUwVOSBMGMxc4ob7Y9
+	 YCcAjH3o0zHeGHXBOahBZHNHomAhamFjk+7uf+yALFJDQeMb6iEmoqfWKUYlvF61vX/V+
+	 0gWVOL5sk5+VhHlDDGuVTxq9TMGVGY04nKLmbjK/hYzt9no3rNGtOX8iYyHslmAPxHcoG
+	 lTdCAtGAL1JHoUK0J6wcefr60EmfqF1ClqS8iicxNEzTypikx5OVgV7L+nPcTXApnJ0JY
+	 /jxfDF+jP+0zHJPUnJQoprSly6QX/Fh5Fil9Xitefza5l0U4ie7Yttgotq2sy0hIa7Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=amutable.com;
-	spf=pass smtp.mailfrom=amutable.com;
-	dkim=pass header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=ITTaRbho;
-	arc=none smtp.remote-ip=209.85.218.53
-Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=linux.intel.com;
+	spf=pass smtp.mailfrom=linux.intel.com;
+	dkim=pass header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=JDmj5wL0;
+	arc=none smtp.remote-ip=198.175.65.13
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.13])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B92A1606A32A
-	for <linux-sh@vger.kernel.org>; Mon, 16 Nov 2026 08:01:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B92A1606A32A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=amutable.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amutable.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BD9E606A32A;
+	Mon, 16 Nov 2026 15:24:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3BD9E606A32A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=ITTaRbho
-Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-c50e26763a4so55822266b.1
-        for <linux-sh@vger.kernel.org>; Mon, 16 Nov 2026 00:01:41 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=amutable-com.20260707.gappssmtp.com; s=20260707; t=1794816100; x=1795420900; darn=vger.kernel.org;
-        h=mime-version:user-agent:content-transfer-encoding:content-type
-         :references:in-reply-to:date:cc:to:from:subject:message-id:from:to
-         :cc:subject:date:message-id:reply-to:content-type;
-        bh=YsacxGE14wOKz6Pg8TZXlOHyLRTqOTqtvBl+xKa/O2U=;
-        b=ITTaRbhoS4PjiN8GAOES1ZGs6qN+vgkvAKeLRlIimkjlbYipl5xqSb3TUHp0tLBeQK
-         8VJ4PUMKS/FNKCoXmyt1UpKQ/ROURNkDMJToB9UBX27FhTSo6eVGNZYMsmBcZSnsq1dR
-         Ti2MEJnhemD4QbEQr8R8gaYt2AT1TS0fd5CwwLuE1NYcww5Gv4/lmzn/fNqEDnizVxVJ
-         w7vtS8T+P/NNNxsygBQPHeOYgpbIkL4D+msHdPp+Ee/csnwj/f3kJQ8M9JTQCcnWQw3+
-         hypYmyI27q+SPyRnAGNFKfouVBKIMedzL/tbBOX0yr1VGnty1WioJvL9iVfMcx+IALE7
-         L8lg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794816100; x=1795420900;
-        h=mime-version:user-agent:content-transfer-encoding:content-type
-         :references:in-reply-to:date:cc:to:from:subject:message-id:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=YsacxGE14wOKz6Pg8TZXlOHyLRTqOTqtvBl+xKa/O2U=;
-        b=UiIu6Czof00DeuJR3fOYdAbAtuAIG4Vpx97lvljIaNDmMzk3jdcCmXg9g3lpkQZf7U
-         +kEgWC/DGYxmHuMxLRP0H3JI7raZTXpwZNZ7JC8v7QgE/kPaL/4AGHMrgeNvpYPNnWvX
-         Rht2VaCzFFohCKY3UgSpawSVxisrOqPDpHuIyQX6SjoyEw78ckI5pKfGeb1axCUIBHRe
-         EuqRXgFfL/gfsQL53lmlLZhquuerhGDtDmVlFabVdZQOIeGlhug/qo711MSwXTlS3L46
-         i2PXpuMKNywDuTa+Oo3AMx59+RxfALZ6BL6LEFHCP3yXHnNUeKyNDom88np88k0U53B/
-         F/Gg==
-X-Forwarded-Encrypted: i=1; AL+hErFV4WCeHnNTTb88SAF3ixDNI2EHfdpPu5N8Me5/g9a7y6yudOiKPdKPd8/B8LsfVie6/shdCZicCA==@vger.kernel.org
-X-Gm-Message-State: APuU4Z+d1IJZ6cxv6jPNxwusEyxer4BxG6xOgtxjxcJEq8IJiVVDxlfO
-	d6shok+3uEtroQPir1EgaDp33tPdOOl2KCRGn1Z0PsYZI5ZwTVrMkFhZd0zXXVnicH0r
-X-Gm-Gg: AYBFou2umWlLxcbooAk5Ap0Z1qkljIUaAVZw6tf9K6Y8Ak3nDaPJrnjTQLQ+ZvAgQWm
-	gheLm+jmWVwwamOlcR9JeJ71zkyuG36XOcBXM04rLYLZ5aUDRFqUbT00fJ9DkSj9Vu0uTiCZK6H
-	HrYz809Kx73UAFc2jCkhiEaJ85ibaszw2xuKuwXXj7S0slrW+r5romqLhXvNrUZP/eUJBFduKSq
-	BaU1dQV5FC6UDgqPf0X0cY/hANhtCVII+drOAgNU5mPA4xw2PEo3wlu/SQVF1wEefqgWUp05rA2
-	FmE1NSmiSgvX7oQY3omp30L8wlSPyOX/lEVehdSAyFTcZyDARyy0V+yaUFQsgH3WWETPnkJFPXU
-	Jn5dQjIoVLeIvolSf2oZCAP4ZXXcqDH8CCZJiKouupJLZOng7tFeECksdG3hJOIIf99gDS/deal
-	9B9PM+9BsKHl/ESFwZAUrBhzu2ZCwZuQaZgQ9z1Fo1Q5t8ffuHr3UjlR51WVXIkZLSiS+3OfR23
-	roouCXm5u+KEYOSMsX/RdNJZBxh9wig48371MRBHuWQRPRRX2hH17/xBUwBEvaohhiuIAi8f4fV
-	OH2WvlRIn/RDFHK9menLVAErPFurPqncrHVk4I4rrOkL8vPoTe0xjrlW9sJp9SY=
-X-Received: by 2002:a17:907:1c90:b0:c2e:63ba:1f90 with SMTP id a640c23a62f3a-c50963bc4f0mr777600066b.48.1794816099924;
-        Mon, 16 Nov 2026 00:01:39 -0800 (PST)
-Received: from [10.0.0.233] (tmo-086-54.customers.d1-online.com. [80.187.86.54])
-        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-c5095b7b2c9sm385795866b.73.2026.11.16.00.01.38
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 16 Nov 2026 00:01:39 -0800 (PST)
-Message-ID: <dfdd6f4437cbf8f55458b908ec5347f3189bce80.camel@amutable.com>
-Subject: Re: [PATCH RFC 4/4] crash_dump: use copy_oldmem_to_iter() everywhere
-From: Alexander Mikhalitsyn <alex@amutable.com>
-To: Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Breno Leitao
-	 <leitao@debian.org>, Chris Mason <mason@kernel.org>, Thomas Gleixner
-	 <tglx@kernel.org>, x86@kernel.org, kexec@lists.infradead.org, 
-	linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org, 
-	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev, 
-	linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, David Hildenbrand <david@kernel.org>
-Date: Mon, 16 Nov 2026 09:01:37 +0100
-In-Reply-To: <20261112-work-procfs-oldmem-v1-4-ecdcafd99265@kernel.org>
-References: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org>
-	 <20261112-work-procfs-oldmem-v1-4-ecdcafd99265@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.56.2-0+deb13u1 
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=JDmj5wL0
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1794842674; x=1826378674;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=LH4mH1ubyxz0IHoQt7RT1+002Vt3ik8/Qr8lqRhqPoo=;
+  b=JDmj5wL0T5x/MIEJZH+6q7+S9e3/u3ssGbBZhqi+En5p0JKKGindKz2Q
+   fooCr44WWGk4dk04U6ITDweTzhsEPjyzUVgK11WRvT61aM6Ek/o2ISdN7
+   Hdr4K2lCwfnPn3chA/ZzKfj2WfrN1NrdcNauyBlHI1C/mZ1gCPJmr91IH
+   q3CSH43qwea7JDtbBj6T3OScGffdYJ9mWTo2y8Kj8PxOWoqmLTfB3BMR5
+   iCvgnXDil1OKitWg3EfcFueCogo29e/MfWAab64hR7ouHBQ06QZwjkB1J
+   ksygVb2YbrCxhNXxO2l9IHo1GmMJs8AClVvpUMiNnEQfM3joCIiCydB3s
+   w==;
+X-CSE-ConnectionGUID: h3kfWtwFQt6OLRR1amiPuA==
+X-CSE-MsgGUID: lVtqlskKSVOgW4hNJvOasw==
+X-IronPort-AV: E=McAfee;i="6800,10657,11968"; a="3457207"
+X-IronPort-AV: E=Sophos;i="6.27,216,1787036400"; 
+   d="scan'208";a="3457207"
+Received: from orviesa003.jf.intel.com ([10.64.159.143])
+  by orvoesa105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 16 Nov 2026 07:24:33 -0800
+X-CSE-ConnectionGUID: u0Vf5AQiTyWGUmFyxOEzSg==
+X-CSE-MsgGUID: wAJ2/SvNRjKLGoPhf13KZQ==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.27,216,1787036400"; 
+   d="scan'208";a="9419868"
+Received: from ijarvine-mobl1.ger.corp.intel.com (HELO localhost) ([10.245.245.151])
+  by smtpauth.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 16 Nov 2026 07:24:25 -0800
+From: =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
+To: linux-pci@vger.kernel.org,
+	Bjorn Helgaas <bhelgaas@google.com>,
+	Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>,
+	Rob Herring <robh@kernel.org>,
+	=?UTF-8?q?Krzysztof=20Wilczy=C5=84ski?= <kw@linux.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Greg Ungerer <gerg@linux-m68k.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+	Helge Deller <deller@gmx.de>,
+	"Rafael J. Wysocki" <rafael@kernel.org>,
+	Len Brown <lenb@kernel.org>,
+	Dominik Brodowski <linux@dominikbrodowski.net>,
+	linux-arm-kernel@lists.infradead.org,
+	linux-kernel@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
+	linux-acpi@vger.kernel.org
+Cc: =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
+Subject: [PATCH 01/13] PCI: Add pci_bus_size_and_assign_resources()
+Date: Mon, 16 Nov 2026 17:23:46 +0200
+Message-ID: <20261116152403.2672-2-ilpo.jarvinen@linux.intel.com>
+X-Mailer: git-send-email 2.47.3
+In-Reply-To: <20261116152403.2672-1-ilpo.jarvinen@linux.intel.com>
+References: <20261116152403.2672-1-ilpo.jarvinen@linux.intel.com>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -106,143 +102,178 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On Thu, 2026-11-12 at 17:37 +0100, Christian Brauner wrote:
-> Make the remaining copy_oldmem_page() implementations copy the page
-> of
-> the crashed kernel with copy_oldmem_to_iter() like x86_64 and powerpc
-> do. None of these architectures has a machine check safe copy today,
-> so
-> for them this is copy_to_iter() under another name. But the copy of a
-> page of the old kernel is in one place now, and an architecture that
-> gains ARCH_HAS_COPY_MC later gets the recovery without touching its
-> crash dump code.
->=20
-> s390 stays as it is. It copies the old kernel's memory through its
-> real
-> address mode window in memcpy_real_iter(), and an uncorrected storage
-> error is fatal on s390 anyway (cf. s390_handle_damage()).
->=20
-> No functional changes.
->=20
-> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+Bridge window sizing and resource assignment must not run concurrently
+with another sizing and assignment pass or with device removal.
+Preventing that requires holding locks across both phases. Many callers
+outside of PCI core call pci_bus_size_bridges() immediately followed by
+pci_bus_assign_resources() and cannot hold the PCI core internal locks
+across the two calls.
 
-Reviewed-by: Alexander Mikhalitsyn <alex@amutable.com>
+Add pci_bus_size_and_assign_resources() into PCI core which combines
+these two operations and convert the callers that call them back to
+back.
 
-> ---
-> =C2=A0arch/arm/kernel/crash_dump.c=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 | =
-2 +-
-> =C2=A0arch/arm64/kernel/crash_dump.c=C2=A0=C2=A0=C2=A0=C2=A0 | 2 +-
-> =C2=A0arch/loongarch/kernel/crash_dump.c | 2 +-
-> =C2=A0arch/mips/kernel/crash_dump.c=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 | 2 +-
-> =C2=A0arch/riscv/kernel/crash_dump.c=C2=A0=C2=A0=C2=A0=C2=A0 | 2 +-
-> =C2=A0arch/sh/kernel/crash_dump.c=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0 | 2 +-
-> =C2=A0arch/x86/kernel/crash_dump_32.c=C2=A0=C2=A0=C2=A0 | 2 +-
-> =C2=A07 files changed, 7 insertions(+), 7 deletions(-)
->=20
-> diff --git a/arch/arm/kernel/crash_dump.c
-> b/arch/arm/kernel/crash_dump.c
-> index 938bd932df9a0..0f2628872b00c 100644
-> --- a/arch/arm/kernel/crash_dump.c
-> +++ b/arch/arm/kernel/crash_dump.c
-> @@ -28,7 +28,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
-> unsigned long pfn,
-> =C2=A0	if (!vaddr)
-> =C2=A0		return -ENOMEM;
-> =C2=A0
-> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
-> =C2=A0
-> =C2=A0	iounmap(vaddr);
-> =C2=A0	return csize;
-> diff --git a/arch/arm64/kernel/crash_dump.c
-> b/arch/arm64/kernel/crash_dump.c
-> index 670e4ce818223..c774b3aba107d 100644
-> --- a/arch/arm64/kernel/crash_dump.c
-> +++ b/arch/arm64/kernel/crash_dump.c
-> @@ -24,7 +24,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
-> unsigned long pfn,
-> =C2=A0	if (!vaddr)
-> =C2=A0		return -ENOMEM;
-> =C2=A0
-> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
-> =C2=A0
-> =C2=A0	memunmap(vaddr);
-> =C2=A0
-> diff --git a/arch/loongarch/kernel/crash_dump.c
-> b/arch/loongarch/kernel/crash_dump.c
-> index e559307c10929..03a136b8be8da 100644
-> --- a/arch/loongarch/kernel/crash_dump.c
-> +++ b/arch/loongarch/kernel/crash_dump.c
-> @@ -15,7 +15,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
-> unsigned long pfn,
-> =C2=A0	if (!vaddr)
-> =C2=A0		return -ENOMEM;
-> =C2=A0
-> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
-> =C2=A0
-> =C2=A0	memunmap(vaddr);
-> =C2=A0
-> diff --git a/arch/mips/kernel/crash_dump.c
-> b/arch/mips/kernel/crash_dump.c
-> index 6e50f49024094..078c0d1e8df46 100644
-> --- a/arch/mips/kernel/crash_dump.c
-> +++ b/arch/mips/kernel/crash_dump.c
-> @@ -12,7 +12,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
-> unsigned long pfn,
-> =C2=A0		return 0;
-> =C2=A0
-> =C2=A0	vaddr =3D kmap_local_pfn(pfn);
-> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
-> =C2=A0	kunmap_local(vaddr);
-> =C2=A0
-> =C2=A0	return csize;
-> diff --git a/arch/riscv/kernel/crash_dump.c
-> b/arch/riscv/kernel/crash_dump.c
-> index ea2158cee97b3..0820e3db12603 100644
-> --- a/arch/riscv/kernel/crash_dump.c
-> +++ b/arch/riscv/kernel/crash_dump.c
-> @@ -21,7 +21,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
-> unsigned long pfn,
-> =C2=A0	if (!vaddr)
-> =C2=A0		return -ENOMEM;
-> =C2=A0
-> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
-> =C2=A0
-> =C2=A0	memunmap(vaddr);
-> =C2=A0	return csize;
-> diff --git a/arch/sh/kernel/crash_dump.c
-> b/arch/sh/kernel/crash_dump.c
-> index 85c0e58f1a59f..2a5988b6e9d7a 100644
-> --- a/arch/sh/kernel/crash_dump.c
-> +++ b/arch/sh/kernel/crash_dump.c
-> @@ -23,7 +23,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
-> unsigned long pfn,
-> =C2=A0	if (!vaddr)
-> =C2=A0		return -ENOMEM;
-> =C2=A0
-> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
-> =C2=A0	iounmap(vaddr);
-> =C2=A0
-> =C2=A0	return csize;
-> diff --git a/arch/x86/kernel/crash_dump_32.c
-> b/arch/x86/kernel/crash_dump_32.c
-> index 5f4ae5476e193..cb202d4e1f703 100644
-> --- a/arch/x86/kernel/crash_dump_32.c
-> +++ b/arch/x86/kernel/crash_dump_32.c
-> @@ -40,7 +40,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
-> unsigned long pfn, size_t csize,
-> =C2=A0		return -EFAULT;
-> =C2=A0
-> =C2=A0	vaddr =3D kmap_local_pfn(pfn);
-> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
-> =C2=A0	kunmap_local(vaddr);
-> =C2=A0
-> =C2=A0	return csize;
+Signed-off-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
+---
+ arch/arm/kernel/bios32.c           | 5 ++---
+ arch/m68k/coldfire/pci.c           | 3 +--
+ arch/mips/pci/pci-legacy.c         | 5 ++---
+ arch/sh/drivers/pci/pci.c          | 3 +--
+ drivers/parisc/lba_pci.c           | 7 ++-----
+ drivers/pci/hotplug/acpiphp_glue.c | 3 +--
+ drivers/pci/setup-bus.c            | 7 +++++++
+ drivers/pcmcia/cardbus.c           | 3 +--
+ include/linux/pci.h                | 1 +
+ 9 files changed, 18 insertions(+), 19 deletions(-)
+
+diff --git a/arch/arm/kernel/bios32.c b/arch/arm/kernel/bios32.c
+index ac0e890510da..555bfb091d30 100644
+--- a/arch/arm/kernel/bios32.c
++++ b/arch/arm/kernel/bios32.c
+@@ -510,15 +510,14 @@ void pci_common_init_dev(struct device *parent, struct hw_pci *hw)
+ 		/*
+ 		 * We insert PCI resources into the iomem_resource and
+ 		 * ioport_resource trees in either pci_bus_claim_resources()
+-		 * or pci_bus_assign_resources().
++		 * or pci_bus_size_and_assign_resources().
+ 		 */
+ 		if (pci_has_flag(PCI_PROBE_ONLY)) {
+ 			pci_bus_claim_resources(bus);
+ 		} else {
+ 			struct pci_bus *child;
+ 
+-			pci_bus_size_bridges(bus);
+-			pci_bus_assign_resources(bus);
++			pci_bus_size_and_assign_resources(bus);
+ 
+ 			list_for_each_entry(child, &bus->children, node)
+ 				pcie_bus_configure_settings(child);
+diff --git a/arch/m68k/coldfire/pci.c b/arch/m68k/coldfire/pci.c
+index 5afb207ccc51..dd21c77c43a6 100644
+--- a/arch/m68k/coldfire/pci.c
++++ b/arch/m68k/coldfire/pci.c
+@@ -250,8 +250,7 @@ static int __init mcf_pci_init(void)
+ 	rootbus->resource[0] = &mcf_pci_io;
+ 	rootbus->resource[1] = &mcf_pci_mem;
+ 
+-	pci_bus_size_bridges(rootbus);
+-	pci_bus_assign_resources(rootbus);
++	pci_bus_size_and_assign_resources(rootbus);
+ 	pci_bus_add_devices(rootbus);
+ 	return 0;
+ }
+diff --git a/arch/mips/pci/pci-legacy.c b/arch/mips/pci/pci-legacy.c
+index dae6dafdd6e0..ec0e42d9a895 100644
+--- a/arch/mips/pci/pci-legacy.c
++++ b/arch/mips/pci/pci-legacy.c
+@@ -129,15 +129,14 @@ static void pcibios_scanbus(struct pci_controller *hose)
+ 	/*
+ 	 * We insert PCI resources into the iomem_resource and
+ 	 * ioport_resource trees in either pci_bus_claim_resources()
+-	 * or pci_bus_assign_resources().
++	 * or pci_bus_size_and_assign_resources().
+ 	 */
+ 	if (pci_has_flag(PCI_PROBE_ONLY)) {
+ 		pci_bus_claim_resources(bus);
+ 	} else {
+ 		struct pci_bus *child;
+ 
+-		pci_bus_size_bridges(bus);
+-		pci_bus_assign_resources(bus);
++		pci_bus_size_and_assign_resources(bus);
+ 		list_for_each_entry(child, &bus->children, node)
+ 			pcie_bus_configure_settings(child);
+ 	}
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index 878a27a1acfb..c91ca8f4cb1c 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -81,8 +81,7 @@ static void pcibios_scanbus(struct pci_channel *hose)
+ 		need_domain_info = 1;
+ 	}
+ 
+-	pci_bus_size_bridges(hose->bus);
+-	pci_bus_assign_resources(hose->bus);
++	pci_bus_size_and_assign_resources(hose->bus);
+ 	pci_bus_add_devices(hose->bus);
+ }
+ 
+diff --git a/drivers/parisc/lba_pci.c b/drivers/parisc/lba_pci.c
+index 5197a3c93c70..39ab93ba458b 100644
+--- a/drivers/parisc/lba_pci.c
++++ b/drivers/parisc/lba_pci.c
+@@ -1639,11 +1639,8 @@ lba_driver_probe(struct parisc_device *dev)
+ 	if (is_pdc_pat()) {
+ 		/* assign resources to un-initialized devices */
+ 
+-		DBG_PAT("LBA pci_bus_size_bridges()\n");
+-		pci_bus_size_bridges(lba_bus);
+-
+-		DBG_PAT("LBA pci_bus_assign_resources()\n");
+-		pci_bus_assign_resources(lba_bus);
++		DBG_PAT("LBA pci_bus_size_and_assign_resources()\n");
++		pci_bus_size_and_assign_resources(lba_bus);
+ 
+ #ifdef DEBUG_LBA_PAT
+ 		DBG_PAT("\nLBA PIOP resource tree\n");
+diff --git a/drivers/pci/hotplug/acpiphp_glue.c b/drivers/pci/hotplug/acpiphp_glue.c
+index 78e3effbb32d..632344f34cae 100644
+--- a/drivers/pci/hotplug/acpiphp_glue.c
++++ b/drivers/pci/hotplug/acpiphp_glue.c
+@@ -465,8 +465,7 @@ static void acpiphp_native_scan_bridge(struct pci_dev *bridge)
+ 		max = pci_scan_bridge(bus, dev, max, 1);
+ 		if (dev->subordinate) {
+ 			pcibios_resource_survey_bus(dev->subordinate);
+-			pci_bus_size_bridges(dev->subordinate);
+-			pci_bus_assign_resources(dev->subordinate);
++			pci_bus_size_and_assign_resources(dev->subordinate);
+ 		}
+ 	}
+ }
+diff --git a/drivers/pci/setup-bus.c b/drivers/pci/setup-bus.c
+index ed16ef7c26fa..29ec9ba59d92 100644
+--- a/drivers/pci/setup-bus.c
++++ b/drivers/pci/setup-bus.c
+@@ -2492,3 +2492,10 @@ void pci_assign_unassigned_bus_resources(struct pci_bus *bus)
+ 	__pci_bus_assign_resources(bus, &add_list, NULL);
+ }
+ EXPORT_SYMBOL_GPL(pci_assign_unassigned_bus_resources);
++
++void pci_bus_size_and_assign_resources(struct pci_bus *bus)
++{
++	pci_bus_size_bridges(bus);
++	__pci_bus_assign_resources(bus, NULL, NULL);
++}
++EXPORT_SYMBOL_GPL(pci_bus_size_and_assign_resources);
+diff --git a/drivers/pcmcia/cardbus.c b/drivers/pcmcia/cardbus.c
+index 5e5cf2c3e2c8..19df3f9228a7 100644
+--- a/drivers/pcmcia/cardbus.c
++++ b/drivers/pcmcia/cardbus.c
+@@ -81,8 +81,7 @@ int __ref cb_alloc(struct pcmcia_socket *s)
+ 	/*
+ 	 * Size all resources below the CardBus controller.
+ 	 */
+-	pci_bus_size_bridges(bus);
+-	pci_bus_assign_resources(bus);
++	pci_bus_size_and_assign_resources(bus);
+ 	cardbus_config_irq_and_cls(bus, s->pci_irq);
+ 
+ 	/* socket specific tune function */
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index aa3765a20a96..d89aeb7c9ff7 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -1569,6 +1569,7 @@ resource_size_t pcibios_retrieve_fw_addr(struct pci_dev *dev, int idx);
+ void pci_bus_assign_resources(const struct pci_bus *bus);
+ void pci_bus_claim_resources(struct pci_bus *bus);
+ void pci_bus_size_bridges(struct pci_bus *bus);
++void pci_bus_size_and_assign_resources(struct pci_bus *bus);
+ int pci_claim_resource(struct pci_dev *, int);
+ int pci_claim_bridge_resource(struct pci_dev *bridge, int i);
+ void pci_assign_unassigned_resources(void);
+-- 
+2.47.3
+
