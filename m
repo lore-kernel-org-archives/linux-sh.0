@@ -1,86 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.45
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.53
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794815930;
-	b=K2oGoZebtk9SGSJEYUduO8hkWT0oLyNhRXNVyAFI3dtlX1PE2VMzcySOLVyhxkLC+WBL
-	 5Mew/5ONDObmW8z6GRl5XUDYddmn0UGQLPBCatwRLPydqznzy2pXIYFX36yBMNIXevB3z
-	 9YQlZEYw3eCAuS/C75FFwCesPr3P6UATNxA2tF8uZ+rQbVjJgKKj/iYHYcSQAoRr2QniM
-	 t5zQ46X4bAo9jl+ecIhidB+ZRFAwaF3ba7+R3KeLfM7Ymz1fiu4dtxzjAlba/Xv87QzmS
-	 75qrgeGU5BnII5o/BF0MfpzHdGVhvIyX70Z2wbrU2+gIUntgX/xokWbfvjnAuJ2cCAw==
+	t=1794815989;
+	b=MOzwTDP4Wd/QbykDbwAZhEmmSm68x9ubznw4f0hr3lWg+yndpEBV0Dt4jP5/ei+03J3N
+	 cZpc9l/qZ18pt9k6663h2T3EeAdS1N469OxkQZzsbtmOnVNz27RImIQNBrIOmowtNeBxD
+	 OCWqAc2txyaTZ0A3qiDiQd1GqInUbfzV76oo2wynPzzjQ2bxmSwYyJgTeA67xdcwHtILr
+	 +9NljdHnnNU03+mbNB4uiw1L6MoVoTu9JfiVUDJekBssNs4/s9QgaYuG6oRT+gPcM9J+H
+	 1lAgZ9s2mMIrSH55pP2yVGRUWNkTuxfQyOasxEaJUP+Q+3QmP3Wybs5KFAjGfFnXfLg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794815930;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794815989;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
 	 Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
 	 Content-Type:Content-Transfer-Encoding:User-Agent:MIME-Version;
-	bh=RUWz3ZPMUxA6+r9kTNI2D7JNnedpd8n5diTIAYYVkok=;
-	b=f9hzkbvA11Jvao3M4+WC8wUtxoYSRDiziBqL7uC8Cew1xnVFgvq31BBcknEWoBxmvIV+
-	 JILnWuHT32IrKV+liKcHx3y88DpZGhGAkJcCKmUUM2+fsefpZEVQOGebIYXFJG6n3j3dW
-	 +131QyoEkZFmTBciUQqmNz/3ngl1lEc6/UY2TUAaDI3fgPY5a9FFJvBOiBEA1Onrr6KUa
-	 iy7FAaWwBbQ22T+NEqx02yUcx4+OiA5uuWGLWDeQKdOyxaRJPtOF5yJJiiFtrKlWCnPyk
-	 IjdXg16SVEHjNC89i3Xzb2SzwtJNsaRdIUmSwHSDHj+up2ta0R+L5TgsbpkHpOpNoVA==
+	bh=mcuJSSxZnzgSbNJLicY5YRDK+dG26RVtPhpOzcEjiSU=;
+	b=lVwPmTPvteWDAHto8amBnQvTRmzIND+WlHBZUqMZAyvVRlYKq/YHXu9EiOHj//GuHiw6
+	 /THsDLVlVYSB2RCSTad/eryO9S3ESMQPkSX5wBZxLxZL2JrlB2fxh3QgOYoWFPLNvHGyT
+	 X/fUmUaQalg5fWW97aUI3ON7zUXJ84IKSbnNN408kbhrr74Aj4ba/Ndpn9f7TfZ6zwAXE
+	 7YYLbA35cK0JZCEidpo0nYF0sg5ZnyMZqHbCrJEndoLHmEANMngWrJXPBKxIcsC4PYVkx
+	 LSkky5shdcRXDfg4GYrbOR2NizqASnvwuPUrsqFqiArlefXyrVHSO0VLSr6C5bFEcMg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=none header.from=amutable.com;
 	spf=pass smtp.mailfrom=amutable.com;
-	dkim=pass header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b="m/LM6ars";
-	arc=none smtp.remote-ip=209.85.128.45
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
+	dkim=pass header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=O1BXF7ki;
+	arc=none smtp.remote-ip=209.85.221.53
+Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF389606A32A
-	for <linux-sh@vger.kernel.org>; Mon, 16 Nov 2026 07:58:49 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org DF389606A32A
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49386606A32F
+	for <linux-sh@vger.kernel.org>; Mon, 16 Nov 2026 07:59:49 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 49386606A32F
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=amutable.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amutable.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=m/LM6ars
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-49d05d51553so16457965e9.2
-        for <linux-sh@vger.kernel.org>; Sun, 15 Nov 2026 23:58:49 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=O1BXF7ki
+Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-48b001cd92bso2016380f8f.2
+        for <linux-sh@vger.kernel.org>; Sun, 15 Nov 2026 23:59:49 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=amutable-com.20260707.gappssmtp.com; s=20260707; t=1794815928; x=1795420728; darn=vger.kernel.org;
+        d=amutable-com.20260707.gappssmtp.com; s=20260707; t=1794815987; x=1795420787; darn=vger.kernel.org;
         h=mime-version:user-agent:content-transfer-encoding:content-type
          :references:in-reply-to:date:cc:to:from:subject:message-id:from:to
          :cc:subject:date:message-id:reply-to:content-type;
-        bh=RUWz3ZPMUxA6+r9kTNI2D7JNnedpd8n5diTIAYYVkok=;
-        b=m/LM6ars18o8GDKRmm846P52W5VTEeLVl3zm4E6+Ukoew1PNUWaySYAFTHbhwbIHY6
-         8zyWRJ3E+soSg5cVCg675JZQUuiKrI7PnShT86jC05Ju/0/IRheNzvGNmD+npQLbnkn0
-         fy8Il1K6Vm+A5YZwCa+xzQ2+KQuOMrOvsBIKg/ExEvAa5Y/VxNmGrq1rCHU6BtXLMwTC
-         Wsvn5VDRjOEmowS+ZSTEWPRIhLKHrJyNPuqywDI23KP2brkj28XF72ButTpsWAH9l4pR
-         IypEgitHhE/vdzZkz5m5Ua6ccTEUz62Pa2MJahrsFOhrSRlAMMkSQY6/3R5U6hM1aN5V
-         0hRQ==
+        bh=mcuJSSxZnzgSbNJLicY5YRDK+dG26RVtPhpOzcEjiSU=;
+        b=O1BXF7kitU2oRSc1LTo+wW4pDoWUGl2PNfV6Mrx6Mvp0/wij7mnUpERFldGZUqkIKs
+         XZw/mtfFkj/UusVH9UrBTKcJVRdKx157srIuj7SKjCzseY8A/sgQ6OmnwahspQTTMdTb
+         ByYOOEcfk1PuecIY/16A6lAoNoMzQHrf6zdncTXX7aDRK9LszvHpzh7ZPEH0Mx6sQJmq
+         xrh7MXGpzyM4o4TzkERIrB1zJfr9k2i/s6K+UbTefEt1DHDqv/Xkm9Buwd9MUFTJidcV
+         xXqa8U5JudzPl6G50YjbGyGAURqJrnYr87IThG271yWvR/pRqmIPWQef8YP9COtt8oSx
+         doJg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794815928; x=1795420728;
+        d=1e100.net; s=20260707; t=1794815987; x=1795420787;
         h=mime-version:user-agent:content-transfer-encoding:content-type
          :references:in-reply-to:date:cc:to:from:subject:message-id:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=RUWz3ZPMUxA6+r9kTNI2D7JNnedpd8n5diTIAYYVkok=;
-        b=HIRHpcvoojUJDoBgGm0epI7T1Y1DFpMDvGv1/U/16clEal08abq5Hex2YlzXUtapn4
-         PwkOeCIB1k412GPZHWvARmvjxOqGtTBYUktroC1nF+t6YmIe5hiJrNzc9KyQxKMdpU6n
-         VIUa2YnyV7HTUG9w5w4420Ch9GGtw5FYTr6lHOQqVtznuTp0J/yWpV/JPeWWXWHpBTSX
-         tB5kCVbtAy7RCzdUW+BZgVAGaTRJ5UdKSaiAHeW4L5OZhgvthCLO9ceC/3bxlUQPnmzc
-         06TEgC7+/8wBDjqxtSDWNhLC86vgZmLSYkG+j3cAzLNOlHnzJEliCnNgb9Yvl2WcIf2F
-         rSCQ==
-X-Forwarded-Encrypted: i=1; AL+hErGOyL5XxoONfC+Molttqak4WZPm5EbiozZ+3pJ0kgedZPa6yQrgo1Ygl3vTtm/DtiNOH8i0MWUB5Q==@vger.kernel.org
-X-Gm-Message-State: APuU4Z+OtnnPRQiTfj0eQ5wofBLrMO9ORvgBRDKn6ycCgMS6MlgywR//
-	BxN5VOWVRfVfhMccmvChUhFOi6DfbMOIhztu3CcCg8TJE73gH2fpKTfUNazyvfCuTimX
-X-Gm-Gg: AYBFou2zLymwaFGGoHF3ExCT4CBE5BNeauSNbiejnaM4ReRR+1YaRBgVcQ7cyxcdItd
-	Ydvi/vSq9GVhwjUDyxTRifDHTBbeS1ME4lp2oOBrY/sacGs/kvochdvfpYzqWnAEjXr0TNABl3n
-	q3Mx6pOa3Ra3uoosDtbGEaGGu27YzwhLFu6YsHnGntvxb1dcpb0VOC2Sw4Ujd4sJ1CWN/ZOMgQD
-	evJXG3R12qno8DY4vsxmy8WVUqHduF2kOeprOlPdqinAu/M5+4cFXzaGuKfJyzjP6xBeM1ryU5O
-	B2euDSJzkuzRWg1vMylqBMBfygggVPYM/+eg9N/+VHpjj9G5oPLP8O8zl3SxaMsCgk9WArPGyog
-	5gJUwdPdJA8L1vLimGBSidGI1Euqop/fdphTH9SO1fdUHhgXvmK+AE9Bj6a7FMfcxmPWGnyF2sP
-	PAnWEyTuL1QvbfuYPos7k/0w0h0zN0xtUlUex8XMic18UamtGFrc7HOJ4pyLrCZgDQhYA4EgTT3
-	kSX79pavbIbnkHJ7xvqsotGWIQXNKRjiIqELxgkwKsdV7fLgi8U2+c8Hwf34rl38UzFx7v8oV67
-	xFB0diVNClr5essyvgXh3WkjVqNNOp0jpJLqL/BopHHaH8g6h+1bal++DAbvT0k=
-X-Received: by 2002:a05:600c:3b07:b0:4bb:5de1:e912 with SMTP id 5b1f17b1804b1-4bb5de1f216mr172834365e9.1.1794815928232;
-        Sun, 15 Nov 2026 23:58:48 -0800 (PST)
+        bh=mcuJSSxZnzgSbNJLicY5YRDK+dG26RVtPhpOzcEjiSU=;
+        b=vP8Gd1w+J+8F6/1aL0ThqR5CVl/n1SHGQY/EMXHKDO5bRvmQSPjmpGRa65Xd7iYKSE
+         /aXhmmbE/Rki1zdUtLLi+ACcgPWWa+a2mQ2ngwLJmpFUY1yngMhk6oImMZJASAx7OchT
+         o6yxBLcK31bUNkTEY4yUXtJKrHlVugRoh8/3WsJRxtbQGCVqtANI3xEYoz1Fq7O1MJBM
+         9TA/kk0FffBJ8lgMRdoMY6qh/QugA+cjXerq2zXl61Ptj0rNPxyYcbHXyi/6cjvBpoe6
+         C8KOWHMiigfPjq/lx8AI6QfJwVc5U4AiBzZEpDMvzbmZcCe+GoALoqdYOeuL61mXs4Wm
+         O9iw==
+X-Forwarded-Encrypted: i=1; AL+hErGm6mvayuV+eWr99cur0lcZF2RiVpIfK9Ci01ZFCwK6IEOLeMDnsoBLCstmTn8uq08aKEHAeSi/ew==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/nAs4j4iClyut6UA6bbfQiKyWUA8SEVzX+Oer1g593g9/LzLVY
+	PafKpB4hRNVwoaj5B8HalWomq4hwnXv5/Z+JkwXo4Ji87EWyrlnJ6jqMFNMErGdbfBLb
+X-Gm-Gg: AYBFou08ka44u4VEtibG12Y7GVAU28r3gtCzl8chwZXeRLZRKC4SV/OLMAd1qpYLiMY
+	hFhJqOTCdrgKQKIAbTG7CIkzXHKXJCz0Q3sJM/+lCdNSmMOHm1yy4C6GoWERcaVpe2HYQeFKgkP
+	gPHnoF1eg8ySquhohdmxMtGSojUwjId7lVU8MuqtHYQJ02DQ8aH+a8xcWh66mAwdKnWIW5z5DTK
+	XfazcylcRY01cUF1giKk6nzBsPaScY2z/ZHbkA4ngSGVOO0p+Qs3NShQDvU9Uz3sdB/ELHMuxgg
+	eB3EJD0PIWThoxQkX08BD6M4IxYSJbYTFkUcLn/uFPWogxU2afwCWIjYkj6U5yzPzVib6mt18f9
+	2C4vaCd+Po5V+3PBTg1wskb0b4Phvhsn5CeZXnkH3o3Z2GRcD19Wu8Oz3hS85Z1GLDXjB3D5v7x
+	WukIRKW3y83+AB1C9dcABRHFnd7lzW99roemSVCmdcl4oUmgyRHw0DGmwiVKIHBd9IzPPcVtLeg
+	F+VTE3xPcHRCSXWgio014Db6nh64uj4WCpbWUcNT9kJmf2IXGYVJ475x4dF2203j10zU8flEPKL
+	jFSHuNsOb2MogMx3922tITaP9JggUVLHuGGyoAuhLOinkuQqEE61cJkRgTIVudi5sat4ZtpWoB+
+	P7H/MP9iC
+X-Received: by 2002:a05:6000:993:b0:48f:bc59:ab9c with SMTP id ffacd0b85a97d-49c6fd932f0mr20349731f8f.12.1794815987554;
+        Sun, 15 Nov 2026 23:59:47 -0800 (PST)
 Received: from [10.0.0.233] (tmo-086-54.customers.d1-online.com. [80.187.86.54])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4bb4e252f7fsm375768305e9.2.2026.11.15.23.58.46
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49d69c21a17sm15766858f8f.50.2026.11.15.23.59.46
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 15 Nov 2026 23:58:47 -0800 (PST)
-Message-ID: <aa32167cd3865049bfe0281b8b651c47f5e1c05d.camel@amutable.com>
-Subject: Re: [PATCH RFC 2/4] sh/crash_dump: check ioremap() in
+        Sun, 15 Nov 2026 23:59:47 -0800 (PST)
+Message-ID: <832e0f9ce4e81ee31a6bcde01591a56aac36e976.camel@amutable.com>
+Subject: Re: [PATCH RFC 3/4] crash_dump: recover from a machine check in
  copy_oldmem_page()
 From: Alexander Mikhalitsyn <alex@amutable.com>
 To: Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org
@@ -92,10 +93,10 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>, Breno Leitao
 	linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, 
 	linux-kernel@vger.kernel.org, David Hildenbrand <david@kernel.org>, 
 	stable@vger.kernel.org
-Date: Mon, 16 Nov 2026 08:58:46 +0100
-In-Reply-To: <20261112-work-procfs-oldmem-v1-2-ecdcafd99265@kernel.org>
+Date: Mon, 16 Nov 2026 08:59:45 +0100
+In-Reply-To: <20261112-work-procfs-oldmem-v1-3-ecdcafd99265@kernel.org>
 References: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org>
-	 <20261112-work-procfs-oldmem-v1-2-ecdcafd99265@kernel.org>
+	 <20261112-work-procfs-oldmem-v1-3-ecdcafd99265@kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.56.2-0+deb13u1 
@@ -110,37 +111,218 @@ Precedence: list
 MIME-Version: 1.0
 
 On Thu, 2026-11-12 at 17:37 +0100, Christian Brauner wrote:
-> copy_oldmem_page() maps a page of the old kernel with ioremap() and
-> copies from it without checking whether the mapping worked. If it
-> didn't, the copy reads from an offset into the NULL page.
+> A capture kernel reads the memory of the crashed kernel, and that
+> memory
+> may well have uncorrectable errors. That is after all what the first
+> kernel often died of. Every architecture that maps a page of the old
+> kernel and copies it out does so with copy_to_iter(), and a machine
+> check in that copy takes the capture kernel down.
 >=20
-> Return -ENOMEM like the other architectures do. read_from_oldmem()
-> turns
-> that into -EFAULT like any other short copy.
+> On x86 a machine check in the kernel is only recovered from if the
+> instruction that took it has a machine check safe exception table
+> entry
+> or copies from userspace (cf. error_context()). The copy of an old
+> page
+> is neither. Its source is kernel memory, whether it goes to the
+> buffer
+> of a read() or, since commit 4a22fd20379c ("vmcore: convert
+> __read_vmcore to use an iov_iter"), into a kernel page for splice(),
+> sendfile() and copy_file_range(). So a read of /proc/vmcore that runs
+> into a poisoned page panics the capture kernel, and so do vmcore's
+> own
+> reads of the ELF headers and notes. Breno sees the result on a fleet:
+> the first kernel dies of a machine check and the capture kernel
+> produces
+> no usable vmcore at all (cf. [1]).
 >=20
-> Fixes: 4d5ade5b29c6 ("sh: kdump support.")
+> On book3s64 a machine check in the kernel is recovered from if the
+> instruction that took it has an exception table entry (cf.
+> mce_common_process_ue()). The user copy has them, so a read() comes
+> up
+> short there and read_from_oldmem() returns -EFAULT. The copies into
+> kernel pages have none and panic the same way. Other powerpc
+> platforms
+> don't recover from a machine check in such a copy at all.
+>=20
+> Copy with _copy_mc_to_iter() instead. x86_64 and PPC64 select
+> ARCH_HAS_COPY_MC, and on x86_64 and book3s64 the machine check safe
+> copy
+> turns the machine check into a short copy, which read_from_oldmem()
+> turns into -EFAULT like any other short copy. On x86 that holds for
+> the
+> fragile and the enhanced fast string variant, a CPU with neither gets
+> the plain copy it has today. Everywhere else _copy_mc_to_iter() is
+> _copy_to_iter(). Put the call into a helper, copy_oldmem_to_iter(),
+> so
+> that the copy of a page of the old kernel lives in one place and an
+> architecture that gains a machine check safe copy later gets this for
+> free. The helper does the same check_copy_size() as copy_to_iter(),
+> so
+> hardened usercopy keeps checking the copy.
+>=20
+> With a v7.4-rc1 capture kernel reading /proc/vmcore and a machine
+> check
+> injected into the copy of an old page the capture kernel is gone. A
+> machine check panic prints no trace of its own, this one comes from
+> panic_sys_info=3Dall_bt:
+>=20
+> [=C2=A0=C2=A0=C2=A0 0.580568] mce: [Hardware Error]: CPU 0: Machine Check=
+ Exception:
+> 7 Bank 1: bd80000000000134
+> [=C2=A0=C2=A0=C2=A0 0.580574] mce: [Hardware Error]: RIP 10:<ffffffff8190=
+9b11>
+> {_copy_to_iter+0x81/0x850}
+> [=C2=A0=C2=A0=C2=A0 0.580584] mce: [Hardware Error]: TSC 202f2117f ADDR 1=
+0000000
+> MISC 8c
+> [=C2=A0=C2=A0=C2=A0 0.580587] mce: [Hardware Error]: PROCESSOR 2:aa0f02 T=
+IME
+> 1794493617 SOCKET 0 APIC 0 microcode aa0021c
+> [=C2=A0=C2=A0=C2=A0 0.580589] mce: [Hardware Error]: Machine check: Uncor=
+rected
+> unrecoverable error in kernel context
+> [=C2=A0=C2=A0=C2=A0 0.580591] Kernel panic - not syncing: Fatal local mac=
+hine check
+> [=C2=A0=C2=A0=C2=A0 0.582587] CPU: 0 UID: 0 PID: 1 Comm: init Not tainted=
+ 7.4.0-rc1-
+> g6628e7d4c6b2 #1 PREEMPT(lazy)
+> [=C2=A0=C2=A0=C2=A0 0.583101] Call Trace:
+> [=C2=A0=C2=A0=C2=A0 0.583198]=C2=A0 <#MC>
+> [=C2=A0=C2=A0=C2=A0 0.583279]=C2=A0 dump_stack_lvl+0x4d/0x70
+> [=C2=A0=C2=A0=C2=A0 0.583419]=C2=A0 nmi_cpu_backtrace.cold+0x18/0x6e
+> [=C2=A0=C2=A0=C2=A0 0.583584]=C2=A0 ? __pfx_nmi_raise_cpu_backtrace+0x10/=
+0x10
+> [=C2=A0=C2=A0=C2=A0 0.583772]=C2=A0 nmi_trigger_cpumask_backtrace+0xba/0x=
+f0
+> [=C2=A0=C2=A0=C2=A0 0.583955]=C2=A0 sys_info+0x83/0xb0
+> [=C2=A0=C2=A0=C2=A0 0.584075]=C2=A0 vpanic+0x1b4/0x303
+> [=C2=A0=C2=A0=C2=A0 0.584197]=C2=A0 panic+0x66/0x70
+> [=C2=A0=C2=A0=C2=A0 0.584488]=C2=A0 mce_panic+0x19e/0x290
+> [=C2=A0=C2=A0=C2=A0 0.584799]=C2=A0 do_machine_check+0x627/0x9a0
+> [=C2=A0=C2=A0=C2=A0 0.584953]=C2=A0 ? _copy_to_iter+0x81/0x850
+> [=C2=A0=C2=A0=C2=A0 0.585099]=C2=A0 exc_machine_check+0x68/0xb0
+> [=C2=A0=C2=A0=C2=A0 0.585246]=C2=A0 asm_exc_machine_check+0x1e/0x40
+> [=C2=A0=C2=A0=C2=A0 0.587747]=C2=A0 </#MC>
+> [=C2=A0=C2=A0=C2=A0 0.587831]=C2=A0 <TASK>
+> [=C2=A0=C2=A0=C2=A0 0.588092]=C2=A0 ? iomem_map_sanity_check+0x98/0xb0
+> [=C2=A0=C2=A0=C2=A0 0.588430]=C2=A0 ? __ioremap_caller.isra.0+0x1a9/0x300
+> [=C2=A0=C2=A0=C2=A0 0.588604]=C2=A0 ? __copy_oldmem_page+0x3d/0xb0
+> [=C2=A0=C2=A0=C2=A0 0.588928]=C2=A0 __copy_oldmem_page+0x5e/0xb0
+> [=C2=A0=C2=A0=C2=A0 0.589079]=C2=A0 read_from_oldmem.part.0+0xe3/0x140
+> [=C2=A0=C2=A0=C2=A0 0.589247]=C2=A0 read_vmcore+0x137/0x280
+> [=C2=A0=C2=A0=C2=A0 0.589381]=C2=A0 proc_reg_read_iter+0x49/0x90
+> [=C2=A0=C2=A0=C2=A0 0.589533]=C2=A0 vfs_read+0x348/0x490
+> [=C2=A0=C2=A0=C2=A0 0.589666]=C2=A0 ksys_read+0x76/0x100
+> [=C2=A0=C2=A0=C2=A0 0.589792]=C2=A0 do_syscall_64+0xde/0x4b0
+> [=C2=A0=C2=A0=C2=A0 0.590103]=C2=A0 entry_SYSCALL_64_after_hwframe+0x77/0=
+x7f
+>=20
+> With this patch the same injection ends the read() with -EFAULT, the
+> capture kernel logs the machine check and keeps running.
+>=20
+> [1]: https://lore.kernel.org/all/avRXzzCSzT9Qj2FC@gmail.com/
+>=20
+> Reported-by: Chris Mason <mason@kernel.org>
+> Suggested-by: Breno Leitao <leitao@debian.org>
+> Fixes: 4ae362be5093 ("[PATCH] kdump: read previous kernel's memory")
+> Fixes: 54c32021eb6f ("[PATCH] powerpc: Add arch-dependent
+> copy_oldmem_page")
+> Fixes: 4a22fd20379c ("vmcore: convert __read_vmcore to use an
+> iov_iter")
 > Cc: stable@vger.kernel.org
 > Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 
 Reviewed-by: Alexander Mikhalitsyn <alex@amutable.com>
 
 > ---
-> =C2=A0arch/sh/kernel/crash_dump.c | 3 +++
-> =C2=A01 file changed, 3 insertions(+)
+> =C2=A0arch/powerpc/kernel/crash_dump.c |=C2=A0 4 ++--
+> =C2=A0arch/x86/kernel/crash_dump_64.c=C2=A0 |=C2=A0 2 +-
+> =C2=A0include/linux/crash_dump.h=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 | 22=
+ ++++++++++++++++++++++
+> =C2=A03 files changed, 25 insertions(+), 3 deletions(-)
 >=20
-> diff --git a/arch/sh/kernel/crash_dump.c
-> b/arch/sh/kernel/crash_dump.c
-> index 19ce6a950aaca..85c0e58f1a59f 100644
-> --- a/arch/sh/kernel/crash_dump.c
-> +++ b/arch/sh/kernel/crash_dump.c
-> @@ -20,6 +20,9 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
+> diff --git a/arch/powerpc/kernel/crash_dump.c
+> b/arch/powerpc/kernel/crash_dump.c
+> index 1543917bd3e1d..f784fc5cb0030 100644
+> --- a/arch/powerpc/kernel/crash_dump.c
+> +++ b/arch/powerpc/kernel/crash_dump.c
+> @@ -83,12 +83,12 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
 > unsigned long pfn,
-> =C2=A0		return 0;
 > =C2=A0
-> =C2=A0	vaddr =3D ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
-> +	if (!vaddr)
-> +		return -ENOMEM;
+> =C2=A0	if (memblock_is_region_memory(paddr, csize)) {
+> =C2=A0		vaddr =3D __va(paddr);
+> -		csize =3D copy_to_iter(vaddr + offset, csize, iter);
+> +		csize =3D copy_oldmem_to_iter(vaddr + offset, csize,
+> iter);
+> =C2=A0	} else {
+> =C2=A0		vaddr =3D ioremap_cache(paddr, PAGE_SIZE);
+> =C2=A0		if (!vaddr)
+> =C2=A0			return -ENOMEM;
+> -		csize =3D copy_to_iter(vaddr + offset, csize, iter);
+> +		csize =3D copy_oldmem_to_iter(vaddr + offset, csize,
+> iter);
+> =C2=A0		iounmap(vaddr);
+> =C2=A0	}
+> =C2=A0
+> diff --git a/arch/x86/kernel/crash_dump_64.c
+> b/arch/x86/kernel/crash_dump_64.c
+> index 32d710f7eb84c..e10dada855b70 100644
+> --- a/arch/x86/kernel/crash_dump_64.c
+> +++ b/arch/x86/kernel/crash_dump_64.c
+> @@ -29,7 +29,7 @@ static ssize_t __copy_oldmem_page(struct iov_iter
+> *iter, unsigned long pfn,
+> =C2=A0	if (!vaddr)
+> =C2=A0		return -ENOMEM;
+> =C2=A0
+> -	csize =3D copy_to_iter(vaddr + offset, csize, iter);
+> +	csize =3D copy_oldmem_to_iter(vaddr + offset, csize, iter);
+> =C2=A0
+> =C2=A0	iounmap((void __iomem *)vaddr);
+> =C2=A0	return csize;
+> diff --git a/include/linux/crash_dump.h b/include/linux/crash_dump.h
+> index 8315270e27b7a..12aeaa40c1c94 100644
+> --- a/include/linux/crash_dump.h
+> +++ b/include/linux/crash_dump.h
+> @@ -6,6 +6,7 @@
+> =C2=A0#include <linux/proc_fs.h>
+> =C2=A0#include <linux/elf.h>
+> =C2=A0#include <linux/pgtable.h>
+> +#include <linux/uio.h>
+> =C2=A0#include <uapi/linux/vmcore.h>
+> =C2=A0
+> =C2=A0/* For IS_ENABLED(CONFIG_CRASH_DUMP) */
+> @@ -33,6 +34,27 @@ ssize_t copy_oldmem_page(struct iov_iter *i,
+> unsigned long pfn, size_t csize,
+> =C2=A0ssize_t copy_oldmem_page_encrypted(struct iov_iter *iter, unsigned
+> long pfn,
+> =C2=A0				=C2=A0=C2=A0 size_t csize, unsigned long
+> offset);
+> =C2=A0
+> +/**
+> + * copy_oldmem_to_iter - copy from the crashed kernel's memory
+> + * @src: where in the mapped page of the crashed kernel to copy from
+> + * @count: how many bytes to copy
+> + * @iter: where to copy them
+> + *
+> + * The memory of the crashed kernel may well have uncorrectable
+> errors.
+> + * Where the architecture has a machine check safe copy a machine
+> check
+> + * in the copy ends it short, like a fault would, instead of taking
+> the
+> + * capture kernel down. Everywhere else this is copy_to_iter().
+> + *
+> + * Return: the number of bytes copied, like copy_to_iter().
+> + */
+> +static inline size_t copy_oldmem_to_iter(const void *src, size_t
+> count,
+> +					 struct iov_iter *iter)
+> +{
+> +	if (check_copy_size(src, count, true))
+> +		return _copy_mc_to_iter(src, count, iter);
+> +	return 0;
+> +}
 > +
-> =C2=A0	csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> =C2=A0	iounmap(vaddr);
+> =C2=A0void vmcore_cleanup(void);
 > =C2=A0
+> =C2=A0/* Architecture code defines this if there are other possible ELF
