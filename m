@@ -1,77 +1,104 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=78.133.224.34
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.45
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794812947;
-	b=ePYLK8Y++vV92rE1O+zSZCs4lo87Otb4FfAJWiDs70cEphLaB2Y96yBMFN3hxfG6Wu7S
-	 ID1wO3/s7IRKmfszS6ass9rVS/NkT+0IEKNclHH6Na5A1XglLvVX89hw6EX3OTizXWw11
-	 XaY2Vq2klq+DvtRoTGG5+ExU/nDQ1RsbCFoZ8eimZrSHXVAtAp/S1UOfts+Fre8by4a0k
-	 75Ao4/kAVxy2XfqfbsSPh5jyAdGfMPBkfJKDBLVoPGrY+SF+4T5MKQQKPRboRM10D4ihZ
-	 XGbgoYXU6qr45whCoELyMp4Xzt4TGUiDdtmlGclm984F6gQjikei6KsKoZ/5SsaMAvg==
+	t=1794815911;
+	b=5pcezJs8WxC0pMbxy+AFG7DWygvE2lvzckAQdXr95WN+UZoYP08UpNazw8xAi7CAJ3BH
+	 F/us3U35INGt+8QnUwEV4s828x1VJLnjyQlMGQHS9Wql3gmWQekoteG5OB3bAqE3XExD8
+	 n3Z/VaooZ8CPGGjbJCNOpZYreqWsmcjfJKFv0Zeckqa/SUtFaxk3Nhngqmq9Szk7yX8f6
+	 Rd6Q9v9zzuh2dqzQcOCn+gw1dWRoGG9Y5ogrOnsCxqWumaSTN73YKP51JAsUC1X8d94Io
+	 iQPb7vLwpXNyC2g097293nkSVMDhl7bUuV0so1Kgb+TEObBVY6hVyQQJ0AejAFLJ7XA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794812947;
-	h=DMARC-Filter:Received:Received:Date:From:To:cc:Subject:In-Reply-To:
-	 Message-ID:References:User-Agent:MIME-Version:Content-Type;
-	bh=1mHmG9IJHtIMld4ZeRanDjKIMZUQxx8f0ptnWkrCv+U=;
-	b=0i8RahmNidBKHbWBeQckX6v4j9iCyuvVL/fZe/BEsPc/Xoe2nv+21TKq8Z9boKNYHrYK
-	 TotB7T80Z1D6oFXyUkcSsAhoCh3IC2ARjY/i+UN6pi3dNYn0B76azB/X9E/tIfcdqgcSB
-	 9AKBwpQFVyOBZwo6poe7axdA/vqIytMUUML/LMiEAVafmfqLwAHbYtegV4ihhnpc2LQN1
-	 1aZBowjXeK5BftnnOth8JJo70ZfTNBNImfEeyD/SSoOHs0mtHF983Xw9qw+XNmuv9T2VO
-	 QrXYqlONvEBxO/uVPvcWVve8MQ3C5gxmDeM/Gca8NoKmNnPn6fkxMNR6i7ZoQw4/UxQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794815911;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:Content-Transfer-Encoding:User-Agent:MIME-Version;
+	bh=MJ7d3rNHeUtNAkSjUSjsQ3HRQiSBTnNiLXOBSu1liKw=;
+	b=M6qJTP7+sXoyw5Dqo8az5uu9q0RAhZhZInIaAuo6HmMt49eUHZYmHPUCu9IIchM2gBxs
+	 1TYdzp5QEoS3em8A34liUtt2QMmtXOiHIF2Q0BKvzE8ROA9LI7Je/pEMn3yNES+l82KH+
+	 TDprC5Z3b4YcGUPNXNP6k6/uqzNr84ovKL4hJYLak1Du+cEHJumCHf1biclsvYKxBAddK
+	 gMkUU6ZidXNfjmHS4COFOr92XjjC+hMFsMPGRfsMhylHlNFe2GB/U77MuEqA37tCOhLvH
+	 fMFcXOhQblLz84FwAuGK3s+ECdZaRsqH9AMn9SL1tsIfCwrEAUohLok+RK/pzmNPsaQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=orcam.me.uk;
-	spf=none smtp.mailfrom=orcam.me.uk;
-	arc=none smtp.remote-ip=78.133.224.34
-Received: from angie.orcam.me.uk (angie.orcam.me.uk [78.133.224.34])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 364A6606A332;
-	Mon, 16 Nov 2026 07:09:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 364A6606A332
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=orcam.me.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=orcam.me.uk
-Received: by angie.orcam.me.uk (Postfix, from userid 500)
-	id 39D8A92009C; Mon, 16 Nov 2026 08:09:04 +0100 (CET)
-Received: from localhost (localhost [127.0.0.1])
-	by angie.orcam.me.uk (Postfix) with ESMTP id 376CC92009B;
-	Mon, 16 Nov 2026 07:09:04 +0000 (GMT)
-Date: Mon, 16 Nov 2026 07:09:04 +0000 (GMT)
-From: "Maciej W. Rozycki" <macro@orcam.me.uk>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-cc: David Laight <david.laight.linux@gmail.com>, 
-    Christian Brauner <brauner@kernel.org>, 
-    Geert Uytterhoeven <geert@linux-m68k.org>, linux-fsdevel@vger.kernel.org, 
-    Jann Horn <jannh@google.com>, Josef Bacik <josef@toxicpanda.com>, 
-    Chris Mason <mason@kernel.org>, Jeff Layton <jlayton@kernel.org>, 
-    NeilBrown <neil@brown.name>, Eric Dumazet <edumazet@kernel.org>, 
-    Thomas Gleixner <tglx@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>, 
-    Jonathan Corbet <corbet@lwn.net>, Christoph Hellwig <hch@lst.de>, 
-    Greg Kroah-Hartman <gregkh@suse.de>, 
-    Joel Granados <joel.granados@kernel.org>, Kees Cook <kees@kernel.org>, 
-    Jan Kara <jack@suse.cz>, Jan Kara <jack@suse.com>, 
-    linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org, 
-    linux-acpi@vger.kernel.org, linux-kselftest@vger.kernel.org, 
-    linux-s390@vger.kernel.org, linux-scsi@vger.kernel.org, 
-    linux-um@lists.infradead.org, linux-wireless@vger.kernel.org, 
-    linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, 
-    ntfs3@lists.linux.dev, platform-driver-x86@vger.kernel.org, 
-    coreteam@netfilter.org, kexec@lists.infradead.org, 
-    linux-pci@vger.kernel.org, linux-sound@vger.kernel.org, 
-    netfilter-devel@vger.kernel.org, dri-devel@lists.freedesktop.org, 
-    ibm-acpi-devel@lists.sourceforge.net, jfs-discussion@lists.sourceforge.net, 
-    linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
-    linux-cifs@vger.kernel.org, linux-fbdev@vger.kernel.org, 
-    linux-hwmon@vger.kernel.org, linux-mm@kvack.org, linux-sh@vger.kernel.org, 
-    linux-usb@vger.kernel.org, samba-technical@lists.samba.org, 
-    sparclinux@vger.kernel.org, linux-m68k@lists.linux-m68k.org, 
-    linux-doc@vger.kernel.org, linux-serial@vger.kernel.org, 
-    linux-atm-general@lists.sourceforge.net, Takashi Iwai <tiwai@suse.de>, 
-    linux-input@vger.kernel.org, linux-raid@vger.kernel.org, 
-    linux-ext4@vger.kernel.org, linux-modules@vger.kernel.org, 
-    linux-debuggers@vger.kernel.org, Chuck Lever <cel@kernel.org>
-Subject: Re: [PATCH RESEND v2 14/23] proc: let procfs copy in writes before
- pinning the entry
-In-Reply-To: <CAHk-=whsA3tKcUCBJDj_vmJ11rVGT9rivgnKjGRgMO21CPmCxg@mail.gmail.com>
-Message-ID: <alpine.DEB.2.21.2611160657470.17804@angie.orcam.me.uk>
-References: <20261104-work-procfs-core-v2-14-76ace653a773@kernel.org> <CAMuHMdVfakapgBK6TBhO1iWX8qzvLDk8jzRS=t2MVa5G=MCUeg@mail.gmail.com> <20261107-akteur-gemieden-eckdaten-21304d085e35@brauner> <20261108185953.28054fb3@pumpkin>
- <alpine.DEB.2.21.2611090504170.17804@angie.orcam.me.uk> <20261109214558.0d9d5228@pumpkin> <CAHk-=whsA3tKcUCBJDj_vmJ11rVGT9rivgnKjGRgMO21CPmCxg@mail.gmail.com>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
+	dmarc=none header.from=amutable.com;
+	spf=pass smtp.mailfrom=amutable.com;
+	dkim=pass header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=RZwbcCo0;
+	arc=none smtp.remote-ip=209.85.221.45
+Received: from mail-wr1-f45.google.com (mail-wr1-f45.google.com [209.85.221.45])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99034606A32C
+	for <linux-sh@vger.kernel.org>; Mon, 16 Nov 2026 07:58:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 99034606A32C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=amutable.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amutable.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=RZwbcCo0
+Received: by mail-wr1-f45.google.com with SMTP id ffacd0b85a97d-490d59c3f0aso1157162f8f.1
+        for <linux-sh@vger.kernel.org>; Sun, 15 Nov 2026 23:58:30 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=amutable-com.20260707.gappssmtp.com; s=20260707; t=1794815909; x=1795420709; darn=vger.kernel.org;
+        h=mime-version:user-agent:content-transfer-encoding:content-type
+         :references:in-reply-to:date:cc:to:from:subject:message-id:from:to
+         :cc:subject:date:message-id:reply-to:content-type;
+        bh=MJ7d3rNHeUtNAkSjUSjsQ3HRQiSBTnNiLXOBSu1liKw=;
+        b=RZwbcCo0a4gjuV18T+2Ucnw6jCdsWPKRC5LMIQkGS1u3K0j0E8r+eXQHgwhpFjV9Ns
+         E4eQbhZlMF0oYosxibPqVnuTLzKDIZ56ygSzOKMLI0U3HdyWkdsGQRg4ffVVNprx0lNl
+         3VoShnBY86Rw8ivEwPnvAve0hmIwWUhUt2ZoXiWAG5yImwJfbTo3xhtFN5I/MYPHtn4b
+         enxL6PfWiyWc5q9d46A94egMlP3knZPlBbquGKVnCwHFNT5Fsl4ImTFxxiA9tP+r47o4
+         8TQ7tud9tTBHlzYrfDmF4FaRvuovfFXjlIwl3BFIwbrGT1RvY+zLOzg32pd1vrPaiWJ/
+         fCWg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794815909; x=1795420709;
+        h=mime-version:user-agent:content-transfer-encoding:content-type
+         :references:in-reply-to:date:cc:to:from:subject:message-id:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=MJ7d3rNHeUtNAkSjUSjsQ3HRQiSBTnNiLXOBSu1liKw=;
+        b=JGM1s68Xl8aTBLa8dbkKrpU0rDdWumR2rwBCZpNT0cHE+Wpjo+NNV0kaywpGxa+OW1
+         kUF4/2l5VoaT8nDlFaH84oKMCYh/QEI4/KTvQG+KiVYBhfbrcX6b4tfRnEci8yqhzXom
+         bhX8VffbL14zwhkWr1/+vUdUj8MfXJ81DPug9GFDVz+i+9/L8XLe7vxdRfhxR9IctpND
+         3ljA3v/sES+K6y/E1wcL1jLFJWEaynBv56/YBijDdL9w1NXaDqAO2bx+8IP3+oOOdXtO
+         mEa8d138aPrvGOFjiyhBwtoZk01F3zVeiOLknbiRwf2Btjx6CSRzG9w8FT87tnl2+36D
+         4Npg==
+X-Forwarded-Encrypted: i=1; AL+hErGtbDW9NqgSzZeKHtUk3Hx8i33rZRTREABn8KTwXa3CnbuHIYbNpZkxrXIIesf1EHhiWLXy0o4x2g==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/mBJN31NAX6k/39dHdaFNmT8nOZlzMALeB3+goo5gB8I4AaCCM
+	tRTgqGUPGOSncoOKhojWLr7GW22MR/xacFvALKSfiMrQcDQhx86hLyXbaUYxCddyQk4E
+X-Gm-Gg: AYBFou2mofcxl1i+PAhSD/nB62etejI5Gtpd+MrIuiW5yGXwYEbVqHz5JfO2ZMBO90U
+	FKRU1T57SO8859R0ACMbQcOSJGPjlTBGP4Z3q+0L7a20PT7SKF76GT2v0xOhCG0OCdFPRkw4box
+	kL8s6tPCPXLQVQMZqum4XlexS6uHtuZNO1YBekmYoQDuUPg0WB9gG18gEOaycCMLR243ca1DYBd
+	AV2WYW5yQk80RWSSE7LkyE7VBsS+7R+5UhKjAvOrBrSGYEG9SETMR5Ha1+Cqu2XDObADHRodsND
+	yRjXpLbSJSjhy0T1TPreB+bQnYI4yCx4YWF7e1G/ScjsmRr/rFf7qgDWNQFtW7cjIDSoq2Jz3sM
+	5XS/bAo3WlsS3cMLw8LjTUmenjt5UIuECbLBnSD63UUwK2AUROnoEBProlYN8TeiQqc+chuf/2j
+	HiEvigv597pZ7x4c+6PV/pbydw42mOTLbWbScVaoFsQldOODwtYpgu9SGNUmEjHx/wufnSZHzrk
+	heCHKDgIbrQHKeKUO6eu7cHtQKcQO6MjLIJX46b5vezWpf6Pj1ksr/pjyu/ioGjgrCE/If7AGuk
+	tCAIRzhgj2YjV16NTvdczwL4YYDeyDlvXvRB05Rb6TkBV/8t3QDS+BOJaPSJeYA=
+X-Received: by 2002:a05:6000:3108:b0:48d:f9dd:e3de with SMTP id ffacd0b85a97d-49c7353c415mr20084703f8f.45.1794815908942;
+        Sun, 15 Nov 2026 23:58:28 -0800 (PST)
+Received: from [10.0.0.233] (tmo-086-54.customers.d1-online.com. [80.187.86.54])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49c5ff2be55sm21124748f8f.28.2026.11.15.23.58.27
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 15 Nov 2026 23:58:28 -0800 (PST)
+Message-ID: <19b4c35c016a91302bf6bc3380bfcd3d21dc50c0.camel@amutable.com>
+Subject: Re: [PATCH RFC 1/4] powerpc/crash_dump: check ioremap_cache() in
+ copy_oldmem_page()
+From: Alexander Mikhalitsyn <alex@amutable.com>
+To: Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Breno Leitao
+	 <leitao@debian.org>, Chris Mason <mason@kernel.org>, Thomas Gleixner
+	 <tglx@kernel.org>, x86@kernel.org, kexec@lists.infradead.org, 
+	linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org, 
+	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev, 
+	linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, David Hildenbrand <david@kernel.org>, 
+	stable@vger.kernel.org
+Date: Mon, 16 Nov 2026 08:58:26 +0100
+In-Reply-To: <20261112-work-procfs-oldmem-v1-1-ecdcafd99265@kernel.org>
+References: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org>
+	 <20261112-work-procfs-oldmem-v1-1-ecdcafd99265@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.2-0+deb13u1 
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -81,21 +108,44 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
 
-On Mon, 9 Nov 2026, Linus Torvalds wrote:
+On Thu, 2026-11-12 at 17:37 +0100, Christian Brauner wrote:
+> copy_oldmem_page() maps a page of the old kernel that isn't in the
+> linear mapping with ioremap_cache() and copies from it without
+> checking
+> whether the mapping worked. If it didn't, the copy reads from an
+> offset
+> into the NULL page. That oopses unless the copy happens to be a user
+> copy, whose exception table entries turn the fault into a short copy.
+>=20
+> Return -ENOMEM like the other architectures do. read_from_oldmem()
+> turns that into -EFAULT like any other short copy.
+>=20
+> Reported-by: Chris Mason <mason@kernel.org>
+> Fixes: 54c32021eb6f ("[PATCH] powerpc: Add arch-dependent
+> copy_oldmem_page")
+> Cc: stable@vger.kernel.org
+> Reviewed-by: Breno Leitao <leitao@debian.org>
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 
-> > Just that the cast would have to be:
-> >         u8 *foo = (u8 *)bar;
-> > where 'bar' is 'char *', and I don't think you need a cast there when
-> > char is unsigned.
-> 
-> .. and just to clarify: 'char' is always unsigned in the kernel on all
-> architectures since commit 3bc753c06dd0 ("kbuild: treat char as always
-> unsigned") back four years ago...
+Reviewed-by: Alexander Mikhalitsyn <alex@amutable.com>
 
- Thanks, yes, that's the piece of the context I was missing.  I've since
-actually come across this commit while investigating which Linux ports 
-have plain `char' signed in the psABI (MIPS for sure).
-
-  Maciej
+> ---
+> =C2=A0arch/powerpc/kernel/crash_dump.c | 2 ++
+> =C2=A01 file changed, 2 insertions(+)
+>=20
+> diff --git a/arch/powerpc/kernel/crash_dump.c
+> b/arch/powerpc/kernel/crash_dump.c
+> index 103b6605dd68f..1543917bd3e1d 100644
+> --- a/arch/powerpc/kernel/crash_dump.c
+> +++ b/arch/powerpc/kernel/crash_dump.c
+> @@ -86,6 +86,8 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
+> unsigned long pfn,
+> =C2=A0		csize =3D copy_to_iter(vaddr + offset, csize, iter);
+> =C2=A0	} else {
+> =C2=A0		vaddr =3D ioremap_cache(paddr, PAGE_SIZE);
+> +		if (!vaddr)
+> +			return -ENOMEM;
+> =C2=A0		csize =3D copy_to_iter(vaddr + offset, csize, iter);
+> =C2=A0		iounmap(vaddr);
+> =C2=A0	}
