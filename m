@@ -1,65 +1,77 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=178.238.236.174
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=78.133.224.34
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794781315;
-	b=fYr9GWWXoZGJpPJOHzNAca4zngiviyAw2GTkJVFGTso5yhaONeOoja+DcNzxqXgGzv3t
-	 phkhh32cSGLw50xsTYPILq9eTv+/HTEHduP1MtFnxDES7Jzzbg1t0Zxee01oFdRKjR18z
-	 K+2rehd4MT+Du58L0a7kRA+cdU1AJEOr3MwdAshm5sBaFnGqI9piVMaGIevKjQEXL+pIw
-	 Z6Ge1lJnLmBgdpZjzMgAfMlpX2fPamZbnFEiFySxGAzG2hp8i6VOc89gpgqOVeUjCNKDA
-	 8sf337I6BZzjnfDpXHI7nm6tQQ3XOZNlWMANjIDjR9veS1GZJnMejIf8PKkcdaHDVag==
+	t=1794812947;
+	b=ePYLK8Y++vV92rE1O+zSZCs4lo87Otb4FfAJWiDs70cEphLaB2Y96yBMFN3hxfG6Wu7S
+	 ID1wO3/s7IRKmfszS6ass9rVS/NkT+0IEKNclHH6Na5A1XglLvVX89hw6EX3OTizXWw11
+	 XaY2Vq2klq+DvtRoTGG5+ExU/nDQ1RsbCFoZ8eimZrSHXVAtAp/S1UOfts+Fre8by4a0k
+	 75Ao4/kAVxy2XfqfbsSPh5jyAdGfMPBkfJKDBLVoPGrY+SF+4T5MKQQKPRboRM10D4ihZ
+	 XGbgoYXU6qr45whCoELyMp4Xzt4TGUiDdtmlGclm984F6gQjikei6KsKoZ/5SsaMAvg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794781315;
-	h=DMARC-Filter:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 In-Reply-To:References:X-Mailer:MIME-Version:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=okQNacVGW0GUvXWHX1z1j8nSeLN8GKo8PtYO0Ji0Mc0=;
-	b=ee4B//As/VyfZXGSbpFOv5FEUHQ6FwryVD/18lSXu27X0Ieo0oAJpt1GP+1dcg5sBSXE
-	 3bMK0fMzbpv5iJK2gvU0XP+TTObvbMnjHDPSYhxsfaDPwOBZl6oz/4wt7cF5iBPeiVKYI
-	 HHTVmCVfMeS07NHSd6o9MhYsSCojXeAnde4iPPq5qFx89IGn6hMBqvesek8RNx3k2SFr7
-	 i3YR1OPbL6JCmm7IqOqDPrgy4c465LLuGM5CMDqUKb92WQOsfNbybWc8IgRpNn8ytMgc6
-	 cYKfJ6JYn/K3AvoghmE4WB+ChVO3zEWJPBwGahsI+ZygYbjm+Hfpu3go7YDNBr2rMgQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794812947;
+	h=DMARC-Filter:Received:Received:Date:From:To:cc:Subject:In-Reply-To:
+	 Message-ID:References:User-Agent:MIME-Version:Content-Type;
+	bh=1mHmG9IJHtIMld4ZeRanDjKIMZUQxx8f0ptnWkrCv+U=;
+	b=0i8RahmNidBKHbWBeQckX6v4j9iCyuvVL/fZe/BEsPc/Xoe2nv+21TKq8Z9boKNYHrYK
+	 TotB7T80Z1D6oFXyUkcSsAhoCh3IC2ARjY/i+UN6pi3dNYn0B76azB/X9E/tIfcdqgcSB
+	 9AKBwpQFVyOBZwo6poe7axdA/vqIytMUUML/LMiEAVafmfqLwAHbYtegV4ihhnpc2LQN1
+	 1aZBowjXeK5BftnnOth8JJo70ZfTNBNImfEeyD/SSoOHs0mtHF983Xw9qw+XNmuv9T2VO
+	 QrXYqlONvEBxO/uVPvcWVve8MQ3C5gxmDeM/Gca8NoKmNnPn6fkxMNR6i7ZoQw4/UxQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=kemnade.info;
-	spf=pass smtp.mailfrom=kemnade.info;
-	dkim=pass header.d=kemnade.info header.i=@kemnade.info header.a=rsa-sha256 header.s=20220719 header.b=5jGnU8sJ;
-	arc=none smtp.remote-ip=178.238.236.174
-Received: from mail.andi.de1.cc (mail.andi.de1.cc [178.238.236.174])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A615606A323;
-	Sun, 15 Nov 2026 22:21:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2A615606A323
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=kemnade.info
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kemnade.info
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kemnade.info header.i=@kemnade.info header.a=rsa-sha256 header.s=20220719 header.b=5jGnU8sJ
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=kemnade.info; s=20220719; h=References:In-Reply-To:Subject:Cc:To:From:
-	Reply-To:Content-ID:Content-Description;
-	bh=okQNacVGW0GUvXWHX1z1j8nSeLN8GKo8PtYO0Ji0Mc0=; t=1794781314; x=1795990914; 
-	b=5jGnU8sJMiBDHvn9IaaJFJb1bM9aE59qJ4L/p1p1zDXS7E9U5XWYgX042oThWu84m9QfX7FBDC0
-	pT7rKvIVFIE5Fr6TuY/+DDGooh5Ujmzg39DuI7cyFoQxOwG4rYH3JPTfYSBpDgRvOuukywueXidrW
-	kIsFCwSJTL0xcZd88zveOpehs/E/Bozsr4LnemW0gSiLl29H++oqFQKt2RDXHTElaqXRX9wbv1CRG
-	LJXHtN1a5BPSHZ37UmroUQnsb7d7PpE8FugIIXNOlfIXu+/MThKA/aOx+pVWbQS/Y4hJFbC3ca8NZ
-	1vF2kT+66bZUTCm34UXh1XP9URSfPcWfnFxQ==;
-Date: Sun, 15 Nov 2026 23:21:34 +0100
-From: Andreas Kemnade <andreas@kemnade.info>
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Svyatoslav Ryhel <clamor95@gmail.com>, "H . Nikolaus Schaller"
- <hns@goldelico.com>, John Paul Adrian Glaubitz
- <glaubitz@physik.fu-berlin.de>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andy
- Shevchenko <andy.shevchenko@gmail.com>, Johannes Kirchmair
- <johannes.kirchmair@skidata.com>, Yuki Horii <yuuki198708@gmail.com>, Geert
- Uytterhoeven <geert+renesas@glider.be>, Kuninori Morimoto
- <kuninori.morimoto.gx@renesas.com>, linux-input@vger.kernel.org,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 0/5] Input: tsc2007 - drop platform data support and
- cleanups
-Message-ID: <20261115232117.463f601a@kemnade.info>
-In-Reply-To: <20261112065037.1800467-1-dmitry.torokhov@gmail.com>
-References: <20261112065037.1800467-1-dmitry.torokhov@gmail.com>
-X-Mailer: Claws Mail 4.3.1 (GTK 3.24.49; aarch64-unknown-linux-gnu)
+	dmarc=none header.from=orcam.me.uk;
+	spf=none smtp.mailfrom=orcam.me.uk;
+	arc=none smtp.remote-ip=78.133.224.34
+Received: from angie.orcam.me.uk (angie.orcam.me.uk [78.133.224.34])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 364A6606A332;
+	Mon, 16 Nov 2026 07:09:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 364A6606A332
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=orcam.me.uk
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=orcam.me.uk
+Received: by angie.orcam.me.uk (Postfix, from userid 500)
+	id 39D8A92009C; Mon, 16 Nov 2026 08:09:04 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+	by angie.orcam.me.uk (Postfix) with ESMTP id 376CC92009B;
+	Mon, 16 Nov 2026 07:09:04 +0000 (GMT)
+Date: Mon, 16 Nov 2026 07:09:04 +0000 (GMT)
+From: "Maciej W. Rozycki" <macro@orcam.me.uk>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+cc: David Laight <david.laight.linux@gmail.com>, 
+    Christian Brauner <brauner@kernel.org>, 
+    Geert Uytterhoeven <geert@linux-m68k.org>, linux-fsdevel@vger.kernel.org, 
+    Jann Horn <jannh@google.com>, Josef Bacik <josef@toxicpanda.com>, 
+    Chris Mason <mason@kernel.org>, Jeff Layton <jlayton@kernel.org>, 
+    NeilBrown <neil@brown.name>, Eric Dumazet <edumazet@kernel.org>, 
+    Thomas Gleixner <tglx@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>, 
+    Jonathan Corbet <corbet@lwn.net>, Christoph Hellwig <hch@lst.de>, 
+    Greg Kroah-Hartman <gregkh@suse.de>, 
+    Joel Granados <joel.granados@kernel.org>, Kees Cook <kees@kernel.org>, 
+    Jan Kara <jack@suse.cz>, Jan Kara <jack@suse.com>, 
+    linux-kernel@vger.kernel.org, linux-nfs@vger.kernel.org, 
+    linux-acpi@vger.kernel.org, linux-kselftest@vger.kernel.org, 
+    linux-s390@vger.kernel.org, linux-scsi@vger.kernel.org, 
+    linux-um@lists.infradead.org, linux-wireless@vger.kernel.org, 
+    linuxppc-dev@lists.ozlabs.org, netdev@vger.kernel.org, 
+    ntfs3@lists.linux.dev, platform-driver-x86@vger.kernel.org, 
+    coreteam@netfilter.org, kexec@lists.infradead.org, 
+    linux-pci@vger.kernel.org, linux-sound@vger.kernel.org, 
+    netfilter-devel@vger.kernel.org, dri-devel@lists.freedesktop.org, 
+    ibm-acpi-devel@lists.sourceforge.net, jfs-discussion@lists.sourceforge.net, 
+    linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
+    linux-cifs@vger.kernel.org, linux-fbdev@vger.kernel.org, 
+    linux-hwmon@vger.kernel.org, linux-mm@kvack.org, linux-sh@vger.kernel.org, 
+    linux-usb@vger.kernel.org, samba-technical@lists.samba.org, 
+    sparclinux@vger.kernel.org, linux-m68k@lists.linux-m68k.org, 
+    linux-doc@vger.kernel.org, linux-serial@vger.kernel.org, 
+    linux-atm-general@lists.sourceforge.net, Takashi Iwai <tiwai@suse.de>, 
+    linux-input@vger.kernel.org, linux-raid@vger.kernel.org, 
+    linux-ext4@vger.kernel.org, linux-modules@vger.kernel.org, 
+    linux-debuggers@vger.kernel.org, Chuck Lever <cel@kernel.org>
+Subject: Re: [PATCH RESEND v2 14/23] proc: let procfs copy in writes before
+ pinning the entry
+In-Reply-To: <CAHk-=whsA3tKcUCBJDj_vmJ11rVGT9rivgnKjGRgMO21CPmCxg@mail.gmail.com>
+Message-ID: <alpine.DEB.2.21.2611160657470.17804@angie.orcam.me.uk>
+References: <20261104-work-procfs-core-v2-14-76ace653a773@kernel.org> <CAMuHMdVfakapgBK6TBhO1iWX8qzvLDk8jzRS=t2MVa5G=MCUeg@mail.gmail.com> <20261107-akteur-gemieden-eckdaten-21304d085e35@brauner> <20261108185953.28054fb3@pumpkin>
+ <alpine.DEB.2.21.2611090504170.17804@angie.orcam.me.uk> <20261109214558.0d9d5228@pumpkin> <CAHk-=whsA3tKcUCBJDj_vmJ11rVGT9rivgnKjGRgMO21CPmCxg@mail.gmail.com>
+User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -70,33 +82,20 @@ List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
 
-On Wed, 11 Nov 2026 22:50:32 -0800
-Dmitry Torokhov <dmitry.torokhov@gmail.com> wrote:
+On Mon, 9 Nov 2026, Linus Torvalds wrote:
 
-> Now that all in-tree boards using tsc2007 (including SuperH ecovec24)
-> have been converted to generic device properties, this series drops
-> legacy platform data support and its header file, removes redundant
-> memory barriers, fixes minor coding style issues, skips registering a
-> non-functional input device when no interrupt is wired (when the chip is
-> used purely as an IIO ADC), and uses IRQF_NO_AUTOEN when requesting the
-> threaded interrupt.
+> > Just that the cast would have to be:
+> >         u8 *foo = (u8 *)bar;
+> > where 'bar' is 'char *', and I don't think you need a cast there when
+> > char is unsigned.
 > 
-> Thanks.
-> 
-> Dmitry Torokhov (5):
->   Input: tsc2007 - drop platform data support
->   Input: tsc2007 - remove unneeded memory barriers
->   Input: tsc2007 - fix minor coding style issues
->   Input: tsc2007 - do not register input device without IRQ
->   Input: tsc2007 - use IRQF_NO_AUTOEN when requesting interrupt
-> 
->  arch/sh/boards/mach-ecovec24/setup.c     |   1 -
->  drivers/input/touchscreen/tsc2007.h      |   5 +-
->  drivers/input/touchscreen/tsc2007_core.c | 183 ++++++++---------------
->  include/linux/platform_data/tsc2007.h    |  23 ---
->  4 files changed, 60 insertions(+), 152 deletions(-)
->  delete mode 100644 include/linux/platform_data/tsc2007.h
-> 
-Tested-by: Andreas Kemnade <andreas@kemnade.info> # GTA04
+> .. and just to clarify: 'char' is always unsigned in the kernel on all
+> architectures since commit 3bc753c06dd0 ("kbuild: treat char as always
+> unsigned") back four years ago...
+
+ Thanks, yes, that's the piece of the context I was missing.  I've since
+actually come across this commit while investigating which Linux ports 
+have plain `char' signed in the psABI (MIPS for sure).
+
+  Maciej
