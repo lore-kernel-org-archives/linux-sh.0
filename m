@@ -1,86 +1,86 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.45
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.45
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794815911;
-	b=5pcezJs8WxC0pMbxy+AFG7DWygvE2lvzckAQdXr95WN+UZoYP08UpNazw8xAi7CAJ3BH
-	 F/us3U35INGt+8QnUwEV4s828x1VJLnjyQlMGQHS9Wql3gmWQekoteG5OB3bAqE3XExD8
-	 n3Z/VaooZ8CPGGjbJCNOpZYreqWsmcjfJKFv0Zeckqa/SUtFaxk3Nhngqmq9Szk7yX8f6
-	 Rd6Q9v9zzuh2dqzQcOCn+gw1dWRoGG9Y5ogrOnsCxqWumaSTN73YKP51JAsUC1X8d94Io
-	 iQPb7vLwpXNyC2g097293nkSVMDhl7bUuV0so1Kgb+TEObBVY6hVyQQJ0AejAFLJ7XA==
+	t=1794815930;
+	b=K2oGoZebtk9SGSJEYUduO8hkWT0oLyNhRXNVyAFI3dtlX1PE2VMzcySOLVyhxkLC+WBL
+	 5Mew/5ONDObmW8z6GRl5XUDYddmn0UGQLPBCatwRLPydqznzy2pXIYFX36yBMNIXevB3z
+	 9YQlZEYw3eCAuS/C75FFwCesPr3P6UATNxA2tF8uZ+rQbVjJgKKj/iYHYcSQAoRr2QniM
+	 t5zQ46X4bAo9jl+ecIhidB+ZRFAwaF3ba7+R3KeLfM7Ymz1fiu4dtxzjAlba/Xv87QzmS
+	 75qrgeGU5BnII5o/BF0MfpzHdGVhvIyX70Z2wbrU2+gIUntgX/xokWbfvjnAuJ2cCAw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794815911;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794815930;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
 	 Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
 	 Content-Type:Content-Transfer-Encoding:User-Agent:MIME-Version;
-	bh=MJ7d3rNHeUtNAkSjUSjsQ3HRQiSBTnNiLXOBSu1liKw=;
-	b=M6qJTP7+sXoyw5Dqo8az5uu9q0RAhZhZInIaAuo6HmMt49eUHZYmHPUCu9IIchM2gBxs
-	 1TYdzp5QEoS3em8A34liUtt2QMmtXOiHIF2Q0BKvzE8ROA9LI7Je/pEMn3yNES+l82KH+
-	 TDprC5Z3b4YcGUPNXNP6k6/uqzNr84ovKL4hJYLak1Du+cEHJumCHf1biclsvYKxBAddK
-	 gMkUU6ZidXNfjmHS4COFOr92XjjC+hMFsMPGRfsMhylHlNFe2GB/U77MuEqA37tCOhLvH
-	 fMFcXOhQblLz84FwAuGK3s+ECdZaRsqH9AMn9SL1tsIfCwrEAUohLok+RK/pzmNPsaQ==
+	bh=RUWz3ZPMUxA6+r9kTNI2D7JNnedpd8n5diTIAYYVkok=;
+	b=f9hzkbvA11Jvao3M4+WC8wUtxoYSRDiziBqL7uC8Cew1xnVFgvq31BBcknEWoBxmvIV+
+	 JILnWuHT32IrKV+liKcHx3y88DpZGhGAkJcCKmUUM2+fsefpZEVQOGebIYXFJG6n3j3dW
+	 +131QyoEkZFmTBciUQqmNz/3ngl1lEc6/UY2TUAaDI3fgPY5a9FFJvBOiBEA1Onrr6KUa
+	 iy7FAaWwBbQ22T+NEqx02yUcx4+OiA5uuWGLWDeQKdOyxaRJPtOF5yJJiiFtrKlWCnPyk
+	 IjdXg16SVEHjNC89i3Xzb2SzwtJNsaRdIUmSwHSDHj+up2ta0R+L5TgsbpkHpOpNoVA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=none header.from=amutable.com;
 	spf=pass smtp.mailfrom=amutable.com;
-	dkim=pass header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=RZwbcCo0;
-	arc=none smtp.remote-ip=209.85.221.45
-Received: from mail-wr1-f45.google.com (mail-wr1-f45.google.com [209.85.221.45])
+	dkim=pass header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b="m/LM6ars";
+	arc=none smtp.remote-ip=209.85.128.45
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99034606A32C
-	for <linux-sh@vger.kernel.org>; Mon, 16 Nov 2026 07:58:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 99034606A32C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF389606A32A
+	for <linux-sh@vger.kernel.org>; Mon, 16 Nov 2026 07:58:49 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org DF389606A32A
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=amutable.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amutable.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=RZwbcCo0
-Received: by mail-wr1-f45.google.com with SMTP id ffacd0b85a97d-490d59c3f0aso1157162f8f.1
-        for <linux-sh@vger.kernel.org>; Sun, 15 Nov 2026 23:58:30 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=m/LM6ars
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-49d05d51553so16457965e9.2
+        for <linux-sh@vger.kernel.org>; Sun, 15 Nov 2026 23:58:49 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=amutable-com.20260707.gappssmtp.com; s=20260707; t=1794815909; x=1795420709; darn=vger.kernel.org;
+        d=amutable-com.20260707.gappssmtp.com; s=20260707; t=1794815928; x=1795420728; darn=vger.kernel.org;
         h=mime-version:user-agent:content-transfer-encoding:content-type
          :references:in-reply-to:date:cc:to:from:subject:message-id:from:to
          :cc:subject:date:message-id:reply-to:content-type;
-        bh=MJ7d3rNHeUtNAkSjUSjsQ3HRQiSBTnNiLXOBSu1liKw=;
-        b=RZwbcCo0a4gjuV18T+2Ucnw6jCdsWPKRC5LMIQkGS1u3K0j0E8r+eXQHgwhpFjV9Ns
-         E4eQbhZlMF0oYosxibPqVnuTLzKDIZ56ygSzOKMLI0U3HdyWkdsGQRg4ffVVNprx0lNl
-         3VoShnBY86Rw8ivEwPnvAve0hmIwWUhUt2ZoXiWAG5yImwJfbTo3xhtFN5I/MYPHtn4b
-         enxL6PfWiyWc5q9d46A94egMlP3knZPlBbquGKVnCwHFNT5Fsl4ImTFxxiA9tP+r47o4
-         8TQ7tud9tTBHlzYrfDmF4FaRvuovfFXjlIwl3BFIwbrGT1RvY+zLOzg32pd1vrPaiWJ/
-         fCWg==
+        bh=RUWz3ZPMUxA6+r9kTNI2D7JNnedpd8n5diTIAYYVkok=;
+        b=m/LM6ars18o8GDKRmm846P52W5VTEeLVl3zm4E6+Ukoew1PNUWaySYAFTHbhwbIHY6
+         8zyWRJ3E+soSg5cVCg675JZQUuiKrI7PnShT86jC05Ju/0/IRheNzvGNmD+npQLbnkn0
+         fy8Il1K6Vm+A5YZwCa+xzQ2+KQuOMrOvsBIKg/ExEvAa5Y/VxNmGrq1rCHU6BtXLMwTC
+         Wsvn5VDRjOEmowS+ZSTEWPRIhLKHrJyNPuqywDI23KP2brkj28XF72ButTpsWAH9l4pR
+         IypEgitHhE/vdzZkz5m5Ua6ccTEUz62Pa2MJahrsFOhrSRlAMMkSQY6/3R5U6hM1aN5V
+         0hRQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794815909; x=1795420709;
+        d=1e100.net; s=20260707; t=1794815928; x=1795420728;
         h=mime-version:user-agent:content-transfer-encoding:content-type
          :references:in-reply-to:date:cc:to:from:subject:message-id:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=MJ7d3rNHeUtNAkSjUSjsQ3HRQiSBTnNiLXOBSu1liKw=;
-        b=JGM1s68Xl8aTBLa8dbkKrpU0rDdWumR2rwBCZpNT0cHE+Wpjo+NNV0kaywpGxa+OW1
-         kUF4/2l5VoaT8nDlFaH84oKMCYh/QEI4/KTvQG+KiVYBhfbrcX6b4tfRnEci8yqhzXom
-         bhX8VffbL14zwhkWr1/+vUdUj8MfXJ81DPug9GFDVz+i+9/L8XLe7vxdRfhxR9IctpND
-         3ljA3v/sES+K6y/E1wcL1jLFJWEaynBv56/YBijDdL9w1NXaDqAO2bx+8IP3+oOOdXtO
-         mEa8d138aPrvGOFjiyhBwtoZk01F3zVeiOLknbiRwf2Btjx6CSRzG9w8FT87tnl2+36D
-         4Npg==
-X-Forwarded-Encrypted: i=1; AL+hErGtbDW9NqgSzZeKHtUk3Hx8i33rZRTREABn8KTwXa3CnbuHIYbNpZkxrXIIesf1EHhiWLXy0o4x2g==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/mBJN31NAX6k/39dHdaFNmT8nOZlzMALeB3+goo5gB8I4AaCCM
-	tRTgqGUPGOSncoOKhojWLr7GW22MR/xacFvALKSfiMrQcDQhx86hLyXbaUYxCddyQk4E
-X-Gm-Gg: AYBFou2mofcxl1i+PAhSD/nB62etejI5Gtpd+MrIuiW5yGXwYEbVqHz5JfO2ZMBO90U
-	FKRU1T57SO8859R0ACMbQcOSJGPjlTBGP4Z3q+0L7a20PT7SKF76GT2v0xOhCG0OCdFPRkw4box
-	kL8s6tPCPXLQVQMZqum4XlexS6uHtuZNO1YBekmYoQDuUPg0WB9gG18gEOaycCMLR243ca1DYBd
-	AV2WYW5yQk80RWSSE7LkyE7VBsS+7R+5UhKjAvOrBrSGYEG9SETMR5Ha1+Cqu2XDObADHRodsND
-	yRjXpLbSJSjhy0T1TPreB+bQnYI4yCx4YWF7e1G/ScjsmRr/rFf7qgDWNQFtW7cjIDSoq2Jz3sM
-	5XS/bAo3WlsS3cMLw8LjTUmenjt5UIuECbLBnSD63UUwK2AUROnoEBProlYN8TeiQqc+chuf/2j
-	HiEvigv597pZ7x4c+6PV/pbydw42mOTLbWbScVaoFsQldOODwtYpgu9SGNUmEjHx/wufnSZHzrk
-	heCHKDgIbrQHKeKUO6eu7cHtQKcQO6MjLIJX46b5vezWpf6Pj1ksr/pjyu/ioGjgrCE/If7AGuk
-	tCAIRzhgj2YjV16NTvdczwL4YYDeyDlvXvRB05Rb6TkBV/8t3QDS+BOJaPSJeYA=
-X-Received: by 2002:a05:6000:3108:b0:48d:f9dd:e3de with SMTP id ffacd0b85a97d-49c7353c415mr20084703f8f.45.1794815908942;
-        Sun, 15 Nov 2026 23:58:28 -0800 (PST)
+        bh=RUWz3ZPMUxA6+r9kTNI2D7JNnedpd8n5diTIAYYVkok=;
+        b=HIRHpcvoojUJDoBgGm0epI7T1Y1DFpMDvGv1/U/16clEal08abq5Hex2YlzXUtapn4
+         PwkOeCIB1k412GPZHWvARmvjxOqGtTBYUktroC1nF+t6YmIe5hiJrNzc9KyQxKMdpU6n
+         VIUa2YnyV7HTUG9w5w4420Ch9GGtw5FYTr6lHOQqVtznuTp0J/yWpV/JPeWWXWHpBTSX
+         tB5kCVbtAy7RCzdUW+BZgVAGaTRJ5UdKSaiAHeW4L5OZhgvthCLO9ceC/3bxlUQPnmzc
+         06TEgC7+/8wBDjqxtSDWNhLC86vgZmLSYkG+j3cAzLNOlHnzJEliCnNgb9Yvl2WcIf2F
+         rSCQ==
+X-Forwarded-Encrypted: i=1; AL+hErGOyL5XxoONfC+Molttqak4WZPm5EbiozZ+3pJ0kgedZPa6yQrgo1Ygl3vTtm/DtiNOH8i0MWUB5Q==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+OtnnPRQiTfj0eQ5wofBLrMO9ORvgBRDKn6ycCgMS6MlgywR//
+	BxN5VOWVRfVfhMccmvChUhFOi6DfbMOIhztu3CcCg8TJE73gH2fpKTfUNazyvfCuTimX
+X-Gm-Gg: AYBFou2zLymwaFGGoHF3ExCT4CBE5BNeauSNbiejnaM4ReRR+1YaRBgVcQ7cyxcdItd
+	Ydvi/vSq9GVhwjUDyxTRifDHTBbeS1ME4lp2oOBrY/sacGs/kvochdvfpYzqWnAEjXr0TNABl3n
+	q3Mx6pOa3Ra3uoosDtbGEaGGu27YzwhLFu6YsHnGntvxb1dcpb0VOC2Sw4Ujd4sJ1CWN/ZOMgQD
+	evJXG3R12qno8DY4vsxmy8WVUqHduF2kOeprOlPdqinAu/M5+4cFXzaGuKfJyzjP6xBeM1ryU5O
+	B2euDSJzkuzRWg1vMylqBMBfygggVPYM/+eg9N/+VHpjj9G5oPLP8O8zl3SxaMsCgk9WArPGyog
+	5gJUwdPdJA8L1vLimGBSidGI1Euqop/fdphTH9SO1fdUHhgXvmK+AE9Bj6a7FMfcxmPWGnyF2sP
+	PAnWEyTuL1QvbfuYPos7k/0w0h0zN0xtUlUex8XMic18UamtGFrc7HOJ4pyLrCZgDQhYA4EgTT3
+	kSX79pavbIbnkHJ7xvqsotGWIQXNKRjiIqELxgkwKsdV7fLgi8U2+c8Hwf34rl38UzFx7v8oV67
+	xFB0diVNClr5essyvgXh3WkjVqNNOp0jpJLqL/BopHHaH8g6h+1bal++DAbvT0k=
+X-Received: by 2002:a05:600c:3b07:b0:4bb:5de1:e912 with SMTP id 5b1f17b1804b1-4bb5de1f216mr172834365e9.1.1794815928232;
+        Sun, 15 Nov 2026 23:58:48 -0800 (PST)
 Received: from [10.0.0.233] (tmo-086-54.customers.d1-online.com. [80.187.86.54])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49c5ff2be55sm21124748f8f.28.2026.11.15.23.58.27
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4bb4e252f7fsm375768305e9.2.2026.11.15.23.58.46
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 15 Nov 2026 23:58:28 -0800 (PST)
-Message-ID: <19b4c35c016a91302bf6bc3380bfcd3d21dc50c0.camel@amutable.com>
-Subject: Re: [PATCH RFC 1/4] powerpc/crash_dump: check ioremap_cache() in
+        Sun, 15 Nov 2026 23:58:47 -0800 (PST)
+Message-ID: <aa32167cd3865049bfe0281b8b651c47f5e1c05d.camel@amutable.com>
+Subject: Re: [PATCH RFC 2/4] sh/crash_dump: check ioremap() in
  copy_oldmem_page()
 From: Alexander Mikhalitsyn <alex@amutable.com>
 To: Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org
@@ -92,10 +92,10 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>, Breno Leitao
 	linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, 
 	linux-kernel@vger.kernel.org, David Hildenbrand <david@kernel.org>, 
 	stable@vger.kernel.org
-Date: Mon, 16 Nov 2026 08:58:26 +0100
-In-Reply-To: <20261112-work-procfs-oldmem-v1-1-ecdcafd99265@kernel.org>
+Date: Mon, 16 Nov 2026 08:58:46 +0100
+In-Reply-To: <20261112-work-procfs-oldmem-v1-2-ecdcafd99265@kernel.org>
 References: <20261112-work-procfs-oldmem-v1-0-ecdcafd99265@kernel.org>
-	 <20261112-work-procfs-oldmem-v1-1-ecdcafd99265@kernel.org>
+	 <20261112-work-procfs-oldmem-v1-2-ecdcafd99265@kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.56.2-0+deb13u1 
@@ -110,42 +110,37 @@ Precedence: list
 MIME-Version: 1.0
 
 On Thu, 2026-11-12 at 17:37 +0100, Christian Brauner wrote:
-> copy_oldmem_page() maps a page of the old kernel that isn't in the
-> linear mapping with ioremap_cache() and copies from it without
-> checking
-> whether the mapping worked. If it didn't, the copy reads from an
-> offset
-> into the NULL page. That oopses unless the copy happens to be a user
-> copy, whose exception table entries turn the fault into a short copy.
+> copy_oldmem_page() maps a page of the old kernel with ioremap() and
+> copies from it without checking whether the mapping worked. If it
+> didn't, the copy reads from an offset into the NULL page.
 >=20
 > Return -ENOMEM like the other architectures do. read_from_oldmem()
-> turns that into -EFAULT like any other short copy.
+> turns
+> that into -EFAULT like any other short copy.
 >=20
-> Reported-by: Chris Mason <mason@kernel.org>
-> Fixes: 54c32021eb6f ("[PATCH] powerpc: Add arch-dependent
-> copy_oldmem_page")
+> Fixes: 4d5ade5b29c6 ("sh: kdump support.")
 > Cc: stable@vger.kernel.org
-> Reviewed-by: Breno Leitao <leitao@debian.org>
 > Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 
 Reviewed-by: Alexander Mikhalitsyn <alex@amutable.com>
 
 > ---
-> =C2=A0arch/powerpc/kernel/crash_dump.c | 2 ++
-> =C2=A01 file changed, 2 insertions(+)
+> =C2=A0arch/sh/kernel/crash_dump.c | 3 +++
+> =C2=A01 file changed, 3 insertions(+)
 >=20
-> diff --git a/arch/powerpc/kernel/crash_dump.c
-> b/arch/powerpc/kernel/crash_dump.c
-> index 103b6605dd68f..1543917bd3e1d 100644
-> --- a/arch/powerpc/kernel/crash_dump.c
-> +++ b/arch/powerpc/kernel/crash_dump.c
-> @@ -86,6 +86,8 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
+> diff --git a/arch/sh/kernel/crash_dump.c
+> b/arch/sh/kernel/crash_dump.c
+> index 19ce6a950aaca..85c0e58f1a59f 100644
+> --- a/arch/sh/kernel/crash_dump.c
+> +++ b/arch/sh/kernel/crash_dump.c
+> @@ -20,6 +20,9 @@ ssize_t copy_oldmem_page(struct iov_iter *iter,
 > unsigned long pfn,
-> =C2=A0		csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> =C2=A0	} else {
-> =C2=A0		vaddr =3D ioremap_cache(paddr, PAGE_SIZE);
-> +		if (!vaddr)
-> +			return -ENOMEM;
-> =C2=A0		csize =3D copy_to_iter(vaddr + offset, csize, iter);
-> =C2=A0		iounmap(vaddr);
-> =C2=A0	}
+> =C2=A0		return 0;
+> =C2=A0
+> =C2=A0	vaddr =3D ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
+> +	if (!vaddr)
+> +		return -ENOMEM;
+> +
+> =C2=A0	csize =3D copy_to_iter(vaddr + offset, csize, iter);
+> =C2=A0	iounmap(vaddr);
+> =C2=A0
