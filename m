@@ -1,42 +1,42 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795042403;
-	b=g4jmUc/cobR021sAhYrjkANykIzUvLzNSnEVYUN3Rpp+DPHc9R8Sbagd4GuWTnWS9JoX
-	 tMfo5CoJeE/ziCmKVvSrBpMEqKdqaRaD+IlBfXK10tgIMeL7RnWJ2cgaa6NwXy3QT6YjB
-	 lc3K5GmMCnEgS0tXwAuZgEZk9GU8mQCvswyDbK8po8fs5S//BgYTxTrcnDLQU3KrkVLrT
-	 Zy+yyo5XtfZTR4I84/vVn3ZCMaIzgMOp6N8kfGIKqFRscEe8Z6JLlkFyqcucG2LZCrQ0u
-	 HFp4aSzUqqzB3oQRFMw3F/eCJK29ZMjJdfCiM7NrTTx4AzWbDbkfPm9MJ9Wm6Abqrzw==
+	t=1795050356;
+	b=PLmMskcE9aktvqsAPCKBSbAPeLMXzF8lz7Nx1KBDTQN2MXXHE9fa5QRWz4s6M90lhCpD
+	 +WHUNsyCjYk9jYppiv9uv+xZ7F+QKtEO2yi96mNNLe4VBOZpgGrcSJ1Sw4YXKfoeJULri
+	 TtiHbuLDScLjm985sEtaHz9Mpekc7bjHV4WmTiF3wPFWklLk0aVwrSWNvh421w60pmtM5
+	 ofGF7gcRBhGpAlvZOjMmb5zapGz2GL6cGRb1yOq3fJf0yAJcUgc0jPnkBW77PA0HP6pe7
+	 X0fhIDYffC7iBmIUbkYbLYoOc4xZkUtltACg93wvLyMGMk8Vm3FAhU9iHti3XWjE7ZA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795042403;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795050356;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:User-Agent:X-stable:X-Patchwork-Hint:
 	 MIME-Version:Content-Transfer-Encoding;
-	bh=hGeu/PhVYDLfvEhxADTzH32OcPTR5NQHZ38HwoKequw=;
-	b=D4jReUS57qGmcsNXSmPJKC/anVzUVtwyQ1XBPMcoQLgngSVLWLEH62b+a1ywnDPDFL8H
-	 6RFukHXSD83LE3BXRb3+BC/NItUFQIV+6iZtt5I4KpkUD9126R5F2lu8GhNrlzAKYrMmv
-	 uRsJCrS0idUOl0jj23nhh6vi9FHRK5H+vWG7+wlMM6J+bv3CRXr5Eb9/EJIdaO/Wd2u6g
-	 qrAv9YhKjwkHVbxeersrLLUX1RilxUv4Vk6g9JC6C0HC2IvmzGViSe4HsWoG2mc41zaQ8
-	 vxQgL5lk/LGpVItP0noM30+6eC9WAc1vfUkt8Y8iNYRWV1eac8GgcXTp4EWogjLSckw==
+	bh=3t63E9YjCHi+iaYwrImCyCws6X0RAOblzSmeaPd88yw=;
+	b=nzshx8GIpfjF9HHVwn1yTYNgn1+HlexVXr12kxxbUW5iHmsTqSsKPgZ5AgpS33FbiH+G
+	 YOXwxRUSO9CfdskHVy8xM7KyYoV+b3J0NKwAjFpP7sfXgn2lxhHIBtZPplk/xbqNIvN7F
+	 9/UikwVsDqCwc+UOt0oozX14J/Vb4QcEIabPv0XWOKV1j++KvRdO/TRfbZhAS068juYSB
+	 l1pAWjyQO5Eh6Zx8ylo6MlnGSbjsleguAlQhQB6VNqhXaS68S48xT7Jm1Tm3WI9lInKXb
+	 yh4suPK5P1AxRp2QG7lCZF/1xdJJ0APgmeDkRS/CeewrEKIBxYyElAiFaVBEwd/thKg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b="u/h138En";
+	dkim=pass header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b=0jguTByM;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B404C606A325;
-	Wed, 18 Nov 2026 22:53:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39CCA606A33E;
+	Thu, 19 Nov 2026 01:05:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b=u/h138En
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1F0251F000C4;
-	Wed, 18 Nov 2026 22:53:22 +0000 (UTC)
+	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b=0jguTByM
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8F0AD1F000C4;
+	Thu, 19 Nov 2026 01:05:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linuxfoundation.org;
-	s=korg; t=1795042403;
-	bh=hGeu/PhVYDLfvEhxADTzH32OcPTR5NQHZ38HwoKequw=;
+	s=korg; t=1795050356;
+	bh=3t63E9YjCHi+iaYwrImCyCws6X0RAOblzSmeaPd88yw=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=u/h138EnfGD6+4wAizeEc8xL4qMCj0Epr5WJaI+uWHUw35kBS/zSaYJ6wX/bCy5NR
-	 Y4LwKNZpV3dRkyqzd0xK2LBTVcX3qKHye4PLTQozk7X8+pAwSjxyaPy0N9DjHW2S6d
-	 s5Pm37gojnPITBW1F1y7hJOyoDiGBN1vrfy+Ev80=
+	b=0jguTByMMarEyLQq2asgSx293GMs2RFTbSfLbI6OgJoUbc08Ui+RHXjsArDLv1VrA
+	 QcKP4jOkq8SgSu+zZPSlqA+I+z7G54Kc073CNxsGBA1O06nU8Zn7fldquCwtQeilTv
+	 8eTHoc3z376R7u0TjrB+cE9pwSn6VMS8+rOPjAoE=
 From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To: stable@vger.kernel.org
 Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
@@ -49,12 +49,12 @@ Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
 	linux-sh@vger.kernel.org,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
 	Sasha Levin <sashal@kernel.org>
-Subject: [PATCH 6.6 3117/3318] sh: Emulate one-byte cmpxchg
-Date: Wed, 18 Nov 2026 16:02:19 +0100
-Message-ID: <20261118150453.456563295@linuxfoundation.org>
+Subject: [PATCH 6.1 2680/2857] sh: Emulate one-byte cmpxchg
+Date: Wed, 18 Nov 2026 16:01:54 +0100
+Message-ID: <20261118150338.072926119@linuxfoundation.org>
 X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261118150313.527275416@linuxfoundation.org>
-References: <20261118150313.527275416@linuxfoundation.org>
+In-Reply-To: <20261118150201.293410965@linuxfoundation.org>
+References: <20261118150201.293410965@linuxfoundation.org>
 User-Agent: quilt/0.69
 X-stable: review
 X-Patchwork-Hint: ignore
@@ -69,7 +69,7 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-6.6-stable review patch.  If anyone has any objections, please let me know.
+6.1-stable review patch.  If anyone has any objections, please let me know.
 
 ------------------
 
@@ -98,10 +98,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  2 files changed, 4 insertions(+)
 
 diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 33530b044953c..3a81cef700fce 100644
+index a0593f6ce0e0f..dbbfc9ffbb955 100644
 --- a/arch/sh/Kconfig
 +++ b/arch/sh/Kconfig
-@@ -15,6 +15,7 @@ config SUPERH
+@@ -16,6 +16,7 @@ config SUPERH
  	select ARCH_HIBERNATION_POSSIBLE if MMU
  	select ARCH_MIGHT_HAVE_PC_PARPORT
  	select ARCH_WANT_IPC_PARSE_VERSION
@@ -110,7 +110,7 @@ index 33530b044953c..3a81cef700fce 100644
  	select DMA_DECLARE_COHERENT
  	select GENERIC_ATOMIC64
 diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
-index 288f6f38d98fb..0d7926bdb8a72 100644
+index 0ed9b3f4a5779..3d5ca061ffba3 100644
 --- a/arch/sh/include/asm/cmpxchg.h
 +++ b/arch/sh/include/asm/cmpxchg.h
 @@ -9,6 +9,7 @@
