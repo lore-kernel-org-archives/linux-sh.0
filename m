@@ -1,42 +1,42 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795050356;
-	b=PLmMskcE9aktvqsAPCKBSbAPeLMXzF8lz7Nx1KBDTQN2MXXHE9fa5QRWz4s6M90lhCpD
-	 +WHUNsyCjYk9jYppiv9uv+xZ7F+QKtEO2yi96mNNLe4VBOZpgGrcSJ1Sw4YXKfoeJULri
-	 TtiHbuLDScLjm985sEtaHz9Mpekc7bjHV4WmTiF3wPFWklLk0aVwrSWNvh421w60pmtM5
-	 ofGF7gcRBhGpAlvZOjMmb5zapGz2GL6cGRb1yOq3fJf0yAJcUgc0jPnkBW77PA0HP6pe7
-	 X0fhIDYffC7iBmIUbkYbLYoOc4xZkUtltACg93wvLyMGMk8Vm3FAhU9iHti3XWjE7ZA==
+	t=1795056719;
+	b=0W8a4yXo00yrUV26FBqYTyDvmBY9+T+XDUuCZgxvKT9FqTtIsFGsVfShCa4WnNibf19n
+	 NtHJXpVNt0RYfEeYXpIVw0J2kXYmQrGKNMy/S+QAw/ZzLRW693LacYVhtUZAuH/l9a2pF
+	 naoSUBZwbWbmQFbyyN8wJxr/6kQGmNppx6UCpYzCd0NlOGedR/NAXXwWJiN2+N/7xk4Pc
+	 HF8Tiukz6oTpNOu6RqIlitDobafNatA/gRmplT/mM3iQikJ7td28XSL7qekxvW3jIL3H6
+	 Rq0BF16rluegzmE6kqV2arDxZEZKRAKiyKZobAoXAiTIn1owCfEXNqaB8KZd/7OUSDg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795050356;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795056719;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:User-Agent:X-stable:X-Patchwork-Hint:
 	 MIME-Version:Content-Transfer-Encoding;
-	bh=3t63E9YjCHi+iaYwrImCyCws6X0RAOblzSmeaPd88yw=;
-	b=nzshx8GIpfjF9HHVwn1yTYNgn1+HlexVXr12kxxbUW5iHmsTqSsKPgZ5AgpS33FbiH+G
-	 YOXwxRUSO9CfdskHVy8xM7KyYoV+b3J0NKwAjFpP7sfXgn2lxhHIBtZPplk/xbqNIvN7F
-	 9/UikwVsDqCwc+UOt0oozX14J/Vb4QcEIabPv0XWOKV1j++KvRdO/TRfbZhAS068juYSB
-	 l1pAWjyQO5Eh6Zx8ylo6MlnGSbjsleguAlQhQB6VNqhXaS68S48xT7Jm1Tm3WI9lInKXb
-	 yh4suPK5P1AxRp2QG7lCZF/1xdJJ0APgmeDkRS/CeewrEKIBxYyElAiFaVBEwd/thKg==
+	bh=4JOAhmtL5b+DiMN5bn1R4rTFPGaMRZEaLxeGFdEKzGc=;
+	b=MOUD4pQhKUtV5Lh+5X0iCV9g52rQ2+HSrwEMo8jmuCcuSZceOxx1KYzuKF2HYFrseSQ+
+	 fd+8HnLeXDPsecniKNvYtYw2OLvND311rMkOZSN00WFOA5JHqLYh2Fzb+Lpz7V7vTvzrL
+	 Kcqyb+HY58kUCk/l540xnaokeQzIrSvXXKm0QLbm4YZ1fDbRzJZHk4xmix6yJ7fD35yEM
+	 BLK/9ZOFR+Zoq20XC03MJt+UcFKUvY544MV1VO7dTZ16RYG1WZ7/cfKZhrPpjK+atgX92
+	 9kyiN1HGXjQKzieSXwYpOJAZytG9toWTQSvNrYYMlFVzHDodZtHBy/VD6IjdKhMItGQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b=0jguTByM;
+	dkim=pass header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b=FlT7JIBY;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39CCA606A33E;
-	Thu, 19 Nov 2026 01:05:56 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8FAA1606A333;
+	Thu, 19 Nov 2026 02:51:59 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b=0jguTByM
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8F0AD1F000C4;
-	Thu, 19 Nov 2026 01:05:55 +0000 (UTC)
+	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.a=rsa-sha256 header.s=korg header.b=FlT7JIBY
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id ED7D11F000C6;
+	Thu, 19 Nov 2026 02:51:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linuxfoundation.org;
-	s=korg; t=1795050356;
-	bh=3t63E9YjCHi+iaYwrImCyCws6X0RAOblzSmeaPd88yw=;
+	s=korg; t=1795056719;
+	bh=4JOAhmtL5b+DiMN5bn1R4rTFPGaMRZEaLxeGFdEKzGc=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=0jguTByMMarEyLQq2asgSx293GMs2RFTbSfLbI6OgJoUbc08Ui+RHXjsArDLv1VrA
-	 QcKP4jOkq8SgSu+zZPSlqA+I+z7G54Kc073CNxsGBA1O06nU8Zn7fldquCwtQeilTv
-	 8eTHoc3z376R7u0TjrB+cE9pwSn6VMS8+rOPjAoE=
+	b=FlT7JIBY0hT2cCwpkH+KONBEQtTyEJaJMJpuKHoP9P0wJre7r3ZNZbm3y/q+Sw89W
+	 7yDmZpD8UAIBp1FbY4PfjhGwG45vSUa3EaN/kP8fJB+ltHPfq/BVi2oDoDo2x1lIbl
+	 lIUX7PLc5PS9k1FlcV/TrNsyYf6d5qnQ8k705+Es=
 From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To: stable@vger.kernel.org
 Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
@@ -49,12 +49,12 @@ Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
 	linux-sh@vger.kernel.org,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
 	Sasha Levin <sashal@kernel.org>
-Subject: [PATCH 6.1 2680/2857] sh: Emulate one-byte cmpxchg
-Date: Wed, 18 Nov 2026 16:01:54 +0100
-Message-ID: <20261118150338.072926119@linuxfoundation.org>
+Subject: [PATCH 5.15 2089/2214] sh: Emulate one-byte cmpxchg
+Date: Wed, 18 Nov 2026 16:02:45 +0100
+Message-ID: <20261118150134.188657707@linuxfoundation.org>
 X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261118150201.293410965@linuxfoundation.org>
-References: <20261118150201.293410965@linuxfoundation.org>
+In-Reply-To: <20261118150009.797899913@linuxfoundation.org>
+References: <20261118150009.797899913@linuxfoundation.org>
 User-Agent: quilt/0.69
 X-stable: review
 X-Patchwork-Hint: ignore
@@ -69,7 +69,7 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-6.1-stable review patch.  If anyone has any objections, please let me know.
+5.15-stable review patch.  If anyone has any objections, please let me know.
 
 ------------------
 
@@ -98,10 +98,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  2 files changed, 4 insertions(+)
 
 diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index a0593f6ce0e0f..dbbfc9ffbb955 100644
+index 101b95f26a91c..04c41890fb79d 100644
 --- a/arch/sh/Kconfig
 +++ b/arch/sh/Kconfig
-@@ -16,6 +16,7 @@ config SUPERH
+@@ -15,6 +15,7 @@ config SUPERH
  	select ARCH_HIBERNATION_POSSIBLE if MMU
  	select ARCH_MIGHT_HAVE_PC_PARPORT
  	select ARCH_WANT_IPC_PARSE_VERSION
