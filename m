@@ -1,45 +1,104 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.216.47
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795384942;
-	b=pBEACgA36xFSDDxXG+1RQfD522q8s3R/vqcG1WpafCscgR4wsKojkM91+EearyjAlLpN
-	 udKJMpbydgO+5NkAPmhk+pQEYepZvWd0NMdFuRBAdiHmttCwxYF1JO0NRNgQBng4BznUC
-	 SO+oFFLm98opsX+QMraPG7YcuZOfK3Vle/+Pduacu1gzoSGz5hIp3h/vyPhyD3iGcGv3o
-	 RbLOeAZinykQ+Dlf/BcHUICvuC52CXFlaOoO2xI6Ev3ElIaRmZ6waBGRnZM4SQGmHWHDe
-	 DMOuO5kvASvd5ZHFy+Z1hpP34IJFyOD7xOfv/vP2gO4/syNVJdYwnVas5cXsRK78C0g==
+	t=1795416292;
+	b=ujvp2vLpbmYhS+xn6LG33KgNlPEf+9MDZJ5ef45L983YrykDl7Wz1gjKnKS07vRwzEw/
+	 04UgjSJtIMOkf/Kq3aqAGlz+GGABqDqIC8bg6TQ4TcYBbwXbIIW3gcVKYOZMUUU9FoCkV
+	 1BnUKRlPeF9xUpO2yDlCptOR56gvBiCQO/dM1AwA4kQC7rmrVwGvDzRI8DP7cnOcYIrXA
+	 YLv9EPpFyYbO1hmpdTXz1slBVIh12a5DMPZzJ9DMm3PIoImr2l4YNb/oaG2V1yJ45QveL
+	 PlFZ1DBnaIq6fYoQH9g8MTFKtjz9/3ZzruyNC921K/523M2qTLH+VOmMZBxOfD4EaqA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795384942;
-	h=Received:DKIM-Signature:Mime-Version:Content-Transfer-Encoding:
-	 Content-Type:Date:Message-Id:Subject:Cc:To:From:References:
-	 In-Reply-To;
-	bh=sTtlSSaGTpDBtcMHiOircAIvmiTH+Ctop/XsFzGC1x4=;
-	b=YrgCw7fc82efjOJR6aqKPcSwalSW3k8vQUHIYDJVI37d9CBiToehWm/1ktwwymQWL6Au
-	 svoB7yp+0z1su71Hd0PFrG5Nz0ensrulMD/zKBsuvTb4eZkW4szYQKpqve8SdVqOhaNC9
-	 rpXHgTRZ0G5Hg9lObkmlBU8Tx36zXCsAu90qa2oSdJ1RpKVfZn2VTpdKMJellxju98pBd
-	 lQ7x4g3dBPSLJkeB4pX7VQTWEnhJIBU8fqJl3690tWQtBED2+6yS5r5cH/ivr2aZa7umF
-	 oaG5QKUfA4/qFx5fhDpAyRJVmhYyRytxOTiVWaI8Cmn0IGGlcCD4X9b3p1tq8Kfh2TA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795416292;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
+	 MIME-Version:Content-Type:Content-Transfer-Encoding:
+	 Content-Disposition;
+	bh=2SjRi5DA6EPs4N724PY/ZYwEORsvpZ9R0IBDl0iZ0NE=;
+	b=q1mga7GjAK6Q+h73krJtnvtJbsnN94xQ5B2VhJfcVDpscYo6GSeFSMT2iqW2bESJAeZg
+	 SLX4qbhkbAKhrtKeoZSRkFJ1E4n7Zmy2L3ahq+TljiOoUXmx9vll/dDE/UUXeq6YWNz9W
+	 9+axBiZInEKNFq/AAsQ48xogI+VJHZyYp6uQmRef6mnkDhY3nIs5oN/rtKCFSUR9sUGIK
+	 F8KtXUBI4+ioc9HT+MQd175BAInL0yoD+KPOfIEk7DXqyy9hL1K5/LWIrObHQiTY9YVDy
+	 Qj3Tnn5i97k0rX96lL2aRv7cgE1p9oQHgubfdcLwX3Et/UY+63vtXbjZ30kLBNM9s9Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=k2Hc6xFR;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=j4o2xYsG;
+	arc=none smtp.remote-ip=209.85.216.47
+Received: from mail-pj1-f47.google.com (mail-pj1-f47.google.com [209.85.216.47])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 92C7D606A31A;
-	Sun, 22 Nov 2026 22:02:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1B03606A31E
+	for <linux-sh@vger.kernel.org>; Mon, 23 Nov 2026 06:44:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A1B03606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=k2Hc6xFR
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 26DB11F000C6;
-	Sun, 22 Nov 2026 22:02:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795384942;
-	bh=sTtlSSaGTpDBtcMHiOircAIvmiTH+Ctop/XsFzGC1x4=;
-	h=Date:Subject:Cc:To:From:References:In-Reply-To;
-	b=k2Hc6xFRtkicPKFvuKT7zGdEMFSb//oYzAC6yGi4WET4vMctzGLV95ptNtrt42XPr
-	 WQXnncoUOn8vCWB5V+5BOCSO1YRgvEGvWFlC6kSpFwx64JgBjdDeDjN8t0GAWjAHIl
-	 OTUhOZXnH51x9+wu6dE5+5xRqac3uNPyE7pzVVKvZEWUvPhn37jeV+RfXXnvGy2n+o
-	 5fpjybhz8GWsaKNEldr/b1vfp4LchA2oilYAZk48pyxh0hZg4h3t2J1QwAu6uVH9h7
-	 a22sYJ2GBWGWAOsKWbURM4twq7Z2FvgS7RP2m5XNLf/srWoFugU+HT+1vi7WOYs8uY
-	 PaUfPtPCWI/6w==
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=j4o2xYsG
+Received: by mail-pj1-f47.google.com with SMTP id 98e67ed59e1d1-3b4021b572dso1854411a91.2
+        for <linux-sh@vger.kernel.org>; Sun, 22 Nov 2026 22:44:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795416291; x=1796021091; darn=vger.kernel.org;
+        h=content-disposition:content-transfer-encoding:content-type
+         :mime-version:references:in-reply-to:subject:cc:to:from:message-id
+         :date:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=2SjRi5DA6EPs4N724PY/ZYwEORsvpZ9R0IBDl0iZ0NE=;
+        b=j4o2xYsGh3WF/JUZQQOuj/v67/PWJ7hBi2FsjvLLsZtbm29aHoYdH0NO+RcHpADiGL
+         2dvXRLuk5oNLY5e3J5y6E54Umcm0YyNsO+tBVTYSYc8Xa+Jk/uS8g20d6XOSmM85q7Mv
+         OOvTfnX7Egw7qPncqmwIy1jdpRDl0/Prkna0hyc/JYVrKiNwRkwjCwV3C6XJAL+vV7E7
+         rmefry0U/PqpRQnG2xXtfNfXYUkv1b7CidqpNSjO077yuGBXMab68jiF244vxAbttmAO
+         b74JQzwV1UZI8H2QsIDxvyqmNgfBnWyrqPslKLrBAFY8wGlBVH7Oxyb80w9pFsfby4Ex
+         UGCA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795416291; x=1796021091;
+        h=content-disposition:content-transfer-encoding:content-type
+         :mime-version:references:in-reply-to:subject:cc:to:from:message-id
+         :date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=2SjRi5DA6EPs4N724PY/ZYwEORsvpZ9R0IBDl0iZ0NE=;
+        b=Kg/VGCe6LGyOuRoUBzWE0Xnyo9JYVxXAA3cwHBrGmCZWdJqohR/zJL8BTiEscVWrwQ
+         YKr2mNfarOSQaQ0prwIfY9kna7zWNN6xbLFtGgTFrzk1BAQslezHV3fOKe+0XG6CjHOD
+         T77K20jnXRfS3hnnwL+kB5uvU4loYtmNsd+mzc9ENJytd359cH8Lnn+hlCKMLq94MzAl
+         8Lnojn/IJ4UOmxjYufqXbNS/fTJs5DMh2iIqusAFdLRXDeTExLvA1zWrbHp/dgNiwnPp
+         /pjNEw1xusJ7yijVMZzUo203tlZw6TuyMkrEMtb1mJkVsV54v96HDI6vO5SJ/PHjYa9v
+         P1gw==
+X-Forwarded-Encrypted: i=1; AL+hErFNxj5ACLUJnaaeeYFfYtHoqfFQ1JYBLlS4hLK1pPXzBn80Z0lHJRq00fjE66hwxH+cdK/wz20XhA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8Vqr0qf/YA11M1w1+zX6NCxblPzLy0Gsnvs3DYDHIprRcgRhTO
+	iB7/RC+KrmGvw6t+ut/lohbOM7kR9erbkkkHX957/t2cvzbdXREx3oZe
+X-Gm-Gg: AZFdTZfDmi6XQeZEZFxsLaxiVP8QUWViEet0eUdXiA05VoKsddfqFMVFkPQpRlVwSK6
+	bBaBS+RlMsgKcuTd2cl8tUqicbYWPFmnDZWhgVQTq3zNIrxrHII7ATrBSuCaEFZDWCQ4s94HjGo
+	yx4hrqmcc94Ww9XYr3V9kNcnuQr6yuZMi3ae/+gn+PvWLi78oy8/c5QcApHca8muvlUtdMCQRpj
+	lWxIzZ6zjFc4D+T2EuMePEXKRvrCGqmmfkF0MrwWEfkYXCigWKhuS8fTfEWccEAq00FeZ0E8d9A
+	w8Kk6HbjMsQgTOFo4A0IDmfkBe68BCD+RhAnR3l1907XWz/NxeWXlLHyIUq4GmHAe9sQJINkjV3
+	IdzBJ9y/quPK3pUHCAyEvBd/L2wHYkLzKkd/hQUrkCtvavi43Idoq4NLtlAOoLBDLrgLFKNy/Gk
+	6DAsjjOQ3HteujMgfkNl3Lqj1V0i5k+0KukUtcUraA7ezH1Sp/l3d2TE3YOT9dGPHSyWePySojO
+	3VfSpCyoMbtCRdZx3YJwm2+3Gc5uGKHNUNq+c3GP+zlw8KP9HR20FScvxlm5/jLu8d7gqt04LBj
+	eeVvocmhlqIhOLivOZvV2SqK/hw2dn1zcocTav/1t0wQT8BOzNqdFl7NNSrho5L2RKux3w==
+X-Received: by 2002:a17:90b:224e:b0:3b4:f92:ade8 with SMTP id 98e67ed59e1d1-3b41c7e1174mr10446536a91.7.1795416291007;
+        Sun, 22 Nov 2026 22:44:51 -0800 (PST)
+Received: from localhost ([2a00:79e0:2ebe:8:4121:d698:201c:9274])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b41ad0b52dsm17835023a91.5.2026.11.22.22.44.50
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 22 Nov 2026 22:44:50 -0800 (PST)
+Date: Sun, 22 Nov 2026 22:44:49 -0800
+Message-ID: <dea00f90c205f8359baca729d8b0f31a@gmail.com>
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+	Arnd Bergmann <arnd@kernel.org>,
+	Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Linus Walleij <linusw@kernel.org>,
+	Bartosz Golaszewski <brgl@kernel.org>,
+	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>,
+	linux-sh@vger.kernel.org,
+	linux-renesas-soc@vger.kernel.org,
+	linux-gpio@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v3 0/5] sh: mach-rsk: rsk7203: switch to using static device property, drop legacy gpio API
+In-Reply-To: <arzKNhmoL6yiGrzH@ashevche-desk.local>
+References: <20260929-rsk7203-properties-v3-0-02f84aeb8e47@gmail.com> <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com> <arzKNhmoL6yiGrzH@ashevche-desk.local>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -48,104 +107,35 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
-Date: Sun, 22 Nov 2026 23:02:06 +0100
-Message-Id: <DN22U90WCTGB.1REAOP1PQUMIQ@kernel.org>
-Subject: Re: [PATCH v4 0/9] Add __must_init and require explicit
- kobj_type::release
-Cc: "Greg Kroah-Hartman" <gregkh@linuxfoundation.org>, "Kees Cook"
- <kees@kernel.org>, "Miguel Ojeda" <ojeda@kernel.org>, "Rafael J . Wysocki"
- <rafael@kernel.org>, "Madhavan Srinivasan" <maddy@linux.ibm.com>, "Srish
- Srinivasan" <ssrish@linux.ibm.com>, "Michael Ellerman"
- <mpe@ellerman.id.au>, "Nicholas Piggin" <npiggin@gmail.com>, "Christophe
- Leroy" <chleroy@kernel.org>, "Nayna Jain" <nayna@linux.ibm.com>, "Mimi
- Zohar" <zohar@linux.ibm.com>, "Yoshinori Sato"
- <ysato@users.sourceforge.jp>, "Rich Felker" <dalias@libc.org>, "John Paul
- Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>, "Juergen Gross"
- <jgross@suse.com>, "Stefano Stabellini" <sstabellini@kernel.org>,
- "Oleksandr Tyshchenko" <oleksandr_tyshchenko@epam.com>, "Nathan Chancellor"
- <nathan@kernel.org>, "Nick Desaulniers" <ndesaulniers@google.com>, "Viresh
- Kumar" <viresh.kumar@linaro.org>, "Zhongqiu Han"
- <zhongqiu.han@oss.qualcomm.com>, "Alexander Aring" <aahringo@redhat.com>,
- "Felix Kuehling" <felix.kuehling@amd.com>, =?utf-8?q?Christian_K=C3=B6nig?=
- <christian.koenig@amd.com>, "Zhihao Cheng" <chengzhihao1@huawei.com>,
- "Sumanth Korikkar" <sumanthk@linux.ibm.com>, "Bill Wendling"
- <morbo@google.com>, "Justin Stitt" <justinstitt@google.com>,
- <driver-core@lists.linux.dev>, <llvm@lists.linux.dev>,
- <linux-hardening@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
- <linux-doc@vger.kernel.org>, <linux-acpi@vger.kernel.org>,
- <linux-pm@vger.kernel.org>, <linuxppc-dev@lists.ozlabs.org>,
- <linux-sh@vger.kernel.org>, <linux-s390@vger.kernel.org>,
- <gfs2@lists.linux.dev>, <xen-devel@lists.xenproject.org>,
- <linux-mtd@lists.infradead.org>, <amd-gfx@lists.freedesktop.org>,
- <dri-devel@lists.freedesktop.org>, <linux-kernel@vger.kernel.org>,
- <agordeev@linux.ibm.com>, <airlied@gmail.com>, <alexander.deucher@amd.com>,
- <catalin.marinas@arm.com>, <chao@kernel.org>, <deller@gmx.de>,
- <dennis.dalessandro@cornelisnetworks.com>, <dmaengine@vger.kernel.org>,
- <gor@linux.ibm.com>, <hca@linux.ibm.com>, <jaegeuk@kernel.org>,
- <James.Bottomley@HansenPartnership.com>, <jgg@ziepe.ca>,
- <jlbec@evilplan.org>, <johan@kernel.org>, <joseph.qi@linux.alibaba.com>,
- <leon@kernel.org>, <lihuisong@huawei.com>, <linusw@kernel.org>,
- <linux-arm-kernel@lists.infradead.org>, <linux-erofs@lists.ozlabs.org>,
- <linux-f2fs-devel@lists.sourceforge.net>, <linux-fbdev@vger.kernel.org>,
- <linux-omap@vger.kernel.org>, <linux-parisc@vger.kernel.org>,
- <linux-rdma@vger.kernel.org>, <mark@fasheh.com>, <neescoba@cisco.com>,
- <ocfs2-devel@lists.linux.dev>, <satishkh@cisco.com>, <simona@ffwll.ch>,
- <sre@kernel.org>, <vkoul@kernel.org>, <will@kernel.org>, <xiang@kernel.org>
-To: "Ian Rogers" <irogers@google.com>
-From: "Danilo Krummrich" <dakr@kernel.org>
-References: <20261119192520.1983406-1-irogers@google.com>
- <20261122215639.1178566-1-dakr@kernel.org>
-In-Reply-To: <20261122215639.1178566-1-dakr@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-(Cc: more people previously Cc'd on v2)
+Hi Adrian,
 
-On Sun Nov 22, 2026 at 10:56 PM CET, Danilo Krummrich wrote:
-> On Thu, 19 Nov 2026 11:25:11 -0800, Ian Rogers wrote:
->> [PATCH v4 0/9] Add __must_init and require explicit kobj_type::release
+On Wed, Sep 30, 2026 at 11:37:10AM +0300, Andy Shevchenko wrote:
+> On Wed, Sep 30, 2026 at 09:23:21AM +0200, Arnd Bergmann wrote:
+...
+> > The patches look good to me. I have build-tested this with the snippet
+> > below and my series from
+> > https://lore.kernel.org/all/20260907090956.2825703-2-arnd@kernel.org/
+> > to check that no use of the legacy interfaces remain.
+> > You can probably fold my one-liner into your last patch.
+...
+> > I would guess even with access to hardware testing is going to be
+> > challenging, I noticed that the defconfig kernel does not fit on the
+> > 4MB flash any more (even without rootfs), and the USB support was
+> > never added for rsk7203, only for 7264/7269.
 >
-> Applied, thanks!
->
->   Branch: driver-core-testing
->   Tree:   git://git.kernel.org/pub/scm/linux/kernel/git/driver-core/drive=
-r-core.git
->
-> [1/9] Compiler Attributes: Add __must_init macro
->       commit: b8a53320a885
-> [2/9] powerpc/secvar: Add missing kobject release callback to secvar_ktyp=
-e
->       commit: 4d5d4dd2a2e2
-> [3/9] sh: sq: Add missing kobject release callback to ktype_percpu_entry
->       commit: d19384f2f3c7
-> [4/9] cpufreq: governor: Initialize kobj_type release callback statically
->       commit: 009365942c15
-> [5/9] dlm: Wait for kobject release before freeing dlm_ls
->       commit: 48ae948f4285
-> [6/9] xen/sys-hypervisor: Add release callback to hyp_sysfs_kobj_type
->       commit: ecaf88d385c1
-> [7/9] ubifs: sysfs: Use kset_create_and_add() for ubifs_kset
->       commit: 25d952902dee
-> [8/9] drm/amdkfd: Free queue in procfs_queue_type kobject release callbac=
-k
->       commit: 6d4ff4a020cf
-> [9/9] kobject: Require explicit initialization of struct kobj_type::relea=
-se
->       commit: 45eeed1f8094
->
-> The patches will appear in the next linux-next integration (typically wit=
-hin 24
-> hours on weekdays).
->
-> The patches are in the driver-core-testing branch and will be promoted to
-> driver-core-next after validation.
+> ...which induces a practical question, shouldn't we just drop the whole thing
+> for good?
 
-I've now picked this up; I will keep this series in driver-core-testing for=
- a
-few more days before moving it to driver-core-next. Please let me know if t=
-here
-are any concerns with the series, particularly the comments in patch 9.
+Gentle ping on this series. Will you be applying these patches (possibly
+with Arnd's Kconfig tweak folded in), or would you prefer patches
+removing rsk7203 support altogether since it is not working anyway?
 
-Thanks,
-Danilo
+Thanks.
+
+-- 
+Dmitry
