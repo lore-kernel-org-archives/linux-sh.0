@@ -1,102 +1,105 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=128.30.2.78
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.177
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795461599;
-	b=VwvO6LTfrCX7L/ZiGrRUUOGLT0AkQybZ4ufSxUCAkZEsjNPa88NL/BOf/PwzgNTvaK8k
-	 c/c1oTzcOD7C+MDhg+cbzWQjUV5aErkSQUfyaCLRUDT7Cvim57fbPja2dWwNcLDF5cW44
-	 iDTrf3zMVykOl6ljolYES3cBKNC3C564tyXyt+XdE+6Xvec953eyIio1wzVJDt5WNVdL8
-	 mOXbyjy3V+hjJx2vSID3mTV5pm42ML3lvCHGfCRPq2oatFjznXn7U9QRhiAgGTVSPCe+e
-	 pmtjxnak6MF15ytIM567hhUMECeDAjZb6mBTT592hIGwOo1diB4ARuCRD4k1UPAureg==
+	t=1795478114;
+	b=EFM/qbMJw2+V83E6nLSRmf7e/ZbkidCybubMFNyX9txOoTFfnTNj7z+V7WQ7+zkia9az
+	 fj53w8fpjMbTxDpLBkLeURXxjALk8eKZLUwQutob1gEqiOjvcH/z2wTQx89HU1fHqIE+u
+	 peDYi4bgLYi1xDKUK9tNRRwnWYrz7eNJXfr7GkvmMJpas82eL/x0zVNPX5bICrRKq7Mvl
+	 bPUbH/Aem29FofuDkJdakJd9zGk4/4+hHPzf8myocDNH+art/k9hh825V7VgqhsrfnV5B
+	 0hiUhS2siyKDI9BtMCBuTs2R/hHuPo1i5vBw4nac8uOxkswYp+8lcMt9RE7dS/I/tbw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795461599;
-	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To;
-	bh=YbFSS6dJsC7jMPW/wNXp8H44yQ2FcFRYnsa9hFAzYJM=;
-	b=QZbJJKXe3Oohb5FQ8y8RW9+KopFLsctbP7y2sLghS2tqmbpBjZp3gsJFuDFd9NZJ1Jx8
-	 fSZH52SBK4iUP2ZE8d2ICHNGYWqllGGa0bvLYvNjMQ9I1YIT1VjvWnmBY164c5uJ6vAiv
-	 fcjX70QzXZyavb+vNqKDFxPS9uFUPluVPeSRI2hrTu/yHzPVwCumeeIPgWU8dVYB4hi+q
-	 suz7IUXayVvVjODwtYkOOBS0GDV6cwLSJk2R8Bft250URolVx5UDm6Q6H3kaGPnPGWj2T
-	 oYLlZCZj37WlapDkUhjKh8LNq+xaC8dLn12l0Bok+q/xmfwNoop/oAyqyalWsWIxudQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795478114;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
+	 MIME-Version:Content-Type:Content-Transfer-Encoding:
+	 Content-Disposition;
+	bh=qHMYy/oSMlkongpCToMb8VA6CvYEq6WBh/L4ubY/+kU=;
+	b=Ltin/jxFjvfEh9HTMi89BnFlWoi+S/3igHfxpHqmp5D0DB+i5BrhyhFuSfoT/WaGPGAu
+	 xT74RXUgV1Tm9cmmKkQXJ9e2EXHcrImg7AkpqISmuMSWcYdr64Rpf1APOr6GCkm0RlAMt
+	 94oC4k6el67Sm0n3QUBnaCeLTJibMtMIYpBIuElGFhTrU5YZ6sjeVIw7FS833BDDF3L7X
+	 Ee7UdrOmJWPVvPnBtRfAPQVHOox7qyr8fZWWpofTbTU8vfOPqRmBHtNeHKRkUTPqfphDB
+	 0K5vaM/qwkBjC/UC5H7hMOgxDyO9nQAZxwm6xde/hx7hkaRa2d0N0VZpRfabbdYNPgA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=csail.mit.edu;
-	spf=pass smtp.mailfrom=csail.mit.edu;
-	dkim=pass header.d=outgoing.csail.mit.edu header.i=@outgoing.csail.mit.edu header.a=rsa-sha256 header.s=test20231205 header.b=z5VxCKWt;
-	arc=none smtp.remote-ip=128.30.2.78
-Received: from outgoing2021.csail.mit.edu (outgoing2021.csail.mit.edu [128.30.2.78])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=aur9tjvm;
+	arc=none smtp.remote-ip=74.125.82.177
+Received: from mail-dy1-f177.google.com (mail-dy1-f177.google.com [74.125.82.177])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9ED53606A31A;
-	Mon, 23 Nov 2026 19:19:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9ED53606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=csail.mit.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=csail.mit.edu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9ED9F606A321
+	for <linux-sh@vger.kernel.org>; Mon, 23 Nov 2026 23:55:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9ED9F606A321
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=outgoing.csail.mit.edu header.i=@outgoing.csail.mit.edu header.a=rsa-sha256 header.s=test20231205 header.b=z5VxCKWt
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=outgoing.csail.mit.edu; s=test20231205; h=In-Reply-To:Content-Type:
-	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-	Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-	List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=YbFSS6dJsC7jMPW/wNXp8H44yQ2FcFRYnsa9hFAzYJM=; t=1795461598; x=1796325598; 
-	b=z5VxCKWtGCXsqdV3G5o7mzM4/ElDJ0LDR2Uaw/We/hWQ6iZt0YL4OYPh+Cfu5RskK5qKXCk+6QS
-	sVOri+nUP4EPq5EIxrf+sUiOxqdYh+rQUuFSDYJFC6T0R3fhk9pfS+gKa+w+vEM2aObWZ3N92YcbP
-	jygaybtAIrkA/tPUQAc/jssn7+k+dbjp/OEFRu8OFG91CPNHwd9JEXvcBcrN5dQDqZjzfUVicdWPQ
-	outbdoCcrMPdCPurg9cXjt6p83wI5fIgDwJFJ1ltq1qdad51JLZymQiHopsGxOhhCvTtsO3kkCcOC
-	FdZcgi8zYN0H1yr4vffjNaznGmIkzETpAyzw==;
-Received: from [49.207.211.146] (helo=csail.mit.edu)
-	by outgoing2021.csail.mit.edu with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.95)
-	(envelope-from <srivatsa@csail.mit.edu>)
-	id 1xVZZR-006Yni-DK;
-	Mon, 23 Nov 2026 14:19:21 -0500
-Date: Tue, 24 Nov 2026 00:49:07 +0530
-From: "Srivatsa S. Bhat" <srivatsa@csail.mit.edu>
-To: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-Cc: Albert Ou <aou@eecs.berkeley.edu>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Baoquan He <baoquan.he@linux.dev>, Borislav Petkov <bp@alien8.de>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>,
-	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Pasha Tatashin <pasha.tatashin@soleen.com>,
-	Paul Walmsley <pjw@kernel.org>,
-	Pratyush Yadav <pratyush@kernel.org>, Rich Felker <dalias@libc.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@kernel.org>,
-	Vasily Gorbik <gor@linux.ibm.com>, Will Deacon <will@kernel.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org,
-	Alexandre Ghiti <alex@ghiti.fr>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Cong Wang <cwang@multikernel.io>,
-	Mark Rutland <mark.rutland@arm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	"Ritesh Harjani (IBM)" <ritesh.list@gmail.com>,
-	Shrikanth Hegde <sshegde@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	WANG Xuerui <kernel@xen0n.name>, kexec@lists.infradead.org,
-	linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev
-Subject: Re: [PATCH 2/2] arch, kexec: declare kexec and crash capabilities in
- Kconfig.kexec
-Message-ID: <awSRq5Cn84BHelio@csail.mit.edu>
-References: <20261119-arch-kconfig-v1-0-37c276fe4d26@kernel.org>
- <20261119-arch-kconfig-v1-2-37c276fe4d26@kernel.org>
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=aur9tjvm
+Received: by mail-dy1-f177.google.com with SMTP id 5a478bee46e88-38564b4b017so4140441eec.0
+        for <linux-sh@vger.kernel.org>; Mon, 23 Nov 2026 15:55:13 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795478113; x=1796082913; darn=vger.kernel.org;
+        h=content-disposition:content-transfer-encoding:content-type
+         :mime-version:references:in-reply-to:subject:cc:to:from:message-id
+         :date:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=qHMYy/oSMlkongpCToMb8VA6CvYEq6WBh/L4ubY/+kU=;
+        b=aur9tjvmrmBWdMGBaCXGgk6MJeEt5iNGa2qSXqZLmaZBc2Kv8JbEJJBt3VS1koB28I
+         wPtCKsMymrS7bcRsinSR6Pps6kUG8TlhWYhgGqFtf++305HmkHiwfHMIJuHdF5Ap6cip
+         Rljt5/NlIZ9U9mhtnAmYzUhjNT3aCSRb42YABt/qwncHwyKfNii5c0Tmyed+CL6BD4c4
+         SNrJeBXEoWkhMvBsdtQrDHPSWrJVVbf385hkj7Mgqs3sqWHZW4zrQQdrvg6+xWHKhuJz
+         hAqpP6+B3jdDREVa4WW3LeGkAnl/k+FgkY0rMRFgWfYPg4TMz1LjwlQP9TfhRpV0t22K
+         dgYw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795478113; x=1796082913;
+        h=content-disposition:content-transfer-encoding:content-type
+         :mime-version:references:in-reply-to:subject:cc:to:from:message-id
+         :date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=qHMYy/oSMlkongpCToMb8VA6CvYEq6WBh/L4ubY/+kU=;
+        b=EtUCB1SjWPiGHZ9cr6gjfrShuTV48eKbFEWYFyVm5duiymP73J593ldmTz0RezEKac
+         fzU4rvc8Aj83LOLMFrR/j49Th5YldxZskgMFKdlOIELLbZfwHqgaFmU8TKBRhmk3L2Oq
+         1pKKakBd+HwINnTH3qFYJZU61wG5VbHXckX422l+o7BCh8vYk1hR3+d8GjM++NR7CNdz
+         Y6eSQULzCYjwdfnY2ZkoQXAW62VNj5xNTYc3889PJCOWN7ZB0FXYQCYlKU+dINYPdpkU
+         ZLBwHDggnvYzW+sfLPl8dryH3ckq1SmV0iRYX0BlLf7gjW3qf6bRjrJDXfuDFb9MtK/o
+         gi4w==
+X-Forwarded-Encrypted: i=1; AL+hErHhlFb0zUhGbbQDIv/qGLKosuU8R0ZMO24UXA+yD0o83WVccRXpTcX+RBJn/gtBdm+V0iHv5/lO7w==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9ljRBzkruVmuAWBISv08fen4sgeRkGk0m86iZ2PUT6OyYKxu5j
+	v1xItzDy4wLjhMTphUJNzBXES/cRhypTpD2JsLA6ZxMWYScRYQH7nRs+muHAFiMS
+X-Gm-Gg: AZFdTZftlsVSBzlA5E54JjgWOFrnXGtnDoD7ffDmoAvw7ghUo2BABW37scXn2vPpiIf
+	HqJimkGCUeMxQTybwkVuzs3SxNLVUIqfov3uRVpSYqp2HhszcwUTRKqOb9taKYz5oY0P68prZaO
+	2rEBEmjGKgsX36cXoD9IVfDf3Y5lPiYe/F174d/xHePKeNaYVlLSvLu8kGu2mbiMYOAtPzIVAh5
+	wZ0S4oH2DSylBjp058+2jDu73+z7wOZ2AMpe1EKYMrLbhj9kAVnzpCn6PUjeY9UqDpsyqiwOBqQ
+	upWQW+Iem6Znk8Ol0riqoH1KqpePaKW68IPXlMw8Z5VEGdteQA/TmaHXFhTK9l+KEAfGb9I7yIV
+	IF4Sqqi01Gie5A/fBB/4zheyQoF0GyqVMBKYQx2ba/OkN/hid4R9O/j+iQGbSEMMOZUXj19noTx
+	cc7Hls5xPwx8yR2lX3sLwlyrD9Jx+vJ7iPWCjgjA7bZOTVA1ve6gcYfdLnbB491V4Hjnk9MH7g2
+	W9HV7rpEc9560ZhaAIBvkWb8hixJT8oT+BfMtghBQ0lgKC+NXKS3Yjnvxn/dTAPe6f8LYGRlRPx
+	g+JVwArojPP+UvzX3X6FDqnz/fbF8JKed8NakiBh0vgF0Sgp6HBC0SUk9FKAtaMTon74wOA4j/k
+	Ak+pUnbYXoGenZ9U=
+X-Received: by 2002:a05:7301:6a05:b0:386:a0dc:2e2d with SMTP id 5a478bee46e88-386a0dc3082mr11090356eec.16.1795478112647;
+        Mon, 23 Nov 2026 15:55:12 -0800 (PST)
+Received: from localhost ([2a00:79e0:2ebe:8:4121:d698:201c:9274])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-385646633d0sm68245062eec.3.2026.11.23.15.55.10
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 23 Nov 2026 15:55:10 -0800 (PST)
+Date: Mon, 23 Nov 2026 15:55:09 -0800
+Message-ID: <2e4f0d32c05d841feb367741bf8802fc@gmail.com>
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+	Arnd Bergmann <arnd@kernel.org>,
+	Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Linus Walleij <linusw@kernel.org>,
+	Bartosz Golaszewski <brgl@kernel.org>,
+	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>,
+	linux-sh@vger.kernel.org,
+	linux-renesas-soc@vger.kernel.org,
+	linux-gpio@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v3 0/5] sh: mach-rsk: rsk7203: switch to using static device property, drop legacy gpio API
+In-Reply-To: <ce838102be497ee6eab490b4454095b96e16d015.camel@physik.fu-berlin.de>
+References: <20260929-rsk7203-properties-v3-0-02f84aeb8e47@gmail.com> <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com> <arzKNhmoL6yiGrzH@ashevche-desk.local> <dea00f90c205f8359baca729d8b0f31a@gmail.com> <ce838102be497ee6eab490b4454095b96e16d015.camel@physik.fu-berlin.de>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -107,29 +110,51 @@ List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
 Content-Disposition: inline
-In-Reply-To: <20261119-arch-kconfig-v1-2-37c276fe4d26@kernel.org>
 
-On Thu, Nov 19, 2026 at 08:16:58AM +0200, Mike Rapoport (Microsoft) wrote:
-> The options that let an architecture opt in to kexec and crash dump
-> features, like ARCH_SUPPORTS_KEXEC or ARCH_SUPPORTS_CRASH_DUMP, are
-> defined in each architecture's Kconfig as def_bool, and most of them are
-> copied over several architectures.
-> 
-> Declare these options once in kernel/Kconfig.kexec next to the options
-> that depend on them, similarly to how mm/Kconfig does it, and make the
-> architectures select them instead.
-> 
-> Selection conditions are preserved, so there is no functional change.
-> 
-> Acked-by: Baoquan He <baoquan.he@linux.dev>
-> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+Hi Adrian,
 
-Reviewed each code movement for correctness and also reasoned through
-why the ARCH_SELECTS_* entries were left untouched in this series (as
-they don't yield any consolidation benefits towards Kconfig.kexec).
+On Mon, Nov 23, 2026 at 09:12:37AM +0100, John Paul Adrian Glaubitz wrote:
+> I have been super-busy with CVE fixes but I will try to get into kernel
+> stuff back again later this week. As I mentioned before, kernel maintenance
+> is not my primary job, so I cannot act as quickly as people who are getting
+> paid for it.
 
-Reviewed-by: Srivatsa S. Bhat (Microsoft) <srivatsa@csail.mit.edu>
+I completely understand; upstream kernel work is not my main focus
+either, and I appreciate you keeping sh maintained in your spare time.
+I did not mean to rush you; I mostly wanted to check how you would like
+to proceed before the next merge window.
 
-Regards,
-Srivatsa
+FWIW, I took a closer look at the current state of rsk7203 on mainline
+prior to this series, and quite a bit of it is already broken:
+
+- Ethernet (smsc911x) has been silently ignoring its platform_data since
+  v4.13 (commit 3708184afc77) because device_property_read_u32() returns
+  -EINVAL instead of -ENXIO when there is no fwnode. That drops
+  SMSC911X_SWAP_FIFO, corrupting TX/RX packet byte order on this
+  big-endian board.
+- The RTC (sh-rtc) fails probe unconditionally since commit 689602e0609e
+  because sh7203 only defines one IRQ resource while sh_rtc_probe() now
+  requests IRQ index 2.
+- sh-cpufreq fails init because sh_cpufreq_cpu_init() never populates
+  the per-CPU clock.
+- Enabling gpio-keys-polled (disabled in rsk7203_defconfig) clobbers
+  LAN9118's IRQ0 on PB0.
+- As Arnd noted, the rsk7203_defconfig kernel no longer fits in the
+  4 MiB flash, and USB was never wired up for this board.
+
+Given how long some of these regressions have gone unnoticed, it seems
+extremely unlikely that anyone is actually using mainline kernels on
+rsk7203.
+
+Rather than worrying about hardware testing here, I think the simplest
+way forward is to just apply these patches (with Arnd's Kconfig tweak
+folded in, or I can send a v4 if you prefer) to unblock the legacy GPIO
+API removal, and we can resolve any bug reports if they ever arise
+later.
+
+Thanks.
+
+-- 
+Dmitry
