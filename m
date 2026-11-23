@@ -1,60 +1,101 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=128.30.2.78
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795448497;
-	b=Q60zul8z4cr7q+0Cu1d+fpzAnCaOb/e3oarw+O7svylof1v6UGrYY+fqaI5CF48GA256
-	 nfPBA12STEFtMZ5uSgX8oiyD0a2XXDBg+8eqSGjl3c2xl8GcXHEqj3YNIiZgwtO789YWx
-	 heinHmO5DpC+RJaTpD1TCwto0m7tv5tr52chwUnQBggIa+XNbETIW8ztYiVJy9Ny55qdT
-	 EPBPPa6lcoJlh/B8Jiq3nnM7UlzOrscoH5DYt9mpnsbsS2k0KzR8t558h1LK4KhSkcN9u
-	 M1P3IlwqCsnC03xAQrJFHeF/olvqFGzYqjvZeUIxRhMGYbmyItOLRS4CLaaCCcVO50A==
+	t=1795461386;
+	b=c/AQ3/sY4Bbj4lzcmITfDWNVgxFkTkXtLZXIP745Iwkbpw+WQ6QwcnjOIpmcBn8UB2SM
+	 s7ywgexufMgZ8PRdmwtKcVH/eleQfIkaMPj696X6+GgKZUE6aAXCbDUisFhqnDzUxGyKr
+	 Nvg+x232G8KStFltNc8uHxLOKUiiMPoGH2ihyqUf/aBTUBkP9BtohOIXS+Ob4fd7BDmoS
+	 G5VmGmPmgsonxYIxnAKkX9YJ5AsRzVMH0NxdPW6wKKJjtIAK9s7cC2ZCZnPfm41N0q/Z2
+	 VIiF33vdf15uejY2yT+eJVYpocl4V9E8Hw+6pd9FMxX9wUH1N1YCYnwuDht3ae7BWYA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795448497;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:
-	 Content-Transfer-Encoding:In-Reply-To;
-	bh=ajq0I1jTHg94BEb2kR+C72Yoj6Dn+cM5m8kty+Pico0=;
-	b=aHeJJBXN1+Knb4TqRxXCWgnnaQOpZ+9q3sM/QmCMaEta/QXjK8QPcasCyPMYY5QumsC/
-	 38SleuWIDBh6g1smYi7tDMr2Lo7OU4AotNIWQSvfgYRfr4bEY1UPVTkK1L8NCPtTLyCxB
-	 sGWuXU7uvI1B85pRghGthzvVIryHeonVOxxqpTc17ZMpjujvGVRpvfRx6Rq6UkBzAdSt/
-	 UdR9NQ5R6tkM5KAZztR7umerf0xb5qp8K4ZvgIIektoDEnWlv+KNsPFs1dvKNSD6D+aEY
-	 Zg40vrijkTPDvh5m7K4/pD93xZKoROCIN3jbuVIlRS5LKqLAPf9WPLruuDQffZNK7hw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795461386;
+	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To;
+	bh=bht87HU90ydQuqNwMWxnyUlGx5v3MiB0Rcrd/VnWTho=;
+	b=qPyNmurokI5zqSYgZBM7OQC8IXFX9230AEGZsk+ylxK0JfenQZQtbk3G6Wu7amG0yf7F
+	 wlHd+blocqF3XnezwEk4RylyuY3pKGJzo8zyW4eH16fQd44MNod0p1lb/UV+YSfkKH62h
+	 tMx9QAWHxz9/08yPhWY60auyj+WnsS0ZYaKlaleYTs7ujPTBvO4UqyMryO5/frd4hXYr2
+	 xte6zD8BXgXaZEc/PPhRmk56Qp8h2tpjQFgI38fCg68C8ArIhvgSTizehQukV7HELtjWs
+	 is7dORijhJb3mRP8rKpK5rtPZoT8eEflUvVGxhHpLDmOTL0J2s4V7TOGO+rbmXqr5Zw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=heo5z1JP;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=csail.mit.edu;
+	spf=pass smtp.mailfrom=csail.mit.edu;
+	dkim=pass header.d=outgoing.csail.mit.edu header.i=@outgoing.csail.mit.edu header.a=rsa-sha256 header.s=test20231205 header.b=Acw6sZ0+;
+	arc=none smtp.remote-ip=128.30.2.78
+Received: from outgoing2021.csail.mit.edu (outgoing2021.csail.mit.edu [128.30.2.78])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with UTF8SMTPS id 747F8606A33E;
-	Mon, 23 Nov 2026 15:41:37 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4C754606A31A;
+	Mon, 23 Nov 2026 19:16:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4C754606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=csail.mit.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=csail.mit.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=heo5z1JP
-Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id B7A601F00A36;
-	Mon, 23 Nov 2026 15:41:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795448496;
-	bh=ajq0I1jTHg94BEb2kR+C72Yoj6Dn+cM5m8kty+Pico0=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=heo5z1JP8A5yxkIctS+s13VURgxZBYP4NbGicVeLFprLdGRLp4z++VF4P5Ksijb9J
-	 19GXOsxzXFHDoK08+NSy4F2C7QAknIiaW+6LkddaRjovaFzj39ZV/dCUB0skHJ1nK5
-	 qCq/Z+3ohu5obCI5WdGdDC27j1GmEWrYpKQba9bbqUgBZsulHdXpevCylt16SuslTt
-	 Ay1PFtS8BNU9Om11cKrCm51zB0DYk/tYFx9AMtRgSFpEhUgdgy2+sIl5Jc6ExQRhZE
-	 MnZnRwc6fw9hE4wPenPq8ZzZACGh9cMfRaKbcboytfz5FUriXvOU7QspbkxuAb3ZDc
-	 pcGMAuXy8e+Hw==
-Date: Mon, 23 Nov 2026 16:41:32 +0100
-From: Bartosz Golaszewski <brgl@kernel.org>
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Arnd Bergmann <arnd@kernel.org>, Linus Walleij <linusw@kernel.org>, 
-	Dmitry Torokhov <dmitry.torokhov@gmail.com>, Johannes Berg <johannes@sipsolutions.net>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Kent Gibson <warthog618@gmail.com>, 
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, 
-	linux-sh@vger.kernel.org, "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>, 
-	linux-wireless@vger.kernel.org
-Subject: Re: [PATCH 0/2 v8] gpiolib: finish the legacy cleanup
-Message-ID: <7dpg3x3gkypkznzhuetjsqmk5fhqwuwkc6kupbs52zqh5mibgx@fjow6eodw4pf>
-References: <20261123085723.156933-1-arnd@kernel.org>
- <tdc6h325jthjgyik2ne4oistkm563maoc2cpnffqu7hh34tpl7@oscripzv4dwq>
- <qvmy7iaxc7cjy2gkajqkr5ma6b4lwxz5ff64a5zsqrgewkxodr@odbjlv5x3hix>
- <8296a5c2-0aa2-4fc7-b65b-9d336bc4dff6@app.fastmail.com>
+	dkim=pass (2048-bit key) header.d=outgoing.csail.mit.edu header.i=@outgoing.csail.mit.edu header.a=rsa-sha256 header.s=test20231205 header.b=Acw6sZ0+
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=outgoing.csail.mit.edu; s=test20231205; h=In-Reply-To:Content-Type:
+	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+	Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+	List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=bht87HU90ydQuqNwMWxnyUlGx5v3MiB0Rcrd/VnWTho=; t=1795461386; x=1796325386; 
+	b=Acw6sZ0+cO2Ay2bPeImF8UCrD7k4IaKB9SkFD4k3A5bqiEOtsQdw8szhOcuZkKLpdpkI9tyvf/O
+	sAjY509ctLaHfEO32Q72Z0RNxwhg/W+wzkyF9Swz3EU9/Ox873Jw/Tn7zUhX51YzAH2HXlUwaqsAl
+	U9KpwFRhA+UUiEChXmxBg+FU59UhoW8Bj94hwC5PKtzDXdLt7WxCU2om/kkgwKjM6VCFxfd/pu5+e
+	xv6OyjcQnSMzLg3dqX8W0y7648iYChADWoYkI3YREXuzE9nunpo+zrw6CZ6nJJig4j28x3uufHiJ1
+	Mi0Dl39OpU8/32w/3/tytRNeMZjvxCeuO4RA==;
+Received: from [49.207.211.146] (helo=csail.mit.edu)
+	by outgoing2021.csail.mit.edu with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.95)
+	(envelope-from <srivatsa@csail.mit.edu>)
+	id 1xVZVX-006Xqr-OR;
+	Mon, 23 Nov 2026 14:15:20 -0500
+Date: Tue, 24 Nov 2026 00:45:01 +0530
+From: "Srivatsa S. Bhat" <srivatsa@csail.mit.edu>
+To: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+Cc: Albert Ou <aou@eecs.berkeley.edu>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Baoquan He <baoquan.he@linux.dev>, Borislav Petkov <bp@alien8.de>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Heiko Carstens <hca@linux.ibm.com>, Helge Deller <deller@gmx.de>,
+	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Pasha Tatashin <pasha.tatashin@soleen.com>,
+	Paul Walmsley <pjw@kernel.org>,
+	Pratyush Yadav <pratyush@kernel.org>, Rich Felker <dalias@libc.org>,
+	Russell King <linux@armlinux.org.uk>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@kernel.org>,
+	Vasily Gorbik <gor@linux.ibm.com>, Will Deacon <will@kernel.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org,
+	Alexandre Ghiti <alex@ghiti.fr>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Cong Wang <cwang@multikernel.io>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	"Ritesh Harjani (IBM)" <ritesh.list@gmail.com>,
+	Shrikanth Hegde <sshegde@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	WANG Xuerui <kernel@xen0n.name>, kexec@lists.infradead.org,
+	linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev
+Subject: Re: [PATCH 1/2] MAINTAINERS: add kernel/Kconfig.kexec to KEXEC
+Message-ID: <awSQtauit5QObOPQ@csail.mit.edu>
+References: <20261119-arch-kconfig-v1-0-37c276fe4d26@kernel.org>
+ <20261119-arch-kconfig-v1-1-37c276fe4d26@kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -64,41 +105,26 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <8296a5c2-0aa2-4fc7-b65b-9d336bc4dff6@app.fastmail.com>
+In-Reply-To: <20261119-arch-kconfig-v1-1-37c276fe4d26@kernel.org>
 
-On Mon, Nov 23, 2026 at 04:24:49PM +0100, Arnd Bergmann wrote:
-> On Mon, Nov 23, 2026, at 16:08, Bartosz Golaszewski wrote:
-> > On Mon, Nov 23, 2026 at 03:59:24PM +0100, Bartosz Golaszewski wrote:
-> >> On Mon, Nov 23, 2026 at 09:57:21AM +0100, Arnd Bergmann wrote:
-> >> > 
-> >> > This was planned for 7.3 originally[1], but kept conflicting with
-> >> > ongoing cleanups for the broken rsk7203 board. I've skipped the
-> >> > oneline rsk change now, which will be fixed properly by Dmitry's
-> >> > patch [2].
-> >> 
-> > Sashiko is right:
-> >
-> >   CC      arch/sh/boards/mach-rsk/devices-rsk7203.o
-> > arch/sh/boards/mach-rsk/devices-rsk7203.c: In function 
-> > ‘rsk7203_devices_setup’:
-> > arch/sh/boards/mach-rsk/devices-rsk7203.c:127:9: error: implicit 
-> > declaration of function ‘gpio_request’; did you mean ‘symbol_request’? 
-> > [-Wimplicit-function-declaration]
-> >   127 |         gpio_request(GPIO_FN_TXD0, NULL);
-> >       |         ^~~~~~~~~~~~
-> >       |         symbol_request
+On Thu, Nov 19, 2026 at 08:16:57AM +0200, Mike Rapoport (Microsoft) wrote:
+> kernel/Kconfig.kexec is not matched by the KEXEC entry, so
+> get_maintainer.pl does not report kexec maintainers for changes in that
+> file.
 > 
-> Yes, this just seemed the easiest way out to avoid clashing with Dmitry's
-> patches again. If you want the version that doesn't break the build,
-> you can still apply v7 [1], but that likely means his series has go
-> through another revision to undo my change and remove the linux/gpio/legacy.h
-> inclusion.
->
+> Add it to the KEXEC entry.
+> 
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 
-Can I apply v7 and provide it to the SH maintainers on an immutable
-branch?
+Reviewed-by: Srivatsa S. Bhat (Microsoft) <srivatsa@csail.mit.edu>
 
-Bart
+In the spirit of finding any other misses in listing out relevant
+files under the kexec and crash entries in MAINTAINERS, I found a few
+other files that need to be added (unrelated to the Kconfig.kexec
+which is the focus of your current patchset). I'm planning to send
+a follow-up series to address that.
+
+Regards,
+Srivatsa
