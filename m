@@ -1,65 +1,64 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=193.142.43.55
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795424264;
-	b=Ev0lPTeu8Pl+AlX71N1p206njTKfpAPzt1ZxG4jt6no9qRq9+bgbk7mBDtddnMRWov/g
-	 MNMxTJLvMSrA4kXGvZnRKkqvb86Vblnr7scxKmLhL2+N6vGYulEfUyw6mcz1qwE5BU2Ig
-	 vGzVxBySmjn7iQbw+wfZeprYkVoBC3QPlSs3A5J1f2EWywenLz/cicSg0yUr7N60rlI4Y
-	 8B5qgSeRKI80PLe2DU8dmIMesdAaL70SM5YQeSfL9/6Rev9oFhik+NlysX3wBJ03D1NJL
-	 xEky8tL484r+l7O5UkTX/E0u/kOhGs6qdP2M1s83YouSc0dAKDptCVcEnI/qi2E+PBg==
+	t=1795426648;
+	b=LNIGPM2Lf5qUfNE7JIEJq62G86FSlJuhs4BR8pvLLwGnqam+5cvTkzx7DUjFVfoQ6Tf/
+	 /iBIFXAXn435zKf6YDyjzA6a1b9m53Tv/Moiz9ePjHKPGgg8KIM3kMN/jmx4TqRDHg3yA
+	 r6UfWWSwURkV8ueMsioILtMD1jRHkDd2kvZVs2G1vBi69rzAcgENNo9HoiXvyMCVCCghp
+	 ZLTDHTJq0Z3CoLhWPtqV9JoQC0fiYSf/HcZ/VsvnzOYUgXrskPT9P470XD/CG4jlGcdMU
+	 2OAddrIIkh0iprNZ+WPCjtJsJ/QoBVQyBR7DD8Y2NwWZ/V6xGBcFivp0W20YTSWDRmg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795424264;
-	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
-	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=ApqXI+L+rJvaTMWirTj9cIQB1urHs8z+JAG5Yj708Rk=;
-	b=rDkXKutXPfZgPe7+1GIgavKvoltzoAngTX4dulNq6VqiliNgS+t9iMHHB2Z7YadRNKoW
-	 pCUYYpGAKAaGflUpUcTAYy09lAVJlG6miEFVA5Jbb9AZmVNyyaRqg8SbFrMgl6LK0Rft/
-	 /crDXKggbcSpFs4bDKBkvCXSjRE7z6DSz7FLfdvNddnuYGKF0dSAuciqEfD1VwJNhVO6Z
-	 kXgt5Bs9OjcvZviMwQqU1kQkI9ADnbwESk0vsgw0To3kW38WLuT1iCqT0ZWQLOPTCZIbO
-	 EFKHfJ7bVlTUWYGoyqdPV3k2H9huyFoHR6SukrC1zVzoOJvTET58VrvTx+wJAV23hEg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795426648;
+	h=DMARC-Filter:From:DKIM-Signature:DKIM-Signature:Date:Subject:
+	 MIME-Version:Content-Type:Content-Transfer-Encoding:Message-Id:
+	 References:In-Reply-To:To:Cc:X-Developer-Signature:X-Developer-Key;
+	bh=E1kpH9qtmZAMmYTBOk6CnIKFezpBGJI84FmVahSpOrc=;
+	b=v7MI2G+WLBer/WgWHaeL0GYzYOB+UNEVEQcx4/bVdfCSOB43XFryPNua06YcQjJH0Dfs
+	 vqxDo+mZPo3GAQWRfvFbWjj1SZsgoxYt+gLf+yLQ5XFwXKm9o5YOGfBqpNmDcUXX/lBfQ
+	 Ipfii489lVd1SUgT8yVgS6SJGt+LRVBrwaXGdbC4VEmx/RwUb6hgkKptc+0JMkoRurP9o
+	 1cZ1N543kTxm0OWt8OA9fwdSnJHuboZwdRqYRxEBaMdVsrxZyU4+QYZzjK1p1ZjrAULaa
+	 i3EPgFrl/6IukpNAcRGRWYg+DnxiYcemoS8cJvRgFatvK1JlX7iFDWXkLX9p1SUUZIw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=X9nTSCJU;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=linutronix.de;
+	spf=pass smtp.mailfrom=linutronix.de;
+	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=kEyAOZ+f;
+	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b="lIn2F/rY";
+	arc=none smtp.remote-ip=193.142.43.55
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 106EE606A331;
-	Mon, 23 Nov 2026 08:57:43 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 318C8606A327;
+	Mon, 23 Nov 2026 09:37:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 318C8606A327
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=X9nTSCJU
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5969E1F000D0;
-	Mon, 23 Nov 2026 08:57:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795424263;
-	bh=ApqXI+L+rJvaTMWirTj9cIQB1urHs8z+JAG5Yj708Rk=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=X9nTSCJU4tFQ/WzCTKIEu1+uyCly9AXS/Au/44r/jtp2Ll4RUJponQ6c77gm2d0QQ
-	 s5XNmDIrvsIeoeErfLVwEK3xGjTQYCk7CdRKDiDK+4kl3YKMqz2eL5/hQGZ8lZ8Wql
-	 v1d3ykuFXH2AGSfzcof2m8SRqFyccj17WAfP13MxEQN1ckYrQyMmTr0Zlg3JukjhEO
-	 C3GsEsoD3yyFmL3ryKQf+vyUNDDzoZRUAwkDX4zXpcMh2jX7AZJoZEq3xzcWze9M3/
-	 ST3Mmlsgz/uaO+kP+krck/kEilBgf2X1BBpmkHbFHQaWmhyFLvzt4iyVNbBSDPIER9
-	 0ew/Xm0zxrY8w==
-From: Arnd Bergmann <arnd@kernel.org>
-To: Linus Walleij <linusw@kernel.org>,
-	Bartosz Golaszewski <brgl@kernel.org>
-Cc: Arnd Bergmann <arnd@arndb.de>,
-	Dmitry Torokhov <dmitry.torokhov@gmail.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Kent Gibson <warthog618@gmail.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	linux-kernel@vger.kernel.org,
-	linux-mips@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-gpio@vger.kernel.org,
-	linux-wireless@vger.kernel.org,
-	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-Subject: [PATCH 2/2] [v8] gpiolib: remove linux/gpio.h
-Date: Mon, 23 Nov 2026 09:57:23 +0100
-Message-ID: <20261123085723.156933-3-arnd@kernel.org>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <20261123085723.156933-1-arnd@kernel.org>
-References: <20261123085723.156933-1-arnd@kernel.org>
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=kEyAOZ+f;
+	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=lIn2F/rY
+From: =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1795426646;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=E1kpH9qtmZAMmYTBOk6CnIKFezpBGJI84FmVahSpOrc=;
+	b=kEyAOZ+fXfpEFfXli9cKb4jaOvep+YD+wGpQAMUQQojZWoFAqgtWYb70a2ykA+VO1bRedq
+	xJ1z/x/EoR0vCb1RSKcWCP09fC16ImShi/WU9K9AboAh6Pl6VYOpQX7L3Va0rbVF8sRgwZ
+	j1VkZWwgTUUpmxL3P+j222I9Hpz4yBmTIIBjdDdZJBGCITy12dETeke7yfjVz6eOwfrX2T
+	qwIgn0zPKXkYeYkzAhQRrFUZf3oInFDCx1beSUFl6BqCyxq769Dp3hpWe19ngJScL2Wjxr
+	jwMUd1tmM8P3eypY0Zj/ISZvHtFUuVCqtBxqaoGWMGH3MzUX5NwVGjxH9YMJBQ==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1795426646;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=E1kpH9qtmZAMmYTBOk6CnIKFezpBGJI84FmVahSpOrc=;
+	b=lIn2F/rYSSMxABLTJM4B3AbW/3uEZC8vK5/mSmfekSgDDXw9MHlSZZVoCJyH3+Wc1EX+Zc
+	QINruovqqc4qHEBA==
+Date: Mon, 23 Nov 2026 10:37:06 +0100
+Subject: [PATCH v3 01/15] MAINTAINERS: exec: Add more auxvec.h variants
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -69,162 +68,58 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
+Message-Id: <20261123-at-vector-size-arch-v3-1-d342dae9e843@linutronix.de>
+References: <20261123-at-vector-size-arch-v3-0-d342dae9e843@linutronix.de>
+In-Reply-To: <20261123-at-vector-size-arch-v3-0-d342dae9e843@linutronix.de>
+To: Kees Cook <kees@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, 
+ linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
+ linux-riscv@lists.infradead.org, loongarch@lists.linux.dev, 
+ linux-s390@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
+ linux-mips@vger.kernel.org, sparclinux@vger.kernel.org, 
+ linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, 
+ =?utf-8?q?Thomas_Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1795426640; l=979;
+ i=thomas.weissschuh@linutronix.de; s=20240209; h=from:subject:message-id;
+ bh=hyCnjfQwzbLi6OQVQUQL35+BD4s52Bt4na4vvI8iM88=;
+ b=Yd3vnnMHSBep+pRQRmyi1AA40DEVjxA2c8/dBeFWV4J0rKudeRDSHvhOeNFfw6AFADdjfzkJf
+ OYY7DU1b6DAAWfLpRxBPgKDgCI6NtpX+tyAlSPU38iJqHr9hcKiFypZ
+X-Developer-Key: i=thomas.weissschuh@linutronix.de; a=ed25519;
+ pk=pfvxvpFUDJV2h2nY0FidLUml22uGLSjByFbM6aqQQws=
 
-From: Arnd Bergmann <arnd@arndb.de>
+There are quite a few auxvec.h headers. Mark all of them maintained
+as part of 'EXEC & BINFMT API, ELF'.
 
-After all other drivers have converted to linux/gpio/consumer.h
-or linux/gpio/legacy.h, remove the final leftover bits here.
-
-Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
-Acked-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-Reviewed-by: Linus Walleij <linusw@kernel.org>
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Thomas Weißschuh <thomas.weissschuh@linutronix.de>
+Reviewed-by: Kees Cook <kees@kernel.org>
 ---
- MAINTAINERS                                  |  1 -
- arch/mips/txx9/rbtx4927/setup.c              |  2 +-
- drivers/gpio/TODO                            |  4 +---
- drivers/gpio/gpiolib-cdev.c                  |  2 +-
- drivers/gpio/gpiolib-legacy.c                |  3 +--
- drivers/gpio/gpiolib.c                       |  2 +-
- drivers/net/wireless/morsemicro/mm81x/hw.c   |  1 -
- drivers/net/wireless/morsemicro/mm81x/yaps.c |  1 -
- include/linux/gpio.h                         | 22 --------------------
- 9 files changed, 5 insertions(+), 33 deletions(-)
- delete mode 100644 include/linux/gpio.h
+ MAINTAINERS | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 829c795c13b3..7efa1e6446a7 100644
+index 93abbb315065..a659c9bfb0f0 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11589,7 +11589,6 @@ F:	Documentation/devicetree/bindings/gpio/
- F:	Documentation/driver-api/gpio/
- F:	drivers/gpio/
- F:	include/dt-bindings/gpio/
--F:	include/linux/gpio.h
- F:	include/linux/gpio/
- K:	(devm_)?gpio_(request|free|direction|get|set)
- K:	GPIOD_FLAGS_BIT_NONEXCLUSIVE
-diff --git a/arch/mips/txx9/rbtx4927/setup.c b/arch/mips/txx9/rbtx4927/setup.c
-index 223889c03186..fdbe2bd87979 100644
---- a/arch/mips/txx9/rbtx4927/setup.c
-+++ b/arch/mips/txx9/rbtx4927/setup.c
-@@ -48,7 +48,7 @@
- #include <linux/ioport.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
--#include <linux/gpio.h>
-+#include <linux/gpio/consumer.h>
- #include <linux/gpio/machine.h>
- #include <linux/leds.h>
- #include <asm/io.h>
-diff --git a/drivers/gpio/TODO b/drivers/gpio/TODO
-index 7ce80fde1f17..4fce4a7e4704 100644
---- a/drivers/gpio/TODO
-+++ b/drivers/gpio/TODO
-@@ -52,9 +52,7 @@ Work items:
-   base can be made dynamic (set to -1) if CONFIG_GPIO_SYSFS is disabled.
- 
- - When this work is complete (will require some of the items in the
--  following ongoing work as well) we can delete the old global
--  numberspace accessors from <linux/gpio.h> and eventually delete
--  <linux/gpio.h> altogether.
-+  following ongoing work as well) we can delete <linux/gpio/legacy.h>.
- 
- -------------------------------------------------------------------------------
- 
-diff --git a/drivers/gpio/gpiolib-cdev.c b/drivers/gpio/gpiolib-cdev.c
-index d877f2de506c..795f7df5b540 100644
---- a/drivers/gpio/gpiolib-cdev.c
-+++ b/drivers/gpio/gpiolib-cdev.c
-@@ -11,7 +11,7 @@
- #include <linux/device.h>
- #include <linux/err.h>
- #include <linux/file.h>
--#include <linux/gpio.h>
-+#include <linux/gpio/consumer.h>
- #include <linux/gpio/driver.h>
- #include <linux/hte.h>
- #include <linux/interrupt.h>
-diff --git a/drivers/gpio/gpiolib-legacy.c b/drivers/gpio/gpiolib-legacy.c
-index c2b04605b203..a841208dc19a 100644
---- a/drivers/gpio/gpiolib-legacy.c
-+++ b/drivers/gpio/gpiolib-legacy.c
-@@ -7,8 +7,7 @@
- 
- #include <linux/gpio/consumer.h>
- #include <linux/gpio/driver.h>
--
--#include <linux/gpio.h>
-+#include <linux/gpio/legacy.h>
- 
- #include "gpiolib.h"
- 
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index c09342fc52cb..c16d69761e04 100644
---- a/drivers/gpio/gpiolib.c
-+++ b/drivers/gpio/gpiolib.c
-@@ -30,7 +30,7 @@
- #include <linux/string_choices.h>
- #include <linux/workqueue.h>
- 
--#include <linux/gpio.h>
-+#include <linux/gpio/consumer.h>
- #include <linux/gpio/driver.h>
- #include <linux/gpio/machine.h>
- 
-diff --git a/drivers/net/wireless/morsemicro/mm81x/hw.c b/drivers/net/wireless/morsemicro/mm81x/hw.c
-index 9293f4094db1..e48eaf151faa 100644
---- a/drivers/net/wireless/morsemicro/mm81x/hw.c
-+++ b/drivers/net/wireless/morsemicro/mm81x/hw.c
-@@ -7,7 +7,6 @@
- #include <linux/stringify.h>
- #include <linux/types.h>
- #include <linux/unaligned.h>
--#include <linux/gpio.h>
- #include "hif.h"
- #include "mac.h"
- #include "bus.h"
-diff --git a/drivers/net/wireless/morsemicro/mm81x/yaps.c b/drivers/net/wireless/morsemicro/mm81x/yaps.c
-index 2d1728c1a6de..a843c1c16216 100644
---- a/drivers/net/wireless/morsemicro/mm81x/yaps.c
-+++ b/drivers/net/wireless/morsemicro/mm81x/yaps.c
-@@ -2,7 +2,6 @@
- /*
-  * Copyright (c) 2017-2026 Morse Micro
-  */
--#include <linux/gpio.h>
- #include <linux/random.h>
- #include <linux/timer.h>
- #include <linux/bitops.h>
-diff --git a/include/linux/gpio.h b/include/linux/gpio.h
-deleted file mode 100644
-index b0d4942a65de..000000000000
---- a/include/linux/gpio.h
-+++ /dev/null
-@@ -1,22 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 */
--/*
-- * NOTE: This header *must not* be included.
-- *
-- * If you're implementing a GPIO driver, only include <linux/gpio/driver.h>
-- * If you're implementing a GPIO consumer, only include <linux/gpio/consumer.h>
-- * If you're using the legacy interfaces, include <linux/gpio/legacy.h>
-- */
--
--#ifndef __LINUX_GPIO_H
--#define __LINUX_GPIO_H
--
--#include <linux/types.h>
--#ifdef CONFIG_GPIOLIB
--#include <linux/gpio/consumer.h>
--#endif
--
--#ifdef CONFIG_GPIOLIB_LEGACY
--#include <linux/gpio/legacy.h>
--#endif /* CONFIG_GPIOLIB_LEGACY */
--
--#endif /* __LINUX_GPIO_H */
+@@ -10073,13 +10073,16 @@ L:	linux-mm@kvack.org
+ S:	Supported
+ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git for-next/execve
+ F:	Documentation/userspace-api/ELF.rst
++F:	arch/*/include/uapi/asm/auxvec.h
+ F:	fs/*binfmt_*.c
+ F:	fs/Kconfig.binfmt
+ F:	fs/exec.c
+ F:	fs/tests/binfmt_*_kunit.c
+ F:	fs/tests/exec_kunit.c
++F:	include/linux/auxvec.h
+ F:	include/linux/binfmts.h
+ F:	include/linux/elf.h
++F:	include/uapi/asm-generic/auxvec.h
+ F:	include/uapi/linux/auxvec.h
+ F:	include/uapi/linux/binfmts.h
+ F:	include/uapi/linux/elf.h
+
 -- 
-2.53.0
+2.56.1
 
