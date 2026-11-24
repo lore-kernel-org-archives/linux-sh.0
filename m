@@ -1,87 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=198.175.65.9
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795504633;
-	b=BS8L9Ku+6XjynfQI/w32u4P+uynAi5GF4LDp7ESzCEKYcX/mWJWvGr52PXsf8RGuzJkJ
-	 mm0+27iaIBSx/jcrNm45Po9wTHqzegcjYWcLFGUZChbg6z6aQk2yRRN2tFh3nHUe0w6QS
-	 DAlAGdmVYUp1JAhF1SdzWHea1v/daiwN1kx40aMfm0J9iR7xPVAmPSjwGktLr+EXAiPEk
-	 YLJDB5o/E9In27No2PWs4DSlrnpTBFQtCV7j8vdsJ+RzouTQvLO3+3GMuQ5cMS14xjrSv
-	 M0Bb6krveY1gx9k0HO4V6SkxoG30S9wi6KLS+aaw43a+gnI58/RZdpGD8vAOhnuHqwg==
+	t=1795508858;
+	b=OGeCqZa0azsfBxHeasTL2M56Oce308iM2W8QJHm6ZhClAns0JkjbmDQkPf6GF2/07QuV
+	 tfZcNh3j7Xh2A8w4ZZPF7vJ8Xtp+rFHRiJn9EgTpZoQVtb48rPwaz45JYy4y3Lm4PPN5w
+	 SUWg2zuL0g8mfqP0yjPtbwtd8pvpoUwgzvPPPx3//cs+1eXrVy1y4NZz4OsQRczhHgeCh
+	 rK/hbcghJfzHm4STJnMPqOgjJUNX5Qhn3tp015zQhOUi2BLVlhAuXOOcocfZWsHfSk8Nf
+	 DjzUqjLm++LtNS2Li5ui23Oi1fpVuhIqyh2xuYA+D5IVt+Q3eBt5U+0S+uFUcsCroqg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795504633;
-	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
-	 X-IronPort-AV:X-IronPort-AV:Received:X-CSE-ConnectionGUID:
-	 X-CSE-MsgGUID:X-ExtLoop1:X-IronPort-AV:Received:Date:From:To:Cc:
-	 Subject:Message-ID:References:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To:Organization;
-	bh=RQcDNanpw//dbaaaimKQPYZVp7hL9J0JtvEqkrn+7kE=;
-	b=BOoOZkUcB4o7oH13kqIcdf3JkqZ8WC9tY77Cjyro76y8dvH4MDhClG28olZ96iFYQE7G
-	 1FprZyhCbqhYkD8K7PKv3e+JosrnqBC27Q7+AFGtSD7lalcfrPB3oVpArGOEQSR0dPlx1
-	 zUPNIbGW5vo+VM7ehSz6ZhAwEQnnuP//wuJdV5J2imneoaaLBxvW0zCY1HAql6kZSZArJ
-	 UkXST7Z0Sr42FRBCK9MfkYlvAGED3+RTbChpFiNRqfMeATvxSogUAsSxJHArDsN+QkDgh
-	 1Fz+UbnsWLE/XqEBbuaw0F9Ifx91oLPBwq0JRF1lev828YWAbg25IbUaN5QvzEDcb/Q==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795508858;
+	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
+	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
+	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
+	 X-Originating-IP:X-ZEDAT-Hint;
+	bh=fOwYXB5vdalFPHcBdZlvLIB1kc1NWkQ5l89Xnccj3bM=;
+	b=ouJ5cJ3zPIqNO4/a/67xLEZYK3PIwuh58EpnB582sROUxYWcQ/TQb7Ul89NexZ9m4OZR
+	 WqnpUE+HHkVpRVm7PtQj+M0Fpm3wJFCIxEnyVRF10sbfDlhsVXScmoWXYrhGUf1xFGQuz
+	 eDwB01K3G9kXMmlWJx5RD4YuDlo4dpb1p0ZX5QD+Z6PYvJCBFwN4vZNes3ee+i/3DEnV2
+	 0/cn0g9Jr58hPRkO6yc+gptlhpCObr1wB+muqfbcJTxmrorWIYCQxt53Mr0tkmdkhwbj7
+	 7Ynpy9uOjWZuMDJbrbO4jo9NhVOeZ+rt6ix5pplPU7RaI/3+tFOwP6S0ePmMF+S/zCw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=linux.intel.com;
-	spf=pass smtp.mailfrom=linux.intel.com;
-	dkim=pass header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=BwaWYyVN;
-	arc=none smtp.remote-ip=198.175.65.9
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.9])
-	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
+	dmarc=pass header.from=physik.fu-berlin.de;
+	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
+	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=GZRlBdlc;
+	arc=none smtp.remote-ip=130.133.4.66
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE250606A31E;
-	Tue, 24 Nov 2026 07:17:12 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CE250606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.intel.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D8824606A322;
+	Tue, 24 Nov 2026 08:27:36 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D8824606A322
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=BwaWYyVN
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1795504633; x=1827040633;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=dugEFlR4OXZrsWQLYSz0uPzA+ZdKgtgmNmQXvziDeew=;
-  b=BwaWYyVNbzgwvkgIbvGE5I+QjCmO4sK6FZu8apeNCrSXP3fSuppyCvML
-   UbhXQE8I2mV0la4KPEcvRAjPm4MXhsw7gibozJdwc8/NJ0+bcNzZlyvBI
-   bwVA+t3qpZd7tNHwTiBEdJrvP+rDPP5eGPUSJTVS9E0yjry5EFwsXQ9dr
-   vRjH9bFzkVijnIJmbCfoPFIHWiotoQHoGDYbgrJTY9oIkgaF9Nfs8AUWR
-   BMNcIwK8GzOfDsCyEBl0embReSxGNilxev9azG+QZ29rc8H7NGHDhv+FQ
-   yPw8c5au9u2Xyqn/M3DWkXFEa6Jq77XJusO3ZNcgLQcmUCg6siUEtfluI
-   A==;
-X-CSE-ConnectionGUID: 9Q2mKrrjQJyvoLDuoe9oVA==
-X-CSE-MsgGUID: ejq79uhrQlK8pCLiCUukkA==
-X-IronPort-AV: E=McAfee;i="6800,10657,11975"; a="4183791"
-X-IronPort-AV: E=Sophos;i="6.27,230,1787036400"; 
-   d="scan'208";a="4183791"
-Received: from fmviesa011.fm.intel.com ([10.60.135.151])
-  by orvoesa101.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Nov 2026 23:10:40 -0800
-X-CSE-ConnectionGUID: QQVnudcPQpGWfCNIBVElPQ==
-X-CSE-MsgGUID: GmZfKkh+SM6bye3Wjh6v/Q==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.27,230,1787036400"; 
-   d="scan'208";a="13284049"
-Received: from hrotuna-mobl2.ger.corp.intel.com (HELO localhost) ([10.245.245.125])
-  by smtpauth.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Nov 2026 23:10:37 -0800
-Date: Tue, 24 Nov 2026 09:10:34 +0200
-From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Arnd Bergmann <arnd@kernel.org>, Rich Felker <dalias@libc.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	Linus Walleij <linusw@kernel.org>,
-	Bartosz Golaszewski <brgl@kernel.org>,
-	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>,
-	linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
-	linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org
+	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=GZRlBdlc
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
+	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
+	References; bh=fOwYXB5vdalFPHcBdZlvLIB1kc1NWkQ5l89Xnccj3bM=; t=1795508856;
+	x=1796113656; b=GZRlBdlcX4n0Jy/5ON6iC6aq0/HHtSx6o31Dne0g7MHIG8tvMxGkUqmYt8dh9
+	/3L2FXPJfjUScXbqtR/fQkRsm79i/8ynBrKwtRiDrAIbolKYr/3V3hKUtillOxRLoQkxiD6CE+CdJ
+	YI+yfHtEvL4Gdd2GmpznMImNqoBfblvMmIc3fqIkbmSnFcrpOlYi6yCN6X6CsWHwoDStmKbVkzMlb
+	1AuJHqWYZ0RX7MidYxaOy2Pyoq26DN2WEDxYwF1x+ooY1ZWSexSY/VeSZzRajyBmTH9FaBBHZH/CU
+	E92qIKwl0f+zGmwcnk2necycUL3Opyvi4ABAbVoP7tD+pbnbRw==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.100)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1xVls4-00000003CfB-07QK; Tue, 24 Nov 2026 09:27:24 +0100
+Received: from p57bd95b5.dip0.t-ipconnect.de ([87.189.149.181] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.100)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1xVls3-00000000YVA-36qH; Tue, 24 Nov 2026 09:27:23 +0100
+Message-ID: <6eb2202457d5703192a513b4e898dfe6653c1b0f.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH v3 0/5] sh: mach-rsk: rsk7203: switch to using static
  device property, drop legacy gpio API
-Message-ID: <awU4aqWbKEs4Qhyg@ashevche-desk.local>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Dmitry Torokhov
+	 <dmitry.torokhov@gmail.com>
+Cc: Arnd Bergmann <arnd@kernel.org>, Rich Felker <dalias@libc.org>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven
+ <geert+renesas@glider.be>, Linus Walleij	 <linusw@kernel.org>, Bartosz
+ Golaszewski <brgl@kernel.org>, Bartosz Golaszewski	
+ <bartosz.golaszewski@oss.qualcomm.com>, linux-sh@vger.kernel.org, 
+	linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Date: Tue, 24 Nov 2026 09:27:22 +0100
+In-Reply-To: <awU4aqWbKEs4Qhyg@ashevche-desk.local>
 References: <20260929-rsk7203-properties-v3-0-02f84aeb8e47@gmail.com>
- <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com>
- <arzKNhmoL6yiGrzH@ashevche-desk.local>
- <dea00f90c205f8359baca729d8b0f31a@gmail.com>
- <ce838102be497ee6eab490b4454095b96e16d015.camel@physik.fu-berlin.de>
- <2e4f0d32c05d841feb367741bf8802fc@gmail.com>
+	 <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com>
+	 <arzKNhmoL6yiGrzH@ashevche-desk.local>
+	 <dea00f90c205f8359baca729d8b0f31a@gmail.com>
+	 <ce838102be497ee6eab490b4454095b96e16d015.camel@physik.fu-berlin.de>
+	 <2e4f0d32c05d841feb367741bf8802fc@gmail.com>
+	 <awU4aqWbKEs4Qhyg@ashevche-desk.local>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.62.1 
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -91,61 +91,26 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <2e4f0d32c05d841feb367741bf8802fc@gmail.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - c/o Alberga Business Park, 6
- krs, Bertel Jungin Aukio 5, 02600 Espoo
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Mon, Nov 23, 2026 at 03:55:09PM -0800, Dmitry Torokhov wrote:
-> On Mon, Nov 23, 2026 at 09:12:37AM +0100, John Paul Adrian Glaubitz wrote:
-> > I have been super-busy with CVE fixes but I will try to get into kernel
-> > stuff back again later this week. As I mentioned before, kernel maintenance
-> > is not my primary job, so I cannot act as quickly as people who are getting
-> > paid for it.
-> 
-> I completely understand; upstream kernel work is not my main focus
-> either, and I appreciate you keeping sh maintained in your spare time.
-> I did not mean to rush you; I mostly wanted to check how you would like
-> to proceed before the next merge window.
-> 
-> FWIW, I took a closer look at the current state of rsk7203 on mainline
-> prior to this series, and quite a bit of it is already broken:
-> 
-> - Ethernet (smsc911x) has been silently ignoring its platform_data since
->   v4.13 (commit 3708184afc77) because device_property_read_u32() returns
->   -EINVAL instead of -ENXIO when there is no fwnode. That drops
->   SMSC911X_SWAP_FIFO, corrupting TX/RX packet byte order on this
->   big-endian board.
-> - The RTC (sh-rtc) fails probe unconditionally since commit 689602e0609e
->   because sh7203 only defines one IRQ resource while sh_rtc_probe() now
->   requests IRQ index 2.
-> - sh-cpufreq fails init because sh_cpufreq_cpu_init() never populates
->   the per-CPU clock.
-> - Enabling gpio-keys-polled (disabled in rsk7203_defconfig) clobbers
->   LAN9118's IRQ0 on PB0.
-> - As Arnd noted, the rsk7203_defconfig kernel no longer fits in the
->   4 MiB flash, and USB was never wired up for this board.
-> 
-> Given how long some of these regressions have gone unnoticed, it seems
-> extremely unlikely that anyone is actually using mainline kernels on
-> rsk7203.
-> 
-> Rather than worrying about hardware testing here, I think the simplest
-> way forward is to just apply these patches (with Arnd's Kconfig tweak
-> folded in, or I can send a v4 if you prefer) to unblock the legacy GPIO
-> API removal,
+On Tue, 2026-11-24 at 09:10 +0200, Andy Shevchenko wrote:
+> ...or even remove the board support completely (would be interesting
+> to see somebody investing time in this HW to fix all what listed and
+> not listed above).
 
-I'm agree with this.
+Can I as the SH maintainer at least have the last word on this? I'm not
+really happy with the fact that corporate developers are chasing hobbyists
+in the kernel developments all the time.
 
-> and we can resolve any bug reports if they ever arise later.
+You people are being paid to do this, of course you can work on the kernel
+on every weekday. But that doesn't mean hobbyist developers have to pick
+that workload as well.
 
-...or even remove the board support completely (would be interesting
-to see somebody investing time in this HW to fix all what listed and
-not listed above).
+Adrian
 
--- 
-With Best Regards,
-Andy Shevchenko
-
-
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
