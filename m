@@ -1,87 +1,89 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=192.198.163.8
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795508858;
-	b=OGeCqZa0azsfBxHeasTL2M56Oce308iM2W8QJHm6ZhClAns0JkjbmDQkPf6GF2/07QuV
-	 tfZcNh3j7Xh2A8w4ZZPF7vJ8Xtp+rFHRiJn9EgTpZoQVtb48rPwaz45JYy4y3Lm4PPN5w
-	 SUWg2zuL0g8mfqP0yjPtbwtd8pvpoUwgzvPPPx3//cs+1eXrVy1y4NZz4OsQRczhHgeCh
-	 rK/hbcghJfzHm4STJnMPqOgjJUNX5Qhn3tp015zQhOUi2BLVlhAuXOOcocfZWsHfSk8Nf
-	 DjzUqjLm++LtNS2Li5ui23Oi1fpVuhIqyh2xuYA+D5IVt+Q3eBt5U+0S+uFUcsCroqg==
+	t=1795509403;
+	b=B+t8/GKn1xbyZ8F+4d00uJ2YhhAHLYjyJt+EXWDlJoY8Dz1BXt81Cn5/I4ADU6w40YcO
+	 gy67n7eT1IlFNGVyJnOnBInKsL4PfSOEQFC9wICMrkY992REY/Pa9tia5N55VdHOlpvgn
+	 bmHnqHFsdV74Y/gNOUuguwLV33oCDn+BQi0WnFqWhA6z6iWau4GlsEYjnt6wLZQT0K2Rc
+	 PjFQVd8zpbtp8GXyYUw3eT9OHira+BPHrTa9QrqTkAJHWNj8Go5BIOvU/lLX2LO3u97RD
+	 +VoDOPMdrVPSM0kBE/vx03r8G+6xEOrH5rf1vSTr6XAzTu6wseyj7EW25QFhz2hTMjw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795508858;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Message-ID:Subject:
-	 From:To:Cc:Date:In-Reply-To:References:Content-Type:
-	 Content-Transfer-Encoding:User-Agent:MIME-Version:X-Original-Sender:
-	 X-Originating-IP:X-ZEDAT-Hint;
-	bh=fOwYXB5vdalFPHcBdZlvLIB1kc1NWkQ5l89Xnccj3bM=;
-	b=ouJ5cJ3zPIqNO4/a/67xLEZYK3PIwuh58EpnB582sROUxYWcQ/TQb7Ul89NexZ9m4OZR
-	 WqnpUE+HHkVpRVm7PtQj+M0Fpm3wJFCIxEnyVRF10sbfDlhsVXScmoWXYrhGUf1xFGQuz
-	 eDwB01K3G9kXMmlWJx5RD4YuDlo4dpb1p0ZX5QD+Z6PYvJCBFwN4vZNes3ee+i/3DEnV2
-	 0/cn0g9Jr58hPRkO6yc+gptlhpCObr1wB+muqfbcJTxmrorWIYCQxt53Mr0tkmdkhwbj7
-	 7Ynpy9uOjWZuMDJbrbO4jo9NhVOeZ+rt6ix5pplPU7RaI/3+tFOwP6S0ePmMF+S/zCw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795509403;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:X-IronPort-AV:Received:X-CSE-ConnectionGUID:
+	 X-CSE-MsgGUID:X-ExtLoop1:X-IronPort-AV:Received:Date:From:To:Cc:
+	 Subject:Message-ID:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To:Organization;
+	bh=1w0d9sUWZdCK+5rk5sXvxrv9OLJKTusbo8yD1kTvInc=;
+	b=ogGIjQN6kJhxRWul2ZbxFPh5uGPHEbfGulgOkIy2Bse58IYjKu8PMbJ/H0PIGRoE0Js3
+	 brUohQGlQRSD7FbcVMPbG4YXuihu3gNyH3Qs+diMQ9mZxtpmEsrX515wDObPhf0RzqLkR
+	 oxNO7ajSFEmPHbTDlgoeXl3wLJAEqJpAwz0QkOw0CncNF0PbVd7uXIdkxUP10ZLrVCa+k
+	 Y8w+BbKtqlY5Yc7hOQxve5O9pAFKABeDFrv2OLKDwaTeq/w4CcwM7OyD7F3jcz3Eveduf
+	 dj7FVIhpsZZehXHSgS8q2ASFcRXXi/j6H6VLi/TKTcbi0Xp0VWzkpz/WSoDJfOcpiYw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=physik.fu-berlin.de;
-	spf=pass smtp.mailfrom=zedat.fu-berlin.de;
-	dkim=pass header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=GZRlBdlc;
-	arc=none smtp.remote-ip=130.133.4.66
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=linux.intel.com;
+	spf=pass smtp.mailfrom=linux.intel.com;
+	dkim=pass header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=VRpGars9;
+	arc=none smtp.remote-ip=192.198.163.8
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.8])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D8824606A322;
-	Tue, 24 Nov 2026 08:27:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D8824606A322
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E7C9606A32A;
+	Tue, 24 Nov 2026 08:36:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 5E7C9606A32A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fu-berlin.de header.i=@fu-berlin.de header.a=rsa-sha256 header.s=fub01 header.b=GZRlBdlc
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:From:
-	Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
-	Content-Transfer-Encoding:Content-ID:Content-Description:In-Reply-To:
-	References; bh=fOwYXB5vdalFPHcBdZlvLIB1kc1NWkQ5l89Xnccj3bM=; t=1795508856;
-	x=1796113656; b=GZRlBdlcX4n0Jy/5ON6iC6aq0/HHtSx6o31Dne0g7MHIG8tvMxGkUqmYt8dh9
-	/3L2FXPJfjUScXbqtR/fQkRsm79i/8ynBrKwtRiDrAIbolKYr/3V3hKUtillOxRLoQkxiD6CE+CdJ
-	YI+yfHtEvL4Gdd2GmpznMImNqoBfblvMmIc3fqIkbmSnFcrpOlYi6yCN6X6CsWHwoDStmKbVkzMlb
-	1AuJHqWYZ0RX7MidYxaOy2Pyoq26DN2WEDxYwF1x+ooY1ZWSexSY/VeSZzRajyBmTH9FaBBHZH/CU
-	E92qIKwl0f+zGmwcnk2necycUL3Opyvi4ABAbVoP7tD+pbnbRw==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.100)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1xVls4-00000003CfB-07QK; Tue, 24 Nov 2026 09:27:24 +0100
-Received: from p57bd95b5.dip0.t-ipconnect.de ([87.189.149.181] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.100)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1xVls3-00000000YVA-36qH; Tue, 24 Nov 2026 09:27:23 +0100
-Message-ID: <6eb2202457d5703192a513b4e898dfe6653c1b0f.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key, unprotected) header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=VRpGars9
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1795509402; x=1827045402;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=PlfoI6XoxhvXEyYiutsIZROptYu5/Xaq/GJDeIv8Qn0=;
+  b=VRpGars9VkFjFoFLKs2/6nTqvZv8++Ajc+kzFQ+L7oyHlRX+7RtAXkEg
+   h9E1P05SkaVMAbAQm60X8nAcWuU7kSOQnabu+wVXFYECjpG5bfkAX/9zI
+   BxZS/0DdBY7LEe5bsNjcOvQy58joWjxbXj4XauA8P+CNZgIvqHf85QZW/
+   gIicfAnZYxaZNKlzbWNwvCAu5jGrU92NNpH5It/G3whvFQzaez5rUu6pK
+   BkumzDALXT07yZY52V3Y3ldzcrDeoZuGpOEeIlki6MWnwr7yjMv9svmU0
+   ENYkuJBUCSEA0pL2xANFkcm/Gat+WYUqDVcOFwGPszt87SjLVC1kNH3Xf
+   Q==;
+X-CSE-ConnectionGUID: ioYyK0scQl2Q4Z48JVrqLw==
+X-CSE-MsgGUID: gD0wNjwSSe6RuSAK65hUbA==
+X-IronPort-AV: E=McAfee;i="6800,10657,11975"; a="4231038"
+X-IronPort-AV: E=Sophos;i="6.27,230,1787036400"; 
+   d="scan'208";a="4231038"
+Received: from fmviesa002.fm.intel.com ([10.60.135.142])
+  by fmvoesa102.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Nov 2026 00:36:41 -0800
+X-CSE-ConnectionGUID: IxCl6M1tSF+dHXU2MX/Q3A==
+X-CSE-MsgGUID: gNKa3/ZxRu+v3JEjljxgCw==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.27,230,1787036400"; 
+   d="scan'208";a="11726749"
+Received: from hrotuna-mobl2.ger.corp.intel.com (HELO localhost) ([10.245.245.125])
+  by smtpauth.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Nov 2026 00:36:37 -0800
+Date: Tue, 24 Nov 2026 10:36:35 +0200
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+	Arnd Bergmann <arnd@kernel.org>, Rich Felker <dalias@libc.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Linus Walleij <linusw@kernel.org>,
+	Bartosz Golaszewski <brgl@kernel.org>,
+	Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>,
+	linux-sh@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH v3 0/5] sh: mach-rsk: rsk7203: switch to using static
  device property, drop legacy gpio API
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Dmitry Torokhov
-	 <dmitry.torokhov@gmail.com>
-Cc: Arnd Bergmann <arnd@kernel.org>, Rich Felker <dalias@libc.org>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven
- <geert+renesas@glider.be>, Linus Walleij	 <linusw@kernel.org>, Bartosz
- Golaszewski <brgl@kernel.org>, Bartosz Golaszewski	
- <bartosz.golaszewski@oss.qualcomm.com>, linux-sh@vger.kernel.org, 
-	linux-renesas-soc@vger.kernel.org, linux-gpio@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Date: Tue, 24 Nov 2026 09:27:22 +0100
-In-Reply-To: <awU4aqWbKEs4Qhyg@ashevche-desk.local>
+Message-ID: <awVMk-aGMRug22ss@ashevche-desk.local>
 References: <20260929-rsk7203-properties-v3-0-02f84aeb8e47@gmail.com>
-	 <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com>
-	 <arzKNhmoL6yiGrzH@ashevche-desk.local>
-	 <dea00f90c205f8359baca729d8b0f31a@gmail.com>
-	 <ce838102be497ee6eab490b4454095b96e16d015.camel@physik.fu-berlin.de>
-	 <2e4f0d32c05d841feb367741bf8802fc@gmail.com>
-	 <awU4aqWbKEs4Qhyg@ashevche-desk.local>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.62.1 
+ <3a51385d-9649-4bd7-87b3-0caf9e462b2e@app.fastmail.com>
+ <arzKNhmoL6yiGrzH@ashevche-desk.local>
+ <dea00f90c205f8359baca729d8b0f31a@gmail.com>
+ <ce838102be497ee6eab490b4454095b96e16d015.camel@physik.fu-berlin.de>
+ <2e4f0d32c05d841feb367741bf8802fc@gmail.com>
+ <awU4aqWbKEs4Qhyg@ashevche-desk.local>
+ <6eb2202457d5703192a513b4e898dfe6653c1b0f.camel@physik.fu-berlin.de>
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -91,26 +93,37 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-sh+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <6eb2202457d5703192a513b4e898dfe6653c1b0f.camel@physik.fu-berlin.de>
+Organization: Intel Finland Oy - BIC 0357606-4 - c/o Alberga Business Park, 6
+ krs, Bertel Jungin Aukio 5, 02600 Espoo
 
-On Tue, 2026-11-24 at 09:10 +0200, Andy Shevchenko wrote:
-> ...or even remove the board support completely (would be interesting
-> to see somebody investing time in this HW to fix all what listed and
-> not listed above).
+On Tue, Nov 24, 2026 at 09:27:22AM +0100, John Paul Adrian Glaubitz wrote:
+> On Tue, 2026-11-24 at 09:10 +0200, Andy Shevchenko wrote:
+> > ...or even remove the board support completely (would be interesting
+> > to see somebody investing time in this HW to fix all what listed and
+> > not listed above).
+> 
+> Can I as the SH maintainer at least have the last word on this? I'm not
+> really happy with the fact that corporate developers are chasing hobbyists
+> in the kernel developments all the time.
 
-Can I as the SH maintainer at least have the last word on this? I'm not
-really happy with the fact that corporate developers are chasing hobbyists
-in the kernel developments all the time.
+I'm not objecting that! I just expressed the concern that with pointed earlier
+lack of time (did I misinterpreted that?) and list of problems it really needs
+a time investment (note, I haven't used the word 'waste').
 
-You people are being paid to do this, of course you can work on the kernel
-on every weekday. But that doesn't mean hobbyist developers have to pick
-that workload as well.
+> You people are being paid to do this, of course you can work on the kernel
+> on every weekday. But that doesn't mean hobbyist developers have to pick
+> that workload as well.
 
-Adrian
+I'm not getting paid for reviewing, say ARM related stuff or stuff that is
+unlikely to appear on say x86 platform, so I'm pretty much understand your
+pain. Please, check the history of changes I have done in the kernel before
+judging, okay?
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+-- 
+With Best Regards,
+Andy Shevchenko
+
+
