@@ -1,98 +1,98 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=158.69.130.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.214.173
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795805907;
-	b=q+tWfglGc5tsblezqznz9OMNwZ/zM30L4SEcgmTV1b/Bwjfv0/yS4MBgqNdhpd83w43y
-	 5JfXKskHTm/slUjcGWFnzQPsGP+RSki/YptDldLknXbq6n79LBoBPc7PSCk+haZ6P+Mh6
-	 ua6UHiD7zjGb0kTpq+LuejKypV7nYi8/6a/Z3O9+Dqe7pmjfYs6GbB/IjJTqwOvyZrEWX
-	 ezxzuz4oc02sFIZ9kauZyd9BiFql2qYMCCXo7/tEGmV0Sa4BaXiUZzfRCzf1JwTo0ueQs
-	 AWq/w8UzLDDMIJ4c2zUFltA+QAAUwEnyCSt+HasaVmSW7bWniUsdQfVtS4zVFhUzZlw==
+	t=1795843536;
+	b=SLsGmyqShwH5q3OIQVoocpsX3uCih7KmRiv9pfPBd7zWVeHXJuUU+Npv8JrPkV5ZvCv7
+	 FDDvMENpSJa8G6GroAWS2cCc/BwBFmFesQPQ0Ss9ZsIL4xQoTczBSautSzrniqppemQas
+	 sc6SU1uU//d1ftPUMOfO10SenyOfHSF0OM769ISFeIxULfPRQqdmd5nbgR7XQuobM9HsS
+	 gKjpz7uGwu8dSEtU9f5zjbnktFoiQxPyqCXMn09ULoPd5LVSORSTAaMx+uTla9qTQjwWQ
+	 2Pl/WUbbbPTesBtF7ISwcEHJ2pg2rr43VDS4MlGp5l0U9RFOfHifHwAyRQLSqB5WH9w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795805907;
-	h=DMARC-Filter:DKIM-Signature:Received:From:To:Cc:Subject:Date:
-	 Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
+	a=rsa-sha256; c=relaxed/relaxed; t=1795843536;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
 	 Content-Transfer-Encoding;
-	bh=rF8sHZW1cTd+n7KcEI4fz6GZGwqe6JLJYuwVImB7MOs=;
-	b=q5diTy4N2TCLdjYQYqWDB1luikupItPqkLNHuCQkWhVSmICnfIBye9yXxgteZnPZRCmc
-	 +9h2c6hgbS7+quRdIbtDh5AYGYEcE9r66ktkegM+eUWxZ20RN2HPqqovePmizjxvqm2Jx
-	 t4duj/ZBswz7pGOQOPtgxjiqBx4q0CsKu7meECXkf/cDOUH8Adcm+E3eq0whKh50/YT9u
-	 SRUP1JnFAzV3/KFLyBNZKGbso/GEdpXpd+0vIzm1D05tzhgm8jETNjOFc1rBj7Dx4rG9N
-	 QmQedE+15eWiZ2Z32iEjk6P6r8z7KuWKrRRl2Zb1HRbBdqE+swwp/MH1sWP68QmVEPA==
+	bh=LTT+F+8eGiTtnoaAOJgxFuyeZr+Zc/qtavdsCFWjKow=;
+	b=seWARl8DlUfOE2EBGgPO8tQNrPPQ67TKYFS9hYUYrNDsEFOVwc2ub9o4lcf2ODpgXY6N
+	 sWo74rRHBoEJTBmqWFYi3qMjJo1e/uyTgSTwfDr2IQX3cUsl3otqP4N+IB32auqSwLan+
+	 +rpInkkvmnhd+YqwtH2Zz5GBfi9/wKvi4/+rm7jFD5sU2Y6Fa7qd2mRwlubjKcxWXTCfd
+	 6wpJw8EpglCWejCfCRCHgUXhVf0TCKLguvmCG0WlB2IBA0Kss8g2bcKHRacOD20alNaJI
+	 Rrg/nfIjunRYmz+MtLHCUZUPYBGst/vn2OHCHknUauDOEy2WCu7dH3yqhMpljTSpJJQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=efficios.com;
-	spf=pass smtp.mailfrom=efficios.com;
-	dkim=pass header.d=efficios.com header.i=@efficios.com header.a=rsa-sha256 header.s=smtpout1 header.b=q4blEadq;
-	arc=none smtp.remote-ip=158.69.130.18
-Received: from smtpout.efficios.com (smtpout.efficios.com [158.69.130.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=Csn9C31G;
+	arc=none smtp.remote-ip=209.85.214.173
+Received: from mail-pl1-f173.google.com (mail-pl1-f173.google.com [209.85.214.173])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E0A04606A6A3;
-	Fri, 27 Nov 2026 18:58:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E0A04606A6A3
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=efficios.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=efficios.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B4ECA606A31E
+	for <linux-sh@vger.kernel.org>; Sat, 28 Nov 2026 05:25:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B4ECA606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=efficios.com header.i=@efficios.com header.a=rsa-sha256 header.s=smtpout1 header.b=q4blEadq
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=efficios.com;
-	s=smtpout1; t=1795805904;
-	bh=rF8sHZW1cTd+n7KcEI4fz6GZGwqe6JLJYuwVImB7MOs=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=q4blEadqTvxKYWYF6QajeBr2d9uBZfo+WIzk4gpnujx/mHTrAjMe5mH3goY66EsGl
-	 vfGdAsGfiQflDvHaxbmwHM+xlRM7c/INxYXF19V+sBVp1Fmhv6KuOGV/MKTRrSeaCS
-	 xKC213z7s9QWX1WV+UkDOS22okkKbXWOIvIvsAuao33N7vKYXxssz9lyQlrtsrJ7Hx
-	 UwzzhPermKdzZjFhlGDj8q+XK/U9i4oI+weBMdQGSGg+XUGOWKWviNKHwyFcS7Ke3S
-	 tmGcQgRCsBZNGfHQ65QcH83g7QToF0o3i5Aqb3m5ld2dX+7ueLJxd7t1q5+6AVtXnY
-	 gd5/eYFmUqLwA==
-Received: from thinkos.internal.efficios.com (mtl.efficios.com [216.120.195.104])
-	by smtpout.efficios.com (Postfix) with ESMTPSA id 4jbjNw68h6zXQN;
-	Fri, 27 Nov 2026 13:58:24 -0500 (EST)
-From: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
-To: Peter Zijlstra <peterz@infradead.org>,
-	Ingo Molnar <mingo@redhat.com>
-Cc: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-	"Paul E. McKenney" <paulmck@kernel.org>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Shuah Khan <skhan@linuxfoundation.org>,
-	Randy Dunlap <rdunlap@infradead.org>,
-	Juri Lelli <juri.lelli@redhat.com>,
-	Vincent Guittot <vincent.guittot@linaro.org>,
-	Dietmar Eggemann <dietmar.eggemann@arm.com>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Ben Segall <bsegall@google.com>,
-	Mel Gorman <mgorman@suse.de>,
-	Valentin Schneider <vschneid@redhat.com>,
-	K Prateek Nayak <kprateek.nayak@amd.com>,
-	Paul Walmsley <pjw@kernel.org>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>,
-	Alexandre Ghiti <alex@ghiti.fr>,
-	Guo Ren <guoren@kernel.org>,
-	linux-kernel@vger.kernel.org,
-	linux-doc@vger.kernel.org,
-	linux-riscv@lists.infradead.org,
-	linux-csky@vger.kernel.org,
-	Jonas Bonn <jonas@southpole.se>,
-	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-	Stafford Horne <shorne@gmail.com>,
-	linux-openrisc@vger.kernel.org,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=Csn9C31G
+Received: by mail-pl1-f173.google.com with SMTP id d9443c01a7336-2f04f61282dso40177385ad.1
+        for <linux-sh@vger.kernel.org>; Fri, 27 Nov 2026 21:25:35 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795843535; x=1796448335; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=LTT+F+8eGiTtnoaAOJgxFuyeZr+Zc/qtavdsCFWjKow=;
+        b=Csn9C31GyefqXel/Pu5z7paIM0NjtCsN7IkQsZaara9c3GJxBkOjTTE6NohGcPrLF4
+         aEb2Bv/K2Yjcq8hsbs8asvyDOMpw502zL6Wsxz/fJG75C7Ee9DZltsEjH8UFirlqj3MD
+         qjuAUvi+0461Bj5SJ83MJgYW26ekT4bH0r1aHxpdEXhRGqMrd2EMDsM4l/aENi/PbYgJ
+         0RJbYZqkC/3tFkVgkl915v5lHQ2Cf9Zgfzwt/AF/xk30122foTBa/ACtRpEyGGjkUoFf
+         +Zy5Ksjeu/0QdnLyhlj3Rk73Tg+FbrB7XNO5L7OvqbNfjPOvQ6MC9w0OZdyXCxryUABF
+         0Mdg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795843535; x=1796448335;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=LTT+F+8eGiTtnoaAOJgxFuyeZr+Zc/qtavdsCFWjKow=;
+        b=bSE8skYN07yvX2PyStjz7jkaTypKkpH1hirLXy6qVvkC5kaiIyaCpoNu203YCsxNIE
+         JKPOj6JPvKQWPSD4FfRAtGXqnExkqer5QeOL4aJWCHv3zGXYfvet7/Ohb/vxXJxAwx2h
+         dJmtNTR1C+hQy9bnZoO3GOBnMkSaJ+96ndiK/0BM8p95NX9X/kthwQNuz41K/jweKqFz
+         HL+kBcIiBicCWEa8nDGNDureDHTtPrVLdrN3OFp9pT9JyenNeD4AaUgG2s2m17u4q/3a
+         f+GQ76Q+fwjCNMrbbTFm3oGmTF1NY//XyBxcA0/PtdiIxndFd+uWbMEKKLNXLp6MZAiZ
+         bJYg==
+X-Forwarded-Encrypted: i=1; AL+hErHs9ythZwtoT82JQ9L+b9NC8FYpJThTNhEb30A7BmVm/75TYHRxuKu+FSFvIXVeVtsIXhVs/sB7mQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+uv9CWsNpZqMTbpnXRPROiRwgRBrSiOHtvPW6u9I/4Fk8Dwm1P
+	lzbFEIn2BNL3cGl4FKCnnYtOwp2eBqnKfEf55YjXeFpdlDktVtAHFt32
+X-Gm-Gg: AZFdTZd+7ZEwf7R36hvBH8I4Tv8lDSZkYTJQHokf7P52lwM20n1MYq45+dN3SF/CruQ
+	pN53BuvBV5V0MC/t5X0bSKcj5htNfeYe9I4gBkbCSOIWN0DKY0wJRywvie62H48ik7ZwQc9fYBH
+	mV8B6f4/1umcF1g52EghzMzEvP+1qtxFHfLF3xHGaeienvnSuGMSsowACQejPAhlIZSJ7QUG2/a
+	9G6+7XvQCib4n6nVu4Y/Y6AjJxZMgtjtR+Vy+BnCAHgEqm6nUGzqGqjOq5tBAlvvEC9dxbFQ3Ju
+	tJnVFxbz1+OeYxqvp1tAYAX6wlF73MGPaRptJvfVATqO3RL1KZE//KhFd4oPw22eUrZTfXp7tK3
+	Tl8ZD1DIcXqXPmSvTlXlfYCBz7egrSUT7fMAEI//JmWaIGNgILXRG6hcxHTm/kYbI2Wbl5JdyPC
+	p8v2FC9ao0KYz5Jb+HRd3/TpswOnxsCwS0bEukZu1YJR6c0y/PYiX5+TqnNDRox34NTSKXB+gh9
+	4yArRKxJ6jHYniNwEq6F9NjklYwXlP5fhgQcBkzNacl3k6AoywHsJVNLfr1/kBci2OuX9jmIE/v
+	nouz9SzvEiC4PelRZwsxgo30+H/4bcB3RZVJEkyqmCGv/nzYgg==
+X-Received: by 2002:a17:90b:1802:b0:3b0:9f53:e8a8 with SMTP id 98e67ed59e1d1-3b41c959dfbmr26204669a91.52.1795843534930;
+        Fri, 27 Nov 2026 21:25:34 -0800 (PST)
+Received: from fedora.tailc1fb0a.ts.net ([172.219.65.15])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b5210be133sm9958967a91.11.2026.11.27.21.25.34
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 27 Nov 2026 21:25:34 -0800 (PST)
+From: Artem Novak <artem122novak@gmail.com>
+To: ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	terrelln@fb.com,
+	dsterba@suse.com
+Cc: geert+renesas@glider.be,
+	ljs@kernel.org,
+	n.schier@fritz.com,
 	linux-sh@vger.kernel.org,
-	Chris Zankel <chris@zankel.net>,
-	Max Filippov <jcmvbkbc@gmail.com>,
-	Huacai Chen <chenhuacai@kernel.org>,
-	WANG Xuerui <kernel@xen0n.name>,
-	loongarch@lists.linux.dev,
-	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-	Helge Deller <deller@gmx.de>,
-	linux-parisc@vger.kernel.org,
-	linux-arch@vger.kernel.org
-Subject: [PATCH v2 10/16] Documentation/membarrier: Update the per-architecture barrier list
-Date: Fri, 27 Nov 2026 13:58:15 -0500
-Message-ID: <20261127185822.158216-11-mathieu.desnoyers@efficios.com>
-X-Mailer: git-send-email 2.47.3
-In-Reply-To: <20261127185822.158216-1-mathieu.desnoyers@efficios.com>
-References: <20261127185822.158216-1-mathieu.desnoyers@efficios.com>
+	linux-kernel@vger.kernel.org,
+	Artem Novak <artem122novak@gmail.com>
+Subject: [RFC PATCH] sh: boot: add Zstandard compressed kernel support
+Date: Fri, 27 Nov 2026 23:25:30 -0600
+Message-ID: <20261128052530.456111-1-artem122novak@gmail.com>
+X-Mailer: git-send-email 2.56.1
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Post: <mailto:linux-sh@vger.kernel.org>
@@ -104,77 +104,162 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-membarrier.rst lists how each architecture provides the full memory
-barrier after the store to rq->curr. The list misses several SMP
-architectures.
+Add support for booting Zstandard compressed kernels on SuperH.
 
-Add csky, openrisc, sh and xtensa. They use the generic
-smp_store_release(). It issues smp_mb() before the store.
-finish_task() uses it.
+Select HAVE_KERNEL_ZSTD and add the required image generation rules
+for Zstandard compressed kernel images.
 
-LoongArch and parisc now provide the barrier with
-membarrier_arch_switch_mm(). Add them next to powerpc and riscv.
+Include the Zstandard decompressor in the compressed kernel and
+provide the architecture helper routines required by it,
+including the SH implementations of the division, memory movement,
+and leading/trailing zero count helpers.
 
-State the rule which both broke: an architecture which weakens
-smp_store_release() or spin_unlock() must provide the barrier another
-way.
+Tested on:
 
-Update the matching comment in __schedule().
+- SH4 R2D: successful Zstandard kernel boot under QEMU.
 
-Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+- SH4: successful builds with and without
+  CONFIG_CC_OPTIMIZE_FOR_SIZE.
+
+- SH3 EDOSK7705: successful Zstandard kernel build.
+
+Signed-off-by: Artem Novak <artem122novak@gmail.com>
 ---
- Documentation/scheduler/membarrier.rst | 14 ++++++++++----
- kernel/sched/core.c                    | 10 ++++++----
- 2 files changed, 16 insertions(+), 8 deletions(-)
+ arch/sh/Kconfig                   |  1 +
+ arch/sh/boot/Makefile             | 12 ++++++++++--
+ arch/sh/boot/compressed/Makefile  | 26 +++++++++++++++++++++++++-
+ arch/sh/boot/compressed/clz_ctz.c |  3 +++
+ arch/sh/boot/compressed/misc.c    |  3 +++
+ 5 files changed, 42 insertions(+), 3 deletions(-)
+ create mode 100644 arch/sh/boot/compressed/clz_ctz.c
 
-diff --git a/Documentation/scheduler/membarrier.rst b/Documentation/scheduler/membarrier.rst
-index 2387804b1c63..c5f6f4f57331 100644
---- a/Documentation/scheduler/membarrier.rst
-+++ b/Documentation/scheduler/membarrier.rst
-@@ -28,12 +28,18 @@ architectures are as follows.
-  - alpha, arc, arm, hexagon, mips rely on the full barrier implied by
-    spin_unlock() in finish_lock_switch().
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index aa579aa041b5..d3919834a6dd 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -49,6 +49,7 @@ config SUPERH
+ 	select HAVE_KERNEL_LZMA
+ 	select HAVE_KERNEL_LZO
+ 	select HAVE_KERNEL_XZ
++	select HAVE_KERNEL_ZSTD
+ 	select HAVE_KPROBES
+ 	select HAVE_KRETPROBES
+ 	select HAVE_MIXED_BREAKPOINTS_REGS
+diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
+index cf63e319b786..49f32431a7e3 100644
+--- a/arch/sh/boot/Makefile
++++ b/arch/sh/boot/Makefile
+@@ -25,11 +25,13 @@ suffix_$(CONFIG_KERNEL_BZIP2)	:= bz2
+ suffix_$(CONFIG_KERNEL_LZMA)	:= lzma
+ suffix_$(CONFIG_KERNEL_XZ)	:= xz
+ suffix_$(CONFIG_KERNEL_LZO)	:= lzo
++suffix_$(CONFIG_KERNEL_ZSTD)	:= zst
  
-+ - csky, openrisc, sh, xtensa rely on the generic smp_store_release(),
-+   which issues a full barrier before the store.  finish_task() uses it.
+ targets := zImage vmlinux.srec romImage uImage uImage.srec uImage.gz \
+-	   uImage.bz2 uImage.lzma uImage.xz uImage.lzo uImage.bin \
++	   uImage.bz2 uImage.lzma uImage.xz uImage.lzo uImage.zst \
++	   uImage.bin \
+ 	   vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 vmlinux.bin.lzma \
+-	   vmlinux.bin.xz vmlinux.bin.lzo
++	   vmlinux.bin.xz vmlinux.bin.lzo vmlinux.bin.zst
+ subdir- := compressed romimage
+ 
+ $(obj)/zImage: $(obj)/compressed/vmlinux FORCE
+@@ -80,6 +82,9 @@ $(obj)/vmlinux.bin.xz: $(obj)/vmlinux.bin FORCE
+ $(obj)/vmlinux.bin.lzo: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,lzo)
+ 
++$(obj)/vmlinux.bin.zst: $(obj)/vmlinux.bin FORCE
++	$(call if_changed,zstd22)
 +
-  - arm64 relies on the full barrier implied by switch_to().
+ $(obj)/uImage.bz2: $(obj)/vmlinux.bin.bz2 FORCE
+ 	$(call if_changed,uimage,bzip2)
  
-- - powerpc, riscv, s390, sparc, x86 rely on the full barrier implied by
--   switch_mm(), if mm is not NULL; they rely on the full barrier implied
--   by mmdrop(), otherwise.  On powerpc and riscv, switch_mm() relies on
--   membarrier_arch_switch_mm().
-+ - loongarch, parisc, powerpc, riscv, s390, sparc, x86 rely on the full
-+   barrier implied by switch_mm(), if mm is not NULL; they rely on the full
-+   barrier implied by mmdrop(), otherwise.  On loongarch, parisc, powerpc and
-+   riscv, switch_mm() relies on membarrier_arch_switch_mm().
+@@ -95,6 +100,9 @@ $(obj)/uImage.xz: $(obj)/vmlinux.bin.xz FORCE
+ $(obj)/uImage.lzo: $(obj)/vmlinux.bin.lzo FORCE
+ 	$(call if_changed,uimage,lzo)
+ 
++$(obj)/uImage.zst: $(obj)/vmlinux.bin.zst FORCE
++	$(call if_changed,uimage,zstd)
 +
-+An architecture which overrides smp_store_release() or spin_unlock() with
-+something weaker than a full barrier must provide this barrier another way.
+ $(obj)/uImage.bin: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,uimage,none)
  
- The barrier matches a full barrier in the proximity of the membarrier system call
- entry, cf. membarrier_{private,global}_expedited().
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index df6d15cf7109..9985c95ecd73 100644
---- a/kernel/sched/core.c
-+++ b/kernel/sched/core.c
-@@ -7367,10 +7367,12 @@ static void __sched notrace __schedule(int sched_mode)
- 		 * Here are the schemes providing that barrier on the
- 		 * various architectures:
- 		 * - mm ? switch_mm() : mmdrop() for x86, s390, sparc, PowerPC,
--		 *   RISC-V.  switch_mm() relies on membarrier_arch_switch_mm()
--		 *   on PowerPC and on RISC-V.
--		 * - finish_lock_switch() for weakly-ordered
--		 *   architectures where spin_unlock is a full barrier,
-+		 *   RISC-V, LoongArch, PA-RISC.  switch_mm() relies on
-+		 *   membarrier_arch_switch_mm() on PowerPC, RISC-V,
-+		 *   LoongArch and PA-RISC.
-+		 * - finish_task() and finish_lock_switch() for weakly-ordered
-+		 *   architectures where smp_store_release() or spin_unlock
-+		 *   is a full barrier,
- 		 * - switch_to() for arm64 (weakly-ordered, spin_unlock
- 		 *   is a RELEASE barrier),
- 		 *
+diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Makefile
+index b85aa5f0d616..f06c0293c3ee 100644
+--- a/arch/sh/boot/compressed/Makefile
++++ b/arch/sh/boot/compressed/Makefile
+@@ -8,8 +8,18 @@
+ OBJECTS := head_32.o misc.o piggy.o \
+            ashiftrt.o ashldi3.o ashrsi3.o ashlsi3.o lshrsi3.o
+ 
++zstd-udivsi3-y := udivsi3_i4i-Os.o
++ifneq ($(CONFIG_CC_OPTIMIZE_FOR_SIZE),y)
++zstd-udivsi3-$(CONFIG_CPU_SH3) := udivsi3_i4i.o
++zstd-udivsi3-$(CONFIG_CPU_SH4) := udivsi3_i4i.o
++endif
++
++OBJECTS-$(CONFIG_KERNEL_ZSTD) += clz_ctz.o memmove.o movmem.o $(zstd-udivsi3-y)
++OBJECTS += $(OBJECTS-y)
++
+ targets := vmlinux vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 \
+-           vmlinux.bin.lzma vmlinux.bin.xz vmlinux.bin.lzo $(OBJECTS)
++           vmlinux.bin.lzma vmlinux.bin.xz vmlinux.bin.lzo \
++           vmlinux.bin.zst $(OBJECTS)
+ 
+ #
+ # IMAGE_OFFSET is the load offset of the compression loader
+@@ -32,6 +42,18 @@ LDFLAGS_vmlinux := --oformat $(ld_bfd) -Ttext $(IMAGE_OFFSET) -e startup \
+ 
+ KBUILD_CFLAGS += -DDISABLE_BRANCH_PROFILING
+ 
++$(obj)/memmove.o: $(srctree)/arch/sh/lib/memmove.S FORCE
++	$(call if_changed_dep,as_o_S)
++
++$(obj)/movmem.o: $(srctree)/arch/sh/lib/movmem.S FORCE
++	$(call if_changed_dep,as_o_S)
++
++$(obj)/udivsi3_i4i.o: $(srctree)/arch/sh/lib/udivsi3_i4i.S FORCE
++	$(call if_changed_dep,as_o_S)
++
++$(obj)/udivsi3_i4i-Os.o: $(srctree)/arch/sh/lib/udivsi3_i4i-Os.S FORCE
++	$(call if_changed_dep,as_o_S)
++
+ $(obj)/vmlinux: $(addprefix $(obj)/, $(OBJECTS)) FORCE
+ 	$(call if_changed,ld)
+ 
+@@ -48,6 +70,8 @@ $(obj)/vmlinux.bin.xz: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,xzkern_with_size)
+ $(obj)/vmlinux.bin.lzo: $(obj)/vmlinux.bin FORCE
+ 	$(call if_changed,lzo_with_size)
++$(obj)/vmlinux.bin.zst: $(obj)/vmlinux.bin FORCE
++	$(call if_changed,zstd22_with_size)
+ 
+ OBJCOPYFLAGS += -R .empty_zero_page
+ 
+diff --git a/arch/sh/boot/compressed/clz_ctz.c b/arch/sh/boot/compressed/clz_ctz.c
+new file mode 100644
+index 000000000000..81a708c6808b
+--- /dev/null
++++ b/arch/sh/boot/compressed/clz_ctz.c
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include "../../../../lib/clz_ctz.c"
+diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
+index 3690379cc86b..3739e5dd6250 100644
+--- a/arch/sh/boot/compressed/misc.c
++++ b/arch/sh/boot/compressed/misc.c
+@@ -66,6 +66,9 @@ static unsigned long free_mem_end_ptr;
+ #ifdef CONFIG_KERNEL_LZO
+ #include "../../../../lib/decompress_unlzo.c"
+ #endif
++#ifdef CONFIG_KERNEL_ZSTD
++#include "../../../../lib/decompress_unzstd.c"
++#endif
+ 
+ int puts(const char *s)
+ {
 -- 
-2.47.3
+2.56.1
 
